@@ -1,0 +1,532 @@
+{
+  "exportedAt": "2026-05-29T06:02:06.491Z",
+  "count": 21,
+  "adjustments": [
+    {
+      "id": 1,
+      "type": "MOVE",
+      "status": "VOID",
+      "week": 6,
+      "targetWeek": null,
+      "originalSlotId": 1,
+      "originalSlot": {
+        "dayOfWeek": 1,
+        "slotIndex": 1,
+        "courseName": "心理健康教育",
+        "teacherName": "李丹丹",
+        "classNames": [
+          "2025级智能轧钢技术1班"
+        ],
+        "roomName": "11-321"
+      },
+      "newDayOfWeek": 1,
+      "newSlotIndex": 1,
+      "newRoomId": 1,
+      "newRoomName": "11-321",
+      "reason": "F1+ API E2E test",
+      "createdAt": "2026-05-28T10:48:33.663Z",
+      "updatedAt": "2026-05-28T10:48:34.343Z"
+    },
+    {
+      "id": 2,
+      "type": "MOVE",
+      "status": "VOID",
+      "week": 6,
+      "targetWeek": null,
+      "originalSlotId": 1,
+      "originalSlot": {
+        "dayOfWeek": 1,
+        "slotIndex": 1,
+        "courseName": "心理健康教育",
+        "teacherName": "李丹丹",
+        "classNames": [
+          "2025级智能轧钢技术1班"
+        ],
+        "roomName": "11-321"
+      },
+      "newDayOfWeek": 1,
+      "newSlotIndex": 1,
+      "newRoomId": 1,
+      "newRoomName": "11-321",
+      "reason": "F1+ API E2E test",
+      "createdAt": "2026-05-28T11:29:24.448Z",
+      "updatedAt": "2026-05-28T11:29:24.557Z"
+    },
+    {
+      "id": 3,
+      "type": "MOVE",
+      "status": "VOID",
+      "week": 12,
+      "targetWeek": null,
+      "originalSlotId": 5,
+      "originalSlot": {
+        "dayOfWeek": 2,
+        "slotIndex": 1,
+        "courseName": "液压与气压传动",
+        "teacherName": "李媛",
+        "classNames": [
+          "2025级智能轧钢技术1班",
+          "2025级智能轧钢技术2班"
+        ],
+        "roomName": "11-239"
+      },
+      "newDayOfWeek": 4,
+      "newSlotIndex": 5,
+      "newRoomId": 14,
+      "newRoomName": "11-212",
+      "reason": null,
+      "createdAt": "2026-05-29T02:30:34.978Z",
+      "updatedAt": "2026-05-29T02:30:34.978Z"
+    },
+    {
+      "id": 4,
+      "type": "MOVE",
+      "status": "VOID",
+      "week": 15,
+      "targetWeek": null,
+      "originalSlotId": 1428,
+      "originalSlot": {
+        "dayOfWeek": 2,
+        "slotIndex": 2,
+        "courseName": "电子技术",
+        "teacherName": "杨景勋",
+        "classNames": [
+          "2025级机电一体化技术4班"
+        ],
+        "roomName": "11-223"
+      },
+      "newDayOfWeek": 3,
+      "newSlotIndex": 5,
+      "newRoomId": 12,
+      "newRoomName": "11-223",
+      "reason": null,
+      "createdAt": "2026-05-29T02:43:03.003Z",
+      "updatedAt": "2026-05-29T02:43:03.003Z"
+    },
+    {
+      "id": 5,
+      "type": "MOVE",
+      "status": "VOID",
+      "week": 6,
+      "targetWeek": null,
+      "originalSlotId": 1,
+      "originalSlot": {
+        "dayOfWeek": 1,
+        "slotIndex": 1,
+        "courseName": "心理健康教育",
+        "teacherName": "李丹丹",
+        "classNames": [
+          "2025级智能轧钢技术1班"
+        ],
+        "roomName": "11-321"
+      },
+      "newDayOfWeek": 1,
+      "newSlotIndex": 1,
+      "newRoomId": 1,
+      "newRoomName": "11-321",
+      "reason": "F1+ API E2E test",
+      "createdAt": "2026-05-29T03:07:38.082Z",
+      "updatedAt": "2026-05-29T03:07:38.666Z"
+    },
+    {
+      "id": 6,
+      "type": "MOVE",
+      "status": "VOID",
+      "week": 7,
+      "targetWeek": 8,
+      "originalSlotId": 1,
+      "originalSlot": {
+        "dayOfWeek": 1,
+        "slotIndex": 1,
+        "courseName": "心理健康教育",
+        "teacherName": "李丹丹",
+        "classNames": [
+          "2025级智能轧钢技术1班"
+        ],
+        "roomName": "11-321"
+      },
+      "newDayOfWeek": 2,
+      "newSlotIndex": 5,
+      "newRoomId": 1,
+      "newRoomName": "11-321",
+      "reason": "cross-week adjustment e2e",
+      "createdAt": "2026-05-29T03:15:28.831Z",
+      "updatedAt": "2026-05-29T03:15:28.989Z"
+    },
+    {
+      "id": 7,
+      "type": "MOVE",
+      "status": "VOID",
+      "week": 6,
+      "targetWeek": null,
+      "originalSlotId": 1,
+      "originalSlot": {
+        "dayOfWeek": 1,
+        "slotIndex": 1,
+        "courseName": "心理健康教育",
+        "teacherName": "李丹丹",
+        "classNames": [
+          "2025级智能轧钢技术1班"
+        ],
+        "roomName": "11-321"
+      },
+      "newDayOfWeek": 1,
+      "newSlotIndex": 1,
+      "newRoomId": 1,
+      "newRoomName": "11-321",
+      "reason": "F1+ API E2E test",
+      "createdAt": "2026-05-29T03:15:41.333Z",
+      "updatedAt": "2026-05-29T03:15:41.435Z"
+    },
+    {
+      "id": 8,
+      "type": "MOVE",
+      "status": "VOID",
+      "week": 6,
+      "targetWeek": null,
+      "originalSlotId": 1,
+      "originalSlot": {
+        "dayOfWeek": 1,
+        "slotIndex": 1,
+        "courseName": "心理健康教育",
+        "teacherName": "李丹丹",
+        "classNames": [
+          "2025级智能轧钢技术1班"
+        ],
+        "roomName": "11-321"
+      },
+      "newDayOfWeek": 1,
+      "newSlotIndex": 1,
+      "newRoomId": 1,
+      "newRoomName": "11-321",
+      "reason": "F1+ API E2E test",
+      "createdAt": "2026-05-29T03:35:52.414Z",
+      "updatedAt": "2026-05-29T03:35:52.530Z"
+    },
+    {
+      "id": 9,
+      "type": "MOVE",
+      "status": "VOID",
+      "week": 7,
+      "targetWeek": 8,
+      "originalSlotId": 1,
+      "originalSlot": {
+        "dayOfWeek": 1,
+        "slotIndex": 1,
+        "courseName": "心理健康教育",
+        "teacherName": "李丹丹",
+        "classNames": [
+          "2025级智能轧钢技术1班"
+        ],
+        "roomName": "11-321"
+      },
+      "newDayOfWeek": 2,
+      "newSlotIndex": 5,
+      "newRoomId": 1,
+      "newRoomName": "11-321",
+      "reason": "cross-week adjustment e2e",
+      "createdAt": "2026-05-29T03:35:55.340Z",
+      "updatedAt": "2026-05-29T03:35:55.490Z"
+    },
+    {
+      "id": 10,
+      "type": "MOVE",
+      "status": "VOID",
+      "week": 7,
+      "targetWeek": 7,
+      "originalSlotId": 1,
+      "originalSlot": {
+        "dayOfWeek": 1,
+        "slotIndex": 1,
+        "courseName": "心理健康教育",
+        "teacherName": "李丹丹",
+        "classNames": [
+          "2025级智能轧钢技术1班"
+        ],
+        "roomName": "11-321"
+      },
+      "newDayOfWeek": 2,
+      "newSlotIndex": 5,
+      "newRoomId": 1,
+      "newRoomName": "11-321",
+      "reason": "F2-FIX-E same-week test",
+      "createdAt": "2026-05-29T04:14:40.536Z",
+      "updatedAt": "2026-05-29T04:14:40.631Z"
+    },
+    {
+      "id": 11,
+      "type": "MOVE",
+      "status": "VOID",
+      "week": 7,
+      "targetWeek": 8,
+      "originalSlotId": 1,
+      "originalSlot": {
+        "dayOfWeek": 1,
+        "slotIndex": 1,
+        "courseName": "心理健康教育",
+        "teacherName": "李丹丹",
+        "classNames": [
+          "2025级智能轧钢技术1班"
+        ],
+        "roomName": "11-321"
+      },
+      "newDayOfWeek": 2,
+      "newSlotIndex": 5,
+      "newRoomId": 1,
+      "newRoomName": "11-321",
+      "reason": "F2-FIX-E cross-week test",
+      "createdAt": "2026-05-29T04:14:40.871Z",
+      "updatedAt": "2026-05-29T04:14:41.962Z"
+    },
+    {
+      "id": 12,
+      "type": "MOVE",
+      "status": "VOID",
+      "week": 6,
+      "targetWeek": null,
+      "originalSlotId": 1,
+      "originalSlot": {
+        "dayOfWeek": 1,
+        "slotIndex": 1,
+        "courseName": "心理健康教育",
+        "teacherName": "李丹丹",
+        "classNames": [
+          "2025级智能轧钢技术1班"
+        ],
+        "roomName": "11-321"
+      },
+      "newDayOfWeek": 1,
+      "newSlotIndex": 1,
+      "newRoomId": 1,
+      "newRoomName": "11-321",
+      "reason": "F1+ API E2E test",
+      "createdAt": "2026-05-29T04:15:06.538Z",
+      "updatedAt": "2026-05-29T04:15:06.680Z"
+    },
+    {
+      "id": 13,
+      "type": "MOVE",
+      "status": "VOID",
+      "week": 7,
+      "targetWeek": 8,
+      "originalSlotId": 1,
+      "originalSlot": {
+        "dayOfWeek": 1,
+        "slotIndex": 1,
+        "courseName": "心理健康教育",
+        "teacherName": "李丹丹",
+        "classNames": [
+          "2025级智能轧钢技术1班"
+        ],
+        "roomName": "11-321"
+      },
+      "newDayOfWeek": 2,
+      "newSlotIndex": 5,
+      "newRoomId": 1,
+      "newRoomName": "11-321",
+      "reason": "cross-week adjustment e2e",
+      "createdAt": "2026-05-29T04:15:53.339Z",
+      "updatedAt": "2026-05-29T04:15:53.553Z"
+    },
+    {
+      "id": 14,
+      "type": "MOVE",
+      "status": "VOID",
+      "week": 7,
+      "targetWeek": 7,
+      "originalSlotId": 195,
+      "originalSlot": {
+        "dayOfWeek": 1,
+        "slotIndex": 1,
+        "courseName": "森林草原火生态",
+        "teacherName": "李志民",
+        "classNames": [
+          "2025级森林草原防火技术1班"
+        ],
+        "roomName": "11-204"
+      },
+      "newDayOfWeek": 4,
+      "newSlotIndex": 2,
+      "newRoomId": null,
+      "newRoomName": null,
+      "reason": null,
+      "createdAt": "2026-05-29T04:40:19.920Z",
+      "updatedAt": "2026-05-29T04:41:13.203Z"
+    },
+    {
+      "id": 15,
+      "type": "MOVE",
+      "status": "VOID",
+      "week": 7,
+      "targetWeek": 8,
+      "originalSlotId": 199,
+      "originalSlot": {
+        "dayOfWeek": 3,
+        "slotIndex": 1,
+        "courseName": "森林草原火生态",
+        "teacherName": "李志民",
+        "classNames": [
+          "2025级森林草原防火技术1班"
+        ],
+        "roomName": "11-204"
+      },
+      "newDayOfWeek": 4,
+      "newSlotIndex": 2,
+      "newRoomId": null,
+      "newRoomName": null,
+      "reason": null,
+      "createdAt": "2026-05-29T04:40:31.538Z",
+      "updatedAt": "2026-05-29T04:41:13.203Z"
+    },
+    {
+      "id": 16,
+      "type": "MOVE",
+      "status": "VOID",
+      "week": 7,
+      "targetWeek": 7,
+      "originalSlotId": 195,
+      "originalSlot": {
+        "dayOfWeek": 1,
+        "slotIndex": 1,
+        "courseName": "森林草原火生态",
+        "teacherName": "李志民",
+        "classNames": [
+          "2025级森林草原防火技术1班"
+        ],
+        "roomName": "11-204"
+      },
+      "newDayOfWeek": 4,
+      "newSlotIndex": 2,
+      "newRoomId": null,
+      "newRoomName": null,
+      "reason": null,
+      "createdAt": "2026-05-29T04:47:29.836Z",
+      "updatedAt": "2026-05-29T04:47:31.448Z"
+    },
+    {
+      "id": 17,
+      "type": "MOVE",
+      "status": "VOID",
+      "week": 7,
+      "targetWeek": 8,
+      "originalSlotId": 195,
+      "originalSlot": {
+        "dayOfWeek": 1,
+        "slotIndex": 1,
+        "courseName": "森林草原火生态",
+        "teacherName": "李志民",
+        "classNames": [
+          "2025级森林草原防火技术1班"
+        ],
+        "roomName": "11-204"
+      },
+      "newDayOfWeek": 4,
+      "newSlotIndex": 2,
+      "newRoomId": null,
+      "newRoomName": null,
+      "reason": null,
+      "createdAt": "2026-05-29T04:47:38.402Z",
+      "updatedAt": "2026-05-29T04:47:42.509Z"
+    },
+    {
+      "id": 18,
+      "type": "MOVE",
+      "status": "VOID",
+      "week": 7,
+      "targetWeek": 8,
+      "originalSlotId": 195,
+      "originalSlot": {
+        "dayOfWeek": 1,
+        "slotIndex": 1,
+        "courseName": "森林草原火生态",
+        "teacherName": "李志民",
+        "classNames": [
+          "2025级森林草原防火技术1班"
+        ],
+        "roomName": "11-204"
+      },
+      "newDayOfWeek": 4,
+      "newSlotIndex": 2,
+      "newRoomId": null,
+      "newRoomName": null,
+      "reason": null,
+      "createdAt": "2026-05-29T04:47:42.691Z",
+      "updatedAt": "2026-05-29T04:47:46.090Z"
+    },
+    {
+      "id": 19,
+      "type": "MOVE",
+      "status": "VOID",
+      "week": 7,
+      "targetWeek": 7,
+      "originalSlotId": 195,
+      "originalSlot": {
+        "dayOfWeek": 1,
+        "slotIndex": 1,
+        "courseName": "森林草原火生态",
+        "teacherName": "李志民",
+        "classNames": [
+          "2025级森林草原防火技术1班"
+        ],
+        "roomName": "11-204"
+      },
+      "newDayOfWeek": 4,
+      "newSlotIndex": 2,
+      "newRoomId": null,
+      "newRoomName": null,
+      "reason": null,
+      "createdAt": "2026-05-29T04:48:31.830Z",
+      "updatedAt": "2026-05-29T04:48:33.448Z"
+    },
+    {
+      "id": 20,
+      "type": "MOVE",
+      "status": "VOID",
+      "week": 7,
+      "targetWeek": 8,
+      "originalSlotId": 195,
+      "originalSlot": {
+        "dayOfWeek": 1,
+        "slotIndex": 1,
+        "courseName": "森林草原火生态",
+        "teacherName": "李志民",
+        "classNames": [
+          "2025级森林草原防火技术1班"
+        ],
+        "roomName": "11-204"
+      },
+      "newDayOfWeek": 4,
+      "newSlotIndex": 2,
+      "newRoomId": null,
+      "newRoomName": null,
+      "reason": null,
+      "createdAt": "2026-05-29T04:48:40.411Z",
+      "updatedAt": "2026-05-29T04:48:44.506Z"
+    },
+    {
+      "id": 21,
+      "type": "MOVE",
+      "status": "VOID",
+      "week": 7,
+      "targetWeek": 8,
+      "originalSlotId": 195,
+      "originalSlot": {
+        "dayOfWeek": 1,
+        "slotIndex": 1,
+        "courseName": "森林草原火生态",
+        "teacherName": "李志民",
+        "classNames": [
+          "2025级森林草原防火技术1班"
+        ],
+        "roomName": "11-204"
+      },
+      "newDayOfWeek": 4,
+      "newSlotIndex": 2,
+      "newRoomId": null,
+      "newRoomName": null,
+      "reason": null,
+      "createdAt": "2026-05-29T04:48:44.700Z",
+      "updatedAt": "2026-05-29T04:48:53.599Z"
+    }
+  ]
+}

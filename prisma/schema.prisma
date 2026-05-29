@@ -1,0 +1,250 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model ClassGroup {
+  id           Int                  @id @default(autoincrement())
+  name         String               @unique
+  studentCount Int?
+  advisorName  String?
+  advisorPhone String?
+  taskClasses  TeachingTaskClass[]
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+}
+
+model Teacher {
+  id           Int            @id @default(autoincrement())
+  name         String         @unique
+  tasks        TeachingTask[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+}
+
+model Course {
+  id        Int            @id @default(autoincrement())
+  name      String         @unique
+  tasks     TeachingTask[]
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+}
+
+model Room {
+  id              Int                   @id @default(autoincrement())
+  name            String                @unique
+  building        String?
+  capacity        Int                   @default(50)
+  type            String                @default("NORMAL")
+  slots           ScheduleSlot[]
+  adjustments     ScheduleAdjustment[]
+  availabilities  RoomAvailability[]
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+}
+
+model TeachingTask {
+  id              Int                  @id @default(autoincrement())
+  courseId        Int
+  course          Course               @relation(fields: [courseId], references: [id])
+  teacherId       Int?
+  teacher         Teacher?             @relation(fields: [teacherId], references: [id])
+  weekType        String               @default("ALL")
+  startWeek       Int                  @default(1)
+  endWeek         Int                  @default(16)
+  remark          String?
+  importBatchId   Int?
+  importBatch     ImportBatch?         @relation(fields: [importBatchId], references: [id])
+  scheduleSlots   ScheduleSlot[]
+  taskClasses     TeachingTaskClass[]
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+}
+
+model ScheduleSlot {
+  id             Int                  @id @default(autoincrement())
+  teachingTaskId Int
+  teachingTask   TeachingTask         @relation(fields: [teachingTaskId], references: [id])
+  roomId        Int?
+  room           Room?                @relation(fields: [roomId], references: [id])
+  dayOfWeek      Int
+  slotIndex      Int
+  importBatchId  Int?
+  importBatch    ImportBatch?         @relation(fields: [importBatchId], references: [id])
+  adjustments    ScheduleAdjustment[]
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+}
+
+model ScheduleAdjustment {
+  id             Int           @id @default(autoincrement())
+  type           String
+  week           Int
+  targetWeek     Int?
+  originalSlotId Int
+  originalSlot   ScheduleSlot  @relation(fields: [originalSlotId], references: [id], onDelete: Cascade)
+  newDayOfWeek   Int?
+  newSlotIndex   Int?
+  newRoomId      Int?
+  newRoom        Room?         @relation(fields: [newRoomId], references: [id])
+  reason         String?
+  status         String        @default("ACTIVE")
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+model TeachingTaskClass {
+  id             Int          @id @default(autoincrement())
+  teachingTaskId Int
+  teachingTask   TeachingTask @relation(fields: [teachingTaskId], references: [id])
+  classGroupId   Int
+  classGroup     ClassGroup   @relation(fields: [classGroupId], references: [id])
+
+  @@unique([teachingTaskId, classGroupId])
+}
+
+model ScheduleChangeLog {
+  id          Int      @id @default(autoincrement())
+  taskId      Int
+  oldDay      Int
+  oldSlotIndex Int
+  oldRoomId   Int?
+  newDay      Int
+  newSlotIndex Int
+  newRoomId   Int?
+  reason      String?
+  createdAt   DateTime @default(now())
+}
+
+model SchedulingConfig {
+  id              Int              @id @default(autoincrement())
+  name            String
+  semesterId      Int?
+  maxIterations   Int              @default(10000)
+  lahcWindowSize  Int              @default(500)
+  lockedTaskIds   String           @default("[]")
+  createdAt       DateTime         @default(now())
+  runs            SchedulingRun[]
+}
+
+model SchedulingRun {
+  id              Int              @id @default(autoincrement())
+  configId        Int
+  config          SchedulingConfig @relation(fields: [configId], references: [id])
+  status          String
+  hardScore       Int?
+  softScore       Int?
+  iterations      Int?
+  durationMs      Int?
+  resultSnapshot  String?
+  createdAt       DateTime         @default(now())
+}
+
+model RoomAvailability {
+  id        Int     @id @default(autoincrement())
+  roomId    Int
+  room      Room    @relation(fields: [roomId], references: [id])
+  dayOfWeek Int
+  slotIndex Int
+  available Boolean @default(true)
+  reason    String?
+
+  @@unique([roomId, dayOfWeek, slotIndex])
+}
+
+model ImportBatch {
+  id               Int      @id @default(autoincrement())
+  filename         String
+  originalFilePath String?
+  parsedJsonPath   String?
+  statsJson        String?
+  qualityJson      String?
+  warningsJson     String?
+  status           String   @default("pending")
+  strategy         String?
+  recordCount      Int      @default(0)
+  createdTaskCount Int?
+  createdSlotCount Int?
+  errorMessage     String?
+  confirmedAt      DateTime?
+  rolledBackAt     DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  teachingTasks    TeachingTask[]
+  scheduleSlots    ScheduleSlot[]
+}
+
+// ─── Auth / RBAC Models ─────────────────────────────────────────────
+
+model User {
+  id           Int       @id @default(autoincrement())
+  username     String    @unique
+  displayName  String
+  passwordHash String
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  userRoles    UserRole[]
+  sessions     Session[]
+}
+
+model Role {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  userRoles        UserRole[]
+  rolePermissions  RolePermission[]
+}
+
+model Permission {
+  id          Int       @id @default(autoincrement())
+  key         String    @unique
+  description String?
+  createdAt   DateTime  @default(now())
+
+  rolePermissions RolePermission[]
+}
+
+model UserRole {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  roleId    Int
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+}
+
+model RolePermission {
+  id           Int      @id @default(autoincrement())
+  roleId       Int
+  permissionId Int
+  createdAt    DateTime @default(now())
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+}
+
+model Session {
+  id           Int       @id @default(autoincrement())
+  userId       Int
+  tokenHash    String    @unique
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  createdAt    DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

@@ -1,0 +1,776 @@
+[
+  {
+    "class_info": {
+      "class_name": "22工程造价1班",
+      "advisor_name": "李建国",
+      "advisor_phone": "13812345678"
+    },
+    "teacher": "王教授",
+    "course": "建筑施工技术",
+    "room": "11-322",
+    "day_of_week": 1,
+    "time_slot": "1,2",
+    "period_start": 1,
+    "period_end": 2,
+    "week_constraints": "全周",
+    "week_start": 1,
+    "week_end": 16,
+    "week_type": "ALL"
+  },
+  {
+    "class_info": {
+      "class_name": "22工程造价1班",
+      "advisor_name": "李建国",
+      "advisor_phone": "13812345678"
+    },
+    "teacher": "张老师",
+    "course": "工程经济学",
+    "room": "林校305",
+    "day_of_week": 1,
+    "time_slot": "3,4",
+    "period_start": 3,
+    "period_end": 4,
+    "week_constraints": "前八周",
+    "week_start": 1,
+    "week_end": 8,
+    "week_type": "FIRST_HALF"
+  },
+  {
+    "class_info": {
+      "class_name": "22工程造价1班",
+      "advisor_name": "李建国",
+      "advisor_phone": "13812345678"
+    },
+    "teacher": "刘工",
+    "course": "建筑结构",
+    "room": "实训楼201",
+    "day_of_week": 2,
+    "time_slot": "1,2",
+    "period_start": 1,
+    "period_end": 2,
+    "week_constraints": "后八周",
+    "week_start": 9,
+    "week_end": 16,
+    "week_type": "SECOND_HALF"
+  },
+  {
+    "class_info": {
+      "class_name": "22工程造价1班",
+      "advisor_name": "李建国",
+      "advisor_phone": "13812345678"
+    },
+    "teacher": "陈老师",
+    "course": "BIM技术应用",
+    "room": "A-101",
+    "day_of_week": 3,
+    "time_slot": "1,2",
+    "period_start": 1,
+    "period_end": 2,
+    "week_constraints": "单周上",
+    "week_start": 1,
+    "week_end": 16,
+    "week_type": "ODD"
+  },
+  {
+    "class_info": {
+      "class_name": "22工程造价1班",
+      "advisor_name": "李建国",
+      "advisor_phone": "13812345678"
+    },
+    "teacher": "赵老师",
+    "course": "工程项目管理",
+    "room": "11-415",
+    "day_of_week": 3,
+    "time_slot": "3,4",
+    "period_start": 3,
+    "period_end": 4,
+    "week_constraints": "双周上",
+    "week_start": 1,
+    "week_end": 16,
+    "week_type": "EVEN"
+  },
+  {
+    "class_info": {
+      "class_name": "22工程造价1班",
+      "advisor_name": "李建国",
+      "advisor_phone": "13812345678"
+    },
+    "teacher": "孙教授",
+    "course": "工程造价实务",
+    "room": "12-208",
+    "day_of_week": 4,
+    "time_slot": "1,2",
+    "period_start": 1,
+    "period_end": 2,
+    "week_constraints": "1-12周",
+    "week_start": 1,
+    "week_end": 12,
+    "week_type": "CUSTOM"
+  },
+  {
+    "class_info": {
+      "class_name": "22工程造价1班",
+      "advisor_name": "李建国",
+      "advisor_phone": "13812345678"
+    },
+    "teacher": "周老师",
+    "course": "建筑法规",
+    "room": "林校401",
+    "day_of_week": 4,
+    "time_slot": "3,4",
+    "period_start": 3,
+    "period_end": 4,
+    "week_constraints": null,
+    "week_start": 1,
+    "week_end": 16,
+    "week_type": "ALL"
+  },
+  {
+    "class_info": {
+      "class_name": "22工程造价1班",
+      "advisor_name": "李建国",
+      "advisor_phone": "13812345678"
+    },
+    "teacher": "吴老师",
+    "course": "工程招投标",
+    "room": "11-501",
+    "day_of_week": 5,
+    "time_slot": "1,2",
+    "period_start": 1,
+    "period_end": 2,
+    "week_constraints": "前八周",
+    "week_start": 1,
+    "week_end": 8,
+    "week_type": "FIRST_HALF"
+  },
+  {
+    "class_info": {
+      "class_name": "22建筑工程技术2班",
+      "advisor_name": "王芳",
+      "advisor_phone": "13987654321"
+    },
+    "teacher": "李老师",
+    "course": "建筑材料",
+    "room": "11-301",
+    "day_of_week": 1,
+    "time_slot": "1,2",
+    "period_start": 1,
+    "period_end": 2,
+    "week_constraints": null,
+    "week_start": 1,
+    "week_end": 16,
+    "week_type": "ALL"
+  },
+  {
+    "class_info": {
+      "class_name": "22建筑工程技术2班",
+      "advisor_name": "王芳",
+      "advisor_phone": "13987654321"
+    },
+    "teacher": "赵教授",
+    "course": "建筑力学",
+    "room": "12-105",
+    "day_of_week": 1,
+    "time_slot": "3,4",
+    "period_start": 3,
+    "period_end": 4,
+    "week_constraints": "全周",
+    "week_start": 1,
+    "week_end": 16,
+    "week_type": "ALL"
+  },
+  {
+    "class_info": {
+      "class_name": "22建筑工程技术2班",
+      "advisor_name": "王芳",
+      "advisor_phone": "13987654321"
+    },
+    "teacher": "钱老师",
+    "course": "建筑制图",
+    "room": "绘图室302",
+    "day_of_week": 2,
+    "time_slot": "1,2",
+    "period_start": 1,
+    "period_end": 2,
+    "week_constraints": "前八周",
+    "week_start": 1,
+    "week_end": 8,
+    "week_type": "FIRST_HALF"
+  },
+  {
+    "class_info": {
+      "class_name": "22建筑工程技术2班",
+      "advisor_name": "王芳",
+      "advisor_phone": "13987654321"
+    },
+    "teacher": "孙老师",
+    "course": "建筑CAD",
+    "room": "机房201",
+    "day_of_week": 2,
+    "time_slot": "3,4",
+    "period_start": 3,
+    "period_end": 4,
+    "week_constraints": "后八周",
+    "week_start": 9,
+    "week_end": 16,
+    "week_type": "SECOND_HALF"
+  },
+  {
+    "class_info": {
+      "class_name": "22建筑工程技术2班",
+      "advisor_name": "王芳",
+      "advisor_phone": "13987654321"
+    },
+    "teacher": "周教授",
+    "course": "混凝土结构",
+    "room": "11-402",
+    "day_of_week": 3,
+    "time_slot": "1,2",
+    "period_start": 1,
+    "period_end": 2,
+    "week_constraints": null,
+    "week_start": 1,
+    "week_end": 16,
+    "week_type": "ALL"
+  },
+  {
+    "class_info": {
+      "class_name": "22建筑工程技术2班",
+      "advisor_name": "王芳",
+      "advisor_phone": "13987654321"
+    },
+    "teacher": "吴老师",
+    "course": "钢结构",
+    "room": "12-310",
+    "day_of_week": 3,
+    "time_slot": "3,4",
+    "period_start": 3,
+    "period_end": 4,
+    "week_constraints": "单周上",
+    "week_start": 1,
+    "week_end": 16,
+    "week_type": "ODD"
+  },
+  {
+    "class_info": {
+      "class_name": "22建筑工程技术2班",
+      "advisor_name": "王芳",
+      "advisor_phone": "13987654321"
+    },
+    "teacher": "郑老师",
+    "course": "建筑施工组织",
+    "room": "11-205",
+    "day_of_week": 4,
+    "time_slot": "1,2",
+    "period_start": 1,
+    "period_end": 2,
+    "week_constraints": "双周上",
+    "week_start": 1,
+    "week_end": 16,
+    "week_type": "EVEN"
+  },
+  {
+    "class_info": {
+      "class_name": "22建筑工程技术2班",
+      "advisor_name": "王芳",
+      "advisor_phone": "13987654321"
+    },
+    "teacher": "冯老师",
+    "course": "建筑工程测量",
+    "room": "实训楼105",
+    "day_of_week": 4,
+    "time_slot": "3,4",
+    "period_start": 3,
+    "period_end": 4,
+    "week_constraints": "1-10周",
+    "week_start": 1,
+    "week_end": 10,
+    "week_type": "CUSTOM"
+  },
+  {
+    "class_info": {
+      "class_name": "22建筑工程技术2班",
+      "advisor_name": "王芳",
+      "advisor_phone": "13987654321"
+    },
+    "teacher": "陈工",
+    "course": "建筑设备",
+    "room": "林校202",
+    "day_of_week": 5,
+    "time_slot": "1,2",
+    "period_start": 1,
+    "period_end": 2,
+    "week_constraints": null,
+    "week_start": 1,
+    "week_end": 16,
+    "week_type": "ALL"
+  },
+  {
+    "class_info": {
+      "class_name": "23市政工程技术1班",
+      "advisor_name": "张伟",
+      "advisor_phone": "13611112222"
+    },
+    "teacher": "杨老师",
+    "course": "市政工程制图",
+    "room": "11-201",
+    "day_of_week": 1,
+    "time_slot": "1,2",
+    "period_start": 1,
+    "period_end": 2,
+    "week_constraints": "全周",
+    "week_start": 1,
+    "week_end": 16,
+    "week_type": "ALL"
+  },
+  {
+    "class_info": {
+      "class_name": "23市政工程技术1班",
+      "advisor_name": "张伟",
+      "advisor_phone": "13611112222"
+    },
+    "teacher": "朱教授",
+    "course": "土力学与地基",
+    "room": "12-305",
+    "day_of_week": 1,
+    "time_slot": "3,4",
+    "period_start": 3,
+    "period_end": 4,
+    "week_constraints": null,
+    "week_start": 1,
+    "week_end": 16,
+    "week_type": "ALL"
+  },
+  {
+    "class_info": {
+      "class_name": "23市政工程技术1班",
+      "advisor_name": "张伟",
+      "advisor_phone": "13611112222"
+    },
+    "teacher": "秦老师",
+    "course": "道路工程",
+    "room": "11-405",
+    "day_of_week": 2,
+    "time_slot": "1,2",
+    "period_start": 1,
+    "period_end": 2,
+    "week_constraints": "前八周",
+    "week_start": 1,
+    "week_end": 8,
+    "week_type": "FIRST_HALF"
+  },
+  {
+    "class_info": {
+      "class_name": "23市政工程技术1班",
+      "advisor_name": "张伟",
+      "advisor_phone": "13611112222"
+    },
+    "teacher": "尤老师",
+    "course": "桥梁工程",
+    "room": "林校302",
+    "day_of_week": 2,
+    "time_slot": "3,4",
+    "period_start": 3,
+    "period_end": 4,
+    "week_constraints": "后八周",
+    "week_start": 9,
+    "week_end": 16,
+    "week_type": "SECOND_HALF"
+  },
+  {
+    "class_info": {
+      "class_name": "23市政工程技术1班",
+      "advisor_name": "张伟",
+      "advisor_phone": "13611112222"
+    },
+    "teacher": "许老师",
+    "course": "排水工程",
+    "room": "12-201",
+    "day_of_week": 3,
+    "time_slot": "1,2",
+    "period_start": 1,
+    "period_end": 2,
+    "week_constraints": "单周上",
+    "week_start": 1,
+    "week_end": 16,
+    "week_type": "ODD"
+  },
+  {
+    "class_info": {
+      "class_name": "23市政工程技术1班",
+      "advisor_name": "张伟",
+      "advisor_phone": "13611112222"
+    },
+    "teacher": "何老师",
+    "course": "给水工程",
+    "room": "11-308",
+    "day_of_week": 3,
+    "time_slot": "3,4",
+    "period_start": 3,
+    "period_end": 4,
+    "week_constraints": "双周上",
+    "week_start": 1,
+    "week_end": 16,
+    "week_type": "EVEN"
+  },
+  {
+    "class_info": {
+      "class_name": "23市政工程技术1班",
+      "advisor_name": "张伟",
+      "advisor_phone": "13611112222"
+    },
+    "teacher": "吕老师",
+    "course": "市政工程预算",
+    "room": "A-205",
+    "day_of_week": 4,
+    "time_slot": "1,2",
+    "period_start": 1,
+    "period_end": 2,
+    "week_constraints": "1-8周",
+    "week_start": 1,
+    "week_end": 8,
+    "week_type": "FIRST_HALF"
+  },
+  {
+    "class_info": {
+      "class_name": "23市政工程技术1班",
+      "advisor_name": "张伟",
+      "advisor_phone": "13611112222"
+    },
+    "teacher": "施老师",
+    "course": "工程监理",
+    "room": "11-502",
+    "day_of_week": 4,
+    "time_slot": "3,4",
+    "period_start": 3,
+    "period_end": 4,
+    "week_constraints": null,
+    "week_start": 1,
+    "week_end": 16,
+    "week_type": "ALL"
+  },
+  {
+    "class_info": {
+      "class_name": "23市政工程技术1班",
+      "advisor_name": "张伟",
+      "advisor_phone": "13611112222"
+    },
+    "teacher": "张老师",
+    "course": "市政工程施工",
+    "room": "实训楼301",
+    "day_of_week": 5,
+    "time_slot": "1,2",
+    "period_start": 1,
+    "period_end": 2,
+    "week_constraints": null,
+    "week_start": 1,
+    "week_end": 16,
+    "week_type": "ALL"
+  },
+  {
+    "class_info": {
+      "class_name": "23工程监理1班",
+      "advisor_name": "刘丽",
+      "advisor_phone": "13733334444"
+    },
+    "teacher": "孔老师",
+    "course": "监理概论",
+    "room": "11-106",
+    "day_of_week": 1,
+    "time_slot": "1,2",
+    "period_start": 1,
+    "period_end": 2,
+    "week_constraints": "全周",
+    "week_start": 1,
+    "week_end": 16,
+    "week_type": "ALL"
+  },
+  {
+    "class_info": {
+      "class_name": "23工程监理1班",
+      "advisor_name": "刘丽",
+      "advisor_phone": "13733334444"
+    },
+    "teacher": "曹老师",
+    "course": "质量控制",
+    "room": "12-207",
+    "day_of_week": 1,
+    "time_slot": "3,4",
+    "period_start": 3,
+    "period_end": 4,
+    "week_constraints": null,
+    "week_start": 1,
+    "week_end": 16,
+    "week_type": "ALL"
+  },
+  {
+    "class_info": {
+      "class_name": "23工程监理1班",
+      "advisor_name": "刘丽",
+      "advisor_phone": "13733334444"
+    },
+    "teacher": "严老师",
+    "course": "进度控制",
+    "room": "11-401",
+    "day_of_week": 2,
+    "time_slot": "1,2",
+    "period_start": 1,
+    "period_end": 2,
+    "week_constraints": "前八周",
+    "week_start": 1,
+    "week_end": 8,
+    "week_type": "FIRST_HALF"
+  },
+  {
+    "class_info": {
+      "class_name": "23工程监理1班",
+      "advisor_name": "刘丽",
+      "advisor_phone": "13733334444"
+    },
+    "teacher": "华老师",
+    "course": "投资控制",
+    "room": "林校201",
+    "day_of_week": 2,
+    "time_slot": "3,4",
+    "period_start": 3,
+    "period_end": 4,
+    "week_constraints": "后八周",
+    "week_start": 9,
+    "week_end": 16,
+    "week_type": "SECOND_HALF"
+  },
+  {
+    "class_info": {
+      "class_name": "23工程监理1班",
+      "advisor_name": "刘丽",
+      "advisor_phone": "13733334444"
+    },
+    "teacher": "金老师",
+    "course": "合同管理",
+    "room": "12-105",
+    "day_of_week": 3,
+    "time_slot": "1,2",
+    "period_start": 1,
+    "period_end": 2,
+    "week_constraints": "单周上",
+    "week_start": 1,
+    "week_end": 16,
+    "week_type": "ODD"
+  },
+  {
+    "class_info": {
+      "class_name": "23工程监理1班",
+      "advisor_name": "刘丽",
+      "advisor_phone": "13733334444"
+    },
+    "teacher": "魏老师",
+    "course": "信息管理",
+    "room": "11-303",
+    "day_of_week": 3,
+    "time_slot": "3,4",
+    "period_start": 3,
+    "period_end": 4,
+    "week_constraints": "双周上",
+    "week_start": 1,
+    "week_end": 16,
+    "week_type": "EVEN"
+  },
+  {
+    "class_info": {
+      "class_name": "23工程监理1班",
+      "advisor_name": "刘丽",
+      "advisor_phone": "13733334444"
+    },
+    "teacher": "陶老师",
+    "course": "安全监理",
+    "room": "A-301",
+    "day_of_week": 4,
+    "time_slot": "1,2",
+    "period_start": 1,
+    "period_end": 2,
+    "week_constraints": "1-14周",
+    "week_start": 1,
+    "week_end": 14,
+    "week_type": "CUSTOM"
+  },
+  {
+    "class_info": {
+      "class_name": "23工程监理1班",
+      "advisor_name": "刘丽",
+      "advisor_phone": "13733334444"
+    },
+    "teacher": "姜老师",
+    "course": "监理案例分析",
+    "room": "11-205",
+    "day_of_week": 4,
+    "time_slot": "3,4",
+    "period_start": 3,
+    "period_end": 4,
+    "week_constraints": null,
+    "week_start": 1,
+    "week_end": 16,
+    "week_type": "ALL"
+  },
+  {
+    "class_info": {
+      "class_name": "22建筑装饰工程技术1班",
+      "advisor_name": "赵强",
+      "advisor_phone": "13555556666"
+    },
+    "teacher": "谢老师",
+    "course": "装饰设计基础",
+    "room": "11-208",
+    "day_of_week": 1,
+    "time_slot": "1,2",
+    "period_start": 1,
+    "period_end": 2,
+    "week_constraints": "全周",
+    "week_start": 1,
+    "week_end": 16,
+    "week_type": "ALL"
+  },
+  {
+    "class_info": {
+      "class_name": "22建筑装饰工程技术1班",
+      "advisor_name": "赵强",
+      "advisor_phone": "13555556666"
+    },
+    "teacher": "喻老师",
+    "course": "室内设计原理",
+    "room": "12-401",
+    "day_of_week": 1,
+    "time_slot": "3,4",
+    "period_start": 3,
+    "period_end": 4,
+    "week_constraints": null,
+    "week_start": 1,
+    "week_end": 16,
+    "week_type": "ALL"
+  },
+  {
+    "class_info": {
+      "class_name": "22建筑装饰工程技术1班",
+      "advisor_name": "赵强",
+      "advisor_phone": "13555556666"
+    },
+    "teacher": "柏老师",
+    "course": "装饰材料",
+    "room": "11-305",
+    "day_of_week": 2,
+    "time_slot": "1,2",
+    "period_start": 1,
+    "period_end": 2,
+    "week_constraints": "前八周",
+    "week_start": 1,
+    "week_end": 8,
+    "week_type": "FIRST_HALF"
+  },
+  {
+    "class_info": {
+      "class_name": "22建筑装饰工程技术1班",
+      "advisor_name": "赵强",
+      "advisor_phone": "13555556666"
+    },
+    "teacher": "水老师",
+    "course": "装饰施工技术",
+    "room": "实训楼401",
+    "day_of_week": 2,
+    "time_slot": "3,4",
+    "period_start": 3,
+    "period_end": 4,
+    "week_constraints": "后八周",
+    "week_start": 9,
+    "week_end": 16,
+    "week_type": "SECOND_HALF"
+  },
+  {
+    "class_info": {
+      "class_name": "22建筑装饰工程技术1班",
+      "advisor_name": "赵强",
+      "advisor_phone": "13555556666"
+    },
+    "teacher": "窦老师",
+    "course": "3DMax建模",
+    "room": "机房302",
+    "day_of_week": 3,
+    "time_slot": "1,2",
+    "period_start": 1,
+    "period_end": 2,
+    "week_constraints": "单周上",
+    "week_start": 1,
+    "week_end": 16,
+    "week_type": "ODD"
+  },
+  {
+    "class_info": {
+      "class_name": "22建筑装饰工程技术1班",
+      "advisor_name": "赵强",
+      "advisor_phone": "13555556666"
+    },
+    "teacher": "章老师",
+    "course": "Photoshop",
+    "room": "机房303",
+    "day_of_week": 3,
+    "time_slot": "3,4",
+    "period_start": 3,
+    "period_end": 4,
+    "week_constraints": "双周上",
+    "week_start": 1,
+    "week_end": 16,
+    "week_type": "EVEN"
+  },
+  {
+    "class_info": {
+      "class_name": "22建筑装饰工程技术1班",
+      "advisor_name": "赵强",
+      "advisor_phone": "13555556666"
+    },
+    "teacher": "云老师",
+    "course": "装饰预算",
+    "room": "11-506",
+    "day_of_week": 4,
+    "time_slot": "1,2",
+    "period_start": 1,
+    "period_end": 2,
+    "week_constraints": "1-16周",
+    "week_start": 1,
+    "week_end": 16,
+    "week_type": "CUSTOM"
+  },
+  {
+    "class_info": {
+      "class_name": "22建筑装饰工程技术1班",
+      "advisor_name": "赵强",
+      "advisor_phone": "13555556666"
+    },
+    "teacher": "苏老师",
+    "course": "家具设计",
+    "room": "12-102",
+    "day_of_week": 4,
+    "time_slot": "3,4",
+    "period_start": 3,
+    "period_end": 4,
+    "week_constraints": null,
+    "week_start": 1,
+    "week_end": 16,
+    "week_type": "ALL"
+  },
+  {
+    "class_info": {
+      "class_name": "22建筑装饰工程技术1班",
+      "advisor_name": "赵强",
+      "advisor_phone": "13555556666"
+    },
+    "teacher": "潘老师",
+    "course": "软装设计",
+    "room": "11-302",
+    "day_of_week": 5,
+    "time_slot": "1,2",
+    "period_start": 1,
+    "period_end": 2,
+    "week_constraints": null,
+    "week_start": 1,
+    "week_end": 16,
+    "week_type": "ALL"
+  }
+]

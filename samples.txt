@@ -1,0 +1,6 @@
+启发式兜底成功剥离的样本:
+  course=机械制图 | teacher=于耀淇 | room=11-322 | day=1 | slot=3,4
+  course=机械基础 | teacher=于耀淇 | room=11-318 | day=4 | slot=7,8
+  course=机械制图 | teacher=于耀淇 | room=11-322 | day=1 | slot=5,6
+  course=机械基础 | teacher=于耀淇 | room=11-333 | day=4 | slot=5,6
+  course=机械制图 | teacher=于耀淇 | room=11-212 | day=1 | slot=1,2
