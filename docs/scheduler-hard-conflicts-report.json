@@ -1,7 +1,7 @@
 {
   "phase": "K9-A2",
-  "timestamp": "2026-05-30T04:34:02.311Z",
-  "durationMs": 281,
+  "timestamp": "2026-05-30T04:50:54.133Z",
+  "durationMs": 257,
   "solverConfig": {
     "maxIterations": 10000,
     "lahcWindowSize": 500
@@ -13,48 +13,42 @@
   },
   "solverResult": {
     "iterations": 10000,
-    "hardScore": -162000,
-    "softScore": -609,
-    "bestHardScore": -130000,
-    "bestSoftScore": -644,
+    "hardScore": -119000,
+    "softScore": -1277,
+    "bestHardScore": -119000,
+    "bestSoftScore": -1352,
     "assignmentCount": 440
   },
   "scoreReconciliation": {
-    "solverBestHardScore": -162000,
-    "reEvaluatedHardScore": -130000,
-    "difference": -32000,
-    "differenceInConflictUnits": -32,
-    "isConsistent": false,
-    "possibleCauses": [
-      "solver 返回 bestScore 和 bestState 不同步：bestScore 在迭代中更新，bestState 在迭代结束后从 bestAssignments 恢复",
-      "solver 内部 delta scoring 与 calculateScoreWithDetails 全量评分实现不一致",
-      "score.ts 中 HC6（锁定课程移动）在 calculateScoreWithDetails 中为空实现，但 delta scoring 中有实际逻辑",
-      "solver 的 findConflictingSlots 与 calculateScoreWithDetails 的成对遍历范围不同",
-      "差异恰好等于 32 个 hard conflict × 1000 penalty"
-    ],
-    "needsK9BScoring": true
+    "solverBestHardScore": -119000,
+    "reEvaluatedHardScore": -119000,
+    "difference": 0,
+    "differenceInConflictUnits": 0,
+    "isConsistent": true,
+    "possibleCauses": [],
+    "needsK9BScoring": false
   },
   "hc2ConsistencyCheck": {
-    "scoreWithDetailsCount": 5,
-    "buildHC2DetailsCount": 5,
+    "scoreWithDetailsCount": 2,
+    "buildHC2DetailsCount": 2,
     "isConsistent": true
   },
   "conflictSummary": {
-    "HC1_ROOM_CONFLICT": 2,
-    "HC2_TEACHER_CONFLICT": 5,
-    "HC3_CLASS_CONFLICT": 29,
-    "HC4_CAPACITY": 94,
+    "HC1_ROOM_CONFLICT": 1,
+    "HC2_TEACHER_CONFLICT": 2,
+    "HC3_CLASS_CONFLICT": 23,
+    "HC4_CAPACITY": 93,
     "HC5_ROOM_UNAVAILABLE": 0,
-    "totalHard": 130,
-    "totalHardPenalty": -130000
+    "totalHard": 119,
+    "totalHardPenalty": -119000
   },
   "conflictsByType": {
     "HC1": [
       {
-        "roomId": 2,
-        "roomName": "11-322",
-        "dayOfWeek": 1,
-        "slotIndex": 2,
+        "roomId": 30,
+        "roomName": "11-301",
+        "dayOfWeek": 6,
+        "slotIndex": 5,
         "overlapWeeks": [
           1,
           2,
@@ -74,147 +68,33 @@
           16
         ],
         "involvedSlotIds": [
-          2,
-          263
+          430,
+          435
         ],
         "teachingTaskIds": [
-          2,
-          198
+          301,
+          304
         ],
         "courseNames": [
-          "机械制图",
-          "金属材料与热处理"
+          "公关与礼仪",
+          "森林火灾预防与扑救"
         ],
         "teacherNames": [
-          "于耀淇",
-          "尹和鑫"
+          "汪雯雯",
+          "赵强"
         ],
         "classGroupNames": [
-          "2025级智能轧钢技术1班",
-          "2024级钢铁智能冶金技术1班（高本贯通）"
-        ]
-      },
-      {
-        "roomId": 41,
-        "roomName": "12楼机房",
-        "dayOfWeek": 1,
-        "slotIndex": 2,
-        "overlapWeeks": [
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7,
-          8
-        ],
-        "involvedSlotIds": [
-          213,
-          329
-        ],
-        "teachingTaskIds": [
-          165,
-          242
-        ],
-        "courseNames": [
-          "习近平新时代中国特色社会主义思想概论",
-          "机械产品数字化设计"
-        ],
-        "teacherNames": [
-          "房忠敏",
-          "杨志强"
-        ],
-        "classGroupNames": [
-          "2025级钢铁智能冶金技术1班（高本贯通）",
-          "2025级森林草原防火技术1班",
-          "2024级钢铁智能冶金技术1班（高本贯通）",
-          "2024级机电一体化技术3班"
+          "2024级森林草原防火技术1班",
+          "2024级森林草原防火技术1班"
         ]
       }
     ],
     "HC2": [
       {
-        "teacherId": 3,
-        "teacherName": "尹和鑫",
-        "dayOfWeek": 1,
-        "slotIndex": 2,
-        "overlapWeeks": [
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7,
-          8,
-          9,
-          10,
-          11,
-          12,
-          13,
-          14,
-          15,
-          16
-        ],
-        "involvedSlotIds": [
-          21,
-          263
-        ],
-        "courseNames": [
-          "金属材料与热处理",
-          "金属材料与热处理"
-        ],
-        "classGroupNames": [
-          "2025级智能轧钢技术2班",
-          "2024级钢铁智能冶金技术1班（高本贯通）"
-        ],
-        "roomNames": [
-          "11-318",
-          "11-322"
-        ]
-      },
-      {
-        "teacherId": 5,
-        "teacherName": "李媛",
-        "dayOfWeek": 3,
+        "teacherId": 23,
+        "teacherName": "赵春超",
+        "dayOfWeek": 6,
         "slotIndex": 4,
-        "overlapWeeks": [
-          2,
-          4,
-          6,
-          8,
-          10,
-          12,
-          14,
-          16
-        ],
-        "involvedSlotIds": [
-          44,
-          347
-        ],
-        "courseNames": [
-          "高等数学",
-          "汽车机械基础"
-        ],
-        "classGroupNames": [
-          "2025级钢铁智能冶金技术1班（高本贯通）",
-          "2025级钢铁智能冶金技术（现场工程师）",
-          "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-          "2024级钢铁智能冶金技术1班（高本贯通）",
-          "2024级汽车制造与试验技术1班",
-          "2024级汽车制造与试验技术2班"
-        ],
-        "roomNames": [
-          "11-322",
-          "林校\n304"
-        ]
-      },
-      {
-        "teacherId": 31,
-        "teacherName": "张红梅",
-        "dayOfWeek": 2,
-        "slotIndex": 1,
         "overlapWeeks": [
           1,
           3,
@@ -226,30 +106,169 @@
           15
         ],
         "involvedSlotIds": [
-          69,
-          114
+          48,
+          62
         ],
         "courseNames": [
           "机械制图",
-          "） 机械制图"
+          "机械制图"
         ],
         "classGroupNames": [
-          "2025级机电一体化技术1班",
+          "2025级钢铁智能冶金技术2班",
           "2025级钢铁智能冶金技术1班（高本贯通）",
-          "2025级机电一体化技术4班",
+          "2025级钢铁智能冶金技术3班",
           "2025级钢铁智能冶金技术（现场工程师）",
           "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
           "2024级钢铁智能冶金技术1班（高本贯通）"
         ],
         "roomNames": [
-          "11-322",
-          "12号楼机器人实训室"
+          "11-208",
+          "10-321"
         ]
       },
       {
-        "teacherId": 30,
-        "teacherName": "张旭",
+        "teacherId": 24,
+        "teacherName": "王淼",
+        "dayOfWeek": 3,
+        "slotIndex": 5,
+        "overlapWeeks": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16
+        ],
+        "involvedSlotIds": [
+          59,
+          293
+        ],
+        "courseNames": [
+          "冶金热工基础",
+          "流体力学"
+        ],
+        "classGroupNames": [
+          "2025级钢铁智能冶金技术2班",
+          "2025级钢铁智能冶金技术3班",
+          "2024级钢铁智能冶金技术2班"
+        ],
+        "roomNames": [
+          "10-227",
+          "11-504"
+        ]
+      }
+    ],
+    "HC3": [
+      {
+        "classGroupId": 3,
+        "classGroupName": "2025级钢铁智能冶金技术1班（高本贯通）",
         "dayOfWeek": 2,
+        "slotIndex": 3,
+        "overlapWeeks": [
+          1,
+          3,
+          5,
+          7,
+          9,
+          11,
+          13,
+          15
+        ],
+        "involvedSlotIds": [
+          11,
+          42
+        ],
+        "courseNames": [
+          "机械制图",
+          "心理健康教育"
+        ],
+        "teacherNames": [
+          "于耀淇",
+          "芦雪莹"
+        ],
+        "roomNames": [
+          "10-321",
+          "11-333"
+        ]
+      },
+      {
+        "classGroupId": 22,
+        "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
+        "dayOfWeek": 2,
+        "slotIndex": 3,
+        "overlapWeeks": [
+          1,
+          3,
+          5,
+          7,
+          9,
+          11,
+          13,
+          15
+        ],
+        "involvedSlotIds": [
+          11,
+          270
+        ],
+        "courseNames": [
+          "机械制图",
+          "大学英语"
+        ],
+        "teacherNames": [
+          "于耀淇",
+          "于秀杰"
+        ],
+        "roomNames": [
+          "10-321",
+          "11-204 或 11-105"
+        ]
+      },
+      {
+        "classGroupId": 3,
+        "classGroupName": "2025级钢铁智能冶金技术1班（高本贯通）",
+        "dayOfWeek": 6,
+        "slotIndex": 5,
+        "overlapWeeks": [
+          2,
+          4,
+          6,
+          8,
+          10,
+          12,
+          14,
+          16
+        ],
+        "involvedSlotIds": [
+          14,
+          41
+        ],
+        "courseNames": [
+          "金属材料与热处理",
+          "高等数学"
+        ],
+        "teacherNames": [
+          "尹和鑫",
+          "李媛"
+        ],
+        "roomNames": [
+          "林校303",
+          "11-318"
+        ]
+      },
+      {
+        "classGroupId": 3,
+        "classGroupName": "2025级钢铁智能冶金技术1班（高本贯通）",
+        "dayOfWeek": 6,
         "slotIndex": 5,
         "overlapWeeks": [
           1,
@@ -262,549 +281,27 @@
           15
         ],
         "involvedSlotIds": [
-          76,
-          95
-        ],
-        "courseNames": [
-          "传感器与检测技术",
-          "传感器"
-        ],
-        "classGroupNames": [
-          "2025级钢铁智能冶金技术1班（高本贯通）",
-          "2025级机电一体化技术1班",
-          "2025级钢铁智能冶金技术（现场工程师）",
-          "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-          "2024级钢铁智能冶金技术1班（高本贯通）",
-          "2025级机电一体化技术3班",
-          "2025级机电一体化技术4班",
-          "2024级机电一体化技术3班"
-        ],
-        "roomNames": [
-          "11-328",
-          "11-239"
-        ]
-      },
-      {
-        "teacherId": 16,
-        "teacherName": "房忠敏",
-        "dayOfWeek": 1,
-        "slotIndex": 2,
-        "overlapWeeks": [
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7,
-          8
-        ],
-        "involvedSlotIds": [
-          213,
-          395
-        ],
-        "courseNames": [
-          "习近平新时代中国特色社会主义思想概论",
-          "林业法规与执法实务"
-        ],
-        "classGroupNames": [
-          "2025级钢铁智能冶金技术1班（高本贯通）",
-          "2025级森林草原防火技术1班",
-          "2024级钢铁智能冶金技术1班（高本贯通）",
-          "2024级林业技术2班"
-        ],
-        "roomNames": [
-          "12楼机房",
-          "10-128"
-        ]
-      }
-    ],
-    "HC3": [
-      {
-        "classGroupId": 22,
-        "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
-        "dayOfWeek": 3,
-        "slotIndex": 3,
-        "overlapWeeks": [
-          9,
-          11,
-          13,
-          15
-        ],
-        "involvedSlotIds": [
-          11,
-          267
-        ],
-        "courseNames": [
-          "机械制图",
-          "大学生职业发展与就业指导"
-        ],
-        "teacherNames": [
-          "于耀淇",
-          "董钇含"
-        ],
-        "roomNames": [
-          "11-318",
-          "林校305"
-        ]
-      },
-      {
-        "classGroupId": 3,
-        "classGroupName": "2025级钢铁智能冶金技术1班（高本贯通）",
-        "dayOfWeek": 4,
-        "slotIndex": 2,
-        "overlapWeeks": [
-          2,
-          4,
-          6,
-          8,
-          10,
-          12,
-          14,
-          16
-        ],
-        "involvedSlotIds": [
-          14,
-          41
-        ],
-        "courseNames": [
-          "金属材料与热处理",
-          "高等数学"
-        ],
-        "teacherNames": [
-          "尹和鑫",
-          "李媛"
-        ],
-        "roomNames": [
-          "11-318",
-          "11-204 或 12-111"
-        ]
-      },
-      {
-        "classGroupId": 3,
-        "classGroupName": "2025级钢铁智能冶金技术1班（高本贯通）",
-        "dayOfWeek": 4,
-        "slotIndex": 2,
-        "overlapWeeks": [
-          1,
-          3,
-          5,
-          7,
-          9,
-          11,
-          13,
-          15
-        ],
-        "involvedSlotIds": [
-          25,
-          41
-        ],
-        "courseNames": [
-          "金属材料与热处理",
-          "高等数学"
-        ],
-        "teacherNames": [
-          "尹和鑫",
-          "李媛"
-        ],
-        "roomNames": [
-          "11-318",
-          "11-204 或 12-111"
-        ]
-      },
-      {
-        "classGroupId": 22,
-        "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
-        "dayOfWeek": 4,
-        "slotIndex": 2,
-        "overlapWeeks": [
-          2,
-          4,
-          6,
-          8,
-          10,
-          12,
-          14,
-          16
-        ],
-        "involvedSlotIds": [
-          14,
-          271
-        ],
-        "courseNames": [
-          "金属材料与热处理",
-          "大学日语"
-        ],
-        "teacherNames": [
-          "尹和鑫",
-          "葛书"
-        ],
-        "roomNames": [
-          "11-318",
-          "11-223"
-        ]
-      },
-      {
-        "classGroupId": 22,
-        "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
-        "dayOfWeek": 4,
-        "slotIndex": 2,
-        "overlapWeeks": [
-          1,
-          3,
-          5,
-          7,
-          9,
-          11,
-          13,
-          15
-        ],
-        "involvedSlotIds": [
-          25,
-          271
-        ],
-        "courseNames": [
-          "金属材料与热处理",
-          "大学日语"
-        ],
-        "teacherNames": [
-          "尹和鑫",
-          "葛书"
-        ],
-        "roomNames": [
-          "11-318",
-          "11-223"
-        ]
-      },
-      {
-        "classGroupId": 3,
-        "classGroupName": "2025级钢铁智能冶金技术1班（高本贯通）",
-        "dayOfWeek": 7,
-        "slotIndex": 2,
-        "overlapWeeks": [
-          2,
-          4,
-          6,
-          8,
-          10,
-          12,
-          14,
-          16
-        ],
-        "involvedSlotIds": [
-          24,
-          43
-        ],
-        "courseNames": [
-          "机械制图",
-          "习近平新时代中国特色社会主义思想概论"
-        ],
-        "teacherNames": [
-          "于耀淇",
-          "房忠敏"
-        ],
-        "roomNames": [
-          "10-410",
-          "1-448"
-        ]
-      },
-      {
-        "classGroupId": 22,
-        "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
-        "dayOfWeek": 7,
-        "slotIndex": 2,
-        "overlapWeeks": [
-          2,
-          4,
-          6,
-          8,
-          10,
-          12,
-          14,
-          16
-        ],
-        "involvedSlotIds": [
-          24,
-          257
-        ],
-        "courseNames": [
-          "机械制图",
-          "大学日语"
-        ],
-        "teacherNames": [
-          "于耀淇",
-          "葛书"
-        ],
-        "roomNames": [
-          "10-410",
-          "10-316"
-        ]
-      },
-      {
-        "classGroupId": 22,
-        "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
-        "dayOfWeek": 7,
-        "slotIndex": 2,
-        "overlapWeeks": [
-          2,
-          4,
-          6,
-          8,
-          10,
-          12,
-          14,
-          16
-        ],
-        "involvedSlotIds": [
-          24,
-          269
-        ],
-        "courseNames": [
-          "机械制图",
-          "金属性能检测"
-        ],
-        "teacherNames": [
-          "于耀淇",
-          "尹和鑫"
-        ],
-        "roomNames": [
-          "10-410",
-          "11-318"
-        ]
-      },
-      {
-        "classGroupId": 22,
-        "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
-        "dayOfWeek": 7,
-        "slotIndex": 2,
-        "overlapWeeks": [
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7,
-          8,
-          9,
-          10,
-          11,
-          12,
-          13,
-          14,
-          15,
-          16
-        ],
-        "involvedSlotIds": [
-          257,
-          269
-        ],
-        "courseNames": [
-          "大学日语",
-          "金属性能检测"
-        ],
-        "teacherNames": [
-          "葛书",
-          "尹和鑫"
-        ],
-        "roomNames": [
-          "10-316",
-          "11-318"
-        ]
-      },
-      {
-        "classGroupId": 3,
-        "classGroupName": "2025级钢铁智能冶金技术1班（高本贯通）",
-        "dayOfWeek": 1,
-        "slotIndex": 2,
-        "overlapWeeks": [
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7,
-          8
-        ],
-        "involvedSlotIds": [
-          30,
-          213
+          41,
+          75
         ],
         "courseNames": [
           "高等数学",
-          "习近平新时代中国特色社会主义思想概论"
+          "电子技术"
         ],
         "teacherNames": [
           "李媛",
-          "房忠敏"
-        ],
-        "roomNames": [
-          "11-212",
-          "12楼机房"
-        ]
-      },
-      {
-        "classGroupId": 3,
-        "classGroupName": "2025级钢铁智能冶金技术1班（高本贯通）",
-        "dayOfWeek": 2,
-        "slotIndex": 1,
-        "overlapWeeks": [
-          1,
-          3,
-          5,
-          7,
-          9,
-          11,
-          13,
-          15
-        ],
-        "involvedSlotIds": [
-          33,
-          114
-        ],
-        "courseNames": [
-          "大学英语",
-          "） 机械制图"
-        ],
-        "teacherNames": [
-          "袁景丽",
-          "张红梅"
-        ],
-        "roomNames": [
-          "11-212",
-          "12号楼机器人实训室"
-        ]
-      },
-      {
-        "classGroupId": 3,
-        "classGroupName": "2025级钢铁智能冶金技术1班（高本贯通）",
-        "dayOfWeek": 3,
-        "slotIndex": 4,
-        "overlapWeeks": [
-          2,
-          4,
-          6,
-          8,
-          10,
-          12,
-          14,
-          16
-        ],
-        "involvedSlotIds": [
-          38,
-          44
-        ],
-        "courseNames": [
-          "中华优秀传统文化",
-          "高等数学"
-        ],
-        "teacherNames": [
-          "杨秀芳",
-          "李媛"
-        ],
-        "roomNames": [
-          "11-529",
-          "11-322"
-        ]
-      },
-      {
-        "classGroupId": 22,
-        "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
-        "dayOfWeek": 3,
-        "slotIndex": 4,
-        "overlapWeeks": [
-          2,
-          4,
-          6,
-          8,
-          10,
-          12,
-          14,
-          16
-        ],
-        "involvedSlotIds": [
-          38,
-          44
-        ],
-        "courseNames": [
-          "中华优秀传统文化",
-          "高等数学"
-        ],
-        "teacherNames": [
-          "杨秀芳",
-          "李媛"
-        ],
-        "roomNames": [
-          "11-529",
-          "11-322"
-        ]
-      },
-      {
-        "classGroupId": 5,
-        "classGroupName": "2025级钢铁智能冶金技术3班",
-        "dayOfWeek": 4,
-        "slotIndex": 1,
-        "overlapWeeks": [
-          9,
-          11,
-          13,
-          15
-        ],
-        "involvedSlotIds": [
-          50,
-          62
-        ],
-        "courseNames": [
-          "形势与政策",
-          "机械制图"
-        ],
-        "teacherNames": [
-          "郭玉莲",
-          "赵春超"
-        ],
-        "roomNames": [
-          "10-410",
-          "11-318"
-        ]
-      },
-      {
-        "classGroupId": 22,
-        "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
-        "dayOfWeek": 4,
-        "slotIndex": 1,
-        "overlapWeeks": [
-          1,
-          3,
-          5,
-          7,
-          9,
-          11,
-          13,
-          15
-        ],
-        "involvedSlotIds": [
-          62,
-          256
-        ],
-        "courseNames": [
-          "机械制图",
-          "大学英语"
-        ],
-        "teacherNames": [
-          "赵春超",
-          "于秀杰"
+          "许进"
         ],
         "roomNames": [
           "11-318",
-          "林校303"
+          "11-329"
         ]
       },
       {
         "classGroupId": 22,
         "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
-        "dayOfWeek": 4,
-        "slotIndex": 1,
+        "dayOfWeek": 3,
+        "slotIndex": 6,
         "overlapWeeks": [
           2,
           4,
@@ -816,58 +313,146 @@
           16
         ],
         "involvedSlotIds": [
-          85,
-          256
-        ],
-        "courseNames": [
-          "传感器与检测技术",
-          "大学英语"
-        ],
-        "teacherNames": [
-          "张旭",
-          "于秀杰"
-        ],
-        "roomNames": [
-          "11-321",
-          "林校303"
-        ]
-      },
-      {
-        "classGroupId": 22,
-        "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
-        "dayOfWeek": 7,
-        "slotIndex": 3,
-        "overlapWeeks": [
-          1,
-          3,
-          5,
-          7,
-          9,
-          11,
-          13,
-          15
-        ],
-        "involvedSlotIds": [
-          78,
-          273
+          24,
+          259
         ],
         "courseNames": [
           "机械制图",
           "冶金传输原理"
         ],
         "teacherNames": [
-          "张红梅",
+          "于耀淇",
           "尹和鑫"
         ],
         "roomNames": [
-          "11-301",
+          "1-301",
           "林校306"
         ]
       },
       {
-        "classGroupId": 8,
-        "classGroupName": "2025级机电一体化技术3班",
-        "dayOfWeek": 3,
+        "classGroupId": 3,
+        "classGroupName": "2025级钢铁智能冶金技术1班（高本贯通）",
+        "dayOfWeek": 7,
+        "slotIndex": 1,
+        "overlapWeeks": [
+          1,
+          3,
+          5,
+          7
+        ],
+        "involvedSlotIds": [
+          31,
+          104
+        ],
+        "courseNames": [
+          "形势与政策",
+          "传感器与检测技术"
+        ],
+        "teacherNames": [
+          "胡浩",
+          "张旭"
+        ],
+        "roomNames": [
+          "11-529",
+          "11-318"
+        ]
+      },
+      {
+        "classGroupId": 17,
+        "classGroupName": "2025级森林草原防火技术1班",
+        "dayOfWeek": 7,
+        "slotIndex": 1,
+        "overlapWeeks": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "involvedSlotIds": [
+          31,
+          207
+        ],
+        "courseNames": [
+          "形势与政策",
+          "森林草原火管理"
+        ],
+        "teacherNames": [
+          "胡浩",
+          "董继扬"
+        ],
+        "roomNames": [
+          "11-529",
+          "11-329"
+        ]
+      },
+      {
+        "classGroupId": 22,
+        "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
+        "dayOfWeek": 7,
+        "slotIndex": 1,
+        "overlapWeeks": [
+          1,
+          3,
+          5,
+          7
+        ],
+        "involvedSlotIds": [
+          31,
+          104
+        ],
+        "courseNames": [
+          "形势与政策",
+          "传感器与检测技术"
+        ],
+        "teacherNames": [
+          "胡浩",
+          "张旭"
+        ],
+        "roomNames": [
+          "11-529",
+          "11-318"
+        ]
+      },
+      {
+        "classGroupId": 22,
+        "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
+        "dayOfWeek": 7,
+        "slotIndex": 1,
+        "overlapWeeks": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "involvedSlotIds": [
+          31,
+          279
+        ],
+        "courseNames": [
+          "形势与政策",
+          "冶金传输原理"
+        ],
+        "teacherNames": [
+          "胡浩",
+          "尹和鑫"
+        ],
+        "roomNames": [
+          "11-529",
+          "11-209 或 12-111"
+        ]
+      },
+      {
+        "classGroupId": 22,
+        "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
+        "dayOfWeek": 7,
         "slotIndex": 1,
         "overlapWeeks": [
           1,
@@ -880,27 +465,187 @@
           15
         ],
         "involvedSlotIds": [
-          96,
-          104
+          104,
+          279
         ],
         "courseNames": [
-          "习近平新时代中国特色社会主义思想概论",
-          "传感器与检测技术"
+          "传感器与检测技术",
+          "冶金传输原理"
         ],
         "teacherNames": [
-          "张帆",
-          "张旭"
+          "张旭",
+          "尹和鑫"
+        ],
+        "roomNames": [
+          "11-318",
+          "11-209 或 12-111"
+        ]
+      },
+      {
+        "classGroupId": 35,
+        "classGroupName": "2024级森林草原防火技术1班",
+        "dayOfWeek": 7,
+        "slotIndex": 1,
+        "overlapWeeks": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "involvedSlotIds": [
+          31,
+          432
+        ],
+        "courseNames": [
+          "形势与政策",
+          "森林防火通信技术"
+        ],
+        "teacherNames": [
+          "胡浩",
+          "王文来"
         ],
         "roomNames": [
           "11-529",
-          "11-321"
+          "11-212"
         ]
       },
       {
         "classGroupId": 22,
         "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
+        "dayOfWeek": 1,
+        "slotIndex": 4,
+        "overlapWeeks": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "involvedSlotIds": [
+          34,
+          277
+        ],
+        "courseNames": [
+          "创新创业教育",
+          "大学日语"
+        ],
+        "teacherNames": [
+          "徐燕",
+          "葛书"
+        ],
+        "roomNames": [
+          "1号楼虚拟仿真实训室",
+          "林校\n304"
+        ]
+      },
+      {
+        "classGroupId": 3,
+        "classGroupName": "2025级钢铁智能冶金技术1班（高本贯通）",
         "dayOfWeek": 2,
         "slotIndex": 1,
+        "overlapWeeks": [
+          2,
+          4,
+          6,
+          8,
+          10,
+          12,
+          14,
+          16
+        ],
+        "involvedSlotIds": [
+          43,
+          201
+        ],
+        "courseNames": [
+          "习近平新时代中国特色社会主义思想概论",
+          "林草环境"
+        ],
+        "teacherNames": [
+          "房忠敏",
+          "刘闯"
+        ],
+        "roomNames": [
+          "11-321",
+          "林校306"
+        ]
+      },
+      {
+        "classGroupId": 22,
+        "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
+        "dayOfWeek": 1,
+        "slotIndex": 5,
+        "overlapWeeks": [
+          2,
+          4,
+          6,
+          8,
+          10,
+          12,
+          14,
+          16
+        ],
+        "involvedSlotIds": [
+          56,
+          263
+        ],
+        "courseNames": [
+          "金属材料与热处理",
+          "金属材料与热处理"
+        ],
+        "teacherNames": [
+          "王淼",
+          "尹和鑫"
+        ],
+        "roomNames": [
+          "林校\n306",
+          "1-301"
+        ]
+      },
+      {
+        "classGroupId": 7,
+        "classGroupName": "2025级机电一体化技术2班",
+        "dayOfWeek": 6,
+        "slotIndex": 5,
+        "overlapWeeks": [
+          1,
+          3,
+          5,
+          7,
+          9,
+          11,
+          13,
+          15
+        ],
+        "involvedSlotIds": [
+          75,
+          84
+        ],
+        "courseNames": [
+          "电子技术",
+          "机械制图"
+        ],
+        "teacherNames": [
+          "许进",
+          "张红梅"
+        ],
+        "roomNames": [
+          "11-329",
+          "11-209"
+        ]
+      },
+      {
+        "classGroupId": 22,
+        "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
+        "dayOfWeek": 7,
+        "slotIndex": 2,
         "overlapWeeks": [
           1,
           3,
@@ -924,175 +669,55 @@
           "张显慧"
         ],
         "roomNames": [
-          "12号楼机器人实训室",
-          "1-142"
+          "11-239",
+          "11-204 或 11-105"
+        ]
+      },
+      {
+        "classGroupId": 17,
+        "classGroupName": "2025级森林草原防火技术1班",
+        "dayOfWeek": 5,
+        "slotIndex": 6,
+        "overlapWeeks": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16
+        ],
+        "involvedSlotIds": [
+          206,
+          214
+        ],
+        "courseNames": [
+          "消防法规",
+          "森林火灾扑救指挥"
+        ],
+        "teacherNames": [
+          "牛生光",
+          "赵强"
+        ],
+        "roomNames": [
+          "11-504",
+          "10-124"
         ]
       },
       {
         "classGroupId": 22,
         "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
         "dayOfWeek": 4,
-        "slotIndex": 5,
-        "overlapWeeks": [
-          2,
-          4,
-          6,
-          8,
-          10,
-          12,
-          14,
-          16
-        ],
-        "involvedSlotIds": [
-          115,
-          274
-        ],
-        "courseNames": [
-          "传感器与检测技术",
-          "材料科学基础"
-        ],
-        "teacherNames": [
-          "张旭",
-          "于耀淇"
-        ],
-        "roomNames": [
-          "11-328",
-          "11-504"
-        ]
-      },
-      {
-        "classGroupId": 22,
-        "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
-        "dayOfWeek": 5,
-        "slotIndex": 2,
-        "overlapWeeks": [
-          1,
-          3,
-          5,
-          7,
-          9,
-          11,
-          13,
-          15
-        ],
-        "involvedSlotIds": [
-          193,
-          276
-        ],
-        "courseNames": [
-          "无人机应用技术",
-          "大学英语"
-        ],
-        "teacherNames": [
-          "董继扬",
-          "于秀杰"
-        ],
-        "roomNames": [
-          "11-318",
-          "11-504"
-        ]
-      },
-      {
-        "classGroupId": 22,
-        "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
-        "dayOfWeek": 5,
-        "slotIndex": 2,
-        "overlapWeeks": [
-          1,
-          3,
-          5,
-          7,
-          9,
-          11,
-          13,
-          15
-        ],
-        "involvedSlotIds": [
-          193,
-          277
-        ],
-        "courseNames": [
-          "无人机应用技术",
-          "大学日语"
-        ],
-        "teacherNames": [
-          "董继扬",
-          "葛书"
-        ],
-        "roomNames": [
-          "11-318",
-          "11-223"
-        ]
-      },
-      {
-        "classGroupId": 22,
-        "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
-        "dayOfWeek": 5,
-        "slotIndex": 2,
-        "overlapWeeks": [
-          2,
-          4,
-          6,
-          8,
-          10,
-          12,
-          14,
-          16
-        ],
-        "involvedSlotIds": [
-          202,
-          276
-        ],
-        "courseNames": [
-          "无人机应用技术",
-          "大学英语"
-        ],
-        "teacherNames": [
-          "董继扬",
-          "于秀杰"
-        ],
-        "roomNames": [
-          "11-208 或 12-201",
-          "11-504"
-        ]
-      },
-      {
-        "classGroupId": 22,
-        "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
-        "dayOfWeek": 5,
-        "slotIndex": 2,
-        "overlapWeeks": [
-          2,
-          4,
-          6,
-          8,
-          10,
-          12,
-          14,
-          16
-        ],
-        "involvedSlotIds": [
-          202,
-          277
-        ],
-        "courseNames": [
-          "无人机应用技术",
-          "大学日语"
-        ],
-        "teacherNames": [
-          "董继扬",
-          "葛书"
-        ],
-        "roomNames": [
-          "11-208 或 12-201",
-          "11-223"
-        ]
-      },
-      {
-        "classGroupId": 22,
-        "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
-        "dayOfWeek": 5,
-        "slotIndex": 2,
+        "slotIndex": 6,
         "overlapWeeks": [
           1,
           2,
@@ -1112,91 +737,99 @@
           16
         ],
         "involvedSlotIds": [
-          276,
-          277
+          255,
+          265
+        ],
+        "courseNames": [
+          "金属材料与热处理",
+          "大学日语"
+        ],
+        "teacherNames": [
+          "尹和鑫",
+          "葛书"
+        ],
+        "roomNames": [
+          "11-322",
+          "10-304"
+        ]
+      },
+      {
+        "classGroupId": 22,
+        "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
+        "dayOfWeek": 5,
+        "slotIndex": 6,
+        "overlapWeeks": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16
+        ],
+        "involvedSlotIds": [
+          264,
+          268
         ],
         "courseNames": [
           "大学英语",
-          "大学日语"
+          "机械设计基础"
         ],
         "teacherNames": [
           "于秀杰",
-          "葛书"
+          "于耀淇"
         ],
         "roomNames": [
-          "11-504",
-          "11-223"
-        ]
-      },
-      {
-        "classGroupId": 17,
-        "classGroupName": "2025级森林草原防火技术1班",
-        "dayOfWeek": 1,
-        "slotIndex": 2,
-        "overlapWeeks": [
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7,
-          8
-        ],
-        "involvedSlotIds": [
-          205,
-          213
-        ],
-        "courseNames": [
-          "大学英语",
-          "习近平新时代中国特色社会主义思想概论"
-        ],
-        "teacherNames": [
-          "刘明哲",
-          "房忠敏"
-        ],
-        "roomNames": [
-          "11-204",
-          "12楼机房"
+          "1-301",
+          "林校\n304"
         ]
       },
       {
         "classGroupId": 22,
         "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
-        "dayOfWeek": 1,
-        "slotIndex": 2,
+        "dayOfWeek": 2,
+        "slotIndex": 6,
         "overlapWeeks": [
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7,
-          8
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16
         ],
         "involvedSlotIds": [
-          213,
-          263
+          267,
+          273
         ],
         "courseNames": [
-          "习近平新时代中国特色社会主义思想概论",
-          "金属材料与热处理"
+          "大学生职业发展与就业指导",
+          "冶金传输原理"
         ],
         "teacherNames": [
-          "房忠敏",
+          "董钇含",
           "尹和鑫"
         ],
         "roomNames": [
-          "12楼机房",
-          "11-322"
+          "10-316",
+          "林校305"
         ]
       },
       {
         "classGroupId": 22,
         "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
-        "dayOfWeek": 1,
-        "slotIndex": 5,
+        "dayOfWeek": 2,
+        "slotIndex": 4,
         "overlapWeeks": [
           1,
           2,
@@ -1216,11 +849,11 @@
           16
         ],
         "involvedSlotIds": [
-          259,
-          261
+          269,
+          272
         ],
         "courseNames": [
-          "冶金传输原理",
+          "金属性能检测",
           "冶金热工基础"
         ],
         "teacherNames": [
@@ -1228,15 +861,47 @@
           "赵春超"
         ],
         "roomNames": [
-          "11-504",
-          "11-328"
+          "11-329",
+          "11-209"
         ]
       },
       {
-        "classGroupId": 22,
-        "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
+        "classGroupId": 29,
+        "classGroupName": "2024级汽车制造与试验技术2班",
+        "dayOfWeek": 4,
+        "slotIndex": 5,
+        "overlapWeeks": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16
+        ],
+        "involvedSlotIds": [
+          341,
+          359
+        ],
+        "courseNames": [
+          "大学生职业发展与就业指导",
+          "新能源汽车动力系统构造与测试"
+        ],
+        "teacherNames": [
+          "孙文哲",
+          "赵俣绗"
+        ],
+        "roomNames": [
+          "林校\n303",
+          "1-142"
+        ]
+      },
+      {
+        "classGroupId": 35,
+        "classGroupName": "2024级森林草原防火技术1班",
         "dayOfWeek": 6,
-        "slotIndex": 1,
+        "slotIndex": 5,
         "overlapWeeks": [
           1,
           2,
@@ -1256,20 +921,20 @@
           16
         ],
         "involvedSlotIds": [
-          270,
-          275
+          430,
+          435
         ],
         "courseNames": [
-          "大学英语",
-          "金属性能检测"
+          "公关与礼仪",
+          "森林火灾预防与扑救"
         ],
         "teacherNames": [
-          "于秀杰",
-          "尹和鑫"
+          "汪雯雯",
+          "赵强"
         ],
         "roomNames": [
-          "11-329",
-          "11-333"
+          "11-301",
+          "11-301"
         ]
       }
     ],
@@ -1278,8 +943,8 @@
         "slotId": 11,
         "teachingTaskId": 11,
         "courseName": "机械制图",
-        "roomId": 3,
-        "roomName": "11-318",
+        "roomId": 50,
+        "roomName": "10-321",
         "roomCapacity": 50,
         "requiredStudents": 93,
         "shortage": 43,
@@ -1292,7 +957,7 @@
           "2024级钢铁智能冶金技术1班（高本贯通）"
         ],
         "teacherName": "于耀淇",
-        "dayOfWeek": 3,
+        "dayOfWeek": 2,
         "slotIndex": 3,
         "weekType": "ODD",
         "startWeek": 1,
@@ -1302,8 +967,8 @@
         "slotId": 14,
         "teachingTaskId": 14,
         "courseName": "金属材料与热处理",
-        "roomId": 3,
-        "roomName": "11-318",
+        "roomId": 26,
+        "roomName": "林校303",
         "roomCapacity": 50,
         "requiredStudents": 93,
         "shortage": 43,
@@ -1316,8 +981,8 @@
           "2024级钢铁智能冶金技术1班（高本贯通）"
         ],
         "teacherName": "尹和鑫",
-        "dayOfWeek": 4,
-        "slotIndex": 2,
+        "dayOfWeek": 6,
+        "slotIndex": 5,
         "weekType": "EVEN",
         "startWeek": 1,
         "endWeek": 16
@@ -1326,8 +991,8 @@
         "slotId": 24,
         "teachingTaskId": 22,
         "courseName": "机械制图",
-        "roomId": 53,
-        "roomName": "10-410",
+        "roomId": 46,
+        "roomName": "1-301",
         "roomCapacity": 50,
         "requiredStudents": 92,
         "shortage": 42,
@@ -1340,8 +1005,8 @@
           "2024级钢铁智能冶金技术1班（高本贯通）"
         ],
         "teacherName": "于耀淇",
-        "dayOfWeek": 7,
-        "slotIndex": 2,
+        "dayOfWeek": 3,
+        "slotIndex": 6,
         "weekType": "EVEN",
         "startWeek": 1,
         "endWeek": 16
@@ -1350,8 +1015,8 @@
         "slotId": 25,
         "teachingTaskId": 23,
         "courseName": "金属材料与热处理",
-        "roomId": 3,
-        "roomName": "11-318",
+        "roomId": 15,
+        "roomName": "11-521",
         "roomCapacity": 50,
         "requiredStudents": 92,
         "shortage": 42,
@@ -1365,7 +1030,7 @@
         ],
         "teacherName": "尹和鑫",
         "dayOfWeek": 4,
-        "slotIndex": 2,
+        "slotIndex": 4,
         "weekType": "ODD",
         "startWeek": 1,
         "endWeek": 16
@@ -1374,98 +1039,6 @@
         "slotId": 31,
         "teachingTaskId": 28,
         "courseName": "形势与政策",
-        "roomId": 11,
-        "roomName": "1-142",
-        "roomCapacity": 50,
-        "requiredStudents": 128,
-        "shortage": 78,
-        "overloadRatio": 2.56,
-        "classGroupNames": [
-          "2025级钢铁智能冶金技术1班（高本贯通）",
-          "2025级森林草原防火技术1班",
-          "2024级钢铁智能冶金技术1班（高本贯通）",
-          "2024级森林草原防火技术1班"
-        ],
-        "teacherName": "胡浩",
-        "dayOfWeek": 1,
-        "slotIndex": 3,
-        "weekType": "FIRST_HALF",
-        "startWeek": 1,
-        "endWeek": 8
-      },
-      {
-        "slotId": 34,
-        "teachingTaskId": 31,
-        "courseName": "创新创业教育",
-        "roomId": 27,
-        "roomName": "林校\n303",
-        "roomCapacity": 50,
-        "requiredStudents": 128,
-        "shortage": 78,
-        "overloadRatio": 2.56,
-        "classGroupNames": [
-          "2025级钢铁智能冶金技术1班（高本贯通）",
-          "2025级森林草原防火技术1班",
-          "2024级钢铁智能冶金技术1班（高本贯通）",
-          "2024级森林草原防火技术1班"
-        ],
-        "teacherName": "徐燕",
-        "dayOfWeek": 7,
-        "slotIndex": 5,
-        "weekType": "FIRST_HALF",
-        "startWeek": 1,
-        "endWeek": 8
-      },
-      {
-        "slotId": 35,
-        "teachingTaskId": 32,
-        "courseName": "习近平新时代中国特色社会主义思想概论",
-        "roomId": 24,
-        "roomName": "林校305",
-        "roomCapacity": 50,
-        "requiredStudents": 128,
-        "shortage": 78,
-        "overloadRatio": 2.56,
-        "classGroupNames": [
-          "2025级钢铁智能冶金技术1班（高本贯通）",
-          "2025级森林草原防火技术1班",
-          "2024级钢铁智能冶金技术1班（高本贯通）",
-          "2024级森林草原防火技术1班"
-        ],
-        "teacherName": "房忠敏",
-        "dayOfWeek": 2,
-        "slotIndex": 6,
-        "weekType": "ALL",
-        "startWeek": 1,
-        "endWeek": 16
-      },
-      {
-        "slotId": 36,
-        "teachingTaskId": 33,
-        "courseName": "机械制图",
-        "roomId": 5,
-        "roomName": "11-239",
-        "roomCapacity": 50,
-        "requiredStudents": 68,
-        "shortage": 18,
-        "overloadRatio": 1.36,
-        "classGroupNames": [
-          "2025级钢铁智能冶金技术1班（高本贯通）",
-          "2025级钢铁智能冶金技术（现场工程师）",
-          "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-          "2024级钢铁智能冶金技术1班（高本贯通）"
-        ],
-        "teacherName": "于耀淇",
-        "dayOfWeek": 2,
-        "slotIndex": 2,
-        "weekType": "ODD",
-        "startWeek": 1,
-        "endWeek": 16
-      },
-      {
-        "slotId": 38,
-        "teachingTaskId": 34,
-        "courseName": "中华优秀传统文化",
         "roomId": 8,
         "roomName": "11-529",
         "roomCapacity": 50,
@@ -1478,9 +1051,78 @@
           "2024级钢铁智能冶金技术1班（高本贯通）",
           "2024级森林草原防火技术1班"
         ],
+        "teacherName": "胡浩",
+        "dayOfWeek": 7,
+        "slotIndex": 1,
+        "weekType": "FIRST_HALF",
+        "startWeek": 1,
+        "endWeek": 8
+      },
+      {
+        "slotId": 34,
+        "teachingTaskId": 31,
+        "courseName": "创新创业教育",
+        "roomId": 18,
+        "roomName": "1号楼虚拟仿真实训室",
+        "roomCapacity": 50,
+        "requiredStudents": 128,
+        "shortage": 78,
+        "overloadRatio": 2.56,
+        "classGroupNames": [
+          "2025级钢铁智能冶金技术1班（高本贯通）",
+          "2025级森林草原防火技术1班",
+          "2024级钢铁智能冶金技术1班（高本贯通）",
+          "2024级森林草原防火技术1班"
+        ],
+        "teacherName": "徐燕",
+        "dayOfWeek": 1,
+        "slotIndex": 4,
+        "weekType": "FIRST_HALF",
+        "startWeek": 1,
+        "endWeek": 8
+      },
+      {
+        "slotId": 35,
+        "teachingTaskId": 32,
+        "courseName": "习近平新时代中国特色社会主义思想概论",
+        "roomId": 48,
+        "roomName": "11-204 或 12-111",
+        "roomCapacity": 50,
+        "requiredStudents": 128,
+        "shortage": 78,
+        "overloadRatio": 2.56,
+        "classGroupNames": [
+          "2025级钢铁智能冶金技术1班（高本贯通）",
+          "2025级森林草原防火技术1班",
+          "2024级钢铁智能冶金技术1班（高本贯通）",
+          "2024级森林草原防火技术1班"
+        ],
+        "teacherName": "房忠敏",
+        "dayOfWeek": 5,
+        "slotIndex": 3,
+        "weekType": "ALL",
+        "startWeek": 1,
+        "endWeek": 16
+      },
+      {
+        "slotId": 38,
+        "teachingTaskId": 34,
+        "courseName": "中华优秀传统文化",
+        "roomId": 4,
+        "roomName": "11-208",
+        "roomCapacity": 50,
+        "requiredStudents": 128,
+        "shortage": 78,
+        "overloadRatio": 2.56,
+        "classGroupNames": [
+          "2025级钢铁智能冶金技术1班（高本贯通）",
+          "2025级森林草原防火技术1班",
+          "2024级钢铁智能冶金技术1班（高本贯通）",
+          "2024级森林草原防火技术1班"
+        ],
         "teacherName": "杨秀芳",
         "dayOfWeek": 3,
-        "slotIndex": 4,
+        "slotIndex": 2,
         "weekType": "ALL",
         "startWeek": 1,
         "endWeek": 16
@@ -1489,8 +1131,8 @@
         "slotId": 43,
         "teachingTaskId": 37,
         "courseName": "习近平新时代中国特色社会主义思想概论",
-        "roomId": 6,
-        "roomName": "1-448",
+        "roomId": 1,
+        "roomName": "11-321",
         "roomCapacity": 50,
         "requiredStudents": 98,
         "shortage": 48,
@@ -1501,8 +1143,8 @@
           "2024级森林草原防火技术1班"
         ],
         "teacherName": "房忠敏",
-        "dayOfWeek": 7,
-        "slotIndex": 2,
+        "dayOfWeek": 2,
+        "slotIndex": 1,
         "weekType": "ALL",
         "startWeek": 1,
         "endWeek": 16
@@ -1511,8 +1153,8 @@
         "slotId": 44,
         "teachingTaskId": 38,
         "courseName": "高等数学",
-        "roomId": 2,
-        "roomName": "11-322",
+        "roomId": 52,
+        "roomName": "10-227",
         "roomCapacity": 50,
         "requiredStudents": 68,
         "shortage": 18,
@@ -1524,7 +1166,7 @@
           "2024级钢铁智能冶金技术1班（高本贯通）"
         ],
         "teacherName": "李媛",
-        "dayOfWeek": 3,
+        "dayOfWeek": 7,
         "slotIndex": 4,
         "weekType": "EVEN",
         "startWeek": 1,
@@ -1534,8 +1176,8 @@
         "slotId": 55,
         "teachingTaskId": 48,
         "courseName": "机械制图",
-        "roomId": 35,
-        "roomName": "11-322 或 10-104",
+        "roomId": 45,
+        "roomName": "11-333 或 11-105",
         "roomCapacity": 50,
         "requiredStudents": 91,
         "shortage": 41,
@@ -1548,8 +1190,8 @@
           "2024级钢铁智能冶金技术1班（高本贯通）"
         ],
         "teacherName": "赵春超",
-        "dayOfWeek": 1,
-        "slotIndex": 6,
+        "dayOfWeek": 5,
+        "slotIndex": 1,
         "weekType": "EVEN",
         "startWeek": 1,
         "endWeek": 16
@@ -1558,8 +1200,8 @@
         "slotId": 56,
         "teachingTaskId": 49,
         "courseName": "金属材料与热处理",
-        "roomId": 28,
-        "roomName": "林校301",
+        "roomId": 49,
+        "roomName": "林校\n306",
         "roomCapacity": 50,
         "requiredStudents": 117,
         "shortage": 67,
@@ -1573,8 +1215,8 @@
           "2024级钢铁智能冶金技术1班（高本贯通）"
         ],
         "teacherName": "王淼",
-        "dayOfWeek": 7,
-        "slotIndex": 6,
+        "dayOfWeek": 1,
+        "slotIndex": 5,
         "weekType": "EVEN",
         "startWeek": 1,
         "endWeek": 16
@@ -1583,8 +1225,8 @@
         "slotId": 62,
         "teachingTaskId": 54,
         "courseName": "机械制图",
-        "roomId": 3,
-        "roomName": "11-318",
+        "roomId": 50,
+        "roomName": "10-321",
         "roomCapacity": 50,
         "requiredStudents": 94,
         "shortage": 44,
@@ -1597,8 +1239,8 @@
           "2024级钢铁智能冶金技术1班（高本贯通）"
         ],
         "teacherName": "赵春超",
-        "dayOfWeek": 4,
-        "slotIndex": 1,
+        "dayOfWeek": 6,
+        "slotIndex": 4,
         "weekType": "ODD",
         "startWeek": 1,
         "endWeek": 16
@@ -1607,8 +1249,8 @@
         "slotId": 64,
         "teachingTaskId": 56,
         "courseName": "电子技术",
-        "roomId": 18,
-        "roomName": "1号楼虚拟仿真实训室",
+        "roomId": 12,
+        "roomName": "11-223",
         "roomCapacity": 50,
         "requiredStudents": 66,
         "shortage": 16,
@@ -1618,8 +1260,8 @@
           "2025级机电一体化技术2班"
         ],
         "teacherName": "许进",
-        "dayOfWeek": 1,
-        "slotIndex": 1,
+        "dayOfWeek": 6,
+        "slotIndex": 6,
         "weekType": "ALL",
         "startWeek": 1,
         "endWeek": 16
@@ -1628,8 +1270,8 @@
         "slotId": 65,
         "teachingTaskId": 57,
         "courseName": "创新创业教育",
-        "roomId": 5,
-        "roomName": "11-239",
+        "roomId": 19,
+        "roomName": "12-402",
         "roomCapacity": 50,
         "requiredStudents": 66,
         "shortage": 16,
@@ -1639,8 +1281,8 @@
           "2025级机电一体化技术2班"
         ],
         "teacherName": "孙文哲",
-        "dayOfWeek": 1,
-        "slotIndex": 2,
+        "dayOfWeek": 2,
+        "slotIndex": 5,
         "weekType": "FIRST_HALF",
         "startWeek": 1,
         "endWeek": 8
@@ -1649,8 +1291,8 @@
         "slotId": 67,
         "teachingTaskId": 59,
         "courseName": "大学英语",
-        "roomId": 5,
-        "roomName": "11-239",
+        "roomId": 14,
+        "roomName": "11-212",
         "roomCapacity": 50,
         "requiredStudents": 66,
         "shortage": 16,
@@ -1660,8 +1302,8 @@
           "2025级机电一体化技术2班"
         ],
         "teacherName": "袁景丽",
-        "dayOfWeek": 1,
-        "slotIndex": 4,
+        "dayOfWeek": 5,
+        "slotIndex": 1,
         "weekType": "ALL",
         "startWeek": 1,
         "endWeek": 16
@@ -1670,8 +1312,8 @@
         "slotId": 68,
         "teachingTaskId": 60,
         "courseName": "传感器",
-        "roomId": 5,
-        "roomName": "11-239",
+        "roomId": 34,
+        "roomName": "11-204",
         "roomCapacity": 50,
         "requiredStudents": 103,
         "shortage": 53,
@@ -1682,8 +1324,8 @@
           "2024级机电一体化技术1班"
         ],
         "teacherName": "张旭",
-        "dayOfWeek": 1,
-        "slotIndex": 5,
+        "dayOfWeek": 7,
+        "slotIndex": 6,
         "weekType": "ALL",
         "startWeek": 1,
         "endWeek": 16
@@ -1692,8 +1334,71 @@
         "slotId": 71,
         "teachingTaskId": 63,
         "courseName": "习近平新时代中国特色社会主义思想概论",
-        "roomId": 11,
-        "roomName": "1-142",
+        "roomId": 33,
+        "roomName": "11-307",
+        "roomCapacity": 50,
+        "requiredStudents": 66,
+        "shortage": 16,
+        "overloadRatio": 1.32,
+        "classGroupNames": [
+          "2025级机电一体化技术1班",
+          "2025级机电一体化技术2班"
+        ],
+        "teacherName": "牛怡亭",
+        "dayOfWeek": 7,
+        "slotIndex": 2,
+        "weekType": "ALL",
+        "startWeek": 1,
+        "endWeek": 16
+      },
+      {
+        "slotId": 72,
+        "teachingTaskId": 59,
+        "courseName": "大学英语",
+        "roomId": 12,
+        "roomName": "11-223",
+        "roomCapacity": 50,
+        "requiredStudents": 66,
+        "shortage": 16,
+        "overloadRatio": 1.32,
+        "classGroupNames": [
+          "2025级机电一体化技术1班",
+          "2025级机电一体化技术2班"
+        ],
+        "teacherName": "袁景丽",
+        "dayOfWeek": 2,
+        "slotIndex": 1,
+        "weekType": "ALL",
+        "startWeek": 1,
+        "endWeek": 16
+      },
+      {
+        "slotId": 73,
+        "teachingTaskId": 64,
+        "courseName": "形势与政策",
+        "roomId": 35,
+        "roomName": "11-322 或 10-104",
+        "roomCapacity": 50,
+        "requiredStudents": 66,
+        "shortage": 16,
+        "overloadRatio": 1.32,
+        "classGroupNames": [
+          "2025级机电一体化技术1班",
+          "2025级机电一体化技术2班"
+        ],
+        "teacherName": "董钇含",
+        "dayOfWeek": 1,
+        "slotIndex": 4,
+        "weekType": "FIRST_HALF",
+        "startWeek": 1,
+        "endWeek": 8
+      },
+      {
+        "slotId": 74,
+        "teachingTaskId": 65,
+        "courseName": "习近平新时代中国特色社会主义思想概论",
+        "roomId": 43,
+        "roomName": "11-209 或 12-111",
         "roomCapacity": 50,
         "requiredStudents": 66,
         "shortage": 16,
@@ -1704,69 +1409,6 @@
         ],
         "teacherName": "牛怡亭",
         "dayOfWeek": 2,
-        "slotIndex": 4,
-        "weekType": "ALL",
-        "startWeek": 1,
-        "endWeek": 16
-      },
-      {
-        "slotId": 72,
-        "teachingTaskId": 59,
-        "courseName": "大学英语",
-        "roomId": 11,
-        "roomName": "1-142",
-        "roomCapacity": 50,
-        "requiredStudents": 66,
-        "shortage": 16,
-        "overloadRatio": 1.32,
-        "classGroupNames": [
-          "2025级机电一体化技术1班",
-          "2025级机电一体化技术2班"
-        ],
-        "teacherName": "袁景丽",
-        "dayOfWeek": 3,
-        "slotIndex": 1,
-        "weekType": "ALL",
-        "startWeek": 1,
-        "endWeek": 16
-      },
-      {
-        "slotId": 73,
-        "teachingTaskId": 64,
-        "courseName": "形势与政策",
-        "roomId": 11,
-        "roomName": "1-142",
-        "roomCapacity": 50,
-        "requiredStudents": 66,
-        "shortage": 16,
-        "overloadRatio": 1.32,
-        "classGroupNames": [
-          "2025级机电一体化技术1班",
-          "2025级机电一体化技术2班"
-        ],
-        "teacherName": "董钇含",
-        "dayOfWeek": 3,
-        "slotIndex": 2,
-        "weekType": "FIRST_HALF",
-        "startWeek": 1,
-        "endWeek": 8
-      },
-      {
-        "slotId": 74,
-        "teachingTaskId": 65,
-        "courseName": "习近平新时代中国特色社会主义思想概论",
-        "roomId": 10,
-        "roomName": "1-133",
-        "roomCapacity": 50,
-        "requiredStudents": 66,
-        "shortage": 16,
-        "overloadRatio": 1.32,
-        "classGroupNames": [
-          "2025级机电一体化技术1班",
-          "2025级机电一体化技术2班"
-        ],
-        "teacherName": "牛怡亭",
-        "dayOfWeek": 3,
         "slotIndex": 3,
         "weekType": "FIRST_HALF",
         "startWeek": 1,
@@ -1776,8 +1418,8 @@
         "slotId": 75,
         "teachingTaskId": 66,
         "courseName": "电子技术",
-        "roomId": 18,
-        "roomName": "1号楼虚拟仿真实训室",
+        "roomId": 17,
+        "roomName": "11-329",
         "roomCapacity": 50,
         "requiredStudents": 134,
         "shortage": 84,
@@ -1791,7 +1433,7 @@
           "2024级钢铁智能冶金技术1班（高本贯通）"
         ],
         "teacherName": "许进",
-        "dayOfWeek": 3,
+        "dayOfWeek": 6,
         "slotIndex": 5,
         "weekType": "ODD",
         "startWeek": 1,
@@ -1801,8 +1443,8 @@
         "slotId": 76,
         "teachingTaskId": 67,
         "courseName": "传感器与检测技术",
-        "roomId": 20,
-        "roomName": "11-328",
+        "roomId": 29,
+        "roomName": "林校306",
         "roomCapacity": 50,
         "requiredStudents": 101,
         "shortage": 51,
@@ -1815,8 +1457,8 @@
           "2024级钢铁智能冶金技术1班（高本贯通）"
         ],
         "teacherName": "张旭",
-        "dayOfWeek": 2,
-        "slotIndex": 5,
+        "dayOfWeek": 7,
+        "slotIndex": 3,
         "weekType": "ODD",
         "startWeek": 1,
         "endWeek": 16
@@ -1825,8 +1467,8 @@
         "slotId": 78,
         "teachingTaskId": 69,
         "courseName": "机械制图",
-        "roomId": 30,
-        "roomName": "11-301",
+        "roomId": 24,
+        "roomName": "林校305",
         "roomCapacity": 50,
         "requiredStudents": 101,
         "shortage": 51,
@@ -1839,8 +1481,8 @@
           "2024级钢铁智能冶金技术1班（高本贯通）"
         ],
         "teacherName": "张红梅",
-        "dayOfWeek": 7,
-        "slotIndex": 3,
+        "dayOfWeek": 3,
+        "slotIndex": 4,
         "weekType": "ODD",
         "startWeek": 1,
         "endWeek": 16
@@ -1849,8 +1491,8 @@
         "slotId": 81,
         "teachingTaskId": 70,
         "courseName": "中华优秀传统文化",
-        "roomId": 8,
-        "roomName": "11-529",
+        "roomId": 9,
+        "roomName": "10-316",
         "roomCapacity": 50,
         "requiredStudents": 66,
         "shortage": 16,
@@ -1861,7 +1503,7 @@
         ],
         "teacherName": "杨旭",
         "dayOfWeek": 5,
-        "slotIndex": 4,
+        "slotIndex": 2,
         "weekType": "ALL",
         "startWeek": 1,
         "endWeek": 16
@@ -1870,30 +1512,6 @@
         "slotId": 85,
         "teachingTaskId": 74,
         "courseName": "传感器与检测技术",
-        "roomId": 1,
-        "roomName": "11-321",
-        "roomCapacity": 50,
-        "requiredStudents": 101,
-        "shortage": 51,
-        "overloadRatio": 2.02,
-        "classGroupNames": [
-          "2025级钢铁智能冶金技术1班（高本贯通）",
-          "2025级机电一体化技术2班",
-          "2025级钢铁智能冶金技术（现场工程师）",
-          "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-          "2024级钢铁智能冶金技术1班（高本贯通）"
-        ],
-        "teacherName": "张旭",
-        "dayOfWeek": 4,
-        "slotIndex": 1,
-        "weekType": "EVEN",
-        "startWeek": 1,
-        "endWeek": 16
-      },
-      {
-        "slotId": 88,
-        "teachingTaskId": 76,
-        "courseName": "机械制图",
         "roomId": 35,
         "roomName": "11-322 或 10-104",
         "roomCapacity": 50,
@@ -1907,9 +1525,33 @@
           "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
           "2024级钢铁智能冶金技术1班（高本贯通）"
         ],
+        "teacherName": "张旭",
+        "dayOfWeek": 5,
+        "slotIndex": 5,
+        "weekType": "EVEN",
+        "startWeek": 1,
+        "endWeek": 16
+      },
+      {
+        "slotId": 88,
+        "teachingTaskId": 76,
+        "courseName": "机械制图",
+        "roomId": 15,
+        "roomName": "11-521",
+        "roomCapacity": 50,
+        "requiredStudents": 101,
+        "shortage": 51,
+        "overloadRatio": 2.02,
+        "classGroupNames": [
+          "2025级钢铁智能冶金技术1班（高本贯通）",
+          "2025级机电一体化技术2班",
+          "2025级钢铁智能冶金技术（现场工程师）",
+          "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+          "2024级钢铁智能冶金技术1班（高本贯通）"
+        ],
         "teacherName": "张红梅",
-        "dayOfWeek": 3,
-        "slotIndex": 6,
+        "dayOfWeek": 6,
+        "slotIndex": 3,
         "weekType": "EVEN",
         "startWeek": 1,
         "endWeek": 16
@@ -1939,8 +1581,8 @@
         "slotId": 93,
         "teachingTaskId": 80,
         "courseName": "形势与政策",
-        "roomId": 11,
-        "roomName": "1-142",
+        "roomId": 6,
+        "roomName": "1-448",
         "roomCapacity": 50,
         "requiredStudents": 68,
         "shortage": 18,
@@ -1950,8 +1592,8 @@
           "2025级机电一体化技术4班"
         ],
         "teacherName": "胡浩",
-        "dayOfWeek": 1,
-        "slotIndex": 4,
+        "dayOfWeek": 5,
+        "slotIndex": 5,
         "weekType": "FIRST_HALF",
         "startWeek": 1,
         "endWeek": 8
@@ -1960,8 +1602,8 @@
         "slotId": 95,
         "teachingTaskId": 82,
         "courseName": "传感器",
-        "roomId": 5,
-        "roomName": "11-239",
+        "roomId": 11,
+        "roomName": "1-142",
         "roomCapacity": 50,
         "requiredStudents": 102,
         "shortage": 52,
@@ -1972,8 +1614,8 @@
           "2024级机电一体化技术3班"
         ],
         "teacherName": "张旭",
-        "dayOfWeek": 2,
-        "slotIndex": 5,
+        "dayOfWeek": 4,
+        "slotIndex": 2,
         "weekType": "ALL",
         "startWeek": 1,
         "endWeek": 16
@@ -1982,8 +1624,8 @@
         "slotId": 96,
         "teachingTaskId": 83,
         "courseName": "习近平新时代中国特色社会主义思想概论",
-        "roomId": 8,
-        "roomName": "11-529",
+        "roomId": 5,
+        "roomName": "11-239",
         "roomCapacity": 50,
         "requiredStudents": 68,
         "shortage": 18,
@@ -1993,8 +1635,8 @@
           "2025级机电一体化技术4班"
         ],
         "teacherName": "张帆",
-        "dayOfWeek": 3,
-        "slotIndex": 1,
+        "dayOfWeek": 7,
+        "slotIndex": 3,
         "weekType": "ALL",
         "startWeek": 1,
         "endWeek": 16
@@ -2003,8 +1645,8 @@
         "slotId": 99,
         "teachingTaskId": 85,
         "courseName": "中华优秀传统文化",
-        "roomId": 11,
-        "roomName": "1-142",
+        "roomId": 6,
+        "roomName": "1-448",
         "roomCapacity": 50,
         "requiredStudents": 68,
         "shortage": 18,
@@ -2014,7 +1656,7 @@
           "2025级机电一体化技术4班"
         ],
         "teacherName": "杜红侠",
-        "dayOfWeek": 4,
+        "dayOfWeek": 5,
         "slotIndex": 1,
         "weekType": "ALL",
         "startWeek": 1,
@@ -2024,8 +1666,8 @@
         "slotId": 100,
         "teachingTaskId": 77,
         "courseName": "大学英语",
-        "roomId": 11,
-        "roomName": "1-142",
+        "roomId": 28,
+        "roomName": "林校301",
         "roomCapacity": 50,
         "requiredStudents": 68,
         "shortage": 18,
@@ -2035,7 +1677,7 @@
           "2025级机电一体化技术4班"
         ],
         "teacherName": "沈军红",
-        "dayOfWeek": 4,
+        "dayOfWeek": 1,
         "slotIndex": 2,
         "weekType": "ALL",
         "startWeek": 1,
@@ -2045,8 +1687,8 @@
         "slotId": 103,
         "teachingTaskId": 88,
         "courseName": "）机械制图",
-        "roomId": 13,
-        "roomName": "11-333",
+        "roomId": 23,
+        "roomName": "林校304",
         "roomCapacity": 50,
         "requiredStudents": 103,
         "shortage": 53,
@@ -2059,8 +1701,8 @@
           "2024级钢铁智能冶金技术1班（高本贯通）"
         ],
         "teacherName": "张红梅",
-        "dayOfWeek": 4,
-        "slotIndex": 4,
+        "dayOfWeek": 1,
+        "slotIndex": 6,
         "weekType": "EVEN",
         "startWeek": 1,
         "endWeek": 16
@@ -2069,8 +1711,8 @@
         "slotId": 104,
         "teachingTaskId": 89,
         "courseName": "传感器与检测技术",
-        "roomId": 1,
-        "roomName": "11-321",
+        "roomId": 3,
+        "roomName": "11-318",
         "roomCapacity": 50,
         "requiredStudents": 103,
         "shortage": 53,
@@ -2083,7 +1725,7 @@
           "2024级钢铁智能冶金技术1班（高本贯通）"
         ],
         "teacherName": "张旭",
-        "dayOfWeek": 3,
+        "dayOfWeek": 7,
         "slotIndex": 1,
         "weekType": "ODD",
         "startWeek": 1,
@@ -2114,8 +1756,8 @@
         "slotId": 106,
         "teachingTaskId": 91,
         "courseName": "创新创业教育",
-        "roomId": 5,
-        "roomName": "11-239",
+        "roomId": 8,
+        "roomName": "11-529",
         "roomCapacity": 50,
         "requiredStudents": 68,
         "shortage": 18,
@@ -2125,8 +1767,8 @@
           "2025级机电一体化技术4班"
         ],
         "teacherName": "董钇含",
-        "dayOfWeek": 5,
-        "slotIndex": 3,
+        "dayOfWeek": 7,
+        "slotIndex": 6,
         "weekType": "FIRST_HALF",
         "startWeek": 1,
         "endWeek": 8
@@ -2135,8 +1777,8 @@
         "slotId": 114,
         "teachingTaskId": 98,
         "courseName": "） 机械制图",
-        "roomId": 44,
-        "roomName": "12号楼机器人实训室",
+        "roomId": 5,
+        "roomName": "11-239",
         "roomCapacity": 50,
         "requiredStudents": 101,
         "shortage": 51,
@@ -2149,8 +1791,8 @@
           "2024级钢铁智能冶金技术1班（高本贯通）"
         ],
         "teacherName": "张红梅",
-        "dayOfWeek": 2,
-        "slotIndex": 1,
+        "dayOfWeek": 7,
+        "slotIndex": 2,
         "weekType": "ODD",
         "startWeek": 1,
         "endWeek": 16
@@ -2159,8 +1801,8 @@
         "slotId": 115,
         "teachingTaskId": 99,
         "courseName": "传感器与检测技术",
-        "roomId": 20,
-        "roomName": "11-328",
+        "roomId": 16,
+        "roomName": "11-209",
         "roomCapacity": 50,
         "requiredStudents": 101,
         "shortage": 51,
@@ -2173,8 +1815,8 @@
           "2024级钢铁智能冶金技术1班（高本贯通）"
         ],
         "teacherName": "张旭",
-        "dayOfWeek": 4,
-        "slotIndex": 5,
+        "dayOfWeek": 1,
+        "slotIndex": 3,
         "weekType": "EVEN",
         "startWeek": 1,
         "endWeek": 16
@@ -2183,8 +1825,8 @@
         "slotId": 118,
         "teachingTaskId": 100,
         "courseName": "大学英语",
-        "roomId": 21,
-        "roomName": "林校\n305",
+        "roomId": 23,
+        "roomName": "林校304",
         "roomCapacity": 50,
         "requiredStudents": 83,
         "shortage": 33,
@@ -2195,7 +1837,7 @@
           "2025级智能网联汽车技术"
         ],
         "teacherName": "赵新宇",
-        "dayOfWeek": 1,
+        "dayOfWeek": 5,
         "slotIndex": 1,
         "weekType": "ALL",
         "startWeek": 1,
@@ -2205,8 +1847,8 @@
         "slotId": 122,
         "teachingTaskId": 104,
         "courseName": "习近平新时代中国特色社会主义思想概论",
-        "roomId": 24,
-        "roomName": "林校305",
+        "roomId": 19,
+        "roomName": "12-402",
         "roomCapacity": 50,
         "requiredStudents": 83,
         "shortage": 33,
@@ -2217,7 +1859,7 @@
           "2025级智能网联汽车技术"
         ],
         "teacherName": "张帆",
-        "dayOfWeek": 2,
+        "dayOfWeek": 7,
         "slotIndex": 1,
         "weekType": "ALL",
         "startWeek": 1,
@@ -2249,8 +1891,8 @@
         "slotId": 125,
         "teachingTaskId": 107,
         "courseName": "中华优秀传统文化",
-        "roomId": 24,
-        "roomName": "林校305",
+        "roomId": 20,
+        "roomName": "11-328",
         "roomCapacity": 50,
         "requiredStudents": 83,
         "shortage": 33,
@@ -2261,8 +1903,8 @@
           "2025级智能网联汽车技术"
         ],
         "teacherName": "汪雯雯",
-        "dayOfWeek": 3,
-        "slotIndex": 1,
+        "dayOfWeek": 1,
+        "slotIndex": 3,
         "weekType": "ALL",
         "startWeek": 1,
         "endWeek": 16
@@ -2271,8 +1913,8 @@
         "slotId": 127,
         "teachingTaskId": 108,
         "courseName": "形势与政策",
-        "roomId": 24,
-        "roomName": "林校305",
+        "roomId": 7,
+        "roomName": "1-232",
         "roomCapacity": 50,
         "requiredStudents": 83,
         "shortage": 33,
@@ -2283,8 +1925,8 @@
           "2025级智能网联汽车技术"
         ],
         "teacherName": "崔春梅",
-        "dayOfWeek": 3,
-        "slotIndex": 3,
+        "dayOfWeek": 5,
+        "slotIndex": 5,
         "weekType": "FIRST_HALF",
         "startWeek": 1,
         "endWeek": 8
@@ -2293,8 +1935,8 @@
         "slotId": 128,
         "teachingTaskId": 109,
         "courseName": "习近平新时代中国特色社会主义思想概论",
-        "roomId": 21,
-        "roomName": "林校\n305",
+        "roomId": 34,
+        "roomName": "11-204",
         "roomCapacity": 50,
         "requiredStudents": 83,
         "shortage": 33,
@@ -2305,8 +1947,8 @@
           "2025级智能网联汽车技术"
         ],
         "teacherName": "张帆",
-        "dayOfWeek": 4,
-        "slotIndex": 1,
+        "dayOfWeek": 7,
+        "slotIndex": 5,
         "weekType": "FIRST_HALF",
         "startWeek": 1,
         "endWeek": 8
@@ -2315,8 +1957,8 @@
         "slotId": 129,
         "teachingTaskId": 100,
         "courseName": "大学英语",
-        "roomId": 21,
-        "roomName": "林校\n305",
+        "roomId": 36,
+        "roomName": "11-321 或 10-104",
         "roomCapacity": 50,
         "requiredStudents": 83,
         "shortage": 33,
@@ -2327,8 +1969,8 @@
           "2025级智能网联汽车技术"
         ],
         "teacherName": "赵新宇",
-        "dayOfWeek": 4,
-        "slotIndex": 3,
+        "dayOfWeek": 1,
+        "slotIndex": 1,
         "weekType": "ALL",
         "startWeek": 1,
         "endWeek": 16
@@ -2337,8 +1979,8 @@
         "slotId": 152,
         "teachingTaskId": 121,
         "courseName": "形势与政策",
-        "roomId": 9,
-        "roomName": "10-316",
+        "roomId": 40,
+        "roomName": "11-208 或 12-201",
         "roomCapacity": 50,
         "requiredStudents": 52,
         "shortage": 2,
@@ -2400,8 +2042,8 @@
         "slotId": 160,
         "teachingTaskId": 129,
         "courseName": "中华优秀传统文化",
-        "roomId": 5,
-        "roomName": "11-239",
+        "roomId": 18,
+        "roomName": "1号楼虚拟仿真实训室",
         "roomCapacity": 50,
         "requiredStudents": 52,
         "shortage": 2,
@@ -2411,8 +2053,8 @@
           "2025级林业技术2班"
         ],
         "teacherName": "杨旭",
-        "dayOfWeek": 3,
-        "slotIndex": 2,
+        "dayOfWeek": 6,
+        "slotIndex": 4,
         "weekType": "ALL",
         "startWeek": 1,
         "endWeek": 16
@@ -2484,8 +2126,8 @@
         "slotId": 177,
         "teachingTaskId": 137,
         "courseName": "大学英语",
-        "roomId": 5,
-        "roomName": "11-239",
+        "roomId": 39,
+        "roomName": "11-204 或 11-105",
         "roomCapacity": 50,
         "requiredStudents": 55,
         "shortage": 5,
@@ -2495,8 +2137,8 @@
           "2025级森林草原资源保护2班"
         ],
         "teacherName": "刘明哲",
-        "dayOfWeek": 1,
-        "slotIndex": 1,
+        "dayOfWeek": 5,
+        "slotIndex": 6,
         "weekType": "ALL",
         "startWeek": 1,
         "endWeek": 16
@@ -2526,8 +2168,8 @@
         "slotId": 179,
         "teachingTaskId": 139,
         "courseName": "习近平新时代中国特色社会主义思想概论",
-        "roomId": 8,
-        "roomName": "11-529",
+        "roomId": 49,
+        "roomName": "林校\n306",
         "roomCapacity": 50,
         "requiredStudents": 55,
         "shortage": 5,
@@ -2537,8 +2179,8 @@
           "2025级森林草原资源保护2班"
         ],
         "teacherName": "张黎",
-        "dayOfWeek": 1,
-        "slotIndex": 3,
+        "dayOfWeek": 4,
+        "slotIndex": 5,
         "weekType": "ALL",
         "startWeek": 1,
         "endWeek": 16
@@ -2547,8 +2189,8 @@
         "slotId": 181,
         "teachingTaskId": 141,
         "courseName": "创新创业教育",
-        "roomId": 8,
-        "roomName": "11-529",
+        "roomId": 2,
+        "roomName": "11-322",
         "roomCapacity": 50,
         "requiredStudents": 55,
         "shortage": 5,
@@ -2558,7 +2200,7 @@
           "2025级森林草原资源保护2班"
         ],
         "teacherName": "徐燕",
-        "dayOfWeek": 2,
+        "dayOfWeek": 1,
         "slotIndex": 1,
         "weekType": "FIRST_HALF",
         "startWeek": 1,
@@ -2568,8 +2210,8 @@
         "slotId": 182,
         "teachingTaskId": 142,
         "courseName": "中华优秀传统文化",
-        "roomId": 11,
-        "roomName": "1-142",
+        "roomId": 23,
+        "roomName": "林校304",
         "roomCapacity": 50,
         "requiredStudents": 55,
         "shortage": 5,
@@ -2580,7 +2222,7 @@
         ],
         "teacherName": "姜剑书",
         "dayOfWeek": 2,
-        "slotIndex": 2,
+        "slotIndex": 5,
         "weekType": "ALL",
         "startWeek": 1,
         "endWeek": 16
@@ -2589,8 +2231,8 @@
         "slotId": 183,
         "teachingTaskId": 143,
         "courseName": "林草培育",
-        "roomId": 8,
-        "roomName": "11-529",
+        "roomId": 35,
+        "roomName": "11-322 或 10-104",
         "roomCapacity": 50,
         "requiredStudents": 55,
         "shortage": 5,
@@ -2610,8 +2252,8 @@
         "slotId": 186,
         "teachingTaskId": 146,
         "courseName": "习近平新时代中国特色社会主义思想概论",
-        "roomId": 5,
-        "roomName": "11-239",
+        "roomId": 53,
+        "roomName": "10-410",
         "roomCapacity": 50,
         "requiredStudents": 55,
         "shortage": 5,
@@ -2621,8 +2263,8 @@
           "2025级森林草原资源保护2班"
         ],
         "teacherName": "张黎",
-        "dayOfWeek": 3,
-        "slotIndex": 3,
+        "dayOfWeek": 6,
+        "slotIndex": 6,
         "weekType": "FIRST_HALF",
         "startWeek": 1,
         "endWeek": 8
@@ -2631,8 +2273,8 @@
         "slotId": 187,
         "teachingTaskId": 137,
         "courseName": "大学英语",
-        "roomId": 5,
-        "roomName": "11-239",
+        "roomId": 28,
+        "roomName": "林校301",
         "roomCapacity": 50,
         "requiredStudents": 55,
         "shortage": 5,
@@ -2642,8 +2284,8 @@
           "2025级森林草原资源保护2班"
         ],
         "teacherName": "刘明哲",
-        "dayOfWeek": 3,
-        "slotIndex": 4,
+        "dayOfWeek": 4,
+        "slotIndex": 3,
         "weekType": "ALL",
         "startWeek": 1,
         "endWeek": 16
@@ -2652,8 +2294,8 @@
         "slotId": 190,
         "teachingTaskId": 143,
         "courseName": "林草培育",
-        "roomId": 11,
-        "roomName": "1-142",
+        "roomId": 13,
+        "roomName": "11-333",
         "roomCapacity": 50,
         "requiredStudents": 55,
         "shortage": 5,
@@ -2663,8 +2305,8 @@
           "2025级森林草原资源保护2班"
         ],
         "teacherName": "刘艳",
-        "dayOfWeek": 4,
-        "slotIndex": 3,
+        "dayOfWeek": 1,
+        "slotIndex": 4,
         "weekType": "ALL",
         "startWeek": 1,
         "endWeek": 16
@@ -2673,8 +2315,8 @@
         "slotId": 192,
         "teachingTaskId": 149,
         "courseName": "林草环境",
-        "roomId": 17,
-        "roomName": "11-329",
+        "roomId": 14,
+        "roomName": "11-212",
         "roomCapacity": 50,
         "requiredStudents": 95,
         "shortage": 45,
@@ -2687,7 +2329,7 @@
           "2024级钢铁智能冶金技术1班（高本贯通）"
         ],
         "teacherName": "刘闯",
-        "dayOfWeek": 5,
+        "dayOfWeek": 6,
         "slotIndex": 1,
         "weekType": "ODD",
         "startWeek": 1,
@@ -2697,8 +2339,8 @@
         "slotId": 193,
         "teachingTaskId": 150,
         "courseName": "无人机应用技术",
-        "roomId": 3,
-        "roomName": "11-318",
+        "roomId": 31,
+        "roomName": "10-124",
         "roomCapacity": 50,
         "requiredStudents": 95,
         "shortage": 45,
@@ -2711,8 +2353,8 @@
           "2024级钢铁智能冶金技术1班（高本贯通）"
         ],
         "teacherName": "董继扬",
-        "dayOfWeek": 5,
-        "slotIndex": 2,
+        "dayOfWeek": 6,
+        "slotIndex": 3,
         "weekType": "ODD",
         "startWeek": 1,
         "endWeek": 16
@@ -2721,8 +2363,8 @@
         "slotId": 201,
         "teachingTaskId": 157,
         "courseName": "林草环境",
-        "roomId": 17,
-        "roomName": "11-329",
+        "roomId": 29,
+        "roomName": "林校306",
         "roomCapacity": 50,
         "requiredStudents": 96,
         "shortage": 46,
@@ -2735,7 +2377,7 @@
           "2024级钢铁智能冶金技术1班（高本贯通）"
         ],
         "teacherName": "刘闯",
-        "dayOfWeek": 5,
+        "dayOfWeek": 2,
         "slotIndex": 1,
         "weekType": "EVEN",
         "startWeek": 1,
@@ -2745,8 +2387,8 @@
         "slotId": 202,
         "teachingTaskId": 158,
         "courseName": "无人机应用技术",
-        "roomId": 40,
-        "roomName": "11-208 或 12-201",
+        "roomId": 9,
+        "roomName": "10-316",
         "roomCapacity": 50,
         "requiredStudents": 96,
         "shortage": 46,
@@ -2759,8 +2401,8 @@
           "2024级钢铁智能冶金技术1班（高本贯通）"
         ],
         "teacherName": "董继扬",
-        "dayOfWeek": 5,
-        "slotIndex": 2,
+        "dayOfWeek": 4,
+        "slotIndex": 4,
         "weekType": "EVEN",
         "startWeek": 1,
         "endWeek": 16
@@ -2769,8 +2411,8 @@
         "slotId": 213,
         "teachingTaskId": 165,
         "courseName": "习近平新时代中国特色社会主义思想概论",
-        "roomId": 41,
-        "roomName": "12楼机房",
+        "roomId": 30,
+        "roomName": "11-301",
         "roomCapacity": 50,
         "requiredStudents": 91,
         "shortage": 41,
@@ -2781,8 +2423,8 @@
           "2024级钢铁智能冶金技术1班（高本贯通）"
         ],
         "teacherName": "房忠敏",
-        "dayOfWeek": 1,
-        "slotIndex": 2,
+        "dayOfWeek": 4,
+        "slotIndex": 3,
         "weekType": "FIRST_HALF",
         "startWeek": 1,
         "endWeek": 8
@@ -2791,8 +2433,8 @@
         "slotId": 239,
         "teachingTaskId": 186,
         "courseName": "美育",
-        "roomId": 8,
-        "roomName": "11-529",
+        "roomId": 11,
+        "roomName": "1-142",
         "roomCapacity": 50,
         "requiredStudents": 75,
         "shortage": 25,
@@ -2803,8 +2445,8 @@
           "2024级机电一体化技术1班"
         ],
         "teacherName": "苏英周",
-        "dayOfWeek": 2,
-        "slotIndex": 2,
+        "dayOfWeek": 6,
+        "slotIndex": 5,
         "weekType": "ALL",
         "startWeek": 1,
         "endWeek": 16
@@ -2813,8 +2455,8 @@
         "slotId": 245,
         "teachingTaskId": 190,
         "courseName": "大学生职业发展与就业指导",
-        "roomId": 5,
-        "roomName": "11-239",
+        "roomId": 39,
+        "roomName": "11-204 或 11-105",
         "roomCapacity": 50,
         "requiredStudents": 75,
         "shortage": 25,
@@ -2825,8 +2467,8 @@
           "2024级机电一体化技术1班"
         ],
         "teacherName": "孙文哲",
-        "dayOfWeek": 4,
-        "slotIndex": 1,
+        "dayOfWeek": 2,
+        "slotIndex": 2,
         "weekType": "CUSTOM",
         "startWeek": 9,
         "endWeek": 16
@@ -2835,8 +2477,8 @@
         "slotId": 260,
         "teachingTaskId": 203,
         "courseName": "美育",
-        "roomId": 11,
-        "roomName": "1-142",
+        "roomId": 39,
+        "roomName": "11-204 或 11-105",
         "roomCapacity": 50,
         "requiredStudents": 78,
         "shortage": 28,
@@ -2847,8 +2489,8 @@
           "2024级钢铁智能冶金技术3班"
         ],
         "teacherName": "张显慧",
-        "dayOfWeek": 2,
-        "slotIndex": 1,
+        "dayOfWeek": 7,
+        "slotIndex": 2,
         "weekType": "ALL",
         "startWeek": 1,
         "endWeek": 16
@@ -2857,8 +2499,8 @@
         "slotId": 267,
         "teachingTaskId": 206,
         "courseName": "大学生职业发展与就业指导",
-        "roomId": 24,
-        "roomName": "林校305",
+        "roomId": 9,
+        "roomName": "10-316",
         "roomCapacity": 50,
         "requiredStudents": 78,
         "shortage": 28,
@@ -2869,8 +2511,8 @@
           "2024级钢铁智能冶金技术3班"
         ],
         "teacherName": "董钇含",
-        "dayOfWeek": 3,
-        "slotIndex": 3,
+        "dayOfWeek": 2,
+        "slotIndex": 6,
         "weekType": "CUSTOM",
         "startWeek": 9,
         "endWeek": 16
@@ -2879,8 +2521,8 @@
         "slotId": 307,
         "teachingTaskId": 228,
         "courseName": "机械设计基础",
-        "roomId": 10,
-        "roomName": "1-133",
+        "roomId": 14,
+        "roomName": "11-212",
         "roomCapacity": 50,
         "requiredStudents": 72,
         "shortage": 22,
@@ -2891,7 +2533,7 @@
         ],
         "teacherName": "李媛",
         "dayOfWeek": 1,
-        "slotIndex": 1,
+        "slotIndex": 2,
         "weekType": "ALL",
         "startWeek": 1,
         "endWeek": 16
@@ -2921,8 +2563,8 @@
         "slotId": 312,
         "teachingTaskId": 228,
         "courseName": "机械设计基础",
-        "roomId": 5,
-        "roomName": "11-239",
+        "roomId": 36,
+        "roomName": "11-321 或 10-104",
         "roomCapacity": 50,
         "requiredStudents": 72,
         "shortage": 22,
@@ -2932,8 +2574,8 @@
           "2024级机电一体化技术2班"
         ],
         "teacherName": "李媛",
-        "dayOfWeek": 3,
-        "slotIndex": 1,
+        "dayOfWeek": 4,
+        "slotIndex": 5,
         "weekType": "ALL",
         "startWeek": 1,
         "endWeek": 16
@@ -2942,8 +2584,8 @@
         "slotId": 317,
         "teachingTaskId": 232,
         "courseName": "液压与气压传动",
-        "roomId": 10,
-        "roomName": "1-133",
+        "roomId": 37,
+        "roomName": "11-504",
         "roomCapacity": 50,
         "requiredStudents": 72,
         "shortage": 22,
@@ -2953,8 +2595,8 @@
           "2024级机电一体化技术2班"
         ],
         "teacherName": "李媛",
-        "dayOfWeek": 5,
-        "slotIndex": 2,
+        "dayOfWeek": 6,
+        "slotIndex": 3,
         "weekType": "ALL",
         "startWeek": 1,
         "endWeek": 16
@@ -2963,8 +2605,8 @@
         "slotId": 324,
         "teachingTaskId": 239,
         "courseName": "大学生职业发展与就业指导",
-        "roomId": 8,
-        "roomName": "11-529",
+        "roomId": 18,
+        "roomName": "1号楼虚拟仿真实训室",
         "roomCapacity": 50,
         "requiredStudents": 69,
         "shortage": 19,
@@ -2974,8 +2616,8 @@
           "2024级机电一体化技术3班"
         ],
         "teacherName": "孙文哲",
-        "dayOfWeek": 4,
-        "slotIndex": 2,
+        "dayOfWeek": 5,
+        "slotIndex": 1,
         "weekType": "CUSTOM",
         "startWeek": 9,
         "endWeek": 16
@@ -2984,8 +2626,8 @@
         "slotId": 325,
         "teachingTaskId": 240,
         "courseName": "美育",
-        "roomId": 46,
-        "roomName": "1-301",
+        "roomId": 22,
+        "roomName": "林校\n304",
         "roomCapacity": 50,
         "requiredStudents": 69,
         "shortage": 19,
@@ -2995,8 +2637,8 @@
           "2024级机电一体化技术3班"
         ],
         "teacherName": "苏英周",
-        "dayOfWeek": 4,
-        "slotIndex": 3,
+        "dayOfWeek": 1,
+        "slotIndex": 5,
         "weekType": "ALL",
         "startWeek": 1,
         "endWeek": 16
@@ -3005,8 +2647,8 @@
         "slotId": 341,
         "teachingTaskId": 249,
         "courseName": "大学生职业发展与就业指导",
-        "roomId": 21,
-        "roomName": "林校\n305",
+        "roomId": 27,
+        "roomName": "林校\n303",
         "roomCapacity": 50,
         "requiredStudents": 55,
         "shortage": 5,
@@ -3016,8 +2658,8 @@
           "2024级汽车制造与试验技术2班"
         ],
         "teacherName": "孙文哲",
-        "dayOfWeek": 1,
-        "slotIndex": 3,
+        "dayOfWeek": 4,
+        "slotIndex": 5,
         "weekType": "CUSTOM",
         "startWeek": 9,
         "endWeek": 16
@@ -3026,8 +2668,8 @@
         "slotId": 346,
         "teachingTaskId": 252,
         "courseName": "汽车机械基础",
-        "roomId": 22,
-        "roomName": "林校\n304",
+        "roomId": 48,
+        "roomName": "11-204 或 12-111",
         "roomCapacity": 50,
         "requiredStudents": 55,
         "shortage": 5,
@@ -3037,8 +2679,8 @@
           "2024级汽车制造与试验技术2班"
         ],
         "teacherName": "李媛",
-        "dayOfWeek": 3,
-        "slotIndex": 3,
+        "dayOfWeek": 6,
+        "slotIndex": 1,
         "weekType": "ALL",
         "startWeek": 1,
         "endWeek": 16
@@ -3089,8 +2731,8 @@
         "slotId": 350,
         "teachingTaskId": 254,
         "courseName": "汽车营销（非学徒制）",
-        "roomId": 22,
-        "roomName": "林校\n304",
+        "roomId": 53,
+        "roomName": "10-410",
         "roomCapacity": 50,
         "requiredStudents": 55,
         "shortage": 5,
@@ -3100,8 +2742,8 @@
           "2024级汽车制造与试验技术2班"
         ],
         "teacherName": "刘艳艳",
-        "dayOfWeek": 5,
-        "slotIndex": 1,
+        "dayOfWeek": 2,
+        "slotIndex": 5,
         "weekType": "ALL",
         "startWeek": 1,
         "endWeek": 16
@@ -3173,8 +2815,8 @@
         "slotId": 378,
         "teachingTaskId": 271,
         "courseName": "美育",
-        "roomId": 11,
-        "roomName": "1-142",
+        "roomId": 22,
+        "roomName": "林校\n304",
         "roomCapacity": 50,
         "requiredStudents": 51,
         "shortage": 1,
@@ -3184,8 +2826,8 @@
           "2024级林业技术2班"
         ],
         "teacherName": "张显慧",
-        "dayOfWeek": 1,
-        "slotIndex": 1,
+        "dayOfWeek": 6,
+        "slotIndex": 4,
         "weekType": "ALL",
         "startWeek": 1,
         "endWeek": 16
@@ -3215,8 +2857,8 @@
         "slotId": 391,
         "teachingTaskId": 280,
         "courseName": "经济林栽培",
-        "roomId": 10,
-        "roomName": "1-133",
+        "roomId": 41,
+        "roomName": "12楼机房",
         "roomCapacity": 50,
         "requiredStudents": 51,
         "shortage": 1,
@@ -3226,8 +2868,8 @@
           "2024级林业技术2班"
         ],
         "teacherName": "刘娜",
-        "dayOfWeek": 4,
-        "slotIndex": 3,
+        "dayOfWeek": 6,
+        "slotIndex": 1,
         "weekType": "ALL",
         "startWeek": 1,
         "endWeek": 16
@@ -3236,8 +2878,8 @@
         "slotId": 394,
         "teachingTaskId": 280,
         "courseName": "经济林栽培",
-        "roomId": 10,
-        "roomName": "1-133",
+        "roomId": 47,
+        "roomName": "11-328 或 11-105",
         "roomCapacity": 50,
         "requiredStudents": 51,
         "shortage": 1,
@@ -3257,8 +2899,8 @@
         "slotId": 408,
         "teachingTaskId": 288,
         "courseName": "美育",
-        "roomId": 11,
-        "roomName": "1-142",
+        "roomId": 20,
+        "roomName": "11-328",
         "roomCapacity": 50,
         "requiredStudents": 89,
         "shortage": 39,
@@ -3269,8 +2911,8 @@
           "2024级森林草原防火技术1班"
         ],
         "teacherName": "张显慧",
-        "dayOfWeek": 1,
-        "slotIndex": 2,
+        "dayOfWeek": 3,
+        "slotIndex": 1,
         "weekType": "ALL",
         "startWeek": 1,
         "endWeek": 16
@@ -3279,8 +2921,8 @@
         "slotId": 409,
         "teachingTaskId": 289,
         "courseName": "经济林栽培",
-        "roomId": 10,
-        "roomName": "1-133",
+        "roomId": 43,
+        "roomName": "11-209 或 12-111",
         "roomCapacity": 50,
         "requiredStudents": 52,
         "shortage": 2,
@@ -3291,7 +2933,7 @@
         ],
         "teacherName": "刘娜",
         "dayOfWeek": 1,
-        "slotIndex": 4,
+        "slotIndex": 6,
         "weekType": "ALL",
         "startWeek": 1,
         "endWeek": 16
@@ -3300,8 +2942,8 @@
         "slotId": 414,
         "teachingTaskId": 289,
         "courseName": "经济林栽培",
-        "roomId": 10,
-        "roomName": "1-133",
+        "roomId": 27,
+        "roomName": "林校\n303",
         "roomCapacity": 50,
         "requiredStudents": 52,
         "shortage": 2,
@@ -3321,8 +2963,8 @@
         "slotId": 416,
         "teachingTaskId": 294,
         "courseName": "学生职业发展与就业指导",
-        "roomId": 5,
-        "roomName": "11-239",
+        "roomId": 23,
+        "roomName": "林校304",
         "roomCapacity": 50,
         "requiredStudents": 89,
         "shortage": 39,
@@ -3333,8 +2975,8 @@
           "2024级森林草原防火技术1班"
         ],
         "teacherName": "徐燕",
-        "dayOfWeek": 4,
-        "slotIndex": 2,
+        "dayOfWeek": 6,
+        "slotIndex": 1,
         "weekType": "CUSTOM",
         "startWeek": 9,
         "endWeek": 16
@@ -3348,151 +2990,183 @@
         "courseName": "电子技术",
         "classGroupNames": "2025级钢铁智能冶金技术1班（高本贯通）, 2025级机电一体化技术1班, 2025级机电一体化技术2班, 2025级钢铁智能冶金技术（现场工程师）, 2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）, 2024级钢铁智能冶金技术1班（高本贯通）",
         "requiredStudents": 134,
-        "roomName": "1号楼虚拟仿真实训室",
+        "roomName": "11-329",
         "roomCapacity": 50,
         "shortage": 84,
         "overloadRatio": 2.68,
-        "dayOfWeek": 3,
+        "dayOfWeek": 6,
         "slotIndex": 5
       },
       {
         "courseName": "形势与政策",
         "classGroupNames": "2025级钢铁智能冶金技术1班（高本贯通）, 2025级森林草原防火技术1班, 2024级钢铁智能冶金技术1班（高本贯通）, 2024级森林草原防火技术1班",
         "requiredStudents": 128,
-        "roomName": "1-142",
+        "roomName": "11-529",
         "roomCapacity": 50,
         "shortage": 78,
         "overloadRatio": 2.56,
-        "dayOfWeek": 1,
-        "slotIndex": 3
+        "dayOfWeek": 7,
+        "slotIndex": 1
       },
       {
         "courseName": "创新创业教育",
         "classGroupNames": "2025级钢铁智能冶金技术1班（高本贯通）, 2025级森林草原防火技术1班, 2024级钢铁智能冶金技术1班（高本贯通）, 2024级森林草原防火技术1班",
         "requiredStudents": 128,
-        "roomName": "林校\n303",
+        "roomName": "1号楼虚拟仿真实训室",
         "roomCapacity": 50,
         "shortage": 78,
         "overloadRatio": 2.56,
-        "dayOfWeek": 7,
-        "slotIndex": 5
+        "dayOfWeek": 1,
+        "slotIndex": 4
       },
       {
         "courseName": "习近平新时代中国特色社会主义思想概论",
         "classGroupNames": "2025级钢铁智能冶金技术1班（高本贯通）, 2025级森林草原防火技术1班, 2024级钢铁智能冶金技术1班（高本贯通）, 2024级森林草原防火技术1班",
         "requiredStudents": 128,
-        "roomName": "林校305",
+        "roomName": "11-204 或 12-111",
         "roomCapacity": 50,
         "shortage": 78,
         "overloadRatio": 2.56,
-        "dayOfWeek": 2,
-        "slotIndex": 6
+        "dayOfWeek": 5,
+        "slotIndex": 3
       },
       {
         "courseName": "中华优秀传统文化",
         "classGroupNames": "2025级钢铁智能冶金技术1班（高本贯通）, 2025级森林草原防火技术1班, 2024级钢铁智能冶金技术1班（高本贯通）, 2024级森林草原防火技术1班",
         "requiredStudents": 128,
-        "roomName": "11-529",
+        "roomName": "11-208",
         "roomCapacity": 50,
         "shortage": 78,
         "overloadRatio": 2.56,
         "dayOfWeek": 3,
-        "slotIndex": 4
+        "slotIndex": 2
       }
     ],
     "topClassConflicts": [
       {
         "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
-        "conflictCount": 20,
-        "worstDayOfWeek": 5,
-        "worstSlotIndex": 2,
+        "conflictCount": 12,
+        "worstDayOfWeek": 7,
+        "worstSlotIndex": 1,
         "involvedCourses": [
           "机械制图",
-          "大学生职业发展与就业指导",
-          "金属材料与热处理",
-          "大学日语",
-          "金属性能检测",
-          "中华优秀传统文化",
-          "高等数学",
           "大学英语",
+          "冶金传输原理",
+          "形势与政策",
           "传感器与检测技术",
-          "冶金传输原理"
+          "创新创业教育",
+          "大学日语",
+          "金属材料与热处理",
+          "） 机械制图",
+          "美育"
         ]
       },
       {
         "classGroupName": "2025级钢铁智能冶金技术1班（高本贯通）",
-        "conflictCount": 6,
-        "worstDayOfWeek": 4,
-        "worstSlotIndex": 2,
+        "conflictCount": 5,
+        "worstDayOfWeek": 6,
+        "worstSlotIndex": 5,
         "involvedCourses": [
+          "机械制图",
+          "心理健康教育",
           "金属材料与热处理",
           "高等数学",
-          "机械制图",
-          "习近平新时代中国特色社会主义思想概论",
-          "大学英语",
-          "） 机械制图",
-          "中华优秀传统文化"
-        ]
-      },
-      {
-        "classGroupName": "2025级钢铁智能冶金技术3班",
-        "conflictCount": 1,
-        "worstDayOfWeek": 4,
-        "worstSlotIndex": 1,
-        "involvedCourses": [
+          "电子技术",
           "形势与政策",
-          "机械制图"
-        ]
-      },
-      {
-        "classGroupName": "2025级机电一体化技术3班",
-        "conflictCount": 1,
-        "worstDayOfWeek": 3,
-        "worstSlotIndex": 1,
-        "involvedCourses": [
+          "传感器与检测技术",
           "习近平新时代中国特色社会主义思想概论",
-          "传感器与检测技术"
+          "林草环境"
         ]
       },
       {
         "classGroupName": "2025级森林草原防火技术1班",
-        "conflictCount": 1,
-        "worstDayOfWeek": 1,
-        "worstSlotIndex": 2,
+        "conflictCount": 2,
+        "worstDayOfWeek": 7,
+        "worstSlotIndex": 1,
         "involvedCourses": [
-          "大学英语",
-          "习近平新时代中国特色社会主义思想概论"
+          "形势与政策",
+          "森林草原火管理",
+          "消防法规",
+          "森林火灾扑救指挥"
+        ]
+      },
+      {
+        "classGroupName": "2024级森林草原防火技术1班",
+        "conflictCount": 2,
+        "worstDayOfWeek": 7,
+        "worstSlotIndex": 1,
+        "involvedCourses": [
+          "形势与政策",
+          "森林防火通信技术",
+          "公关与礼仪",
+          "森林火灾预防与扑救"
+        ]
+      },
+      {
+        "classGroupName": "2025级机电一体化技术2班",
+        "conflictCount": 1,
+        "worstDayOfWeek": 6,
+        "worstSlotIndex": 5,
+        "involvedCourses": [
+          "电子技术",
+          "机械制图"
         ]
       }
     ],
     "topRoomConflicts": [
       {
-        "roomName": "11-322",
+        "roomName": "11-301",
         "conflictCount": 1,
-        "dayOfWeek": 1,
-        "slotIndex": 2,
+        "dayOfWeek": 6,
+        "slotIndex": 5,
         "involvedCourses": [
-          "机械制图",
-          "金属材料与热处理"
-        ]
-      },
-      {
-        "roomName": "12楼机房",
-        "conflictCount": 1,
-        "dayOfWeek": 1,
-        "slotIndex": 2,
-        "involvedCourses": [
-          "习近平新时代中国特色社会主义思想概论",
-          "机械产品数字化设计"
+          "公关与礼仪",
+          "森林火灾预防与扑救"
         ]
       }
     ],
     "topTeacherConflicts": [
       {
-        "teacherId": 3,
-        "teacherName": "尹和鑫",
-        "dayOfWeek": 1,
-        "slotIndex": 2,
+        "teacherId": 23,
+        "teacherName": "赵春超",
+        "dayOfWeek": 6,
+        "slotIndex": 4,
+        "overlapWeeks": [
+          1,
+          3,
+          5,
+          7,
+          9,
+          11,
+          13,
+          15
+        ],
+        "involvedSlotIds": [
+          48,
+          62
+        ],
+        "courseNames": [
+          "机械制图",
+          "机械制图"
+        ],
+        "classGroupNames": [
+          "2025级钢铁智能冶金技术2班",
+          "2025级钢铁智能冶金技术1班（高本贯通）",
+          "2025级钢铁智能冶金技术3班",
+          "2025级钢铁智能冶金技术（现场工程师）",
+          "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+          "2024级钢铁智能冶金技术1班（高本贯通）"
+        ],
+        "roomNames": [
+          "11-208",
+          "10-321"
+        ]
+      },
+      {
+        "teacherId": 24,
+        "teacherName": "王淼",
+        "dayOfWeek": 3,
+        "slotIndex": 5,
         "overlapWeeks": [
           1,
           2,
@@ -3512,265 +3186,122 @@
           16
         ],
         "involvedSlotIds": [
-          21,
-          263
+          59,
+          293
         ],
         "courseNames": [
-          "金属材料与热处理",
-          "金属材料与热处理"
+          "冶金热工基础",
+          "流体力学"
         ],
         "classGroupNames": [
-          "2025级智能轧钢技术2班",
-          "2024级钢铁智能冶金技术1班（高本贯通）"
+          "2025级钢铁智能冶金技术2班",
+          "2025级钢铁智能冶金技术3班",
+          "2024级钢铁智能冶金技术2班"
         ],
         "roomNames": [
-          "11-318",
-          "11-322"
-        ]
-      },
-      {
-        "teacherId": 5,
-        "teacherName": "李媛",
-        "dayOfWeek": 3,
-        "slotIndex": 4,
-        "overlapWeeks": [
-          2,
-          4,
-          6,
-          8,
-          10,
-          12,
-          14,
-          16
-        ],
-        "involvedSlotIds": [
-          44,
-          347
-        ],
-        "courseNames": [
-          "高等数学",
-          "汽车机械基础"
-        ],
-        "classGroupNames": [
-          "2025级钢铁智能冶金技术1班（高本贯通）",
-          "2025级钢铁智能冶金技术（现场工程师）",
-          "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-          "2024级钢铁智能冶金技术1班（高本贯通）",
-          "2024级汽车制造与试验技术1班",
-          "2024级汽车制造与试验技术2班"
-        ],
-        "roomNames": [
-          "11-322",
-          "林校\n304"
-        ]
-      },
-      {
-        "teacherId": 31,
-        "teacherName": "张红梅",
-        "dayOfWeek": 2,
-        "slotIndex": 1,
-        "overlapWeeks": [
-          1,
-          3,
-          5,
-          7,
-          9,
-          11,
-          13,
-          15
-        ],
-        "involvedSlotIds": [
-          69,
-          114
-        ],
-        "courseNames": [
-          "机械制图",
-          "） 机械制图"
-        ],
-        "classGroupNames": [
-          "2025级机电一体化技术1班",
-          "2025级钢铁智能冶金技术1班（高本贯通）",
-          "2025级机电一体化技术4班",
-          "2025级钢铁智能冶金技术（现场工程师）",
-          "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-          "2024级钢铁智能冶金技术1班（高本贯通）"
-        ],
-        "roomNames": [
-          "11-322",
-          "12号楼机器人实训室"
-        ]
-      },
-      {
-        "teacherId": 30,
-        "teacherName": "张旭",
-        "dayOfWeek": 2,
-        "slotIndex": 5,
-        "overlapWeeks": [
-          1,
-          3,
-          5,
-          7,
-          9,
-          11,
-          13,
-          15
-        ],
-        "involvedSlotIds": [
-          76,
-          95
-        ],
-        "courseNames": [
-          "传感器与检测技术",
-          "传感器"
-        ],
-        "classGroupNames": [
-          "2025级钢铁智能冶金技术1班（高本贯通）",
-          "2025级机电一体化技术1班",
-          "2025级钢铁智能冶金技术（现场工程师）",
-          "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-          "2024级钢铁智能冶金技术1班（高本贯通）",
-          "2025级机电一体化技术3班",
-          "2025级机电一体化技术4班",
-          "2024级机电一体化技术3班"
-        ],
-        "roomNames": [
-          "11-328",
-          "11-239"
-        ]
-      },
-      {
-        "teacherId": 16,
-        "teacherName": "房忠敏",
-        "dayOfWeek": 1,
-        "slotIndex": 2,
-        "overlapWeeks": [
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7,
-          8
-        ],
-        "involvedSlotIds": [
-          213,
-          395
-        ],
-        "courseNames": [
-          "习近平新时代中国特色社会主义思想概论",
-          "林业法规与执法实务"
-        ],
-        "classGroupNames": [
-          "2025级钢铁智能冶金技术1班（高本贯通）",
-          "2025级森林草原防火技术1班",
-          "2024级钢铁智能冶金技术1班（高本贯通）",
-          "2024级林业技术2班"
-        ],
-        "roomNames": [
-          "12楼机房",
-          "10-128"
+          "10-227",
+          "11-504"
         ]
       }
     ],
     "topTimeSlotPressure": [
       {
-        "dayOfWeek": 4,
-        "slotIndex": 2,
-        "scheduledSlotCount": 23,
-        "distinctRoomCount": 20,
-        "distinctClassGroupCount": 28,
-        "capacityShortageCount": 6,
+        "dayOfWeek": 7,
+        "slotIndex": 1,
+        "scheduledSlotCount": 12,
+        "distinctRoomCount": 10,
+        "distinctClassGroupCount": 14,
+        "capacityShortageCount": 3,
+        "classConflictCount": 6,
+        "roomConflictCount": 0
+      },
+      {
+        "dayOfWeek": 6,
+        "slotIndex": 5,
+        "scheduledSlotCount": 10,
+        "distinctRoomCount": 8,
+        "distinctClassGroupCount": 13,
+        "capacityShortageCount": 3,
         "classConflictCount": 4,
-        "roomConflictCount": 0
+        "roomConflictCount": 1
       },
       {
-        "dayOfWeek": 5,
-        "slotIndex": 2,
-        "scheduledSlotCount": 20,
-        "distinctRoomCount": 19,
-        "distinctClassGroupCount": 26,
-        "capacityShortageCount": 5,
-        "classConflictCount": 5,
-        "roomConflictCount": 0
-      },
-      {
-        "dayOfWeek": 1,
-        "slotIndex": 2,
-        "scheduledSlotCount": 24,
-        "distinctRoomCount": 22,
-        "distinctClassGroupCount": 29,
+        "dayOfWeek": 2,
+        "slotIndex": 4,
+        "scheduledSlotCount": 13,
+        "distinctRoomCount": 13,
+        "distinctClassGroupCount": 18,
         "capacityShortageCount": 4,
-        "classConflictCount": 3,
-        "roomConflictCount": 2
-      },
-      {
-        "dayOfWeek": 4,
-        "slotIndex": 1,
-        "scheduledSlotCount": 23,
-        "distinctRoomCount": 21,
-        "distinctClassGroupCount": 31,
-        "capacityShortageCount": 6,
-        "classConflictCount": 3,
-        "roomConflictCount": 0
-      },
-      {
-        "dayOfWeek": 1,
-        "slotIndex": 1,
-        "scheduledSlotCount": 19,
-        "distinctRoomCount": 19,
-        "distinctClassGroupCount": 27,
-        "capacityShortageCount": 7,
-        "classConflictCount": 0,
-        "roomConflictCount": 0
-      },
-      {
-        "dayOfWeek": 3,
-        "slotIndex": 3,
-        "scheduledSlotCount": 17,
-        "distinctRoomCount": 15,
-        "distinctClassGroupCount": 28,
-        "capacityShortageCount": 6,
         "classConflictCount": 1,
         "roomConflictCount": 0
       },
       {
-        "dayOfWeek": 3,
-        "slotIndex": 4,
-        "scheduledSlotCount": 17,
-        "distinctRoomCount": 17,
-        "distinctClassGroupCount": 26,
+        "dayOfWeek": 5,
+        "slotIndex": 1,
+        "scheduledSlotCount": 11,
+        "distinctRoomCount": 10,
+        "distinctClassGroupCount": 21,
         "capacityShortageCount": 5,
-        "classConflictCount": 2,
+        "classConflictCount": 0,
+        "roomConflictCount": 0
+      },
+      {
+        "dayOfWeek": 1,
+        "slotIndex": 1,
+        "scheduledSlotCount": 11,
+        "distinctRoomCount": 11,
+        "distinctClassGroupCount": 16,
+        "capacityShortageCount": 4,
+        "classConflictCount": 0,
+        "roomConflictCount": 0
+      },
+      {
+        "dayOfWeek": 1,
+        "slotIndex": 4,
+        "scheduledSlotCount": 16,
+        "distinctRoomCount": 15,
+        "distinctClassGroupCount": 20,
+        "capacityShortageCount": 3,
+        "classConflictCount": 1,
+        "roomConflictCount": 0
+      },
+      {
+        "dayOfWeek": 1,
+        "slotIndex": 5,
+        "scheduledSlotCount": 8,
+        "distinctRoomCount": 7,
+        "distinctClassGroupCount": 14,
+        "capacityShortageCount": 3,
+        "classConflictCount": 1,
         "roomConflictCount": 0
       },
       {
         "dayOfWeek": 2,
         "slotIndex": 1,
-        "scheduledSlotCount": 21,
-        "distinctRoomCount": 21,
-        "distinctClassGroupCount": 29,
-        "capacityShortageCount": 4,
-        "classConflictCount": 2,
+        "scheduledSlotCount": 10,
+        "distinctRoomCount": 10,
+        "distinctClassGroupCount": 17,
+        "capacityShortageCount": 3,
+        "classConflictCount": 1,
         "roomConflictCount": 0
       },
       {
-        "dayOfWeek": 3,
-        "slotIndex": 1,
-        "scheduledSlotCount": 19,
-        "distinctRoomCount": 19,
-        "distinctClassGroupCount": 29,
-        "capacityShortageCount": 5,
-        "classConflictCount": 1,
+        "dayOfWeek": 2,
+        "slotIndex": 3,
+        "scheduledSlotCount": 13,
+        "distinctRoomCount": 12,
+        "distinctClassGroupCount": 27,
+        "capacityShortageCount": 2,
+        "classConflictCount": 2,
         "roomConflictCount": 0
       },
       {
         "dayOfWeek": 4,
         "slotIndex": 3,
-        "scheduledSlotCount": 19,
-        "distinctRoomCount": 19,
-        "distinctClassGroupCount": 28,
-        "capacityShortageCount": 6,
+        "scheduledSlotCount": 8,
+        "distinctRoomCount": 8,
+        "distinctClassGroupCount": 13,
+        "capacityShortageCount": 4,
         "classConflictCount": 0,
         "roomConflictCount": 0
       }
@@ -3846,102 +3377,102 @@
   ],
   "resourcePressure": [
     {
-      "dayOfWeek": 4,
-      "slotIndex": 2,
-      "scheduledSlotCount": 23,
-      "distinctRoomCount": 20,
-      "distinctClassGroupCount": 28,
-      "capacityShortageCount": 6,
+      "dayOfWeek": 7,
+      "slotIndex": 1,
+      "scheduledSlotCount": 12,
+      "distinctRoomCount": 10,
+      "distinctClassGroupCount": 14,
+      "capacityShortageCount": 3,
+      "classConflictCount": 6,
+      "roomConflictCount": 0
+    },
+    {
+      "dayOfWeek": 6,
+      "slotIndex": 5,
+      "scheduledSlotCount": 10,
+      "distinctRoomCount": 8,
+      "distinctClassGroupCount": 13,
+      "capacityShortageCount": 3,
       "classConflictCount": 4,
-      "roomConflictCount": 0
+      "roomConflictCount": 1
     },
     {
-      "dayOfWeek": 5,
-      "slotIndex": 2,
-      "scheduledSlotCount": 20,
-      "distinctRoomCount": 19,
-      "distinctClassGroupCount": 26,
-      "capacityShortageCount": 5,
-      "classConflictCount": 5,
-      "roomConflictCount": 0
-    },
-    {
-      "dayOfWeek": 1,
-      "slotIndex": 2,
-      "scheduledSlotCount": 24,
-      "distinctRoomCount": 22,
-      "distinctClassGroupCount": 29,
+      "dayOfWeek": 2,
+      "slotIndex": 4,
+      "scheduledSlotCount": 13,
+      "distinctRoomCount": 13,
+      "distinctClassGroupCount": 18,
       "capacityShortageCount": 4,
-      "classConflictCount": 3,
-      "roomConflictCount": 2
-    },
-    {
-      "dayOfWeek": 4,
-      "slotIndex": 1,
-      "scheduledSlotCount": 23,
-      "distinctRoomCount": 21,
-      "distinctClassGroupCount": 31,
-      "capacityShortageCount": 6,
-      "classConflictCount": 3,
-      "roomConflictCount": 0
-    },
-    {
-      "dayOfWeek": 1,
-      "slotIndex": 1,
-      "scheduledSlotCount": 19,
-      "distinctRoomCount": 19,
-      "distinctClassGroupCount": 27,
-      "capacityShortageCount": 7,
-      "classConflictCount": 0,
-      "roomConflictCount": 0
-    },
-    {
-      "dayOfWeek": 3,
-      "slotIndex": 3,
-      "scheduledSlotCount": 17,
-      "distinctRoomCount": 15,
-      "distinctClassGroupCount": 28,
-      "capacityShortageCount": 6,
       "classConflictCount": 1,
       "roomConflictCount": 0
     },
     {
-      "dayOfWeek": 3,
-      "slotIndex": 4,
-      "scheduledSlotCount": 17,
-      "distinctRoomCount": 17,
-      "distinctClassGroupCount": 26,
+      "dayOfWeek": 5,
+      "slotIndex": 1,
+      "scheduledSlotCount": 11,
+      "distinctRoomCount": 10,
+      "distinctClassGroupCount": 21,
       "capacityShortageCount": 5,
-      "classConflictCount": 2,
+      "classConflictCount": 0,
+      "roomConflictCount": 0
+    },
+    {
+      "dayOfWeek": 1,
+      "slotIndex": 1,
+      "scheduledSlotCount": 11,
+      "distinctRoomCount": 11,
+      "distinctClassGroupCount": 16,
+      "capacityShortageCount": 4,
+      "classConflictCount": 0,
+      "roomConflictCount": 0
+    },
+    {
+      "dayOfWeek": 1,
+      "slotIndex": 4,
+      "scheduledSlotCount": 16,
+      "distinctRoomCount": 15,
+      "distinctClassGroupCount": 20,
+      "capacityShortageCount": 3,
+      "classConflictCount": 1,
+      "roomConflictCount": 0
+    },
+    {
+      "dayOfWeek": 1,
+      "slotIndex": 5,
+      "scheduledSlotCount": 8,
+      "distinctRoomCount": 7,
+      "distinctClassGroupCount": 14,
+      "capacityShortageCount": 3,
+      "classConflictCount": 1,
       "roomConflictCount": 0
     },
     {
       "dayOfWeek": 2,
       "slotIndex": 1,
-      "scheduledSlotCount": 21,
-      "distinctRoomCount": 21,
-      "distinctClassGroupCount": 29,
-      "capacityShortageCount": 4,
-      "classConflictCount": 2,
+      "scheduledSlotCount": 10,
+      "distinctRoomCount": 10,
+      "distinctClassGroupCount": 17,
+      "capacityShortageCount": 3,
+      "classConflictCount": 1,
       "roomConflictCount": 0
     },
     {
-      "dayOfWeek": 3,
-      "slotIndex": 1,
-      "scheduledSlotCount": 19,
-      "distinctRoomCount": 19,
-      "distinctClassGroupCount": 29,
-      "capacityShortageCount": 5,
-      "classConflictCount": 1,
+      "dayOfWeek": 2,
+      "slotIndex": 3,
+      "scheduledSlotCount": 13,
+      "distinctRoomCount": 12,
+      "distinctClassGroupCount": 27,
+      "capacityShortageCount": 2,
+      "classConflictCount": 2,
       "roomConflictCount": 0
     },
     {
       "dayOfWeek": 4,
       "slotIndex": 3,
-      "scheduledSlotCount": 19,
-      "distinctRoomCount": 19,
-      "distinctClassGroupCount": 28,
-      "capacityShortageCount": 6,
+      "scheduledSlotCount": 8,
+      "distinctRoomCount": 8,
+      "distinctClassGroupCount": 13,
+      "capacityShortageCount": 4,
       "classConflictCount": 0,
       "roomConflictCount": 0
     }
@@ -3949,8 +3480,7 @@
   "diagnosisClassification": [
     "CAPACITY_BOTTLENECK",
     "CLASS_CONFLICT",
-    "ROOM_CONFLICT",
-    "SCORING_OR_DIAGNOSTIC_MISMATCH"
+    "ROOM_CONFLICT"
   ],
   "notes": [
     "HC1-HC5 details computed via secondary traversal of bestState (no score.ts modification)",

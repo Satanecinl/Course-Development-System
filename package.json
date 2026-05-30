@@ -11,6 +11,7 @@
     "test:solver": "tsx scripts/test-solver.ts",
     "test:diagnostics": "tsx scripts/test-diagnostics.ts",
     "test:capacity": "tsx scripts/test-capacity.ts",
+    "test:scoring-consistency": "tsx scripts/test-scoring-consistency.ts",
     "import:data": "tsx scripts/import-data.ts",
     "export:data-template": "tsx scripts/export-data-template.ts",
     "test:import-quality": "tsx scripts/test-import-quality.ts",

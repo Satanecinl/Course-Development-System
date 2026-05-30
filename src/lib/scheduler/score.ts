@@ -389,13 +389,13 @@ export function calculateDeltaScore(
   if (!newAvail) deltaHard += HARD_PENALTY
 
   // HC6 锁定课程移动
+  // HC6 is intentionally not counted in delta scoring because full scoring (calculateScoreWithDetails)
+  // currently does not count HC6. Locked slots are controlled by solver movability / lockedSlotIds,
+  // not by a delta-only hard penalty that would cause scoring mismatch.
+  // See K9-B-SCORING-0 audit for details.
+
+  // orig is still needed for SC MINIMUM_PERTURBATION below
   const orig = state.originalAssignments.get(move.slotId)
-  if (orig) {
-    const wasAtOrig = old.dayOfWeek === orig.dayOfWeek && old.slotIndex === orig.slotIndex && old.roomId === orig.roomId
-    const nowAtOrig = move.newDay === orig.dayOfWeek && move.newSlotIndex === orig.slotIndex && move.newRoomId === orig.roomId
-    if (wasAtOrig && !nowAtOrig) deltaHard += HARD_PENALTY // 离开原位
-    if (!wasAtOrig && nowAtOrig) deltaHard -= HARD_PENALTY // 恢复原位
-  }
 
   // SC2 同天
   const siblings = ctx.slotsByTask.get(task.id)
