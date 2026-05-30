@@ -132,16 +132,80 @@ model SchedulingConfig {
 }
 
 model SchedulingRun {
-  id              Int              @id @default(autoincrement())
-  configId        Int
-  config          SchedulingConfig @relation(fields: [configId], references: [id])
-  status          String
-  hardScore       Int?
-  softScore       Int?
-  iterations      Int?
-  durationMs      Int?
-  resultSnapshot  String?
-  createdAt       DateTime         @default(now())
+  id                    Int              @id @default(autoincrement())
+  configId              Int
+  config                SchedulingConfig @relation(fields: [configId], references: [id])
+  mode                  String           @default("PREVIEW")  // PREVIEW | APPLY | ROLLBACK
+  status                String           @default("PENDING")  // PENDING | PREVIEW | APPLYING | COMPLETED | FAILED | ROLLED_BACK
+  operatorId            Int?
+  operator              User?            @relation(fields: [operatorId], references: [id])
+  operatorNameSnapshot  String?
+
+  startedAt             DateTime?
+  completedAt           DateTime?
+  appliedAt             DateTime?
+  rolledBackAt          DateTime?
+  rollbackOfRunId       Int?
+
+  iterations            Int?
+  durationMs            Int?
+  randomSeed            Int?
+  solverVersion         String?
+
+  hardScore             Int?
+  softScore             Int?
+  hardScoreBefore       Int?
+  softScoreBefore       Int?
+  hardScoreAfter        Int?
+  softScoreAfter        Int?
+  hc1Before             Int?
+  hc2Before             Int?
+  hc3Before             Int?
+  hc4Before             Int?
+  hc1After              Int?
+  hc2After              Int?
+  hc3After              Int?
+  hc4After              Int?
+
+  resultSnapshot        String?
+  conflictSummary       String?
+  databaseFingerprint   String?
+  previewExpiresAt      DateTime?
+  changedSlotCount      Int              @default(0)
+  errorMessage          String?
+
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @default(now()) @updatedAt
+
+  changes               SchedulerRunChange[]
+}
+
+model SchedulerRunChange {
+  id                  Int      @id @default(autoincrement())
+  runId               Int
+  scheduleSlotId      Int
+  teachingTaskId      Int
+
+  oldDayOfWeek        Int
+  oldSlotIndex        Int
+  oldRoomId           Int?
+  newDayOfWeek        Int
+  newSlotIndex        Int
+  newRoomId           Int?
+
+  courseNameSnapshot  String?
+  teacherNameSnapshot String?
+  classGroupsSnapshot String?
+  roomNameOldSnapshot String?
+  roomNameNewSnapshot String?
+
+  createdAt           DateTime @default(now())
+
+  run                 SchedulingRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([runId])
+  @@index([scheduleSlotId])
+  @@index([teachingTaskId])
 }
 
 model RoomAvailability {
@@ -190,8 +254,9 @@ model User {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  userRoles    UserRole[]
-  sessions     Session[]
+  userRoles      UserRole[]
+  sessions       Session[]
+  schedulingRuns SchedulingRun[]
 }
 
 model Role {
