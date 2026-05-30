@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client'
+import { existsSync, statSync } from 'fs'
 
 const prisma = new PrismaClient()
 
@@ -192,6 +193,90 @@ async function main() {
 
   console.log('## Next Step\n')
   console.log('- K9-B-ROOM-CAPACITY-AUTOFIT-EXECUTION')
+  console.log()
+
+  // ── Execute Mode ──
+  const executeMode = process.env.K9_ROOM_CAPACITY_AUTOFIT_EXECUTE === 'YES'
+  const backupPath = process.env.K9_ROOM_CAPACITY_BACKUP_PATH
+
+  if (!executeMode) {
+    await prisma.$disconnect()
+    return
+  }
+
+  console.log('## Execute Mode\n')
+  console.log('- mode: EXECUTE')
+
+  // Validate env vars
+  if (!backupPath) {
+    console.error('ABORT: K9_ROOM_CAPACITY_BACKUP_PATH not set')
+    await prisma.$disconnect()
+    process.exit(1)
+  }
+  if (!existsSync(backupPath)) {
+    console.error(`ABORT: Backup not found: ${backupPath}`)
+    await prisma.$disconnect()
+    process.exit(1)
+  }
+  const backupSize = statSync(backupPath).size
+  if (backupSize === 0) {
+    console.error(`ABORT: Backup is empty: ${backupPath}`)
+    await prisma.$disconnect()
+    process.exit(1)
+  }
+
+  // Assert candidates match expected
+  if (candidates.length !== 12) {
+    console.error(`ABORT: candidates=${candidates.length}, expected=12`)
+    await prisma.$disconnect()
+    process.exit(1)
+  }
+  if (totalIncrease !== 226) {
+    console.error(`ABORT: totalIncrease=${totalIncrease}, expected=226`)
+    await prisma.$disconnect()
+    process.exit(1)
+  }
+
+  console.log(`- backupPath: ${backupPath}`)
+  console.log(`- backupSize: ${backupSize} bytes`)
+  console.log(`- candidates: ${candidates.length}`)
+  console.log(`- totalIncrease: ${totalIncrease}`)
+  console.log()
+
+  // Execute updates in transaction
+  console.log('## Executing Updates')
+  let updatedCount = 0
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      for (const c of candidates) {
+        await tx.room.update({
+          where: { id: c.roomId },
+          data: { capacity: c.proposedCapacity },
+        })
+        updatedCount++
+        console.log(`  updated room ${c.roomId} (${c.roomName}): ${c.currentCapacity} -> ${c.proposedCapacity}`)
+      }
+    })
+    console.log(`\n- transaction: SUCCESS`)
+    console.log(`- updatedCount: ${updatedCount}`)
+  } catch (e) {
+    console.error(`\n- transaction: FAILED`)
+    console.error(e)
+    await prisma.$disconnect()
+    process.exit(1)
+  }
+
+  if (updatedCount !== candidates.length) {
+    console.error(`ABORT: updatedCount ${updatedCount} !== candidates ${candidates.length}`)
+    await prisma.$disconnect()
+    process.exit(1)
+  }
+
+  console.log('\n## Update Complete')
+  console.log('- status: SUCCESS')
+  console.log(`- updated: ${updatedCount} Room.capacity records`)
+  console.log(`- backup: ${backupPath}`)
   console.log()
 
   await prisma.$disconnect()
