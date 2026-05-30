@@ -1,4 +1,4 @@
-import { readFileSync } from 'fs'
+import { readFileSync, existsSync, statSync } from 'fs'
 import { join } from 'path'
 import { PrismaClient } from '@prisma/client'
 import { parseRemarkKeywords, findMergedClassNames, buildEventKey } from '../src/lib/import/importer'
@@ -295,14 +295,7 @@ async function main() {
   }
   console.log()
 
-  // ── 10. Backup Required ──
-  console.log('## Backup Required Before Execution')
-  console.log('- source: prisma/dev.db')
-  console.log('- suggested path: prisma/dev.db.backup-before-k9dq4-cleanup-{YYYYMMDDHHMMSS}')
-  console.log('- restore: Copy-Item "prisma\\dev.db.backup-before-k9dq4-cleanup-{timestamp}" "prisma\\dev.db" -Force')
-  console.log()
-
-  // ── 11. Before/After Stats ──
+  // ── 10. Before/After Stats ──
   const totalTTC = actualTasks.reduce((s, t) => s + t.taskClasses.length, 0)
   console.log('## Before / After Stats')
   console.log(`| Metric | Before | After (expected) |`)
@@ -313,8 +306,139 @@ async function main() {
   console.log(`| affectedTasks | ${affectedTasks.size} | ${affectedTasks.size} (tasks unchanged) |`)
   console.log()
 
-  console.log('## Next Step')
-  console.log('- K9-DQ-4E-DATA-CLEANUP-EXECUTION')
+  // ── 11. Execute Mode ──
+  const executeMode = process.env.K9_DQ4_EXECUTE_CLEANUP === 'YES'
+  const expectedCandidates = process.env.K9_DQ4_EXPECTED_CANDIDATES
+  const expectedTarget = process.env.K9_DQ4_EXPECTED_TARGET_CANDIDATES
+  const backupPath = process.env.K9_DQ4_BACKUP_PATH
+
+  if (!executeMode) {
+    console.log('## Next Step')
+    console.log('- K9-DQ-4E-DATA-CLEANUP-EXECUTION')
+    console.log()
+    await prisma.$disconnect()
+    return
+  }
+
+  // ── Execute mode: validate env vars ──
+  console.log('## Execute Mode')
+  console.log('- mode: EXECUTE')
+  console.log('- executeModeEnabled: true')
+  console.log()
+
+  if (expectedCandidates !== String(EXPECTED_TOTAL)) {
+    console.error(`ABORT: K9_DQ4_EXPECTED_CANDIDATES=${expectedCandidates} does not match expected ${EXPECTED_TOTAL}`)
+    await prisma.$disconnect()
+    process.exit(1)
+  }
+  if (expectedTarget !== String(EXPECTED_TARGET)) {
+    console.error(`ABORT: K9_DQ4_EXPECTED_TARGET_CANDIDATES=${expectedTarget} does not match expected ${EXPECTED_TARGET}`)
+    await prisma.$disconnect()
+    process.exit(1)
+  }
+  if (!backupPath) {
+    console.error('ABORT: K9_DQ4_BACKUP_PATH not set')
+    await prisma.$disconnect()
+    process.exit(1)
+  }
+  if (!existsSync(backupPath)) {
+    console.error(`ABORT: Backup file not found: ${backupPath}`)
+    await prisma.$disconnect()
+    process.exit(1)
+  }
+  const backupSize = statSync(backupPath).size
+  if (backupSize === 0) {
+    console.error(`ABORT: Backup file is empty: ${backupPath}`)
+    await prisma.$disconnect()
+    process.exit(1)
+  }
+
+  console.log(`- backupPath: ${backupPath}`)
+  console.log(`- backupSize: ${backupSize} bytes`)
+  console.log(`- candidates: ${suspiciousLinks.length}`)
+  console.log()
+
+  // ── Execute: delete in transaction ──
+  console.log('## Executing Cleanup')
+  let deletedCount = 0
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      for (const l of suspiciousLinks) {
+        await tx.teachingTaskClass.delete({
+          where: {
+            teachingTaskId_classGroupId: {
+              teachingTaskId: l.teachingTaskId,
+              classGroupId: l.classGroupId,
+            },
+          },
+        })
+        deletedCount++
+      }
+    })
+
+    console.log(`- transaction: SUCCESS`)
+    console.log(`- deletedCount: ${deletedCount}`)
+    console.log()
+
+    if (deletedCount !== suspiciousLinks.length) {
+      console.error(`ABORT: deletedCount ${deletedCount} !== candidates ${suspiciousLinks.length}`)
+      await prisma.$disconnect()
+      process.exit(1)
+    }
+  } catch (e) {
+    console.error(`- transaction: FAILED`)
+    console.error(e)
+    console.log()
+    console.log('## Rollback')
+    console.log('- Prisma transaction auto-rolled back')
+    console.log('- No manual fix needed')
+    console.log(`- Restore: cp "${backupPath}" prisma/dev.db`)
+    await prisma.$disconnect()
+    process.exit(1)
+  }
+
+  // ── Post-cleanup verification ──
+  console.log('## Post-Cleanup Verification')
+  const afterTasks = await prisma.teachingTask.findMany({
+    include: {
+      course: { select: { name: true } },
+      taskClasses: { include: { classGroup: { select: { name: true } } } },
+    },
+  })
+
+  const afterTotalTTC = afterTasks.reduce((s, t) => s + t.taskClasses.length, 0)
+  const afterTargetTasks = afterTasks.filter((t) =>
+    t.taskClasses.some((tc) => tc.classGroup.name === TARGET_CLASS),
+  )
+  const afterTargetLinks = afterTargetTasks.reduce((sum, t) => sum + t.taskClasses.filter((tc) => tc.classGroup.name === TARGET_CLASS).length, 0)
+
+  // 检查 8 门异常课程是否仍关联目标班级
+  const afterAbnormalLinks: string[] = []
+  for (const course of ABNORMAL_COURSES) {
+    const stillLinked = afterTasks.some((t) =>
+      t.course.name === course &&
+      t.taskClasses.some((tc) => tc.classGroup.name === TARGET_CLASS),
+    )
+    if (stillLinked) afterAbnormalLinks.push(course)
+  }
+
+  console.log(`- totalTeachingTaskClassLinks after: ${afterTotalTTC} (before: ${totalTTC})`)
+  console.log(`- targetClassLinks after: ${afterTargetLinks} (before: ${targetLinks})`)
+  console.log(`- abnormalCoursesStillLinked: ${afterAbnormalLinks.length === 0 ? 'NONE' : afterAbnormalLinks.join(', ')}`)
+  console.log()
+
+  if (afterTargetLinks !== targetAfter) {
+    console.error(`WARNING: targetClassLinks after ${afterTargetLinks} !== expected ${targetAfter}`)
+  }
+  if (afterAbnormalLinks.length > 0) {
+    console.error(`WARNING: abnormal courses still linked: ${afterAbnormalLinks.join(', ')}`)
+  }
+
+  console.log('## Cleanup Complete')
+  console.log('- status: SUCCESS')
+  console.log(`- deleted: ${deletedCount} TeachingTaskClass links`)
+  console.log(`- backup: ${backupPath}`)
   console.log()
 
   await prisma.$disconnect()
