@@ -1,6 +1,6 @@
 # ClassGroup Data Quality Report - K9-DQ-1
 
-Generated: 2026-05-30T05:34:55.855Z
+Generated: 2026-05-30T05:51:07.621Z
 
 ## 1. Executive Summary
 

@@ -118,14 +118,61 @@ function parseRemarkKeywords(remark: string | null): string[] {
   return keywords;
 }
 
+const KNOWN_TRACKS = ['高本贯通', '现场工程师'];
+
+function extractYear(name: string): string | null {
+  const m = name.match(/^(\d{4})级/);
+  return m ? m[1] : null;
+}
+
+function extractTrack(name: string): string | null {
+  for (const t of KNOWN_TRACKS) {
+    if (name.includes(t)) return t;
+  }
+  return null;
+}
+
+function hasExplicitYear(text: string): boolean {
+  return /\d{4}级/.test(text);
+}
+
+function hasExplicitTrack(text: string): boolean {
+  for (const t of KNOWN_TRACKS) {
+    if (text.includes(t)) return true;
+  }
+  return false;
+}
+
+function filterCandidatesByYearAndTrack(
+  baseClassName: string,
+  keyword: string,
+  candidates: { id: number; name: string }[],
+): { id: number; name: string }[] {
+  const baseYear = extractYear(baseClassName);
+  const baseTrack = extractTrack(baseClassName);
+  const keywordHasYear = hasExplicitYear(keyword);
+  const keywordHasTrack = hasExplicitTrack(keyword);
+
+  return candidates.filter((c) => {
+    if (!keywordHasYear && baseYear) {
+      const cy = extractYear(c.name);
+      if (cy && cy !== baseYear) return false;
+    }
+    if (!keywordHasTrack && baseTrack) {
+      const ct = extractTrack(c.name);
+      if (ct && ct !== baseTrack) return false;
+    }
+    return true;
+  });
+}
+
 async function findMergedClassIds(
   keywords: string[],
-  excludeName: string
+  baseClassName: string,
 ): Promise<{ id: number; name: string }[]> {
   const results: { id: number; name: string }[] = [];
   const seen = new Set<number>();
 
-  // 先获取所有班级名用于模糊匹配
   const allClasses = await prisma.classGroup.findMany({
     select: { id: true, name: true },
   });
@@ -133,35 +180,48 @@ async function findMergedClassIds(
   for (const kw of keywords) {
     if (kw.length < 2) continue;
 
-    // 第一轮：精确 contains 匹配
-    for (const c of allClasses) {
-      if (c.name === excludeName || seen.has(c.id)) continue;
+    const filtered = filterCandidatesByYearAndTrack(baseClassName, kw, allClasses);
+
+    // 第一轮：精确 contains 匹配（过滤后候选集）
+    const includesMatches: { id: number; name: string }[] = [];
+    for (const c of filtered) {
+      if (c.name === baseClassName || seen.has(c.id)) continue;
       if (c.name.includes(kw)) {
-        seen.add(c.id);
-        results.push(c);
+        includesMatches.push(c);
       }
     }
 
-    // 第二轮：如果 contains 失败，用字符序列匹配
-    // "森防" 应能匹配 "森林草原防火技术1班"
-    if (results.length === 0 && kw.length >= 2) {
-      const chars = [...kw]; // 拆分每个字符
-      for (const c of allClasses) {
-        if (c.name === excludeName || seen.has(c.id)) continue;
+    if (includesMatches.length === 1) {
+      seen.add(includesMatches[0].id);
+      results.push(includesMatches[0]);
+    } else if (includesMatches.length > 1) {
+      console.warn(`AMBIGUOUS_MATCH: keyword "${kw}" matches ${includesMatches.length} classes: ${includesMatches.map(c => c.name).join(', ')}`);
+      continue;
+    }
+
+    // 第二轮：子序列匹配（过滤后候选集）
+    if (includesMatches.length === 0) {
+      const subseqMatches: { id: number; name: string }[] = [];
+      const chars = [...kw];
+      for (const c of filtered) {
+        if (c.name === baseClassName || seen.has(c.id)) continue;
         let pos = 0;
         let matched = true;
         for (const ch of chars) {
           pos = c.name.indexOf(ch, pos);
-          if (pos === -1) {
-            matched = false;
-            break;
-          }
+          if (pos === -1) { matched = false; break; }
           pos++;
         }
         if (matched) {
-          seen.add(c.id);
-          results.push(c);
+          subseqMatches.push(c);
         }
+      }
+
+      if (subseqMatches.length === 1) {
+        seen.add(subseqMatches[0].id);
+        results.push(subseqMatches[0]);
+      } else if (subseqMatches.length > 1) {
+        console.warn(`AMBIGUOUS_SUBSEQ_MATCH: keyword "${kw}" matches ${subseqMatches.length} classes: ${subseqMatches.map(c => c.name).join(', ')}`);
       }
     }
   }

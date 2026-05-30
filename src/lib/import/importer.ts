@@ -140,6 +140,61 @@ export function mapTimeSlotToIndex(timeSlot: string): number {
   return 1
 }
 
+// ── 辅助：年份 / 培养方向提取 ──
+
+const KNOWN_TRACKS = ['高本贯通', '现场工程师']
+
+function extractYear(name: string): string | null {
+  const m = name.match(/^(\d{4})级/)
+  return m ? m[1] : null
+}
+
+function extractTrack(name: string): string | null {
+  for (const t of KNOWN_TRACKS) {
+    if (name.includes(t)) return t
+  }
+  return null
+}
+
+function hasExplicitYear(text: string): boolean {
+  return /\d{4}级/.test(text)
+}
+
+function hasExplicitTrack(text: string): boolean {
+  for (const t of KNOWN_TRACKS) {
+    if (text.includes(t)) return true
+  }
+  return false
+}
+
+// 按年份和培养方向过滤候选班级
+function filterCandidatesByYearAndTrack(
+  baseClassName: string,
+  keyword: string,
+  candidates: { name: string }[],
+): { name: string }[] {
+  const baseYear = extractYear(baseClassName)
+  const baseTrack = extractTrack(baseClassName)
+  const keywordHasYear = hasExplicitYear(keyword)
+  const keywordHasTrack = hasExplicitTrack(keyword)
+
+  return candidates.filter((c) => {
+    // 年份约束：keyword 不显式含年级时，候选班级必须与 baseClass 同年级
+    if (!keywordHasYear && baseYear) {
+      const cy = extractYear(c.name)
+      if (cy && cy !== baseYear) return false
+    }
+
+    // 培养方向约束：keyword 不显式含方向时，候选班级必须与 baseClass 同方向
+    if (!keywordHasTrack && baseTrack) {
+      const ct = extractTrack(c.name)
+      if (ct && ct !== baseTrack) return false
+    }
+
+    return true
+  })
+}
+
 // ── 辅助：合班解析 ──
 
 export function parseRemarkKeywords(remark: string | null): string[] {
@@ -163,24 +218,47 @@ export function parseRemarkKeywords(remark: string | null): string[] {
 
 export async function findMergedClassNames(
   keywords: string[],
-  excludeName: string,
+  baseClassName: string,
   allClasses: { name: string }[],
+  warnings?: string[],
 ): Promise<string[]> {
   const results: string[] = []
   const seen = new Set<string>()
+
   for (const kw of keywords) {
     if (kw.length < 2) continue
-    for (const c of allClasses) {
-      if (c.name === excludeName || seen.has(c.name)) continue
+
+    // 步骤 1：先按年份 / 培养方向过滤候选集
+    const filtered = filterCandidatesByYearAndTrack(baseClassName, kw, allClasses)
+
+    // 步骤 2：在过滤后的候选集上做 includes() 匹配
+    const includesMatches: string[] = []
+    for (const c of filtered) {
+      if (c.name === baseClassName || seen.has(c.name)) continue
       if (c.name.includes(kw)) {
-        seen.add(c.name)
-        results.push(c.name)
+        includesMatches.push(c.name)
       }
     }
-    if (results.length === 0 && kw.length >= 2) {
+
+    if (includesMatches.length === 1) {
+      seen.add(includesMatches[0])
+      results.push(includesMatches[0])
+    } else if (includesMatches.length > 1) {
+      // 歧义保护：多个匹配时拒绝并记录 warning
+      if (warnings) {
+        warnings.push(
+          `AMBIGUOUS_MATCH: keyword "${kw}" matches ${includesMatches.length} classes: ${includesMatches.join(', ')}`,
+        )
+      }
+      continue
+    }
+
+    // 步骤 3：includes 无匹配时，在过滤候选集上做子序列匹配
+    if (includesMatches.length === 0) {
+      const subseqMatches: string[] = []
       const chars = [...kw]
-      for (const c of allClasses) {
-        if (c.name === excludeName || seen.has(c.name)) continue
+      for (const c of filtered) {
+        if (c.name === baseClassName || seen.has(c.name)) continue
         let pos = 0
         let matched = true
         for (const ch of chars) {
@@ -189,12 +267,23 @@ export async function findMergedClassNames(
           pos++
         }
         if (matched) {
-          seen.add(c.name)
-          results.push(c.name)
+          subseqMatches.push(c.name)
+        }
+      }
+
+      if (subseqMatches.length === 1) {
+        seen.add(subseqMatches[0])
+        results.push(subseqMatches[0])
+      } else if (subseqMatches.length > 1) {
+        if (warnings) {
+          warnings.push(
+            `AMBIGUOUS_SUBSEQ_MATCH: keyword "${kw}" matches ${subseqMatches.length} classes: ${subseqMatches.join(', ')}`,
+          )
         }
       }
     }
   }
+
   return results
 }
 
@@ -238,6 +327,7 @@ interface PreparedData {
   slotKeys: string[]
   missingTeacherCount: number
   missingRoomCount: number
+  mergeWarnings: string[]
 }
 
 async function prepareRecords(batchId: number): Promise<PreparedData> {
@@ -271,6 +361,7 @@ async function prepareRecords(batchId: number): Promise<PreparedData> {
 
   // 事件聚合
   const eventKeyToClassNames = new Map<string, Set<string>>()
+  const mergeWarnings: string[] = []
   for (const r of records) {
     const ek = buildEventKey(r)
     let set = eventKeyToClassNames.get(ek)
@@ -280,7 +371,7 @@ async function prepareRecords(batchId: number): Promise<PreparedData> {
       const keywords = parseRemarkKeywords(r.remark)
       if (keywords.length > 0) {
         const allClasses = [...classNames].map((n) => ({ name: n }))
-        const merged = await findMergedClassNames(keywords, r.class_info?.class_name ?? '', allClasses)
+        const merged = await findMergedClassNames(keywords, r.class_info?.class_name ?? '', allClasses, mergeWarnings)
         for (const m of merged) set.add(m)
       }
     }
@@ -323,7 +414,7 @@ async function prepareRecords(batchId: number): Promise<PreparedData> {
     }
   }
 
-  return { records, quality, classification, classNames, teacherNames, courseNames, roomNames, eventKeyToClassNames, taskKeyToClassNames, taskKeyToRecord, taskKeys, slotKeyToRecord, slotKeys, missingTeacherCount, missingRoomCount }
+  return { records, quality, classification, classNames, teacherNames, courseNames, roomNames, eventKeyToClassNames, taskKeyToClassNames, taskKeyToRecord, taskKeys, slotKeyToRecord, slotKeys, missingTeacherCount, missingRoomCount, mergeWarnings }
 }
 
 // ── 事务内真实写入逻辑 ──
@@ -337,7 +428,7 @@ async function executeImportInTransaction(
 ): Promise<ImportExecutionResult> {
   const { records, classification, classNames, teacherNames, courseNames, roomNames, taskKeyToClassNames, taskKeyToRecord, taskKeys, slotKeyToRecord, slotKeys, missingTeacherCount, missingRoomCount } = prepared
 
-  const warnings: string[] = [...classification.warnings]
+  const warnings: string[] = [...classification.warnings, ...prepared.mergeWarnings]
   let classGroupCreated = 0
   let classGroupUpdated = 0
   let classGroupConflict = 0
@@ -537,7 +628,7 @@ export async function confirmImportBatchDryRun(
   strategy: ImportStrategy,
 ): Promise<ImportPlan> {
   const prepared = await prepareRecords(batchId)
-  const { quality, classification, records, classNames, teacherNames, courseNames, roomNames, eventKeyToClassNames, taskKeyToClassNames, taskKeys, slotKeys, missingTeacherCount, missingRoomCount } = prepared
+  const { quality, classification, records, classNames, teacherNames, courseNames, roomNames, eventKeyToClassNames, taskKeyToClassNames, taskKeys, slotKeys, missingTeacherCount, missingRoomCount, mergeWarnings } = prepared
 
   if (!classification.canImport) {
     return {
@@ -549,7 +640,7 @@ export async function confirmImportBatchDryRun(
       plannedTeachingTasks: { createCount: 0, sampleKeys: [], duplicateKeyCount: 0 },
       plannedScheduleSlots: { createCount: 0, missingRoomCount: 0, sampleKeys: [], duplicateKeyCount: 0 },
       eventGroupCount: 0, teachingTaskGroupCount: 0, scheduleSlotGroupCount: 0, mergedClassSamples: [],
-      warnings: classification.warnings, blockingReasons: classification.blockingReasons, canImport: false,
+      warnings: [...classification.warnings, ...mergeWarnings], blockingReasons: classification.blockingReasons, canImport: false,
     }
   }
 
@@ -605,7 +696,7 @@ export async function confirmImportBatchDryRun(
   const missingTeacherExamples = records.filter((r) => !r.teacher).slice(0, 5).map((r) => `${r.class_info?.class_name ?? '?'} - ${r.course ?? '?'}`)
   const missingRoomExamples = records.filter((r) => !r.room).slice(0, 5).map((r) => `${r.class_info?.class_name ?? '?'} - ${r.course ?? '?'}`)
 
-  const planWarnings: string[] = [...classification.warnings]
+  const planWarnings: string[] = [...classification.warnings, ...mergeWarnings]
   if (missingTeacherCount > 0) planWarnings.push(`${missingTeacherCount} 条记录缺教师，将写入 teacherId=null`)
   if (missingRoomCount > 0) planWarnings.push(`${missingRoomCount} 条记录缺教室，将写入 roomId=null`)
   for (const conflict of studentCountConflicts) planWarnings.push(`CLASS_STUDENT_COUNT_CONFLICT: ${conflict.className} 出现多个不同人数: ${conflict.values.join(', ')}`)
