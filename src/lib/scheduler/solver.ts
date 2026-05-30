@@ -4,6 +4,7 @@ import type {
   Move,
   Score,
   SolverConfig,
+  TaskWithRelations,
 } from './types'
 import { isScoreBetter } from './types'
 import { calculateInitialScore, calculateDeltaScore } from './score'
@@ -64,9 +65,104 @@ function randInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min
 }
 
-/** 找出有冲突的 slot ID 集合 */
-function findConflictingSlots(ctx: SchedulingContext, state: ScheduleState): Set<number> {
-  const conflicting = new Set<number>()
+// ── Week overlap helper (same logic as score.ts) ──
+
+function getWeekSet(task: TaskWithRelations): Set<number> {
+  const weeks: number[] = []
+  const { startWeek, endWeek, weekType } = task
+  if (weekType === 'ALL' || weekType === 'FIRST_HALF' || weekType === 'SECOND_HALF' || weekType === 'CUSTOM') {
+    for (let w = startWeek; w <= endWeek; w++) weeks.push(w)
+  } else if (weekType === 'ODD') {
+    for (let w = startWeek; w <= endWeek; w++) { if (w % 2 === 1) weeks.push(w) }
+  } else if (weekType === 'EVEN') {
+    for (let w = startWeek; w <= endWeek; w++) { if (w % 2 === 0) weeks.push(w) }
+  }
+  return new Set(weeks)
+}
+
+const weekSetCache = new Map<number, Set<number>>()
+
+function getCachedWeekSet(task: TaskWithRelations): Set<number> {
+  let cached = weekSetCache.get(task.id)
+  if (!cached) {
+    cached = getWeekSet(task)
+    weekSetCache.set(task.id, cached)
+  }
+  return cached
+}
+
+function hasWeekOverlap(taskA: TaskWithRelations, taskB: TaskWithRelations): boolean {
+  const setA = getCachedWeekSet(taskA)
+  const setB = getCachedWeekSet(taskB)
+  const [smaller, larger] = setA.size <= setB.size ? [setA, setB] : [setB, setA]
+  for (const w of smaller) {
+    if (larger.has(w)) return true
+  }
+  return false
+}
+
+// ── Hard-compatible placement check ──
+
+/**
+ * Check if placing a task at (day, slot, room) would create any hard conflict
+ * with existing placements. Excludes the moving slot itself.
+ */
+function isPlacementHardCompatible(
+  ctx: SchedulingContext,
+  state: ScheduleState,
+  movingSlotId: number,
+  movingTask: TaskWithRelations,
+  proposedDay: number,
+  proposedSlotIndex: number,
+  proposedRoomId: number,
+): boolean {
+  if (proposedRoomId === 0) return false
+
+  const proposedRoom = ctx.roomById.get(proposedRoomId)
+  if (!proposedRoom) return false
+
+  // HC4: capacity check
+  const studentInfo = getTaskStudentCount(movingTask, ctx)
+  if (studentInfo.studentCount > proposedRoom.capacity) return false
+
+  const movingClassGroupIds = new Set(movingTask.taskClasses.map(tc => tc.classGroupId))
+
+  // Exclude only the moving slot itself (not siblings — siblings at the same
+  // position would create a duplicate, which we must detect)
+  for (const [slotId, pos] of state.assignments) {
+    if (slotId === movingSlotId) continue
+    if (pos.dayOfWeek !== proposedDay || pos.slotIndex !== proposedSlotIndex) continue
+    if (pos.roomId === 0) continue
+
+    const otherSlot = ctx.slots.find(s => s.id === slotId)
+    if (!otherSlot) continue
+    const otherTask = otherSlot.teachingTask
+
+    // week overlap check
+    if (!hasWeekOverlap(movingTask, otherTask)) continue
+
+    // HC1: room conflict
+    if (pos.roomId === proposedRoomId) return false
+
+    // HC2: teacher conflict
+    if (movingTask.teacherId != null && movingTask.teacherId === otherTask.teacherId) return false
+
+    // HC3: class conflict
+    for (const tc of otherTask.taskClasses) {
+      if (movingClassGroupIds.has(tc.classGroupId)) return false
+    }
+  }
+
+  return true
+}
+
+// ── Hard conflict participant detection ──
+
+function findHardConflictParticipants(
+  ctx: SchedulingContext,
+  state: ScheduleState,
+): Set<number> {
+  const participants = new Set<number>()
   const slots = ctx.slots
 
   for (let i = 0; i < slots.length; i++) {
@@ -79,6 +175,7 @@ function findConflictingSlots(ctx: SchedulingContext, state: ScheduleState): Set
       const bPos = state.assignments.get(b.id)
       if (!bPos || bPos.roomId === 0) continue
       if (aPos.dayOfWeek !== bPos.dayOfWeek || aPos.slotIndex !== bPos.slotIndex) continue
+      if (!hasWeekOverlap(a.teachingTask, b.teachingTask)) continue
 
       const hasRoomConflict = aPos.roomId === bPos.roomId
       const hasTeacherConflict = a.teachingTask.teacherId != null &&
@@ -92,13 +189,31 @@ function findConflictingSlots(ctx: SchedulingContext, state: ScheduleState): Set
       }
 
       if (hasRoomConflict || hasTeacherConflict || hasClassConflict) {
-        conflicting.add(a.id)
-        conflicting.add(b.id)
+        participants.add(a.id)
+        participants.add(b.id)
       }
     }
   }
 
-  return conflicting
+  return participants
+}
+
+// ── Move types ──
+
+type MoveType = 'ROOM_ONLY' | 'TIME_ONLY' | 'TIME_AND_ROOM'
+
+// ── Solver metrics ──
+
+interface SolverMetrics {
+  attemptedMoves: number
+  acceptedMoves: number
+  rejectedHardWorseMoves: number
+  rejectedIncompatibleMoves: number
+  noCandidateIterations: number
+  roomOnlyMoves: number
+  timeOnlyMoves: number
+  timeAndRoomMoves: number
+  bestHardScoreIteration: number
 }
 
 /** 求解器结果 */
@@ -106,10 +221,11 @@ export interface SolveResult {
   bestScore: Score
   bestState: ScheduleState
   iterations: number
+  metrics?: SolverMetrics
 }
 
 /**
- * LAHC 求解器
+ * LAHC 求解器 — hard-first acceptance with compatibility checks
  */
 export function solve(
   ctx: SchedulingContext,
@@ -122,6 +238,7 @@ export function solve(
   // 追踪 best
   let bestScore: Score = { hardScore: currentScore.hardScore, softScore: currentScore.softScore }
   let bestAssignments = cloneAssignments(state.assignments)
+  let bestIteration = 0
 
   const { maxIterations, lahcWindowSize, lockedSlotIds } = config
 
@@ -158,44 +275,234 @@ export function solve(
 
   let currentTotal = initialTotal
 
-  // 缓存冲突 slot 集合
-  let conflictingCache = findConflictingSlots(ctx, state)
-  let conflictingArray = [...conflictingCache]
+  // Metrics
+  const metrics: SolverMetrics = {
+    attemptedMoves: 0,
+    acceptedMoves: 0,
+    rejectedHardWorseMoves: 0,
+    rejectedIncompatibleMoves: 0,
+    noCandidateIterations: 0,
+    roomOnlyMoves: 0,
+    timeOnlyMoves: 0,
+    timeAndRoomMoves: 0,
+    bestHardScoreIteration: 0,
+  }
+
+  const CANDIDATES_PER_ITERATION = 32
+  const SOURCE_RETRIES = 4
 
   for (let i = 0; i < maxIterations; i++) {
-    if (i % 500 === 0 && i > 0) {
-      conflictingCache = findConflictingSlots(ctx, state)
-      conflictingArray = [...conflictingCache]
+    // Find hard conflict participants for targeted selection
+    const conflictParticipants = findHardConflictParticipants(ctx, state)
+    const hasConflicts = conflictParticipants.size > 0
+
+    // Try multiple source slots if needed
+    let bestCandidate: Move | null = null
+    let bestCandidateHard = -Infinity
+    let bestCandidateSoft = -Infinity
+    let foundCandidate = false
+
+    // Exhaustive search mode: when hard conflicts exist, try all 42 time slots
+    // for each conflict slot with the first eligible room
+    if (hasConflicts) {
+      const conflictArr = [...conflictParticipants]
+      // Shuffle to avoid always trying the same slot first
+      for (let ci = conflictArr.length - 1; ci > 0; ci--) {
+        const cj = randInt(0, ci)
+        const tmp = conflictArr[ci]; conflictArr[ci] = conflictArr[cj]; conflictArr[cj] = tmp
+      }
+
+      for (const slotId of conflictArr) {
+        const slot = ctx.slots.find(s => s.id === slotId)
+        if (!slot) continue
+        const pos = state.assignments.get(slotId)
+        if (!pos) continue
+        const task = slot.teachingTask
+        const rooms = eligibleRoomsByTask.get(task.id) ?? []
+        if (rooms.length === 0) continue
+
+        for (let day = 1; day <= 7 && !foundCandidate; day++) {
+          for (let si = 1; si <= 6 && !foundCandidate; si++) {
+            if (day === pos.dayOfWeek && si === pos.slotIndex) continue
+            // Try the first eligible room
+            const roomId = rooms[0].id
+            if (isPlacementHardCompatible(ctx, state, slotId, task, day, si, roomId)) {
+              const move: Move = { slotId, newDay: day, newSlotIndex: si, newRoomId: roomId }
+              const delta = calculateDeltaScore(ctx, state, move)
+              const newHard = currentScore.hardScore + delta.deltaHard
+              const newSoft = currentScore.softScore + delta.deltaSoft
+              if (newHard > bestCandidateHard || (newHard === bestCandidateHard && newSoft > bestCandidateSoft)) {
+                bestCandidate = move
+                bestCandidateHard = newHard
+                bestCandidateSoft = newSoft
+                foundCandidate = true
+              }
+            }
+          }
+        }
+        // If first room didn't work, try other eligible rooms
+        if (!foundCandidate && rooms.length > 1) {
+          for (let ri = 1; ri < rooms.length && !foundCandidate; ri++) {
+            for (let day = 1; day <= 7 && !foundCandidate; day++) {
+              for (let si = 1; si <= 6 && !foundCandidate; si++) {
+                if (day === pos.dayOfWeek && si === pos.slotIndex) continue
+                if (isPlacementHardCompatible(ctx, state, slotId, task, day, si, rooms[ri].id)) {
+                  const move: Move = { slotId, newDay: day, newSlotIndex: si, newRoomId: rooms[ri].id }
+                  const delta = calculateDeltaScore(ctx, state, move)
+                  const newHard = currentScore.hardScore + delta.deltaHard
+                  const newSoft = currentScore.softScore + delta.deltaSoft
+                  if (newHard > bestCandidateHard || (newHard === bestCandidateHard && newSoft > bestCandidateSoft)) {
+                    bestCandidate = move
+                    bestCandidateHard = newHard
+                    bestCandidateSoft = newSoft
+                    foundCandidate = true
+                  }
+                }
+              }
+            }
+          }
+        }
+        if (foundCandidate) break
+      }
     }
 
-    const pool = conflictingArray.length > 0 ? conflictingArray : allMovable
-    const slotId = pool[randInt(0, pool.length - 1)]
+    // Fallback: random candidate generation (for soft optimization or if exhaustive failed)
+    if (!foundCandidate) {
+      for (let srcTry = 0; srcTry < SOURCE_RETRIES && !foundCandidate; srcTry++) {
+        let sourceSlotId: number
+        if (hasConflicts) {
+          const conflictArr = [...conflictParticipants]
+          sourceSlotId = conflictArr[randInt(0, conflictArr.length - 1)]
+        } else {
+          sourceSlotId = allMovable[randInt(0, allMovable.length - 1)]
+        }
 
-    const newDay = randInt(1, 7)
-    const newSlot = randInt(1, 6)
+        const sourceSlot = ctx.slots.find(s => s.id === sourceSlotId)
+        if (!sourceSlot) continue
+        const sourcePos = state.assignments.get(sourceSlotId)
+        if (!sourcePos) continue
+        const sourceTask = sourceSlot.teachingTask
+        const eligibleRooms = eligibleRoomsByTask.get(sourceTask.id) ?? []
 
-    // 优先从容量足够的教室中选，如果没有则 fallback 到所有教室
-    const slotData = ctx.slots.find((s) => s.id === slotId)
-    const eligibleRooms = slotData ? eligibleRoomsByTask.get(slotData.teachingTaskId) : null
-    const roomPool = eligibleRooms && eligibleRooms.length > 0 ? eligibleRooms.map((r) => r.id) : allRoomIds
-    const newRoom = roomPool[randInt(0, roomPool.length - 1)]
+        if (eligibleRooms.length === 0) continue
 
-    const move: Move = { slotId, newDay, newSlotIndex: newSlot, newRoomId: newRoom }
+        for (let c = 0; c < CANDIDATES_PER_ITERATION; c++) {
+          const moveTypeRoll = Math.random()
+          let moveType: MoveType
+          if (moveTypeRoll < 0.4) moveType = 'ROOM_ONLY'
+          else if (moveTypeRoll < 0.7) moveType = 'TIME_ONLY'
+          else moveType = 'TIME_AND_ROOM'
 
-    const delta = calculateDeltaScore(ctx, state, move)
+          let newDay: number
+          let newSlotIndex: number
+          let newRoomId: number
+
+          if (moveType === 'ROOM_ONLY') {
+            newDay = sourcePos.dayOfWeek
+            newSlotIndex = sourcePos.slotIndex
+            newRoomId = eligibleRooms[randInt(0, eligibleRooms.length - 1)].id
+          } else if (moveType === 'TIME_ONLY') {
+            newDay = randInt(1, 7)
+            newSlotIndex = randInt(1, 6)
+            newRoomId = sourcePos.roomId
+          } else {
+            newDay = randInt(1, 7)
+            newSlotIndex = randInt(1, 6)
+            newRoomId = eligibleRooms[randInt(0, eligibleRooms.length - 1)].id
+          }
+
+          if (newDay === sourcePos.dayOfWeek && newSlotIndex === sourcePos.slotIndex && newRoomId === sourcePos.roomId) {
+            continue
+          }
+
+          if (!isPlacementHardCompatible(ctx, state, sourceSlotId, sourceTask, newDay, newSlotIndex, newRoomId)) {
+            metrics.rejectedIncompatibleMoves++
+            continue
+          }
+
+          const move: Move = { slotId: sourceSlotId, newDay, newSlotIndex, newRoomId }
+          const delta = calculateDeltaScore(ctx, state, move)
+          const newHard = currentScore.hardScore + delta.deltaHard
+          const newSoft = currentScore.softScore + delta.deltaSoft
+
+          if (newHard > bestCandidateHard || (newHard === bestCandidateHard && newSoft > bestCandidateSoft)) {
+            bestCandidate = move
+            bestCandidateHard = newHard
+            bestCandidateSoft = newSoft
+            foundCandidate = true
+          }
+        }
+      }
+    }
+
+    if (!bestCandidate) {
+      metrics.noCandidateIterations++
+      history[historyIndex] = currentTotal
+      historyIndex = (historyIndex + 1) % lahcWindowSize
+      continue
+    }
+
+    metrics.attemptedMoves++
+
+    // Apply the best candidate and compute actual new scores
+    const delta = calculateDeltaScore(ctx, state, bestCandidate)
     const newTotal = currentTotal + delta.deltaHard + delta.deltaSoft
+    const newHard = currentScore.hardScore + delta.deltaHard
+    const newSoft = currentScore.softScore + delta.deltaSoft
 
-    // Late Acceptance 判定（分数为负，越大越好）
-    if (newTotal >= history[historyIndex] || newTotal >= currentTotal) {
-      applyMove(state, move)
+    // Hard-first acceptance: reject if hard score worsens
+    if (newHard < currentScore.hardScore) {
+      metrics.rejectedHardWorseMoves++
+      history[historyIndex] = currentTotal
+      historyIndex = (historyIndex + 1) % lahcWindowSize
+      continue
+    }
+
+    // Hard=0 regression guard: when already feasible, reject any move
+    // that could introduce hard conflicts (delta.hard != 0 may be slightly
+    // inaccurate due to week-overlap nuances, so reject delta.hard >= 0 too
+    // to prevent drift).
+    if (currentScore.hardScore === 0 && delta.deltaHard !== 0) {
+      metrics.rejectedHardWorseMoves++
+      history[historyIndex] = currentTotal
+      historyIndex = (historyIndex + 1) % lahcWindowSize
+      continue
+    }
+
+    // Accept: either hard improves, or hard equal + LAHC/soft acceptance
+    let accept = false
+    if (newHard > currentScore.hardScore) {
+      accept = true
+    } else {
+      // hard equal — use LAHC acceptance
+      if (newTotal >= history[historyIndex] || newTotal >= currentTotal) {
+        accept = true
+      }
+    }
+
+    if (accept) {
+      applyMove(state, bestCandidate)
       currentTotal = newTotal
-      currentScore.hardScore += delta.deltaHard
-      currentScore.softScore += delta.deltaSoft
+      currentScore.hardScore = newHard
+      currentScore.softScore = newSoft
+      metrics.acceptedMoves++
 
-      // 更新 best
+      // Track move type (get source pos from the best candidate's slot)
+      const candSourcePos = state.assignments.get(bestCandidate.slotId)
+      if (candSourcePos) {
+        const isRoomOnly = bestCandidate.newDay === candSourcePos.dayOfWeek && bestCandidate.newSlotIndex === candSourcePos.slotIndex
+        const isTimeOnly = bestCandidate.newRoomId === candSourcePos.roomId
+        if (isRoomOnly) metrics.roomOnlyMoves++
+        else if (isTimeOnly) metrics.timeOnlyMoves++
+        else metrics.timeAndRoomMoves++
+      }
+
+      // Update best
       if (isScoreBetter(currentScore, bestScore)) {
         bestScore = { hardScore: currentScore.hardScore, softScore: currentScore.softScore }
         bestAssignments = cloneAssignments(state.assignments)
+        bestIteration = i + 1
+        metrics.bestHardScoreIteration = i + 1
       }
     }
 
@@ -213,5 +520,5 @@ export function solve(
     originalAssignments: state.originalAssignments,
   }
 
-  return { bestScore, bestState, iterations: maxIterations }
+  return { bestScore, bestState, iterations: maxIterations, metrics }
 }
