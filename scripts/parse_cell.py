@@ -61,6 +61,17 @@ def _remove_from_text(text: str, substr: str) -> str:
     return re.sub(r'\s+', ' ', text).strip()
 
 
+# 课程名开头孤立标点清洗：移除开头的闭合括号或标点残留
+_LEADING_ORPHAN_PUNCT_RE = re.compile(r'^[）\)\]】、，,;；:：\s]+')
+
+
+def sanitize_course_name(name: str) -> str:
+    """清洗课程名：移除开头孤立的闭合括号或标点残留。"""
+    if not name:
+        return name
+    return _LEADING_ORPHAN_PUNCT_RE.sub('', name).strip()
+
+
 def _extract_teacher(text: str) -> tuple:
     """
     从粘连文本中提取末尾的教师名（1-4个汉字）。
@@ -208,6 +219,7 @@ def _parse_single_block(text: str, room: str = None, teacher_regex=None) -> Dict
         course_name = text.strip()
 
     course_name = re.sub(r'\s*或\s*$', '', course_name).strip()
+    course_name = sanitize_course_name(course_name)
 
     # 教师名黑名单兜底
     if teacher in _TEACHER_BLACKLIST:
