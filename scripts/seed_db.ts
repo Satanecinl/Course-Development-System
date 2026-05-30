@@ -84,6 +84,12 @@ function parseBuilding(roomName: string): string | null {
 
 // ========== 合班解析 ==========
 
+function isMeaningfulRemarkKeyword(keyword: string): boolean {
+  const trimmed = keyword.trim();
+  if (trimmed.length === 0) return false;
+  return /[\p{Letter}\p{Number}]/u.test(trimmed);
+}
+
 function parseRemarkKeywords(remark: string | null): string[] {
   if (!remark) return [];
 
@@ -94,7 +100,7 @@ function parseRemarkKeywords(remark: string | null): string[] {
     .replace(/合班$/, "")
     .trim();
 
-  if (!core) return [];
+  if (!core || !isMeaningfulRemarkKeyword(core)) return [];
 
   const keywords: string[] = [core];
 
@@ -106,12 +112,14 @@ function parseRemarkKeywords(remark: string | null): string[] {
 
     // 取末尾 2-4 个汉字 + 数字
     for (let len = 2; len <= Math.min(4, prefix.length); len++) {
-      keywords.push(prefix.slice(-len) + num);
+      const kw = prefix.slice(-len) + num;
+      if (isMeaningfulRemarkKeyword(kw)) keywords.push(kw);
     }
 
     // 取末尾 2 个汉字 + 数字的第 1 位
     if (num.length >= 2 && prefix.length >= 2) {
-      keywords.push(prefix.slice(-2) + num[0]);
+      const kw = prefix.slice(-2) + num[0];
+      if (isMeaningfulRemarkKeyword(kw)) keywords.push(kw);
     }
   }
 
