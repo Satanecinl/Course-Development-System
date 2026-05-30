@@ -45,7 +45,8 @@
     "test:h3c-password-reset": "tsx scripts/test-h3c-password-reset.ts",
     "test:h3d-user-data-read": "tsx scripts/test-h3d-user-data-read.ts",
     "test:h3e-data-export-permission": "tsx scripts/test-h3e-data-export-permission.ts",
-    "audit:api-permissions": "tsx scripts/audit-api-permissions.ts"
+    "audit:api-permissions": "tsx scripts/audit-api-permissions.ts",
+    "diagnose:scheduler-hard-conflicts": "tsx scripts/diagnose-hard-conflicts.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
