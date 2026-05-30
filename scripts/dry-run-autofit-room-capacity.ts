@@ -69,13 +69,15 @@ async function main() {
     if (studentCount > slot.room.capacity) currentHC4++
   }
 
-  // Build update candidates
+  // Build update candidates (110% rule)
   const candidates: Array<{
     roomId: number
     roomName: string
     currentCapacity: number
     maxAssignedStudentCount: number
+    requiredCapacity110: number
     proposedCapacity: number
+    capacityIncrease: number
     taskCount: number
     reason: string
   }> = []
@@ -83,34 +85,49 @@ async function main() {
   for (const [roomId, entry] of roomMaxStudents) {
     const room = roomMap.get(roomId)
     if (!room) continue
-    if (entry.maxStudents > room.capacity) {
+    const requiredCapacity110 = Math.ceil(entry.maxStudents * 1.10)
+    if (requiredCapacity110 > room.capacity) {
+      const proposedCapacity = Math.max(room.capacity, requiredCapacity110)
       candidates.push({
         roomId,
         roomName: room.name,
         currentCapacity: room.capacity,
         maxAssignedStudentCount: entry.maxStudents,
-        proposedCapacity: entry.maxStudents,
+        requiredCapacity110,
+        proposedCapacity,
+        capacityIncrease: proposedCapacity - room.capacity,
         taskCount: entry.tasks.length,
-        reason: `maxAssigned=${entry.maxStudents} > current=${room.capacity}`,
+        reason: `required110=${requiredCapacity110} > current=${room.capacity}`,
       })
     }
   }
 
-  candidates.sort((a, b) => b.maxAssignedStudentCount - a.maxAssignedStudentCount)
+  candidates.sort((a, b) => b.requiredCapacity110 - a.requiredCapacity110)
 
   // Calculate expected HC4 after autofit
-  // After autofit, room.capacity = maxAssignedStudentCount for all candidates
-  // So HC4 should drop to 0 (all capacity conflicts resolved by definition)
-  const expectedHC4After = 0
+  // After autofit, room.capacity = proposedCapacity for all candidates
+  // Recalculate HC4 with proposed capacities
+  const proposedCapacities = new Map<number, number>()
+  for (const c of candidates) {
+    proposedCapacities.set(c.roomId, c.proposedCapacity)
+  }
+  let expectedHC4After = 0
+  for (const slot of slots) {
+    if (!slot.room || !slot.teachingTask) continue
+    const studentCount = slot.teachingTask.taskClasses.reduce((sum, tc) => {
+      return sum + (tc.classGroup.studentCount ?? 50)
+    }, 0)
+    const effectiveCapacity = proposedCapacities.get(slot.room.id) ?? slot.room.capacity
+    if (studentCount > effectiveCapacity) expectedHC4After++
+  }
 
   // Summary stats
   const roomsUsed = roomMaxStudents.size
   const totalIncrease = candidates.reduce((sum, c) => sum + (c.proposedCapacity - c.currentCapacity), 0)
 
-  // Target room: 林校305
-  const linxiao305 = candidates.find((c) => c.roomName.includes('林校305') || c.roomName.includes('林校\n305'))
-  const linxiao305Room = rooms.find((r) => r.name.includes('林校305') || r.name.includes('林校\n305'))
-  const linxiao305Entry = roomMaxStudents.get(linxiao305Room?.id ?? -1)
+  // Target room: 林校305 (all records)
+  const linxiao305Candidates = candidates.filter((c) => c.roomName.includes('林校305') || c.roomName.includes('林校\n305'))
+  const linxiao305Rooms = rooms.filter((r) => r.name.includes('林校305') || r.name.includes('林校\n305'))
 
   console.log('## Summary\n')
   console.log(`- totalRooms: ${rooms.length}`)
@@ -127,26 +144,33 @@ async function main() {
   if (candidates.length === 0) {
     console.log('(no updates needed)')
   } else {
-    console.log('| roomId | roomName | currentCapacity | maxAssigned | proposed | tasks | reason |')
-    console.log('| ---: | --- | ---: | ---: | ---: | ---: | --- |')
+    console.log('| roomId | roomName | current | maxAssigned | required110 | proposed | increase | tasks | reason |')
+    console.log('| ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |')
     for (const c of candidates) {
-      console.log(`| ${c.roomId} | ${c.roomName} | ${c.currentCapacity} | ${c.maxAssignedStudentCount} | ${c.proposedCapacity} | ${c.taskCount} | ${c.reason} |`)
+      console.log(`| ${c.roomId} | ${c.roomName} | ${c.currentCapacity} | ${c.maxAssignedStudentCount} | ${c.requiredCapacity110} | ${c.proposedCapacity} | +${c.capacityIncrease} | ${c.taskCount} | ${c.reason} |`)
     }
   }
   console.log()
 
   // 林校305 专项
   console.log('## Target Room: 林校305\n')
-  if (linxiao305Room) {
-    console.log(`- roomName: ${linxiao305Room.name}`)
-    console.log(`- DB currentCapacity: ${linxiao305Room.capacity}`)
-    console.log(`- maxAssignedStudentCount: ${linxiao305Entry?.maxStudents ?? 'N/A (not used by any slot)'}`)
-    console.log(`- proposedCapacity: ${linxiao305 ? linxiao305.proposedCapacity : linxiao305Room.capacity}`)
-    console.log(`- needsUpdate: ${linxiao305 ? 'YES' : 'NO'}`)
-    if (linxiao305Entry) {
-      console.log(`- top tasks:`)
-      for (const t of linxiao305Entry.tasks.sort((a, b) => b.students - a.students).slice(0, 5)) {
-        console.log(`    - task ${t.taskId}: ${t.course} (${t.students} students)`)
+  if (linxiao305Rooms.length > 0) {
+    for (const room of linxiao305Rooms) {
+      const entry = roomMaxStudents.get(room.id)
+      const candidate = linxiao305Candidates.find((c) => c.roomId === room.id)
+      console.log(`- roomId: ${room.id}`)
+      console.log(`  - roomName: ${room.name}`)
+      console.log(`  - DB currentCapacity: ${room.capacity}`)
+      console.log(`  - maxAssignedStudentCount: ${entry?.maxStudents ?? 'N/A (not used)'}`)
+      console.log(`  - requiredCapacity110: ${candidate?.requiredCapacity110 ?? 'N/A'}`)
+      console.log(`  - proposedCapacity: ${candidate?.proposedCapacity ?? room.capacity}`)
+      console.log(`  - capacityIncrease: ${candidate ? '+' + candidate.capacityIncrease : 0}`)
+      console.log(`  - needsUpdate: ${candidate ? 'YES' : 'NO'}`)
+      if (entry) {
+        console.log(`  - top tasks:`)
+        for (const t of entry.tasks.sort((a, b) => b.students - a.students).slice(0, 5)) {
+          console.log(`      - task ${t.taskId}: ${t.course} (${t.students} students)`)
+        }
       }
     }
   } else {
