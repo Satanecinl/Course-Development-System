@@ -1,0 +1,2429 @@
+{
+  "generatedAt": "2026-05-30T05:34:55.855Z",
+  "phase": "K9-DQ-1",
+  "targetClassGroup": {
+    "id": 22,
+    "name": "2024级钢铁智能冶金技术1班（高本贯通）"
+  },
+  "summary": {
+    "targetTeachingTaskCount": 43,
+    "suspiciousCrossYearTaskCount": 28,
+    "allCrossYearTaskCount": 35,
+    "suspiciousCrossTrackTaskCount": 27,
+    "hc3PossiblyPollutedCount": 46,
+    "hc4PossiblyPollutedCount": 26
+  },
+  "targetClassTasks": [
+    {
+      "teachingTaskId": 11,
+      "courseName": "机械制图",
+      "teacherName": "于耀淇",
+      "classGroupNames": [
+        "2025级智能轧钢技术1班",
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        1,
+        3,
+        18,
+        19,
+        22
+      ],
+      "classGroupYears": [
+        "2025",
+        "2025",
+        "2025",
+        "2025",
+        "2024"
+      ],
+      "requiredStudents": 93,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": true,
+      "containsTargetYear": true,
+      "containsOtherYear": true,
+      "suspicious": true,
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 14,
+      "courseName": "金属材料与热处理",
+      "teacherName": "尹和鑫",
+      "classGroupNames": [
+        "2025级智能轧钢技术1班",
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        1,
+        3,
+        18,
+        19,
+        22
+      ],
+      "classGroupYears": [
+        "2025",
+        "2025",
+        "2025",
+        "2025",
+        "2024"
+      ],
+      "requiredStudents": 93,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": true,
+      "containsTargetYear": true,
+      "containsOtherYear": true,
+      "suspicious": true,
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 22,
+      "courseName": "机械制图",
+      "teacherName": "于耀淇",
+      "classGroupNames": [
+        "2025级智能轧钢技术2班",
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        2,
+        3,
+        18,
+        19,
+        22
+      ],
+      "classGroupYears": [
+        "2025",
+        "2025",
+        "2025",
+        "2025",
+        "2024"
+      ],
+      "requiredStudents": 92,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": true,
+      "containsTargetYear": true,
+      "containsOtherYear": true,
+      "suspicious": true,
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 23,
+      "courseName": "金属材料与热处理",
+      "teacherName": "尹和鑫",
+      "classGroupNames": [
+        "2025级智能轧钢技术2班",
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        2,
+        3,
+        18,
+        19,
+        22
+      ],
+      "classGroupYears": [
+        "2025",
+        "2025",
+        "2025",
+        "2025",
+        "2024"
+      ],
+      "requiredStudents": 92,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": true,
+      "containsTargetYear": true,
+      "containsOtherYear": true,
+      "suspicious": true,
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 28,
+      "courseName": "形势与政策",
+      "teacherName": "胡浩",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级森林草原防火技术1班",
+        "2024级钢铁智能冶金技术1班（高本贯通）",
+        "2024级森林草原防火技术1班"
+      ],
+      "classGroupIds": [
+        3,
+        17,
+        22,
+        35
+      ],
+      "classGroupYears": [
+        "2025",
+        "2025",
+        "2024",
+        "2024"
+      ],
+      "requiredStudents": 128,
+      "remark": "2024级森林草原防火技术1班",
+      "isCrossYear": true,
+      "containsTargetYear": true,
+      "containsOtherYear": true,
+      "suspicious": false,
+      "suspiciousReason": "公共课/思政课跨年级合班，需回看原始数据确认"
+    },
+    {
+      "teachingTaskId": 31,
+      "courseName": "创新创业教育",
+      "teacherName": "徐燕",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级森林草原防火技术1班",
+        "2024级钢铁智能冶金技术1班（高本贯通）",
+        "2024级森林草原防火技术1班"
+      ],
+      "classGroupIds": [
+        3,
+        17,
+        22,
+        35
+      ],
+      "classGroupYears": [
+        "2025",
+        "2025",
+        "2024",
+        "2024"
+      ],
+      "requiredStudents": 128,
+      "remark": "2024级森林草原防火技术1班",
+      "isCrossYear": true,
+      "containsTargetYear": true,
+      "containsOtherYear": true,
+      "suspicious": false,
+      "suspiciousReason": "公共课/思政课跨年级合班，需回看原始数据确认"
+    },
+    {
+      "teachingTaskId": 32,
+      "courseName": "习近平新时代中国特色社会主义思想概论",
+      "teacherName": "房忠敏",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级森林草原防火技术1班",
+        "2024级钢铁智能冶金技术1班（高本贯通）",
+        "2024级森林草原防火技术1班"
+      ],
+      "classGroupIds": [
+        3,
+        17,
+        22,
+        35
+      ],
+      "classGroupYears": [
+        "2025",
+        "2025",
+        "2024",
+        "2024"
+      ],
+      "requiredStudents": 128,
+      "remark": "2024级森林草原防火技术1班",
+      "isCrossYear": true,
+      "containsTargetYear": true,
+      "containsOtherYear": true,
+      "suspicious": false,
+      "suspiciousReason": "公共课/思政课跨年级合班，需回看原始数据确认"
+    },
+    {
+      "teachingTaskId": 34,
+      "courseName": "中华优秀传统文化",
+      "teacherName": "杨秀芳",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级森林草原防火技术1班",
+        "2024级钢铁智能冶金技术1班（高本贯通）",
+        "2024级森林草原防火技术1班"
+      ],
+      "classGroupIds": [
+        3,
+        17,
+        22,
+        35
+      ],
+      "classGroupYears": [
+        "2025",
+        "2025",
+        "2024",
+        "2024"
+      ],
+      "requiredStudents": 128,
+      "remark": "2024级森林草原防火技术1班",
+      "isCrossYear": true,
+      "containsTargetYear": true,
+      "containsOtherYear": true,
+      "suspicious": true,
+      "suspiciousReason": "专业课跨年级合班: 2025+2024级"
+    },
+    {
+      "teachingTaskId": 38,
+      "courseName": "高等数学",
+      "teacherName": "李媛",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        18,
+        19,
+        22
+      ],
+      "classGroupYears": [
+        "2025",
+        "2025",
+        "2025",
+        "2024"
+      ],
+      "requiredStudents": 68,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": true,
+      "containsTargetYear": true,
+      "containsOtherYear": true,
+      "suspicious": true,
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 48,
+      "courseName": "机械制图",
+      "teacherName": "赵春超",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级钢铁智能冶金技术2班",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        4,
+        18,
+        19,
+        22
+      ],
+      "classGroupYears": [
+        "2025",
+        "2025",
+        "2025",
+        "2025",
+        "2024"
+      ],
+      "requiredStudents": 91,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": true,
+      "containsTargetYear": true,
+      "containsOtherYear": true,
+      "suspicious": true,
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 49,
+      "courseName": "金属材料与热处理",
+      "teacherName": "王淼",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级钢铁智能冶金技术2班",
+        "2025级钢铁智能冶金技术3班",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        4,
+        5,
+        18,
+        19,
+        22
+      ],
+      "classGroupYears": [
+        "2025",
+        "2025",
+        "2025",
+        "2025",
+        "2025",
+        "2024"
+      ],
+      "requiredStudents": 117,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": true,
+      "containsTargetYear": true,
+      "containsOtherYear": true,
+      "suspicious": true,
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 54,
+      "courseName": "机械制图",
+      "teacherName": "赵春超",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级钢铁智能冶金技术3班",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        5,
+        18,
+        19,
+        22
+      ],
+      "classGroupYears": [
+        "2025",
+        "2025",
+        "2025",
+        "2025",
+        "2024"
+      ],
+      "requiredStudents": 94,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": true,
+      "containsTargetYear": true,
+      "containsOtherYear": true,
+      "suspicious": true,
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 66,
+      "courseName": "电子技术",
+      "teacherName": "许进",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级机电一体化技术1班",
+        "2025级机电一体化技术2班",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        6,
+        7,
+        18,
+        19,
+        22
+      ],
+      "classGroupYears": [
+        "2025",
+        "2025",
+        "2025",
+        "2025",
+        "2025",
+        "2024"
+      ],
+      "requiredStudents": 134,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": true,
+      "containsTargetYear": true,
+      "containsOtherYear": true,
+      "suspicious": true,
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 67,
+      "courseName": "传感器与检测技术",
+      "teacherName": "张旭",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级机电一体化技术1班",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        6,
+        18,
+        19,
+        22
+      ],
+      "classGroupYears": [
+        "2025",
+        "2025",
+        "2025",
+        "2025",
+        "2024"
+      ],
+      "requiredStudents": 101,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": true,
+      "containsTargetYear": true,
+      "containsOtherYear": true,
+      "suspicious": true,
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 69,
+      "courseName": "机械制图",
+      "teacherName": "张红梅",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级机电一体化技术1班",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        6,
+        18,
+        19,
+        22
+      ],
+      "classGroupYears": [
+        "2025",
+        "2025",
+        "2025",
+        "2025",
+        "2024"
+      ],
+      "requiredStudents": 101,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": true,
+      "containsTargetYear": true,
+      "containsOtherYear": true,
+      "suspicious": true,
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 74,
+      "courseName": "传感器与检测技术",
+      "teacherName": "张旭",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级机电一体化技术2班",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        7,
+        18,
+        19,
+        22
+      ],
+      "classGroupYears": [
+        "2025",
+        "2025",
+        "2025",
+        "2025",
+        "2024"
+      ],
+      "requiredStudents": 101,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": true,
+      "containsTargetYear": true,
+      "containsOtherYear": true,
+      "suspicious": true,
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 76,
+      "courseName": "机械制图",
+      "teacherName": "张红梅",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级机电一体化技术2班",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        7,
+        18,
+        19,
+        22
+      ],
+      "classGroupYears": [
+        "2025",
+        "2025",
+        "2025",
+        "2025",
+        "2024"
+      ],
+      "requiredStudents": 101,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": true,
+      "containsTargetYear": true,
+      "containsOtherYear": true,
+      "suspicious": true,
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 88,
+      "courseName": "）机械制图",
+      "teacherName": "张红梅",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级机电一体化技术3班",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        8,
+        18,
+        19,
+        22
+      ],
+      "classGroupYears": [
+        "2025",
+        "2025",
+        "2025",
+        "2025",
+        "2024"
+      ],
+      "requiredStudents": 103,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": true,
+      "containsTargetYear": true,
+      "containsOtherYear": true,
+      "suspicious": true,
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 89,
+      "courseName": "传感器与检测技术",
+      "teacherName": "张旭",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级机电一体化技术3班",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        8,
+        18,
+        19,
+        22
+      ],
+      "classGroupYears": [
+        "2025",
+        "2025",
+        "2025",
+        "2025",
+        "2024"
+      ],
+      "requiredStudents": 103,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": true,
+      "containsTargetYear": true,
+      "containsOtherYear": true,
+      "suspicious": true,
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 98,
+      "courseName": "） 机械制图",
+      "teacherName": "张红梅",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级机电一体化技术4班",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        9,
+        18,
+        19,
+        22
+      ],
+      "classGroupYears": [
+        "2025",
+        "2025",
+        "2025",
+        "2025",
+        "2024"
+      ],
+      "requiredStudents": 101,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": true,
+      "containsTargetYear": true,
+      "containsOtherYear": true,
+      "suspicious": true,
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 99,
+      "courseName": "传感器与检测技术",
+      "teacherName": "张旭",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级机电一体化技术4班",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        9,
+        18,
+        19,
+        22
+      ],
+      "classGroupYears": [
+        "2025",
+        "2025",
+        "2025",
+        "2025",
+        "2024"
+      ],
+      "requiredStudents": 101,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": true,
+      "containsTargetYear": true,
+      "containsOtherYear": true,
+      "suspicious": true,
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 149,
+      "courseName": "林草环境",
+      "teacherName": "刘闯",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级森林草原资源保护1班",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        15,
+        18,
+        19,
+        22
+      ],
+      "classGroupYears": [
+        "2025",
+        "2025",
+        "2025",
+        "2025",
+        "2024"
+      ],
+      "requiredStudents": 95,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": true,
+      "containsTargetYear": true,
+      "containsOtherYear": true,
+      "suspicious": true,
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 150,
+      "courseName": "无人机应用技术",
+      "teacherName": "董继扬",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级森林草原资源保护1班",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        15,
+        18,
+        19,
+        22
+      ],
+      "classGroupYears": [
+        "2025",
+        "2025",
+        "2025",
+        "2025",
+        "2024"
+      ],
+      "requiredStudents": 95,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": true,
+      "containsTargetYear": true,
+      "containsOtherYear": true,
+      "suspicious": true,
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 157,
+      "courseName": "林草环境",
+      "teacherName": "刘闯",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级森林草原资源保护2班",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        16,
+        18,
+        19,
+        22
+      ],
+      "classGroupYears": [
+        "2025",
+        "2025",
+        "2025",
+        "2025",
+        "2024"
+      ],
+      "requiredStudents": 96,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": true,
+      "containsTargetYear": true,
+      "containsOtherYear": true,
+      "suspicious": true,
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 158,
+      "courseName": "无人机应用技术",
+      "teacherName": "董继扬",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级森林草原资源保护2班",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        16,
+        18,
+        19,
+        22
+      ],
+      "classGroupYears": [
+        "2025",
+        "2025",
+        "2025",
+        "2025",
+        "2024"
+      ],
+      "requiredStudents": 96,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": true,
+      "containsTargetYear": true,
+      "containsOtherYear": true,
+      "suspicious": true,
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 165,
+      "courseName": "习近平新时代中国特色社会主义思想概论",
+      "teacherName": "房忠敏",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级森林草原防火技术1班",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        17,
+        22
+      ],
+      "classGroupYears": [
+        "2025",
+        "2025",
+        "2024"
+      ],
+      "requiredStudents": 91,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": true,
+      "containsTargetYear": true,
+      "containsOtherYear": true,
+      "suspicious": false,
+      "suspiciousReason": "公共课/思政课跨年级合班，需回看原始数据确认"
+    },
+    {
+      "teachingTaskId": 168,
+      "courseName": "机械制图",
+      "teacherName": "赵春超",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        18,
+        19,
+        22
+      ],
+      "classGroupYears": [
+        "2025",
+        "2025",
+        "2025",
+        "2024"
+      ],
+      "requiredStudents": 68,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": true,
+      "containsTargetYear": true,
+      "containsOtherYear": true,
+      "suspicious": true,
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 171,
+      "courseName": "金属材料与热处理",
+      "teacherName": "王淼",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        18,
+        19,
+        22
+      ],
+      "classGroupYears": [
+        "2025",
+        "2025",
+        "2025",
+        "2024"
+      ],
+      "requiredStudents": 68,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": true,
+      "containsTargetYear": true,
+      "containsOtherYear": true,
+      "suspicious": true,
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 174,
+      "courseName": "机械制图",
+      "teacherName": "张红梅",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        18,
+        19,
+        22
+      ],
+      "classGroupYears": [
+        "2025",
+        "2025",
+        "2025",
+        "2024"
+      ],
+      "requiredStudents": 68,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": true,
+      "containsTargetYear": true,
+      "containsOtherYear": true,
+      "suspicious": true,
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 176,
+      "courseName": "电子技术",
+      "teacherName": "许进",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        18,
+        19,
+        22
+      ],
+      "classGroupYears": [
+        "2025",
+        "2025",
+        "2025",
+        "2024"
+      ],
+      "requiredStudents": 68,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": true,
+      "containsTargetYear": true,
+      "containsOtherYear": true,
+      "suspicious": true,
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 179,
+      "courseName": "电机与电气控制技术",
+      "teacherName": "李传鸿",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        18,
+        19,
+        22
+      ],
+      "classGroupYears": [
+        "2025",
+        "2025",
+        "2025",
+        "2024"
+      ],
+      "requiredStudents": 68,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": true,
+      "containsTargetYear": true,
+      "containsOtherYear": true,
+      "suspicious": true,
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 181,
+      "courseName": "传感器与检测技术",
+      "teacherName": "张旭",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        18,
+        19,
+        22
+      ],
+      "classGroupYears": [
+        "2025",
+        "2025",
+        "2025",
+        "2024"
+      ],
+      "requiredStudents": 68,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": true,
+      "containsTargetYear": true,
+      "containsOtherYear": true,
+      "suspicious": true,
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 198,
+      "courseName": "金属材料与热处理",
+      "teacherName": "尹和鑫",
+      "classGroupNames": [
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        22
+      ],
+      "classGroupYears": [
+        "2024"
+      ],
+      "requiredStudents": 30,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": false,
+      "containsTargetYear": true,
+      "containsOtherYear": false,
+      "suspicious": false,
+      "suspiciousReason": ""
+    },
+    {
+      "teachingTaskId": 199,
+      "courseName": "大学英语",
+      "teacherName": "于秀杰",
+      "classGroupNames": [
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        22
+      ],
+      "classGroupYears": [
+        "2024"
+      ],
+      "requiredStudents": 30,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": false,
+      "containsTargetYear": true,
+      "containsOtherYear": false,
+      "suspicious": false,
+      "suspiciousReason": ""
+    },
+    {
+      "teachingTaskId": 200,
+      "courseName": "大学日语",
+      "teacherName": "葛书",
+      "classGroupNames": [
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        22
+      ],
+      "classGroupYears": [
+        "2024"
+      ],
+      "requiredStudents": 30,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": false,
+      "containsTargetYear": true,
+      "containsOtherYear": false,
+      "suspicious": false,
+      "suspiciousReason": ""
+    },
+    {
+      "teachingTaskId": 201,
+      "courseName": "材料科学基础",
+      "teacherName": "于耀淇",
+      "classGroupNames": [
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        22
+      ],
+      "classGroupYears": [
+        "2024"
+      ],
+      "requiredStudents": 30,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": false,
+      "containsTargetYear": true,
+      "containsOtherYear": false,
+      "suspicious": false,
+      "suspiciousReason": ""
+    },
+    {
+      "teachingTaskId": 202,
+      "courseName": "冶金传输原理",
+      "teacherName": "尹和鑫",
+      "classGroupNames": [
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        22
+      ],
+      "classGroupYears": [
+        "2024"
+      ],
+      "requiredStudents": 30,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": false,
+      "containsTargetYear": true,
+      "containsOtherYear": false,
+      "suspicious": false,
+      "suspiciousReason": ""
+    },
+    {
+      "teachingTaskId": 203,
+      "courseName": "美育",
+      "teacherName": "张显慧",
+      "classGroupNames": [
+        "2024级钢铁智能冶金技术1班（高本贯通）",
+        "2024级钢铁智能冶金技术2班",
+        "2024级钢铁智能冶金技术3班"
+      ],
+      "classGroupIds": [
+        22,
+        23,
+        24
+      ],
+      "classGroupYears": [
+        "2024",
+        "2024",
+        "2024"
+      ],
+      "requiredStudents": 78,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": false,
+      "containsTargetYear": true,
+      "containsOtherYear": false,
+      "suspicious": false,
+      "suspiciousReason": ""
+    },
+    {
+      "teachingTaskId": 204,
+      "courseName": "冶金热工基础",
+      "teacherName": "赵春超",
+      "classGroupNames": [
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        22
+      ],
+      "classGroupYears": [
+        "2024"
+      ],
+      "requiredStudents": 30,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": false,
+      "containsTargetYear": true,
+      "containsOtherYear": false,
+      "suspicious": false,
+      "suspiciousReason": ""
+    },
+    {
+      "teachingTaskId": 205,
+      "courseName": "职业素养",
+      "teacherName": "董钇含",
+      "classGroupNames": [
+        "2024级钢铁智能冶金技术1班（高本贯通）",
+        "2024级钢铁智能冶金技术2班",
+        "2024级钢铁智能冶金技术3班"
+      ],
+      "classGroupIds": [
+        22,
+        23,
+        24
+      ],
+      "classGroupYears": [
+        "2024",
+        "2024",
+        "2024"
+      ],
+      "requiredStudents": 78,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": false,
+      "containsTargetYear": true,
+      "containsOtherYear": false,
+      "suspicious": false,
+      "suspiciousReason": ""
+    },
+    {
+      "teachingTaskId": 206,
+      "courseName": "大学生职业发展与就业指导",
+      "teacherName": "董钇含",
+      "classGroupNames": [
+        "2024级钢铁智能冶金技术1班（高本贯通）",
+        "2024级钢铁智能冶金技术2班",
+        "2024级钢铁智能冶金技术3班"
+      ],
+      "classGroupIds": [
+        22,
+        23,
+        24
+      ],
+      "classGroupYears": [
+        "2024",
+        "2024",
+        "2024"
+      ],
+      "requiredStudents": 78,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": false,
+      "containsTargetYear": true,
+      "containsOtherYear": false,
+      "suspicious": false,
+      "suspiciousReason": ""
+    },
+    {
+      "teachingTaskId": 207,
+      "courseName": "机械设计基础",
+      "teacherName": "于耀淇",
+      "classGroupNames": [
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        22
+      ],
+      "classGroupYears": [
+        "2024"
+      ],
+      "requiredStudents": 30,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": false,
+      "containsTargetYear": true,
+      "containsOtherYear": false,
+      "suspicious": false,
+      "suspiciousReason": ""
+    },
+    {
+      "teachingTaskId": 208,
+      "courseName": "金属性能检测",
+      "teacherName": "尹和鑫",
+      "classGroupNames": [
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        22
+      ],
+      "classGroupYears": [
+        "2024"
+      ],
+      "requiredStudents": 30,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "isCrossYear": false,
+      "containsTargetYear": true,
+      "containsOtherYear": false,
+      "suspicious": false,
+      "suspiciousReason": ""
+    }
+  ],
+  "allCrossYearTasks": [
+    {
+      "teachingTaskId": 11,
+      "courseName": "机械制图",
+      "teacherName": "于耀淇",
+      "classGroupNames": [
+        "2025级智能轧钢技术1班",
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        1,
+        3,
+        18,
+        19,
+        22
+      ],
+      "involvedYears": [
+        "2025",
+        "2024"
+      ],
+      "classGroupCount": 5,
+      "requiredStudents": 93,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "weekType": "ODD",
+      "startWeek": 1,
+      "endWeek": 16,
+      "importBatchId": 1,
+      "classification": "SUSPICIOUS_CROSS_TRACK_MERGE",
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 14,
+      "courseName": "金属材料与热处理",
+      "teacherName": "尹和鑫",
+      "classGroupNames": [
+        "2025级智能轧钢技术1班",
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        1,
+        3,
+        18,
+        19,
+        22
+      ],
+      "involvedYears": [
+        "2025",
+        "2024"
+      ],
+      "classGroupCount": 5,
+      "requiredStudents": 93,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "weekType": "EVEN",
+      "startWeek": 1,
+      "endWeek": 16,
+      "importBatchId": 1,
+      "classification": "SUSPICIOUS_CROSS_TRACK_MERGE",
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 22,
+      "courseName": "机械制图",
+      "teacherName": "于耀淇",
+      "classGroupNames": [
+        "2025级智能轧钢技术2班",
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        2,
+        3,
+        18,
+        19,
+        22
+      ],
+      "involvedYears": [
+        "2025",
+        "2024"
+      ],
+      "classGroupCount": 5,
+      "requiredStudents": 92,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "weekType": "EVEN",
+      "startWeek": 1,
+      "endWeek": 16,
+      "importBatchId": 1,
+      "classification": "SUSPICIOUS_CROSS_TRACK_MERGE",
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 23,
+      "courseName": "金属材料与热处理",
+      "teacherName": "尹和鑫",
+      "classGroupNames": [
+        "2025级智能轧钢技术2班",
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        2,
+        3,
+        18,
+        19,
+        22
+      ],
+      "involvedYears": [
+        "2025",
+        "2024"
+      ],
+      "classGroupCount": 5,
+      "requiredStudents": 92,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "weekType": "ODD",
+      "startWeek": 1,
+      "endWeek": 16,
+      "importBatchId": 1,
+      "classification": "SUSPICIOUS_CROSS_TRACK_MERGE",
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 38,
+      "courseName": "高等数学",
+      "teacherName": "李媛",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        18,
+        19,
+        22
+      ],
+      "involvedYears": [
+        "2025",
+        "2024"
+      ],
+      "classGroupCount": 4,
+      "requiredStudents": 68,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "weekType": "EVEN",
+      "startWeek": 1,
+      "endWeek": 16,
+      "importBatchId": 1,
+      "classification": "SUSPICIOUS_CROSS_TRACK_MERGE",
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 48,
+      "courseName": "机械制图",
+      "teacherName": "赵春超",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级钢铁智能冶金技术2班",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        4,
+        18,
+        19,
+        22
+      ],
+      "involvedYears": [
+        "2025",
+        "2024"
+      ],
+      "classGroupCount": 5,
+      "requiredStudents": 91,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "weekType": "EVEN",
+      "startWeek": 1,
+      "endWeek": 16,
+      "importBatchId": 1,
+      "classification": "SUSPICIOUS_CROSS_TRACK_MERGE",
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 49,
+      "courseName": "金属材料与热处理",
+      "teacherName": "王淼",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级钢铁智能冶金技术2班",
+        "2025级钢铁智能冶金技术3班",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        4,
+        5,
+        18,
+        19,
+        22
+      ],
+      "involvedYears": [
+        "2025",
+        "2024"
+      ],
+      "classGroupCount": 6,
+      "requiredStudents": 117,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "weekType": "EVEN",
+      "startWeek": 1,
+      "endWeek": 16,
+      "importBatchId": 1,
+      "classification": "SUSPICIOUS_CROSS_TRACK_MERGE",
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 54,
+      "courseName": "机械制图",
+      "teacherName": "赵春超",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级钢铁智能冶金技术3班",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        5,
+        18,
+        19,
+        22
+      ],
+      "involvedYears": [
+        "2025",
+        "2024"
+      ],
+      "classGroupCount": 5,
+      "requiredStudents": 94,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "weekType": "ODD",
+      "startWeek": 1,
+      "endWeek": 16,
+      "importBatchId": 1,
+      "classification": "SUSPICIOUS_CROSS_TRACK_MERGE",
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 66,
+      "courseName": "电子技术",
+      "teacherName": "许进",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级机电一体化技术1班",
+        "2025级机电一体化技术2班",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        6,
+        7,
+        18,
+        19,
+        22
+      ],
+      "involvedYears": [
+        "2025",
+        "2024"
+      ],
+      "classGroupCount": 6,
+      "requiredStudents": 134,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "weekType": "ODD",
+      "startWeek": 1,
+      "endWeek": 16,
+      "importBatchId": 1,
+      "classification": "SUSPICIOUS_CROSS_TRACK_MERGE",
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 67,
+      "courseName": "传感器与检测技术",
+      "teacherName": "张旭",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级机电一体化技术1班",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        6,
+        18,
+        19,
+        22
+      ],
+      "involvedYears": [
+        "2025",
+        "2024"
+      ],
+      "classGroupCount": 5,
+      "requiredStudents": 101,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "weekType": "ODD",
+      "startWeek": 1,
+      "endWeek": 16,
+      "importBatchId": 1,
+      "classification": "SUSPICIOUS_CROSS_TRACK_MERGE",
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 69,
+      "courseName": "机械制图",
+      "teacherName": "张红梅",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级机电一体化技术1班",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        6,
+        18,
+        19,
+        22
+      ],
+      "involvedYears": [
+        "2025",
+        "2024"
+      ],
+      "classGroupCount": 5,
+      "requiredStudents": 101,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "weekType": "ODD",
+      "startWeek": 1,
+      "endWeek": 16,
+      "importBatchId": 1,
+      "classification": "SUSPICIOUS_CROSS_TRACK_MERGE",
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 74,
+      "courseName": "传感器与检测技术",
+      "teacherName": "张旭",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级机电一体化技术2班",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        7,
+        18,
+        19,
+        22
+      ],
+      "involvedYears": [
+        "2025",
+        "2024"
+      ],
+      "classGroupCount": 5,
+      "requiredStudents": 101,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "weekType": "EVEN",
+      "startWeek": 1,
+      "endWeek": 16,
+      "importBatchId": 1,
+      "classification": "SUSPICIOUS_CROSS_TRACK_MERGE",
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 76,
+      "courseName": "机械制图",
+      "teacherName": "张红梅",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级机电一体化技术2班",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        7,
+        18,
+        19,
+        22
+      ],
+      "involvedYears": [
+        "2025",
+        "2024"
+      ],
+      "classGroupCount": 5,
+      "requiredStudents": 101,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "weekType": "EVEN",
+      "startWeek": 1,
+      "endWeek": 16,
+      "importBatchId": 1,
+      "classification": "SUSPICIOUS_CROSS_TRACK_MERGE",
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 88,
+      "courseName": "）机械制图",
+      "teacherName": "张红梅",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级机电一体化技术3班",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        8,
+        18,
+        19,
+        22
+      ],
+      "involvedYears": [
+        "2025",
+        "2024"
+      ],
+      "classGroupCount": 5,
+      "requiredStudents": 103,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "weekType": "EVEN",
+      "startWeek": 1,
+      "endWeek": 16,
+      "importBatchId": 1,
+      "classification": "SUSPICIOUS_CROSS_TRACK_MERGE",
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 89,
+      "courseName": "传感器与检测技术",
+      "teacherName": "张旭",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级机电一体化技术3班",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        8,
+        18,
+        19,
+        22
+      ],
+      "involvedYears": [
+        "2025",
+        "2024"
+      ],
+      "classGroupCount": 5,
+      "requiredStudents": 103,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "weekType": "ODD",
+      "startWeek": 1,
+      "endWeek": 16,
+      "importBatchId": 1,
+      "classification": "SUSPICIOUS_CROSS_TRACK_MERGE",
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 98,
+      "courseName": "） 机械制图",
+      "teacherName": "张红梅",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级机电一体化技术4班",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        9,
+        18,
+        19,
+        22
+      ],
+      "involvedYears": [
+        "2025",
+        "2024"
+      ],
+      "classGroupCount": 5,
+      "requiredStudents": 101,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "weekType": "ODD",
+      "startWeek": 1,
+      "endWeek": 16,
+      "importBatchId": 1,
+      "classification": "SUSPICIOUS_CROSS_TRACK_MERGE",
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 99,
+      "courseName": "传感器与检测技术",
+      "teacherName": "张旭",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级机电一体化技术4班",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        9,
+        18,
+        19,
+        22
+      ],
+      "involvedYears": [
+        "2025",
+        "2024"
+      ],
+      "classGroupCount": 5,
+      "requiredStudents": 101,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "weekType": "EVEN",
+      "startWeek": 1,
+      "endWeek": 16,
+      "importBatchId": 1,
+      "classification": "SUSPICIOUS_CROSS_TRACK_MERGE",
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 149,
+      "courseName": "林草环境",
+      "teacherName": "刘闯",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级森林草原资源保护1班",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        15,
+        18,
+        19,
+        22
+      ],
+      "involvedYears": [
+        "2025",
+        "2024"
+      ],
+      "classGroupCount": 5,
+      "requiredStudents": 95,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "weekType": "ODD",
+      "startWeek": 1,
+      "endWeek": 16,
+      "importBatchId": 1,
+      "classification": "SUSPICIOUS_CROSS_TRACK_MERGE",
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 150,
+      "courseName": "无人机应用技术",
+      "teacherName": "董继扬",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级森林草原资源保护1班",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        15,
+        18,
+        19,
+        22
+      ],
+      "involvedYears": [
+        "2025",
+        "2024"
+      ],
+      "classGroupCount": 5,
+      "requiredStudents": 95,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "weekType": "ODD",
+      "startWeek": 1,
+      "endWeek": 16,
+      "importBatchId": 1,
+      "classification": "SUSPICIOUS_CROSS_TRACK_MERGE",
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 157,
+      "courseName": "林草环境",
+      "teacherName": "刘闯",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级森林草原资源保护2班",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        16,
+        18,
+        19,
+        22
+      ],
+      "involvedYears": [
+        "2025",
+        "2024"
+      ],
+      "classGroupCount": 5,
+      "requiredStudents": 96,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "weekType": "EVEN",
+      "startWeek": 1,
+      "endWeek": 16,
+      "importBatchId": 1,
+      "classification": "SUSPICIOUS_CROSS_TRACK_MERGE",
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 158,
+      "courseName": "无人机应用技术",
+      "teacherName": "董继扬",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级森林草原资源保护2班",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        16,
+        18,
+        19,
+        22
+      ],
+      "involvedYears": [
+        "2025",
+        "2024"
+      ],
+      "classGroupCount": 5,
+      "requiredStudents": 96,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "weekType": "EVEN",
+      "startWeek": 1,
+      "endWeek": 16,
+      "importBatchId": 1,
+      "classification": "SUSPICIOUS_CROSS_TRACK_MERGE",
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 168,
+      "courseName": "机械制图",
+      "teacherName": "赵春超",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        18,
+        19,
+        22
+      ],
+      "involvedYears": [
+        "2025",
+        "2024"
+      ],
+      "classGroupCount": 4,
+      "requiredStudents": 68,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "weekType": "ODD",
+      "startWeek": 1,
+      "endWeek": 16,
+      "importBatchId": 1,
+      "classification": "SUSPICIOUS_CROSS_TRACK_MERGE",
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 171,
+      "courseName": "金属材料与热处理",
+      "teacherName": "王淼",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        18,
+        19,
+        22
+      ],
+      "involvedYears": [
+        "2025",
+        "2024"
+      ],
+      "classGroupCount": 4,
+      "requiredStudents": 68,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "weekType": "ODD",
+      "startWeek": 1,
+      "endWeek": 16,
+      "importBatchId": 1,
+      "classification": "SUSPICIOUS_CROSS_TRACK_MERGE",
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 174,
+      "courseName": "机械制图",
+      "teacherName": "张红梅",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        18,
+        19,
+        22
+      ],
+      "involvedYears": [
+        "2025",
+        "2024"
+      ],
+      "classGroupCount": 4,
+      "requiredStudents": 68,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "weekType": "ODD",
+      "startWeek": 1,
+      "endWeek": 16,
+      "importBatchId": 1,
+      "classification": "SUSPICIOUS_CROSS_TRACK_MERGE",
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 176,
+      "courseName": "电子技术",
+      "teacherName": "许进",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        18,
+        19,
+        22
+      ],
+      "involvedYears": [
+        "2025",
+        "2024"
+      ],
+      "classGroupCount": 4,
+      "requiredStudents": 68,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "weekType": "ODD",
+      "startWeek": 1,
+      "endWeek": 16,
+      "importBatchId": 1,
+      "classification": "SUSPICIOUS_CROSS_TRACK_MERGE",
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 179,
+      "courseName": "电机与电气控制技术",
+      "teacherName": "李传鸿",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        18,
+        19,
+        22
+      ],
+      "involvedYears": [
+        "2025",
+        "2024"
+      ],
+      "classGroupCount": 4,
+      "requiredStudents": 68,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "weekType": "ODD",
+      "startWeek": 1,
+      "endWeek": 16,
+      "importBatchId": 1,
+      "classification": "SUSPICIOUS_CROSS_TRACK_MERGE",
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 181,
+      "courseName": "传感器与检测技术",
+      "teacherName": "张旭",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级钢铁智能冶金技术（现场工程师）",
+        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        18,
+        19,
+        22
+      ],
+      "involvedYears": [
+        "2025",
+        "2024"
+      ],
+      "classGroupCount": 4,
+      "requiredStudents": 68,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "weekType": "ODD",
+      "startWeek": 1,
+      "endWeek": 16,
+      "importBatchId": 1,
+      "classification": "SUSPICIOUS_CROSS_TRACK_MERGE",
+      "suspiciousReason": "跨培养方向: 高本贯通+现场工程师"
+    },
+    {
+      "teachingTaskId": 34,
+      "courseName": "中华优秀传统文化",
+      "teacherName": "杨秀芳",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级森林草原防火技术1班",
+        "2024级钢铁智能冶金技术1班（高本贯通）",
+        "2024级森林草原防火技术1班"
+      ],
+      "classGroupIds": [
+        3,
+        17,
+        22,
+        35
+      ],
+      "involvedYears": [
+        "2025",
+        "2024"
+      ],
+      "classGroupCount": 4,
+      "requiredStudents": 128,
+      "remark": "2024级森林草原防火技术1班",
+      "weekType": "ALL",
+      "startWeek": 1,
+      "endWeek": 16,
+      "importBatchId": 1,
+      "classification": "SUSPICIOUS_CROSS_YEAR_MERGE",
+      "suspiciousReason": "专业课跨年级合班: 2025+2024级"
+    },
+    {
+      "teachingTaskId": 60,
+      "courseName": "传感器",
+      "teacherName": "张旭",
+      "classGroupNames": [
+        "2025级机电一体化技术1班",
+        "2025级机电一体化技术2班",
+        "2024级机电一体化技术1班"
+      ],
+      "classGroupIds": [
+        6,
+        7,
+        25
+      ],
+      "involvedYears": [
+        "2025",
+        "2024"
+      ],
+      "classGroupCount": 3,
+      "requiredStudents": 103,
+      "remark": "2024级机电一体化技术1班",
+      "weekType": "ALL",
+      "startWeek": 1,
+      "endWeek": 16,
+      "importBatchId": 1,
+      "classification": "SUSPICIOUS_CROSS_YEAR_MERGE",
+      "suspiciousReason": "专业课跨年级合班: 2025+2024级"
+    },
+    {
+      "teachingTaskId": 82,
+      "courseName": "传感器",
+      "teacherName": "张旭",
+      "classGroupNames": [
+        "2025级机电一体化技术3班",
+        "2025级机电一体化技术4班",
+        "2024级机电一体化技术3班"
+      ],
+      "classGroupIds": [
+        8,
+        9,
+        27
+      ],
+      "involvedYears": [
+        "2025",
+        "2024"
+      ],
+      "classGroupCount": 3,
+      "requiredStudents": 102,
+      "remark": "2024级机电一体化技术3班",
+      "weekType": "ALL",
+      "startWeek": 1,
+      "endWeek": 16,
+      "importBatchId": 1,
+      "classification": "SUSPICIOUS_CROSS_YEAR_MERGE",
+      "suspiciousReason": "专业课跨年级合班: 2025+2024级"
+    },
+    {
+      "teachingTaskId": 28,
+      "courseName": "形势与政策",
+      "teacherName": "胡浩",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级森林草原防火技术1班",
+        "2024级钢铁智能冶金技术1班（高本贯通）",
+        "2024级森林草原防火技术1班"
+      ],
+      "classGroupIds": [
+        3,
+        17,
+        22,
+        35
+      ],
+      "involvedYears": [
+        "2025",
+        "2024"
+      ],
+      "classGroupCount": 4,
+      "requiredStudents": 128,
+      "remark": "2024级森林草原防火技术1班",
+      "weekType": "FIRST_HALF",
+      "startWeek": 1,
+      "endWeek": 8,
+      "importBatchId": 1,
+      "classification": "UNKNOWN_NEEDS_SOURCE_CHECK",
+      "suspiciousReason": "公共课/思政课跨年级合班，需回看原始数据确认"
+    },
+    {
+      "teachingTaskId": 31,
+      "courseName": "创新创业教育",
+      "teacherName": "徐燕",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级森林草原防火技术1班",
+        "2024级钢铁智能冶金技术1班（高本贯通）",
+        "2024级森林草原防火技术1班"
+      ],
+      "classGroupIds": [
+        3,
+        17,
+        22,
+        35
+      ],
+      "involvedYears": [
+        "2025",
+        "2024"
+      ],
+      "classGroupCount": 4,
+      "requiredStudents": 128,
+      "remark": "2024级森林草原防火技术1班",
+      "weekType": "FIRST_HALF",
+      "startWeek": 1,
+      "endWeek": 8,
+      "importBatchId": 1,
+      "classification": "UNKNOWN_NEEDS_SOURCE_CHECK",
+      "suspiciousReason": "公共课/思政课跨年级合班，需回看原始数据确认"
+    },
+    {
+      "teachingTaskId": 32,
+      "courseName": "习近平新时代中国特色社会主义思想概论",
+      "teacherName": "房忠敏",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级森林草原防火技术1班",
+        "2024级钢铁智能冶金技术1班（高本贯通）",
+        "2024级森林草原防火技术1班"
+      ],
+      "classGroupIds": [
+        3,
+        17,
+        22,
+        35
+      ],
+      "involvedYears": [
+        "2025",
+        "2024"
+      ],
+      "classGroupCount": 4,
+      "requiredStudents": 128,
+      "remark": "2024级森林草原防火技术1班",
+      "weekType": "ALL",
+      "startWeek": 1,
+      "endWeek": 16,
+      "importBatchId": 1,
+      "classification": "UNKNOWN_NEEDS_SOURCE_CHECK",
+      "suspiciousReason": "公共课/思政课跨年级合班，需回看原始数据确认"
+    },
+    {
+      "teachingTaskId": 37,
+      "courseName": "习近平新时代中国特色社会主义思想概论",
+      "teacherName": "房忠敏",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级森林草原防火技术1班",
+        "2024级森林草原防火技术1班"
+      ],
+      "classGroupIds": [
+        3,
+        17,
+        35
+      ],
+      "involvedYears": [
+        "2025",
+        "2024"
+      ],
+      "classGroupCount": 3,
+      "requiredStudents": 98,
+      "remark": "2024级森林草原防火技术1班",
+      "weekType": "ALL",
+      "startWeek": 1,
+      "endWeek": 16,
+      "importBatchId": 1,
+      "classification": "UNKNOWN_NEEDS_SOURCE_CHECK",
+      "suspiciousReason": "公共课/思政课跨年级合班，需回看原始数据确认"
+    },
+    {
+      "teachingTaskId": 165,
+      "courseName": "习近平新时代中国特色社会主义思想概论",
+      "teacherName": "房忠敏",
+      "classGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级森林草原防火技术1班",
+        "2024级钢铁智能冶金技术1班（高本贯通）"
+      ],
+      "classGroupIds": [
+        3,
+        17,
+        22
+      ],
+      "involvedYears": [
+        "2025",
+        "2024"
+      ],
+      "classGroupCount": 3,
+      "requiredStudents": 91,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "weekType": "FIRST_HALF",
+      "startWeek": 1,
+      "endWeek": 8,
+      "importBatchId": 1,
+      "classification": "UNKNOWN_NEEDS_SOURCE_CHECK",
+      "suspiciousReason": "公共课/思政课跨年级合班，需回看原始数据确认"
+    }
+  ],
+  "matchingLogicAudit": [
+    {
+      "finding": "findMergedClassNames() does NOT filter by grade year",
+      "file": "src/lib/import/importer.ts",
+      "functions": [
+        "parseRemarkKeywords",
+        "findMergedClassNames"
+      ],
+      "risk": "MEDIUM-HIGH",
+      "detail": "When resolving 合班 remarks, character-subsequence matching considers ALL class groups regardless of year. A keyword like \"森防\" matches both \"2024级森林草原防火技术1班\" and \"2025级森林草原防火技术1班\"."
+    },
+    {
+      "finding": "taskKey in prepareRecords omits remark field",
+      "file": "src/lib/import/importer.ts",
+      "functions": [
+        "prepareRecords"
+      ],
+      "risk": "LOW (separate issue)",
+      "detail": "prepareRecords builds taskKey without remark, but dry-run builds it with remark. This could cause different grouping but is a separate issue from cross-year merge."
+    }
+  ],
+  "frontendFilterAudit": [
+    {
+      "finding": "API returns ALL taskClasses per TeachingTask, not just filtered class",
+      "file": "src/app/api/schedule/route.ts",
+      "functions": [
+        "GET handler"
+      ],
+      "risk": "CONFIRMED BUG (display)",
+      "detail": "When filtering by class, the API correctly narrows ScheduleSlots but eagerly loads ALL taskClasses. Line 73 maps all taskClasses into classNames. This means even if DB data is correct, the card shows all 合班 classes."
+    }
+  ],
+  "hcImpactEstimate": {
+    "hc3": {
+      "total": 109,
+      "involvingTargetClass": 49,
+      "involvingSuspiciousCrossYear": 46
+    },
+    "hc4": {
+      "total": 67,
+      "involvingTargetClass": 24,
+      "involvingSuspiciousCrossYear": 26
+    },
+    "remarkCollisions": 78
+  },
+  "rootCauseHypothesis": [
+    "IMPORT_MATCHING: findMergedClassNames() matches across grade years via includes() and character-subsequence matching",
+    "FRONTEND_DISPLAY: API returns all taskClasses regardless of filter, showing unrelated 合班 classes on cards",
+    "DATA: Some cross-year merges may be legitimate (public courses) but others are false positives from keyword matching"
+  ],
+  "recommendedNextPhase": "K9-DQ-2-MATCHING"
+}
