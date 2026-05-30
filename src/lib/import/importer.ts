@@ -197,20 +197,28 @@ function filterCandidatesByYearAndTrack(
 
 // ── 辅助：合班解析 ──
 
+function isMeaningfulRemarkKeyword(keyword: string): boolean {
+  const trimmed = keyword.trim()
+  if (trimmed.length === 0) return false
+  return /[\p{Letter}\p{Number}]/u.test(trimmed)
+}
+
 export function parseRemarkKeywords(remark: string | null): string[] {
   if (!remark) return []
   const core = remark.replace(/^与/, '').replace(/合班$/, '').trim()
-  if (!core) return []
+  if (!core || !isMeaningfulRemarkKeyword(core)) return []
   const keywords: string[] = [core]
   const numMatch = core.match(/([一-龥]+?)(\d+)$/)
   if (numMatch) {
     const prefix = numMatch[1]
     const num = numMatch[2]
     for (let len = 2; len <= Math.min(4, prefix.length); len++) {
-      keywords.push(prefix.slice(-len) + num)
+      const kw = prefix.slice(-len) + num
+      if (isMeaningfulRemarkKeyword(kw)) keywords.push(kw)
     }
     if (num.length >= 2 && prefix.length >= 2) {
-      keywords.push(prefix.slice(-2) + num[0])
+      const kw = prefix.slice(-2) + num[0]
+      if (isMeaningfulRemarkKeyword(kw)) keywords.push(kw)
     }
   }
   return keywords
