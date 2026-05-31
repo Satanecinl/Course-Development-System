@@ -14,8 +14,8 @@ const ROUTE_RULES: RouteRule[] = [
   // Dashboard — schedule management
   { pattern: /^\/dashboard/, permissions: ['schedule:view'] },
 
-  // Admin schedule
-  { pattern: /^\/admin\/schedule/, permissions: ['schedule:view'] },
+  // Admin scheduler (auto-scheduling console + history)
+  { pattern: /^\/admin\/scheduler/, permissions: ['schedule:adjust'] },
 
   // Admin import
   { pattern: /^\/admin\/import/, permissions: ['import:manage'] },
