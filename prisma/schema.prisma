@@ -7,23 +7,47 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Semester {
+  id           Int       @id @default(autoincrement())
+  name         String
+  code         String    @unique
+  academicYear String?
+  term         String?
+  startsAt     DateTime?
+  endsAt       DateTime?
+  isActive     Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  classGroups         ClassGroup[]
+  teachingTasks       TeachingTask[]
+  scheduleSlots       ScheduleSlot[]
+  scheduleAdjustments ScheduleAdjustment[]
+  schedulingRuns      SchedulingRun[]
+  schedulingConfigs   SchedulingConfig[]
+}
+
 model ClassGroup {
-  id           Int                  @id @default(autoincrement())
-  name         String               @unique
+  id           Int                 @id @default(autoincrement())
+  name         String              @unique
   studentCount Int?
   advisorName  String?
   advisorPhone String?
+  semesterId   Int?
+  semester     Semester?           @relation(fields: [semesterId], references: [id])
   taskClasses  TeachingTaskClass[]
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@index([semesterId])
 }
 
 model Teacher {
-  id           Int            @id @default(autoincrement())
-  name         String         @unique
-  tasks        TeachingTask[]
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  id        Int            @id @default(autoincrement())
+  name      String         @unique
+  tasks     TeachingTask[]
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
 }
 
 model Course {
@@ -35,66 +59,78 @@ model Course {
 }
 
 model Room {
-  id              Int                   @id @default(autoincrement())
-  name            String                @unique
-  building        String?
-  capacity        Int                   @default(50)
-  type            String                @default("NORMAL")
-  slots           ScheduleSlot[]
-  adjustments     ScheduleAdjustment[]
-  availabilities  RoomAvailability[]
-  createdAt       DateTime              @default(now())
-  updatedAt       DateTime              @updatedAt
+  id             Int                  @id @default(autoincrement())
+  name           String               @unique
+  building       String?
+  capacity       Int                  @default(50)
+  type           String               @default("NORMAL")
+  slots          ScheduleSlot[]
+  adjustments    ScheduleAdjustment[]
+  availabilities RoomAvailability[]
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
 }
 
 model TeachingTask {
-  id              Int                  @id @default(autoincrement())
-  courseId        Int
-  course          Course               @relation(fields: [courseId], references: [id])
-  teacherId       Int?
-  teacher         Teacher?             @relation(fields: [teacherId], references: [id])
-  weekType        String               @default("ALL")
-  startWeek       Int                  @default(1)
-  endWeek         Int                  @default(16)
-  remark          String?
-  importBatchId   Int?
-  importBatch     ImportBatch?         @relation(fields: [importBatchId], references: [id])
-  scheduleSlots   ScheduleSlot[]
-  taskClasses     TeachingTaskClass[]
-  createdAt       DateTime             @default(now())
-  updatedAt       DateTime             @updatedAt
+  id            Int                 @id @default(autoincrement())
+  courseId      Int
+  course        Course              @relation(fields: [courseId], references: [id])
+  teacherId     Int?
+  teacher       Teacher?            @relation(fields: [teacherId], references: [id])
+  weekType      String              @default("ALL")
+  startWeek     Int                 @default(1)
+  endWeek       Int                 @default(16)
+  remark        String?
+  importBatchId Int?
+  importBatch   ImportBatch?        @relation(fields: [importBatchId], references: [id])
+  semesterId    Int?
+  semester      Semester?           @relation(fields: [semesterId], references: [id])
+  scheduleSlots ScheduleSlot[]
+  taskClasses   TeachingTaskClass[]
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@index([semesterId])
 }
 
 model ScheduleSlot {
   id             Int                  @id @default(autoincrement())
   teachingTaskId Int
   teachingTask   TeachingTask         @relation(fields: [teachingTaskId], references: [id])
-  roomId        Int?
+  roomId         Int?
   room           Room?                @relation(fields: [roomId], references: [id])
   dayOfWeek      Int
   slotIndex      Int
   importBatchId  Int?
   importBatch    ImportBatch?         @relation(fields: [importBatchId], references: [id])
+  semesterId     Int?
+  semester       Semester?            @relation(fields: [semesterId], references: [id])
   adjustments    ScheduleAdjustment[]
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
+
+  @@index([semesterId])
 }
 
 model ScheduleAdjustment {
-  id             Int           @id @default(autoincrement())
+  id             Int          @id @default(autoincrement())
   type           String
   week           Int
   targetWeek     Int?
   originalSlotId Int
-  originalSlot   ScheduleSlot  @relation(fields: [originalSlotId], references: [id], onDelete: Cascade)
+  originalSlot   ScheduleSlot @relation(fields: [originalSlotId], references: [id], onDelete: Cascade)
   newDayOfWeek   Int?
   newSlotIndex   Int?
   newRoomId      Int?
-  newRoom        Room?         @relation(fields: [newRoomId], references: [id])
+  newRoom        Room?        @relation(fields: [newRoomId], references: [id])
+  semesterId     Int?
+  semester       Semester?    @relation(fields: [semesterId], references: [id])
   reason         String?
-  status         String        @default("ACTIVE")
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  status         String       @default("ACTIVE")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([semesterId])
 }
 
 model TeachingTaskClass {
@@ -108,90 +144,97 @@ model TeachingTaskClass {
 }
 
 model ScheduleChangeLog {
-  id          Int      @id @default(autoincrement())
-  taskId      Int
-  oldDay      Int
+  id           Int      @id @default(autoincrement())
+  taskId       Int
+  oldDay       Int
   oldSlotIndex Int
-  oldRoomId   Int?
-  newDay      Int
+  oldRoomId    Int?
+  newDay       Int
   newSlotIndex Int
-  newRoomId   Int?
-  reason      String?
-  createdAt   DateTime @default(now())
+  newRoomId    Int?
+  reason       String?
+  createdAt    DateTime @default(now())
 }
 
 model SchedulingConfig {
-  id              Int              @id @default(autoincrement())
-  name            String
-  semesterId      Int?
-  maxIterations   Int              @default(10000)
-  lahcWindowSize  Int              @default(500)
-  lockedTaskIds   String           @default("[]")
-  createdAt       DateTime         @default(now())
-  runs            SchedulingRun[]
+  id             Int             @id @default(autoincrement())
+  name           String
+  semesterId     Int?
+  semester       Semester?       @relation(fields: [semesterId], references: [id])
+  maxIterations  Int             @default(10000)
+  lahcWindowSize Int             @default(500)
+  lockedTaskIds  String          @default("[]")
+  createdAt      DateTime        @default(now())
+  runs           SchedulingRun[]
+
+  @@index([semesterId])
 }
 
 model SchedulingRun {
-  id                    Int              @id @default(autoincrement())
-  configId              Int
-  config                SchedulingConfig @relation(fields: [configId], references: [id])
-  mode                  String           @default("PREVIEW")  // PREVIEW | APPLY | ROLLBACK
-  status                String           @default("PENDING")  // PENDING | PREVIEW | APPLYING | COMPLETED | FAILED | ROLLED_BACK
-  operatorId            Int?
-  operator              User?            @relation(fields: [operatorId], references: [id])
-  operatorNameSnapshot  String?
+  id                   Int              @id @default(autoincrement())
+  configId             Int
+  config               SchedulingConfig @relation(fields: [configId], references: [id])
+  semesterId           Int?
+  semester             Semester?        @relation(fields: [semesterId], references: [id])
+  mode                 String           @default("PREVIEW") // PREVIEW | APPLY | ROLLBACK
+  status               String           @default("PENDING") // PENDING | PREVIEW | APPLYING | COMPLETED | FAILED | ROLLED_BACK
+  operatorId           Int?
+  operator             User?            @relation(fields: [operatorId], references: [id])
+  operatorNameSnapshot String?
 
-  startedAt             DateTime?
-  completedAt           DateTime?
-  appliedAt             DateTime?
-  rolledBackAt          DateTime?
-  rollbackOfRunId       Int?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  appliedAt       DateTime?
+  rolledBackAt    DateTime?
+  rollbackOfRunId Int?
 
-  iterations            Int?
-  durationMs            Int?
-  randomSeed            Int?
-  solverVersion         String?
+  iterations    Int?
+  durationMs    Int?
+  randomSeed    Int?
+  solverVersion String?
 
-  hardScore             Int?
-  softScore             Int?
-  hardScoreBefore       Int?
-  softScoreBefore       Int?
-  hardScoreAfter        Int?
-  softScoreAfter        Int?
-  hc1Before             Int?
-  hc2Before             Int?
-  hc3Before             Int?
-  hc4Before             Int?
-  hc1After              Int?
-  hc2After              Int?
-  hc3After              Int?
-  hc4After              Int?
+  hardScore       Int?
+  softScore       Int?
+  hardScoreBefore Int?
+  softScoreBefore Int?
+  hardScoreAfter  Int?
+  softScoreAfter  Int?
+  hc1Before       Int?
+  hc2Before       Int?
+  hc3Before       Int?
+  hc4Before       Int?
+  hc1After        Int?
+  hc2After        Int?
+  hc3After        Int?
+  hc4After        Int?
 
-  resultSnapshot        String?
-  conflictSummary       String?
-  databaseFingerprint   String?
-  previewExpiresAt      DateTime?
-  changedSlotCount      Int              @default(0)
-  errorMessage          String?
+  resultSnapshot      String?
+  conflictSummary     String?
+  databaseFingerprint String?
+  previewExpiresAt    DateTime?
+  changedSlotCount    Int       @default(0)
+  errorMessage        String?
 
-  createdAt             DateTime         @default(now())
-  updatedAt             DateTime         @default(now()) @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
-  changes               SchedulerRunChange[]
+  changes SchedulerRunChange[]
+
+  @@index([semesterId])
 }
 
 model SchedulerRunChange {
-  id                  Int      @id @default(autoincrement())
-  runId               Int
-  scheduleSlotId      Int
-  teachingTaskId      Int
+  id             Int @id @default(autoincrement())
+  runId          Int
+  scheduleSlotId Int
+  teachingTaskId Int
 
-  oldDayOfWeek        Int
-  oldSlotIndex        Int
-  oldRoomId           Int?
-  newDayOfWeek        Int
-  newSlotIndex        Int
-  newRoomId           Int?
+  oldDayOfWeek Int
+  oldSlotIndex Int
+  oldRoomId    Int?
+  newDayOfWeek Int
+  newSlotIndex Int
+  newRoomId    Int?
 
   courseNameSnapshot  String?
   teacherNameSnapshot String?
@@ -199,9 +242,9 @@ model SchedulerRunChange {
   roomNameOldSnapshot String?
   roomNameNewSnapshot String?
 
-  createdAt           DateTime @default(now())
+  createdAt DateTime @default(now())
 
-  run                 SchedulingRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  run SchedulingRun @relation(fields: [runId], references: [id], onDelete: Cascade)
 
   @@index([runId])
   @@index([scheduleSlotId])
@@ -221,38 +264,38 @@ model RoomAvailability {
 }
 
 model ImportBatch {
-  id               Int      @id @default(autoincrement())
+  id               Int       @id @default(autoincrement())
   filename         String
   originalFilePath String?
   parsedJsonPath   String?
   statsJson        String?
   qualityJson      String?
   warningsJson     String?
-  status           String   @default("pending")
+  status           String    @default("pending")
   strategy         String?
-  recordCount      Int      @default(0)
+  recordCount      Int       @default(0)
   createdTaskCount Int?
   createdSlotCount Int?
   errorMessage     String?
   confirmedAt      DateTime?
   rolledBackAt     DateTime?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
-  teachingTasks    TeachingTask[]
-  scheduleSlots    ScheduleSlot[]
+  teachingTasks TeachingTask[]
+  scheduleSlots ScheduleSlot[]
 }
 
 // ─── Auth / RBAC Models ─────────────────────────────────────────────
 
 model User {
-  id           Int       @id @default(autoincrement())
-  username     String    @unique
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
   displayName  String
   passwordHash String
-  isActive     Boolean   @default(true)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   userRoles      UserRole[]
   sessions       Session[]
@@ -260,21 +303,21 @@ model User {
 }
 
 model Role {
-  id          Int       @id @default(autoincrement())
-  name        String    @unique
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
   description String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  userRoles        UserRole[]
-  rolePermissions  RolePermission[]
+  userRoles       UserRole[]
+  rolePermissions RolePermission[]
 }
 
 model Permission {
-  id          Int       @id @default(autoincrement())
-  key         String    @unique
+  id          Int      @id @default(autoincrement())
+  key         String   @unique
   description String?
-  createdAt   DateTime  @default(now())
+  createdAt   DateTime @default(now())
 
   rolePermissions RolePermission[]
 }
@@ -304,12 +347,12 @@ model RolePermission {
 }
 
 model Session {
-  id           Int       @id @default(autoincrement())
-  userId       Int
-  tokenHash    String    @unique
-  expiresAt    DateTime
-  revokedAt    DateTime?
-  createdAt    DateTime  @default(now())
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
