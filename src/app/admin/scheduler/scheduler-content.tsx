@@ -18,6 +18,8 @@ import {
   BookOpen,
   Users,
   History,
+  Copy,
+  Check,
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -67,6 +69,7 @@ interface PreviewResponse {
   databaseFingerprint: string
   iterations: number
   durationMs: number
+  randomSeed: number | null
   error?: string
 }
 
@@ -146,6 +149,11 @@ export default function SchedulerContent() {
   const [applyDialogOpen, setApplyDialogOpen] = useState(false)
   const [rollbackDialogOpen, setRollbackDialogOpen] = useState(false)
 
+  // Seed input
+  const [randomSeedInput, setRandomSeedInput] = useState('')
+  const [seedCopied, setSeedCopied] = useState(false)
+  const [seedError, setSeedError] = useState<string | null>(null)
+
   // ── Helpers ──
 
   const isPreviewExpired = useCallback((data: PreviewResponse | null): boolean => {
@@ -172,9 +180,32 @@ export default function SchedulerContent() {
     return true
   }, [applyRunId, rollbackRunId])
 
+  // ── Seed validation ──
+
+  function validateSeed(input: string): { valid: boolean; seed: number | null; error: string | null } {
+    const trimmed = input.trim()
+    if (trimmed === '') return { valid: true, seed: null, error: null }
+    const parsed = Number(trimmed)
+    if (!Number.isInteger(parsed) || Number.isNaN(parsed)) {
+      return { valid: false, seed: null, error: '种子必须是整数' }
+    }
+    if (parsed < 0 || parsed > 2147483647) {
+      return { valid: false, seed: null, error: '种子必须在 0 ~ 2147483647 之间' }
+    }
+    return { valid: true, seed: parsed, error: null }
+  }
+
   // ── Actions ──
 
   const handlePreview = async () => {
+    const seedValidation = validateSeed(randomSeedInput)
+    if (!seedValidation.valid) {
+      setSeedError(seedValidation.error)
+      toast.error(`随机种子错误: ${seedValidation.error}`)
+      return
+    }
+    setSeedError(null)
+
     setState('previewLoading')
     setErrorMsg(null)
     setPreviewData(null)
@@ -183,12 +214,18 @@ export default function SchedulerContent() {
     setApplyData(null)
     setRollbackRunId(null)
     setRollbackData(null)
+    setSeedCopied(false)
 
     try {
+      const body: Record<string, unknown> = {}
+      if (seedValidation.seed != null) {
+        body.randomSeed = seedValidation.seed
+      }
+
       const res = await fetch('/api/admin/scheduler/preview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
+        body: JSON.stringify(body),
       })
 
       const data: PreviewResponse = await res.json()
@@ -318,6 +355,17 @@ export default function SchedulerContent() {
     setRollbackRunId(null)
     setRollbackData(null)
     setShowChanges(false)
+    setRandomSeedInput('')
+    setSeedError(null)
+    setSeedCopied(false)
+  }
+
+  const copySeed = (seed: number) => {
+    navigator.clipboard.writeText(String(seed)).then(() => {
+      setSeedCopied(true)
+      toast.success('已复制随机种子')
+      setTimeout(() => setSeedCopied(false), 2000)
+    })
   }
 
   // ── Render ──
@@ -351,6 +399,37 @@ export default function SchedulerContent() {
               <li>Rollback 可撤销 Apply，但只能撤销未被手动修改的 Apply</li>
               <li>只有 hardScore=0 且 HC1-HC4 全为 0 的 Preview 才能 Apply</li>
             </ul>
+          </div>
+        </div>
+      </div>
+
+      {/* Random Seed Input */}
+      <div className="bg-white rounded-lg border border-gray-200 p-4 mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              随机种子 <span className="text-gray-400 font-normal">（可选）</span>
+            </label>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={randomSeedInput}
+              onChange={(e) => {
+                setRandomSeedInput(e.target.value)
+                setSeedError(null)
+              }}
+              placeholder="留空则自动生成（例如：12345）"
+              className={`w-full sm:w-72 text-sm border rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                seedError ? 'border-red-300 focus:ring-red-500' : 'border-gray-300'
+              }`}
+            />
+            {seedError ? (
+              <p className="text-xs text-red-600 mt-1">{seedError}</p>
+            ) : (
+              <p className="text-xs text-gray-500 mt-1">
+                填写相同 seed 可复现相同输入下的 Preview 结果。留空时后端会自动生成 seed。
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -468,6 +547,26 @@ export default function SchedulerContent() {
                 {previewData.changedSlotCount}
               </span>
             </div>
+
+            {/* Random Seed */}
+            {previewData.randomSeed != null && (
+              <div className="flex items-center gap-2 text-sm">
+                <Hash className="w-4 h-4 text-gray-400" />
+                <span className="text-gray-500">随机种子:</span>
+                <span className="font-mono font-medium text-blue-600">{previewData.randomSeed}</span>
+                <button
+                  onClick={() => copySeed(previewData.randomSeed!)}
+                  className="ml-1 p-1 rounded hover:bg-gray-100 transition-colors"
+                  title="复制种子"
+                >
+                  {seedCopied ? (
+                    <Check className="w-3.5 h-3.5 text-green-600" />
+                  ) : (
+                    <Copy className="w-3.5 h-3.5 text-gray-400" />
+                  )}
+                </button>
+              </div>
+            )}
 
             {/* Expires at */}
             {previewData.previewExpiresAt && (
