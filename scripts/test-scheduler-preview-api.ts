@@ -28,8 +28,10 @@ async function main() {
 
   const beforeRunCount = await prisma.schedulingRun.count()
   const beforeChangeCount = await prisma.schedulerRunChange.count()
+  const beforeConfigCount = await prisma.schedulingConfig.count()
   console.log(`- before SchedulingRun count: ${beforeRunCount}`)
   console.log(`- before SchedulerRunChange count: ${beforeChangeCount}`)
+  console.log(`- before SchedulingConfig count: ${beforeConfigCount}`)
 
   // 2. Run preview service
   console.log('\n--- Running preview service ---')
@@ -75,8 +77,10 @@ async function main() {
 
   const afterRunCount = await prisma.schedulingRun.count()
   const afterChangeCount = await prisma.schedulerRunChange.count()
+  const afterConfigCount = await prisma.schedulingConfig.count()
   console.log(`- after SchedulingRun count: ${afterRunCount}`)
   console.log(`- after SchedulerRunChange count: ${afterChangeCount}`)
+  console.log(`- after SchedulingConfig count: ${afterConfigCount}`)
 
   // 5. Assertions
   let failures = 0
@@ -90,6 +94,7 @@ async function main() {
   console.log('\n--- Assertions ---')
   check('ScheduleSlot fingerprint unchanged', afterFingerprint, beforeFingerprint)
   check('SchedulerRunChange count unchanged', afterChangeCount, beforeChangeCount)
+  check('SchedulingConfig count unchanged', afterConfigCount, beforeConfigCount)
   check('SchedulingRun count increased by 1', afterRunCount, beforeRunCount + 1)
   check('mode = PREVIEW', run.mode, 'PREVIEW')
   check('status = COMPLETED', run.status, 'COMPLETED')

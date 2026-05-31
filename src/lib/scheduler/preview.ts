@@ -141,6 +141,7 @@ export interface PreviewOptions {
   randomSeed?: number | null
   operatorId?: number | null
   operatorName?: string | null
+  configId?: number
 }
 
 const SOLVER_VERSION = 'lahc-hard-first-v3'
@@ -237,22 +238,29 @@ export async function createSchedulerPreview(
     HC4: hcAfter.hc4,
   })
 
-  // 9. Create SchedulingRun record
-  // Find or create a default SchedulingConfig
-  let config = await prisma.schedulingConfig.findFirst()
-  if (!config) {
-    config = await prisma.schedulingConfig.create({
-      data: {
-        name: 'default',
-        maxIterations,
-        lahcWindowSize,
-      },
+  // 9. Resolve SchedulingConfig (read-only — never create)
+  let configId: number
+  if (options.configId != null) {
+    const config = await prisma.schedulingConfig.findUnique({
+      where: { id: options.configId },
     })
+    if (!config) {
+      throw new Error('SCHEDULING_CONFIG_NOT_FOUND')
+    }
+    configId = config.id
+  } else {
+    const config = await prisma.schedulingConfig.findFirst({
+      orderBy: { id: 'asc' },
+    })
+    if (!config) {
+      throw new Error('SCHEDULING_CONFIG_REQUIRED')
+    }
+    configId = config.id
   }
 
   const run = await prisma.schedulingRun.create({
     data: {
-      configId: config.id,
+      configId: configId,
       mode: 'PREVIEW',
       status,
       operatorId: options.operatorId ?? null,
