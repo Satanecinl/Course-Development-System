@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import {
   Sparkles,
   Play,
@@ -20,6 +20,9 @@ import {
   History,
   Copy,
   Check,
+  Lock,
+  Search,
+  X,
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -35,6 +38,21 @@ import {
 } from '@/components/ui/dialog'
 
 // ── Types ──
+
+interface LockableSlot {
+  id: number
+  dayOfWeek: number
+  slotIndex: number
+  roomId: number | null
+  roomName: string
+  roomCapacity: number | null
+  teachingTaskId: number
+  courseName: string | null
+  teacherName: string | null
+  classGroupNames: string[]
+  studentCount: number
+  displayName: string
+}
 
 interface ProposedChange {
   scheduleSlotId: number
@@ -70,6 +88,8 @@ interface PreviewResponse {
   iterations: number
   durationMs: number
   randomSeed: number | null
+  lockedSlotIds: number[]
+  lockedSlotCount: number
   error?: string
 }
 
@@ -154,6 +174,63 @@ export default function SchedulerContent() {
   const [seedCopied, setSeedCopied] = useState(false)
   const [seedError, setSeedError] = useState<string | null>(null)
 
+  // Lockable slots
+  const [lockableSlots, setLockableSlots] = useState<LockableSlot[]>([])
+  const [lockableSlotsLoading, setLockableSlotsLoading] = useState(false)
+  const [selectedSlotIds, setSelectedSlotIds] = useState<Set<number>>(new Set())
+  const [lockSearchQuery, setLockSearchQuery] = useState('')
+  const [showLockSection, setShowLockSection] = useState(true)
+
+  // Load lockable slots on mount
+  useEffect(() => {
+    loadLockableSlots()
+  }, [])
+
+  const loadLockableSlots = async () => {
+    setLockableSlotsLoading(true)
+    try {
+      const res = await fetch('/api/admin/scheduler/lockable-slots')
+      const data = await res.json()
+      if (data.success) {
+        setLockableSlots(data.data.items)
+      } else {
+        console.error('Failed to load lockable slots:', data.error)
+      }
+    } catch (e) {
+      console.error('Failed to load lockable slots:', e)
+    } finally {
+      setLockableSlotsLoading(false)
+    }
+  }
+
+  const filteredLockableSlots = lockableSlots.filter(slot => {
+    if (!lockSearchQuery) return true
+    const query = lockSearchQuery.toLowerCase()
+    return (
+      slot.displayName.toLowerCase().includes(query) ||
+      slot.courseName?.toLowerCase().includes(query) ||
+      slot.teacherName?.toLowerCase().includes(query) ||
+      slot.classGroupNames.some(name => name.toLowerCase().includes(query)) ||
+      slot.roomName.toLowerCase().includes(query)
+    )
+  })
+
+  const toggleSlotSelection = (slotId: number) => {
+    setSelectedSlotIds(prev => {
+      const next = new Set(prev)
+      if (next.has(slotId)) {
+        next.delete(slotId)
+      } else {
+        next.add(slotId)
+      }
+      return next
+    })
+  }
+
+  const clearSlotSelection = () => {
+    setSelectedSlotIds(new Set())
+  }
+
   // ── Helpers ──
 
   const isPreviewExpired = useCallback((data: PreviewResponse | null): boolean => {
@@ -220,6 +297,9 @@ export default function SchedulerContent() {
       const body: Record<string, unknown> = {}
       if (seedValidation.seed != null) {
         body.randomSeed = seedValidation.seed
+      }
+      if (selectedSlotIds.size > 0) {
+        body.lockedSlotIds = Array.from(selectedSlotIds)
       }
 
       const res = await fetch('/api/admin/scheduler/preview', {
@@ -358,6 +438,8 @@ export default function SchedulerContent() {
     setRandomSeedInput('')
     setSeedError(null)
     setSeedCopied(false)
+    setSelectedSlotIds(new Set())
+    setLockSearchQuery('')
   }
 
   const copySeed = (seed: number) => {
@@ -432,6 +514,174 @@ export default function SchedulerContent() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Locked Slots Section */}
+      <div className="bg-white rounded-lg border border-gray-200 mb-4">
+        <button
+          onClick={() => setShowLockSection(!showLockSection)}
+          className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <Lock className="w-5 h-5 text-amber-500" />
+            <div className="text-left">
+              <h3 className="font-medium text-gray-900">锁定课表槽位</h3>
+              <p className="text-xs text-gray-500 mt-0.5">
+                被锁定的槽位不会在本次 Preview 中被 solver 移动。锁定仅对本次 Preview 生效，不会持久化写入数据库。
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {selectedSlotIds.size > 0 && (
+              <Badge variant="default" className="bg-amber-100 text-amber-700 border-amber-200">
+                已选 {selectedSlotIds.size} 个
+              </Badge>
+            )}
+            {showLockSection ? (
+              <ChevronUp className="w-5 h-5 text-gray-400" />
+            ) : (
+              <ChevronDown className="w-5 h-5 text-gray-400" />
+            )}
+          </div>
+        </button>
+
+        {showLockSection && (
+          <div className="px-4 pb-4">
+            {/* Search and Actions */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={lockSearchQuery}
+                  onChange={(e) => setLockSearchQuery(e.target.value)}
+                  placeholder="搜索课程、教师、班级、教室..."
+                  className="w-full pl-10 pr-10 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                {lockSearchQuery && (
+                  <button
+                    onClick={() => setLockSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2"
+                  >
+                    <X className="w-4 h-4 text-gray-400 hover:text-gray-600" />
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearSlotSelection}
+                  disabled={selectedSlotIds.size === 0}
+                >
+                  清空选择
+                </Button>
+                <span className="text-sm text-gray-500">
+                  共 {filteredLockableSlots.length} 个槽位
+                </span>
+              </div>
+            </div>
+
+            {/* Slots List */}
+            {lockableSlotsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+                <span className="ml-2 text-sm text-gray-500">加载中...</span>
+              </div>
+            ) : filteredLockableSlots.length === 0 ? (
+              <div className="text-center py-8 text-sm text-gray-500">
+                {lockSearchQuery ? '没有匹配的课表槽位' : '暂无课表槽位'}
+              </div>
+            ) : (
+              <div className="max-h-[400px] overflow-y-auto border border-gray-200 rounded-md">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 sticky top-0">
+                    <tr>
+                      <th className="w-10 p-2">
+                        <span className="sr-only">选择</span>
+                      </th>
+                      <th className="text-left p-2 font-medium text-gray-600">时间</th>
+                      <th className="text-left p-2 font-medium text-gray-600">课程</th>
+                      <th className="text-left p-2 font-medium text-gray-600">教师</th>
+                      <th className="text-left p-2 font-medium text-gray-600">班级</th>
+                      <th className="text-left p-2 font-medium text-gray-600">教室</th>
+                      <th className="text-right p-2 font-medium text-gray-600">人数</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredLockableSlots.map((slot) => {
+                      const isSelected = selectedSlotIds.has(slot.id)
+                      return (
+                        <tr
+                          key={slot.id}
+                          onClick={() => toggleSlotSelection(slot.id)}
+                          className={`border-t border-gray-100 cursor-pointer transition-colors ${
+                            isSelected ? 'bg-amber-50 hover:bg-amber-100' : 'hover:bg-gray-50'
+                          }`}
+                        >
+                          <td className="p-2 text-center">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => toggleSlotSelection(slot.id)}
+                              className="rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                            />
+                          </td>
+                          <td className="p-2">
+                            <span className="font-medium">
+                              {DAY_NAMES[slot.dayOfWeek]} 第{slot.slotIndex}节
+                            </span>
+                          </td>
+                          <td className="p-2">
+                            <div className="flex items-center gap-1.5">
+                              <BookOpen className="w-3.5 h-3.5 text-gray-400" />
+                              <span className="truncate max-w-[120px]" title={slot.courseName ?? undefined}>
+                                {slot.courseName ?? '-'}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="p-2">
+                            <div className="flex items-center gap-1.5">
+                              <User className="w-3.5 h-3.5 text-gray-400" />
+                              <span>{slot.teacherName ?? '-'}</span>
+                            </div>
+                          </td>
+                          <td className="p-2">
+                            <div className="flex items-center gap-1.5">
+                              <Users className="w-3.5 h-3.5 text-gray-400" />
+                              <span className="truncate max-w-[150px]" title={slot.classGroupNames.join(', ')}>
+                                {slot.classGroupNames.join(', ') || '-'}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="p-2">
+                            <div className="flex items-center gap-1.5">
+                              <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                              <span>{slot.roomName}</span>
+                            </div>
+                          </td>
+                          <td className="p-2 text-right">
+                            <span className="text-gray-600">{slot.studentCount}</span>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Selected Summary */}
+            {selectedSlotIds.size > 0 && (
+              <div className="mt-3 flex items-center gap-2 text-sm text-amber-700">
+                <Lock className="w-4 h-4" />
+                <span>
+                  已选择 <strong>{selectedSlotIds.size}</strong> 个槽位锁定，这些槽位在 Preview 中不会被移动。
+                </span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Action Buttons */}
@@ -547,6 +797,17 @@ export default function SchedulerContent() {
                 {previewData.changedSlotCount}
               </span>
             </div>
+
+            {/* Locked Slots */}
+            {previewData.lockedSlotCount > 0 && (
+              <div className="flex items-center gap-2 text-sm">
+                <Lock className="w-4 h-4 text-gray-400" />
+                <span className="text-gray-500">锁定槽位:</span>
+                <span className="font-medium text-amber-600">
+                  {previewData.lockedSlotCount} 个
+                </span>
+              </div>
+            )}
 
             {/* Random Seed */}
             {previewData.randomSeed != null && (

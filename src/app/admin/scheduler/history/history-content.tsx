@@ -22,6 +22,7 @@ import {
   CheckCircle2,
   RotateCcw,
   ShieldAlert,
+  Lock,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -81,6 +82,8 @@ interface RunDetailData {
     randomSeed: number | null
     solverVersion: string | null
     errorMessage: string | null
+    lockedSlotIds: number[]
+    lockedSlotCount: number
   }
   changes: ChangeDetail[]
 }
@@ -507,7 +510,25 @@ function RunDetailView({ data }: { data: RunDetailData }) {
         <InfoItem icon={<Hash className="w-3.5 h-3.5" />} label="随机种子" value={run.randomSeed != null ? String(run.randomSeed) : '-'} />
         <InfoItem icon={<User className="w-3.5 h-3.5" />} label="操作者" value={run.operatorNameSnapshot || '-'} />
         <InfoItem icon={<Hash className="w-3.5 h-3.5" />} label="变更数量" value={String(run.changedSlotCount)} />
+        <InfoItem icon={<Lock className="w-3.5 h-3.5" />} label="锁定槽位" value={String(run.lockedSlotCount ?? 0)} />
       </div>
+
+      {/* Locked Slot IDs */}
+      {run.lockedSlotIds && run.lockedSlotIds.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+          <div className="flex items-center gap-2 mb-2">
+            <Lock className="w-4 h-4 text-amber-600" />
+            <p className="text-xs font-medium text-amber-700">锁定槽位 ID 列表</p>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {run.lockedSlotIds.map((id) => (
+              <Badge key={id} variant="secondary" className="bg-amber-100 text-amber-700 border-amber-200">
+                #{id}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Score Comparison */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

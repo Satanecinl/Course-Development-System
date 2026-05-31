@@ -45,6 +45,9 @@ export interface PreviewResult {
   iterations: number
   durationMs: number
   randomSeed: number | null
+
+  lockedSlotIds: number[]
+  lockedSlotCount: number
 }
 
 // ── Helpers ──
@@ -139,6 +142,7 @@ export interface PreviewOptions {
   maxIterations?: number
   lahcWindowSize?: number
   randomSeed?: number | null
+  lockedSlotIds?: number[]
   operatorId?: number | null
   operatorName?: string | null
   configId?: number
@@ -154,6 +158,7 @@ export async function createSchedulerPreview(
   const maxIterations = Math.min(options.maxIterations ?? 10000, MAX_ITERATIONS)
   const lahcWindowSize = options.lahcWindowSize ?? 500
   const randomSeed = options.randomSeed ?? Math.floor(Math.random() * 0x7fffffff)
+  const lockedSlotIds = options.lockedSlotIds ?? []
 
   // 1. Load scheduling context
   const ctx = await loadSchedulingContext()
@@ -182,7 +187,12 @@ export async function createSchedulerPreview(
   // 4. Run solver
   const startedAt = new Date()
 
-  const solveResult = solve(ctx, { maxIterations, lahcWindowSize, randomSeed })
+  const solveResult = solve(ctx, {
+    maxIterations,
+    lahcWindowSize,
+    randomSeed,
+    lockedSlotIds: new Set(lockedSlotIds),
+  })
   const completedAt = new Date()
   const durationMs = completedAt.getTime() - startedAt.getTime()
 
@@ -227,6 +237,8 @@ export async function createSchedulerPreview(
     proposedChanges,
     blockReasons,
     solverMetrics: solveResult.metrics ?? null,
+    lockedSlotIds,
+    lockedSlotCount: lockedSlotIds.length,
   })
 
   const conflictSummary = JSON.stringify({
@@ -309,5 +321,7 @@ export async function createSchedulerPreview(
     iterations: solveResult.iterations,
     durationMs,
     randomSeed: usedSeed,
+    lockedSlotIds,
+    lockedSlotCount: lockedSlotIds.length,
   }
 }

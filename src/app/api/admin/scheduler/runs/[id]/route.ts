@@ -38,6 +38,9 @@ interface RunDetail {
   databaseFingerprint: string | null
   operatorNameSnapshot: string | null
   errorMessage: string | null
+
+  lockedSlotIds: number[]
+  lockedSlotCount: number
 }
 
 interface ChangeDetail {
@@ -106,6 +109,19 @@ export async function GET(
       )
     }
 
+    // Parse lockedSlotIds from resultSnapshot
+    let lockedSlotIds: number[] = []
+    let lockedSlotCount = 0
+    if (run.resultSnapshot) {
+      try {
+        const snapshot = JSON.parse(run.resultSnapshot)
+        lockedSlotIds = snapshot.lockedSlotIds ?? []
+        lockedSlotCount = snapshot.lockedSlotCount ?? lockedSlotIds.length
+      } catch {
+        // Ignore parse errors
+      }
+    }
+
     const runDetail: RunDetail = {
       id: run.id,
       mode: run.mode,
@@ -137,6 +153,8 @@ export async function GET(
       databaseFingerprint: run.databaseFingerprint,
       operatorNameSnapshot: run.operatorNameSnapshot,
       errorMessage: run.errorMessage,
+      lockedSlotIds,
+      lockedSlotCount,
     }
 
     const changes: ChangeDetail[] = run.changes.map((c) => ({

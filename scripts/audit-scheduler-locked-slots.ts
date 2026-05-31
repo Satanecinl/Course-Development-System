@@ -148,42 +148,42 @@ check(
 console.log('\n─── 3. Preview API 审计 ───\n')
 
 check(
-  'PreviewRequest 无 lockedSlotIds 字段',
-  !fileContains('src/app/api/admin/scheduler/preview/route.ts', 'lockedSlotIds'),
-  'Preview API 当前不接收 lockedSlotIds'
+  'PreviewRequest 有 lockedSlotIds 字段',
+  fileContains('src/app/api/admin/scheduler/preview/route.ts', 'lockedSlotIds?: number[]'),
+  'Preview API 应接收 lockedSlotIds'
 )
 
 check(
-  'PreviewOptions 无 lockedSlotIds 字段',
-  !fileContains('src/lib/scheduler/preview.ts', 'lockedSlotIds'),
-  'createSchedulerPreview 当前不接收 lockedSlotIds'
+  'PreviewOptions 有 lockedSlotIds 字段',
+  fileContains('src/lib/scheduler/preview.ts', 'lockedSlotIds?: number[]'),
+  'createSchedulerPreview 应接收 lockedSlotIds'
 )
 
 check(
-  'preview.ts 调用 solve 未传递 lockedSlotIds',
-  fileContains('src/lib/scheduler/preview.ts', 'const solveResult = solve(ctx, { maxIterations, lahcWindowSize, randomSeed })'),
-  'preview.ts 调用 solve 时未传递 lockedSlotIds'
+  'preview.ts 调用 solve 传递 lockedSlotIds',
+  fileContains('src/lib/scheduler/preview.ts', 'lockedSlotIds: new Set(lockedSlotIds)'),
+  'preview.ts 调用 solve 时应传递 lockedSlotIds'
 )
 
 // 4. 前端审计
 console.log('\n─── 4. 前端审计 ───\n')
 
 check(
-  'scheduler-content.tsx 无 lockedSlotIds',
-  !fileContains('src/app/admin/scheduler/scheduler-content.tsx', 'lockedSlotIds'),
-  '前端当前不处理 lockedSlotIds'
+  'scheduler-content.tsx 有 lockedSlotIds',
+  fileContains('src/app/admin/scheduler/scheduler-content.tsx', 'lockedSlotIds'),
+  '前端应处理 lockedSlotIds'
 )
 
 check(
-  'scheduler-content.tsx 无锁定选择 UI',
-  !fileContains('src/app/admin/scheduler/scheduler-content.tsx', '锁定'),
-  '前端当前无锁定 UI'
+  'scheduler-content.tsx 有锁定选择 UI',
+  fileContains('src/app/admin/scheduler/scheduler-content.tsx', '锁定课表槽位'),
+  '前端应有锁定 UI'
 )
 
 check(
-  'history-content.tsx 无 lockedSlotIds',
-  !fileContains('src/app/admin/scheduler/history/history-content.tsx', 'lockedSlotIds'),
-  '历史页当前不显示 lockedSlotIds'
+  'history-content.tsx 有 lockedSlotIds',
+  fileContains('src/app/admin/scheduler/history/history-content.tsx', 'lockedSlotIds'),
+  '历史页应显示 lockedSlotIds'
 )
 
 // 5. Apply / Rollback 审计
