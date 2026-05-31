@@ -14,6 +14,7 @@ import {
   Users,
   Settings,
   Activity,
+  Sparkles,
   type LucideIcon,
 } from 'lucide-react'
 import type { NavItem } from '@/lib/auth/navigation'
@@ -27,6 +28,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   'users': Users,
   'settings': Settings,
   'activity': Activity,
+  'sparkles': Sparkles,
 }
 
 interface AppSidebarProps {

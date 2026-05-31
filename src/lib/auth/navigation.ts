@@ -29,6 +29,12 @@ export const NAV_ITEMS: NavItem[] = [
     icon: 'database',
   },
   {
+    label: '自动排课',
+    href: '/admin/scheduler',
+    permission: 'schedule:adjust',
+    icon: 'sparkles',
+  },
+  {
     label: '导入管理',
     href: '/admin/import',
     permission: 'import:manage',
