@@ -17,7 +17,9 @@ import {
   User,
   BookOpen,
   Users,
+  History,
 } from 'lucide-react'
+import Link from 'next/link'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -323,10 +325,18 @@ export default function SchedulerContent() {
   return (
     <div className="p-6 max-w-6xl mx-auto">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <Sparkles className="w-6 h-6 text-amber-500" />
-        <h2 className="text-xl font-bold text-gray-900">自动排课</h2>
-        <Badge variant="secondary">管理员</Badge>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <Sparkles className="w-6 h-6 text-amber-500" />
+          <h2 className="text-xl font-bold text-gray-900">自动排课</h2>
+          <Badge variant="secondary">管理员</Badge>
+        </div>
+        <Link href="/admin/scheduler/history">
+          <Button variant="outline" size="sm">
+            <History className="w-4 h-4 mr-1.5" />
+            运行历史
+          </Button>
+        </Link>
       </div>
 
       {/* Description */}
