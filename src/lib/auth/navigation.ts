@@ -35,6 +35,12 @@ export const NAV_ITEMS: NavItem[] = [
     icon: 'sparkles',
   },
   {
+    label: '教室容量',
+    href: '/admin/rooms/capacity',
+    permission: 'schedule:adjust',
+    icon: 'door-open',
+  },
+  {
     label: '导入管理',
     href: '/admin/import',
     permission: 'import:manage',

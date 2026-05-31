@@ -17,6 +17,9 @@ const ROUTE_RULES: RouteRule[] = [
   // Admin scheduler (auto-scheduling console + history)
   { pattern: /^\/admin\/scheduler/, permissions: ['schedule:adjust'] },
 
+  // Admin rooms capacity
+  { pattern: /^\/admin\/rooms/, permissions: ['schedule:adjust'] },
+
   // Admin import
   { pattern: /^\/admin\/import/, permissions: ['import:manage'] },
 
