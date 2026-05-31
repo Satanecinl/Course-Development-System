@@ -140,7 +140,7 @@ async function main() {
   console.log(`- capacity50RoomsUnused: ${unused.length}`)
   console.log(`- needsNormalizeUp: ${needsUp.length}`)
   console.log(`- needsNormalizeDown: ${needsDown.length}`)
-  console.log(`- alreadyMatches110Rule: ${alreadyMatch.length}`)
+  console.log(`- alreadyMatches110Rule: ${alreadyMatching.length}`)
   console.log(`- cannotCalculateBlocked: 0`)
   console.log(`- proposedUpdateCount: ${proposedUpdates.length}`)
   console.log(`- expectedHC4AfterNormalize: ${expectedHC4}`)
