@@ -27,7 +27,7 @@ async function main() {
           taskClasses: { include: { classGroup: { select: { id: true, studentCount: true } } } },
         },
       },
-      room: { select: { id: true } },
+      room: { select: { id: true, capacity: true } },
     },
   })
 
@@ -117,8 +117,6 @@ async function main() {
   // Summary stats
   const needsUp = candidates.filter((c) => c.category === 'NEEDS_NORMALIZE_UP')
   const needsDown = candidates.filter((c) => c.category === 'NEEDS_NORMALIZE_DOWN')
-  const alreadyMatch = candidates.filter((c) => c.category === 'ALREADY_MATCHES_110_RULE')
-  const unusedRooms = candidates.filter((c) => c.category === 'UNUSED_KEEP_DEFAULT')
   const proposedUpdates = [...needsUp, ...needsDown]
 
   // Expected HC4 after normalize
@@ -164,12 +162,12 @@ async function main() {
 
   // Already matching
   console.log('## Capacity 50 Rooms Already Matching Rule\n')
-  if (alreadyMatch.length === 0) {
+  if (alreadyMatching.length === 0) {
     console.log('(none)')
   } else {
     console.log('| roomId | roomName | maxAssigned | normalized110 |')
     console.log('| ---: | --- | ---: | ---: |')
-    for (const c of alreadyMatch) {
+    for (const c of alreadyMatching) {
       console.log(`| ${c.roomId} | ${c.roomName} | ${c.maxAssigned} | ${c.normalized} |`)
     }
   }

@@ -155,7 +155,7 @@ export default function SchedulerContent() {
     if (!previewData || previewRunId == null) return false
     if (previewData.status !== 'COMPLETED') return false
     if (previewData.blocked) return false
-    if (previewData.hardScoreAfter !== 0) return false
+    if (previewData.scoreAfter.hardScore !== 0) return false
     if (previewData.hcAfter.hc1 !== 0 || previewData.hcAfter.hc2 !== 0 ||
         previewData.hcAfter.hc3 !== 0 || previewData.hcAfter.hc4 !== 0) return false
     if (isPreviewExpired(previewData)) return false
@@ -495,16 +495,16 @@ export default function SchedulerContent() {
                   </div>
                 </div>
                 <div className="flex gap-2 mt-2">
-                  <Badge variant={previewData.hcBefore.hc1 > 0 ? 'destructive' : 'secondary'} size="xs">
+                  <Badge variant={previewData.hcBefore.hc1 > 0 ? 'destructive' : 'secondary'} >
                     HC1: {previewData.hcBefore.hc1}
                   </Badge>
-                  <Badge variant={previewData.hcBefore.hc2 > 0 ? 'destructive' : 'secondary'} size="xs">
+                  <Badge variant={previewData.hcBefore.hc2 > 0 ? 'destructive' : 'secondary'} >
                     HC2: {previewData.hcBefore.hc2}
                   </Badge>
-                  <Badge variant={previewData.hcBefore.hc3 > 0 ? 'destructive' : 'secondary'} size="xs">
+                  <Badge variant={previewData.hcBefore.hc3 > 0 ? 'destructive' : 'secondary'} >
                     HC3: {previewData.hcBefore.hc3}
                   </Badge>
-                  <Badge variant={previewData.hcBefore.hc4 > 0 ? 'destructive' : 'secondary'} size="xs">
+                  <Badge variant={previewData.hcBefore.hc4 > 0 ? 'destructive' : 'secondary'} >
                     HC4: {previewData.hcBefore.hc4}
                   </Badge>
                 </div>
@@ -526,16 +526,16 @@ export default function SchedulerContent() {
                   </div>
                 </div>
                 <div className="flex gap-2 mt-2">
-                  <Badge variant={previewData.hcAfter.hc1 > 0 ? 'destructive' : 'default'} size="xs">
+                  <Badge variant={previewData.hcAfter.hc1 > 0 ? 'destructive' : 'default'} >
                     HC1: {previewData.hcAfter.hc1}
                   </Badge>
-                  <Badge variant={previewData.hcAfter.hc2 > 0 ? 'destructive' : 'default'} size="xs">
+                  <Badge variant={previewData.hcAfter.hc2 > 0 ? 'destructive' : 'default'} >
                     HC2: {previewData.hcAfter.hc2}
                   </Badge>
-                  <Badge variant={previewData.hcAfter.hc3 > 0 ? 'destructive' : 'default'} size="xs">
+                  <Badge variant={previewData.hcAfter.hc3 > 0 ? 'destructive' : 'default'} >
                     HC3: {previewData.hcAfter.hc3}
                   </Badge>
-                  <Badge variant={previewData.hcAfter.hc4 > 0 ? 'destructive' : 'default'} size="xs">
+                  <Badge variant={previewData.hcAfter.hc4 > 0 ? 'destructive' : 'default'} >
                     HC4: {previewData.hcAfter.hc4}
                   </Badge>
                 </div>

@@ -22,6 +22,7 @@ async function main() {
     include: {
       teachingTask: {
         include: {
+          course: true,
           taskClasses: { include: { classGroup: { select: { id: true, name: true, studentCount: true } } } },
         },
       },
