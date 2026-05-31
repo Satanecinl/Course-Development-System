@@ -9,6 +9,7 @@ import type {
 import { isScoreBetter } from './types'
 import { calculateInitialScore, calculateDeltaScore } from './score'
 import { getTaskStudentCount } from './capacity'
+import { createSeededRandom, randInt } from './prng'
 
 /** 应用一次移动到状态，返回旧位置 */
 export function applyMove(
@@ -60,10 +61,6 @@ export function buildInitialState(ctx: SchedulingContext): ScheduleState {
   }
 }
 
-/** 随机整数 [min, max] */
-function randInt(min: number, max: number): number {
-  return Math.floor(Math.random() * (max - min + 1)) + min
-}
 
 // ── Week overlap helper (same logic as score.ts) ──
 
@@ -222,6 +219,8 @@ export interface SolveResult {
   bestState: ScheduleState
   iterations: number
   metrics?: SolverMetrics
+  /** 实际使用的随机种子 */
+  usedSeed: number
 }
 
 /**
@@ -232,6 +231,10 @@ export function solve(
   config: SolverConfig,
   onProgress?: (iteration: number, score: Score) => void,
 ): SolveResult {
+  // Initialize seeded RNG
+  const usedSeed = config.randomSeed ?? 0
+  const rng = createSeededRandom(usedSeed)
+
   const state = buildInitialState(ctx)
   const currentScore = calculateInitialScore(ctx, state)
 
@@ -256,7 +259,7 @@ export function solve(
   }
 
   if (allMovable.length === 0) {
-    return { bestScore, bestState: state, iterations: 0 }
+    return { bestScore, bestState: state, iterations: 0, usedSeed }
   }
 
   // 预计算每个 task 的容量足够教室（按容量升序）
@@ -308,7 +311,7 @@ export function solve(
       const conflictArr = [...conflictParticipants]
       // Shuffle to avoid always trying the same slot first
       for (let ci = conflictArr.length - 1; ci > 0; ci--) {
-        const cj = randInt(0, ci)
+        const cj = randInt(rng, 0, ci)
         const tmp = conflictArr[ci]; conflictArr[ci] = conflictArr[cj]; conflictArr[cj] = tmp
       }
 
@@ -372,9 +375,9 @@ export function solve(
         let sourceSlotId: number
         if (hasConflicts) {
           const conflictArr = [...conflictParticipants]
-          sourceSlotId = conflictArr[randInt(0, conflictArr.length - 1)]
+          sourceSlotId = conflictArr[randInt(rng, 0, conflictArr.length - 1)]
         } else {
-          sourceSlotId = allMovable[randInt(0, allMovable.length - 1)]
+          sourceSlotId = allMovable[randInt(rng, 0, allMovable.length - 1)]
         }
 
         const sourceSlot = ctx.slots.find(s => s.id === sourceSlotId)
@@ -387,7 +390,7 @@ export function solve(
         if (eligibleRooms.length === 0) continue
 
         for (let c = 0; c < CANDIDATES_PER_ITERATION; c++) {
-          const moveTypeRoll = Math.random()
+          const moveTypeRoll = rng()
           let moveType: MoveType
           if (moveTypeRoll < 0.4) moveType = 'ROOM_ONLY'
           else if (moveTypeRoll < 0.7) moveType = 'TIME_ONLY'
@@ -400,15 +403,15 @@ export function solve(
           if (moveType === 'ROOM_ONLY') {
             newDay = sourcePos.dayOfWeek
             newSlotIndex = sourcePos.slotIndex
-            newRoomId = eligibleRooms[randInt(0, eligibleRooms.length - 1)].id
+            newRoomId = eligibleRooms[randInt(rng, 0, eligibleRooms.length - 1)].id
           } else if (moveType === 'TIME_ONLY') {
-            newDay = randInt(1, 7)
-            newSlotIndex = randInt(1, 6)
+            newDay = randInt(rng, 1, 7)
+            newSlotIndex = randInt(rng, 1, 6)
             newRoomId = sourcePos.roomId
           } else {
-            newDay = randInt(1, 7)
-            newSlotIndex = randInt(1, 6)
-            newRoomId = eligibleRooms[randInt(0, eligibleRooms.length - 1)].id
+            newDay = randInt(rng, 1, 7)
+            newSlotIndex = randInt(rng, 1, 6)
+            newRoomId = eligibleRooms[randInt(rng, 0, eligibleRooms.length - 1)].id
           }
 
           if (newDay === sourcePos.dayOfWeek && newSlotIndex === sourcePos.slotIndex && newRoomId === sourcePos.roomId) {
@@ -520,5 +523,5 @@ export function solve(
     originalAssignments: state.originalAssignments,
   }
 
-  return { bestScore, bestState, iterations: maxIterations, metrics }
+  return { bestScore, bestState, iterations: maxIterations, metrics, usedSeed }
 }

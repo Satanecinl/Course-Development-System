@@ -90,6 +90,8 @@ export interface SolverConfig {
   maxIterations: number
   lahcWindowSize: number
   lockedSlotIds?: Set<number>
+  /** 随机种子，用于复现 solver 结果 */
+  randomSeed?: number | null
 }
 
 // ── Phase B+: 诊断 ──

@@ -153,7 +153,7 @@ export async function createSchedulerPreview(
 ): Promise<PreviewResult> {
   const maxIterations = Math.min(options.maxIterations ?? 10000, MAX_ITERATIONS)
   const lahcWindowSize = options.lahcWindowSize ?? 500
-  const randomSeed = options.randomSeed ?? null
+  const randomSeed = options.randomSeed ?? Math.floor(Math.random() * 0x7fffffff)
 
   // 1. Load scheduling context
   const ctx = await loadSchedulingContext()
@@ -182,14 +182,12 @@ export async function createSchedulerPreview(
   // 4. Run solver
   const startedAt = new Date()
 
-  if (randomSeed != null) {
-    // Seed Math.random for reproducibility (best-effort)
-    // Note: JS Math.random is not seedable natively, but we record the seed
-  }
-
-  const solveResult = solve(ctx, { maxIterations, lahcWindowSize })
+  const solveResult = solve(ctx, { maxIterations, lahcWindowSize, randomSeed })
   const completedAt = new Date()
   const durationMs = completedAt.getTime() - startedAt.getTime()
+
+  // The seed actually used by the solver (generated if not provided)
+  const usedSeed = solveResult.usedSeed
 
   // 5. Calculate best score with details
   const bestDetails = calculateScoreWithDetails(ctx, solveResult.bestState)
@@ -269,7 +267,7 @@ export async function createSchedulerPreview(
       completedAt,
       iterations: solveResult.iterations,
       durationMs,
-      randomSeed,
+      randomSeed: usedSeed,
       solverVersion: SOLVER_VERSION,
       hardScore: solveResult.bestScore.hardScore,
       softScore: solveResult.bestScore.softScore,
@@ -310,6 +308,6 @@ export async function createSchedulerPreview(
     databaseFingerprint,
     iterations: solveResult.iterations,
     durationMs,
-    randomSeed,
+    randomSeed: usedSeed,
   }
 }
