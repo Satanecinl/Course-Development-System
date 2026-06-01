@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requirePermission } from '@/lib/auth/require-permission'
+import { guardSlotUpdate } from '@/lib/schedule/slot-mutation-guard'
 
 export async function PUT(
   request: NextRequest,
@@ -32,7 +33,7 @@ export async function PUT(
       return NextResponse.json({ error: 'No fields to update' }, { status: 400 })
     }
 
-    // 查询旧状态用于日志
+    // 查询旧状态用于日志和 guard
     const oldSlot = await prisma.scheduleSlot.findUnique({
       where: { id: slotId },
       select: { teachingTaskId: true, dayOfWeek: true, slotIndex: true, roomId: true },
@@ -40,6 +41,20 @@ export async function PUT(
 
     if (!oldSlot) {
       return NextResponse.json({ error: 'Slot not found' }, { status: 404 })
+    }
+
+    // Server-side guard: same-semester + conflict check
+    const guardResult = await guardSlotUpdate(
+      slotId,
+      (dayOfWeek ?? oldSlot.dayOfWeek) as number,
+      (slotIndex ?? oldSlot.slotIndex) as number,
+      ((roomId ?? oldSlot.roomId) as number) ?? 0,
+    )
+    if (!guardResult.ok) {
+      return NextResponse.json(
+        { error: guardResult.error, conflicts: guardResult.conflicts },
+        { status: guardResult.status ?? 400 },
+      )
     }
 
     // 更新 ScheduleSlot

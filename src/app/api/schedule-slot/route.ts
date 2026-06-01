@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requirePermission } from '@/lib/auth/require-permission'
+import { guardSlotCreate } from '@/lib/schedule/slot-mutation-guard'
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,12 +25,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '节次无效 (1-7)' }, { status: 400 })
     }
 
-    // Verify teaching task exists
-    const task = await prisma.teachingTask.findUnique({
-      where: { id: teachingTaskId },
-    })
-    if (!task) {
-      return NextResponse.json({ error: '教学任务不存在' }, { status: 404 })
+    // Server-side guard: conflict check + semesterId resolution
+    const guardResult = await guardSlotCreate(
+      teachingTaskId,
+      dayOfWeek,
+      slotIndex,
+      roomId ?? null,
+    )
+    if (!guardResult.ok) {
+      return NextResponse.json(
+        { error: guardResult.error, conflicts: guardResult.conflicts },
+        { status: guardResult.status ?? 400 },
+      )
     }
 
     const slot = await prisma.scheduleSlot.create({
@@ -38,6 +45,7 @@ export async function POST(request: NextRequest) {
         roomId: roomId ?? null,
         dayOfWeek,
         slotIndex,
+        semesterId: guardResult.semesterId,
       },
     })
 

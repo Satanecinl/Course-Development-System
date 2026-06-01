@@ -86,22 +86,23 @@ const adjustmentsLib = readFile('src/lib/schedule/adjustments.ts')
 // ── 1. PUT /api/schedule-slot/[id] ──
 
 const slotPutExists = fileExists('src/app/api/schedule-slot/[id]/route.ts')
-const slotPutHasConflictCheck = slotPutRoute.includes('checkScheduleConflict') || slotPutRoute.includes('conflict-check')
-const slotPutHasSemesterGuard = slotPutRoute.includes('semesterId') && (
+const slotPutHasConflictCheck = slotPutRoute.includes('checkScheduleConflict') || slotPutRoute.includes('conflict-check') || slotPutRoute.includes('guardSlot')
+const slotPutHasSemesterGuard = (slotPutRoute.includes('semesterId') && (
   slotPutRoute.includes('semester') && (slotPutRoute.includes('guard') || slotPutRoute.includes('existing') || slotPutRoute.includes('!=='))
-)
+)) || slotPutRoute.includes('guardSlotUpdate')
 const slotPutCallsUpdate = /scheduleSlot\.update/.test(slotPutRoute) || /prisma\.scheduleSlot\.update/.test(slotPutRoute)
 const slotPutAllowsDaySlotRoom = /dayOfWeek/.test(slotPutRoute) && /slotIndex/.test(slotPutRoute)
 const slotPutPermission = slotPutRoute.match(/requirePermission\(['"]([^'"]+)['"]\)/)?.[1] ?? 'unknown'
 
 if (slotPutExists) {
+  const putSeverity = slotPutHasConflictCheck && slotPutHasSemesterGuard ? 'NONE' : slotPutHasConflictCheck || slotPutHasSemesterGuard ? 'MEDIUM' : 'HIGH'
   addFinding({
     id: 'K11-MUTATION-HIGH-1',
-    severity: 'HIGH',
+    severity: putSeverity,
     area: 'PUT /api/schedule-slot/[id]',
-    description: 'PUT 直接更新 ScheduleSlot 无 server-side conflict check，无 same-semester guard。具备 data:write 权限的用户可通过 curl 绕过前端，制造教师/班级/教室硬冲突或跨学期写入。',
+    description: `PUT 更新 ScheduleSlot ${slotPutHasConflictCheck ? '有' : '无'} server-side conflict check，${slotPutHasSemesterGuard ? '有' : '无'} same-semester guard。${!slotPutHasConflictCheck || !slotPutHasSemesterGuard ? '具备 data:write 权限的用户可通过 curl 绕过前端，制造硬冲突或跨学期写入。' : '服务端 guard 已就位。'}`,
     evidence: `Route exists: ${slotPutExists}; hasConflictCheck: ${slotPutHasConflictCheck}; hasSemesterGuard: ${slotPutHasSemesterGuard}; callsUpdate: ${slotPutCallsUpdate}; permission: ${slotPutPermission}`,
-    recommendation: '在 PUT handler 中调用 checkScheduleConflict() 并在 conflict 时拒绝写入；增加 same-semester guard；建议要求 schedule:adjust 权限。',
+    recommendation: putSeverity === 'NONE' ? 'N/A' : '在 PUT handler 中调用 conflict check + same-semester guard。',
   })
 } else {
   addFinding({
@@ -117,7 +118,7 @@ if (slotPutExists) {
 // ── 2. POST /api/schedule-slot ──
 
 const slotPostExists = fileExists('src/app/api/schedule-slot/route.ts')
-const slotPostHasConflictCheck = slotPostRoute.includes('checkScheduleConflict') || slotPostRoute.includes('conflict-check')
+const slotPostHasConflictCheck = slotPostRoute.includes('checkScheduleConflict') || slotPostRoute.includes('conflict-check') || slotPostRoute.includes('guardSlot')
 const slotPostSetsSemesterId = /semesterId/.test(slotPostRoute) && /create/.test(slotPostRoute)
 
 if (slotPostExists) {
@@ -135,7 +136,7 @@ if (slotPostExists) {
 
 const adminFieldWhitelist = adminModelRoute.match(/scheduleslot:\s*\[([^\]]+)\]/)?.[1] ?? ''
 const adminAllowsCoreFields = ['dayOfWeek', 'slotIndex', 'roomId', 'teachingTaskId'].every(f => adminFieldWhitelist.includes(f))
-const adminPutHasConflictCheck = adminModelRoute.includes('checkScheduleConflict')
+const adminPutHasConflictCheck = adminModelRoute.includes('checkScheduleConflict') || adminModelRoute.includes('guardAdminSlot')
 const adminPutHasSemesterGuard = adminModelRoute.includes('semesterId') && adminModelRoute.includes('existing')
 const adminPutPermission = adminModelRoute.match(/PUT[\s\S]*?requirePermission\(['"]([^'"]+)['"]\)/)?.[1] ?? 'unknown'
 
@@ -186,17 +187,21 @@ if (ttUpdatesSlots) {
 // ── 6. No server-side conflict enforcement ──
 
 const conflictCheckCallers = grep('checkScheduleConflict')
+const guardCallers = grep('guardSlot|guardAdminSlot|slot-mutation-guard')
 const mutationCallers = conflictCheckCallers.filter(f =>
   f.file.includes('route.ts') && !f.file.includes('conflict-check/route.ts')
+)
+const guardMutationCallers = guardCallers.filter(f =>
+  f.file.includes('route.ts') && !f.file.includes('verify-') && !f.file.includes('audit-')
 )
 
 addFinding({
   id: 'K11-MUTATION-HIGH-3',
-  severity: mutationCallers.length === 0 ? 'HIGH' : 'NONE',
+  severity: mutationCallers.length + guardMutationCallers.length === 0 ? 'HIGH' : 'NONE',
   area: 'Server-side conflict enforcement',
-  description: `checkScheduleConflict 仅被 ${conflictCheckCallers.length} 个文件引用。${mutationCallers.length === 0 ? '无任何 mutation route 在写入前调用 conflict check。conflict check 仅作为 advisory endpoint 存在，服务端无强制执行。' : '有 mutation route 调用 conflict check。'}`,
-  evidence: `Callers: ${conflictCheckCallers.map(f => `${f.file}:${f.line}`).join(', ')}`,
-  recommendation: '所有 schedule mutation 路径应在写入前调用 checkScheduleConflict。',
+  description: `checkScheduleConflict 被 ${conflictCheckCallers.length} 个文件引用，guard module 被 ${guardMutationCallers.length} 个 route 文件引用。${mutationCallers.length + guardMutationCallers.length === 0 ? '无任何 mutation route 在写入前调用 conflict check。' : `${mutationCallers.length + guardMutationCallers.length} 个 mutation route 已接入 conflict guard。`}`,
+  evidence: `checkScheduleConflict callers: ${conflictCheckCallers.map(f => `${f.file}:${f.line}`).join(', ')}; guard callers: ${guardMutationCallers.map(f => `${f.file}:${f.line}`).join(', ')}`,
+  recommendation: mutationCallers.length + guardMutationCallers.length === 0 ? '所有 schedule mutation 路径应在写入前调用 checkScheduleConflict。' : 'N/A',
 })
 
 // ── 7. Client store does not call conflict-check ──
@@ -242,7 +247,7 @@ addFinding({
 
 // ── 10. Semester guard coverage ──
 
-const putSemesterScoped = slotPutRoute.includes('semesterId')
+const putSemesterScoped = slotPutRoute.includes('semesterId') || slotPutRoute.includes('guardSlotUpdate')
 const postSemesterScoped = slotPostRoute.includes('semesterId')
 const adminSemesterScoped = adminModelRoute.includes('SEMESTER_SCOPED_MODELS') && adminModelRoute.includes('scheduleslot')
 

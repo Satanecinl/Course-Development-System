@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requirePermission } from '@/lib/auth/require-permission'
 import { resolveSchedulerSemester } from '@/lib/semester'
+import { guardAdminSlotUpdate, guardAdminSlotCreate } from '@/lib/schedule/slot-mutation-guard'
 
 const MODEL_MAP: Record<string, keyof typeof prisma> = {
   classgroup: 'classGroup',
@@ -199,6 +200,20 @@ export async function POST(
       data.semesterId = semester.id
     }
 
+    // Conflict check for scheduleslot create
+    if (model.toLowerCase() === 'scheduleslot' && data.teachingTaskId) {
+      const guardResult = await guardAdminSlotCreate(data.teachingTaskId as number, data)
+      if (!guardResult.ok) {
+        return NextResponse.json(
+          { error: guardResult.error, conflicts: guardResult.conflicts },
+          { status: guardResult.status ?? 400 },
+        )
+      }
+      if (guardResult.semesterId && !data.semesterId) {
+        data.semesterId = guardResult.semesterId
+      }
+    }
+
     const record = await delegate.create({ data })
     return NextResponse.json({ success: true, record })
   } catch (e: unknown) {
@@ -247,6 +262,17 @@ export async function PUT(
         )
       }
       data.semesterId = semester.id
+    }
+
+    // Conflict check for scheduleslot update
+    if (model.toLowerCase() === 'scheduleslot') {
+      const guardResult = await guardAdminSlotUpdate(id, data)
+      if (!guardResult.ok) {
+        return NextResponse.json(
+          { error: guardResult.error, conflicts: guardResult.conflicts },
+          { status: guardResult.status ?? 400 },
+        )
+      }
     }
 
     const record = await delegate.update({ where: { id }, data })
