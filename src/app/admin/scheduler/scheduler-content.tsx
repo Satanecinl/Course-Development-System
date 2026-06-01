@@ -90,6 +90,9 @@ interface PreviewResponse {
   randomSeed: number | null
   lockedSlotIds: number[]
   lockedSlotCount: number
+  semesterId?: number
+  semesterCode?: string
+  semesterName?: string
   error?: string
 }
 
@@ -774,6 +777,17 @@ export default function SchedulerContent() {
               <span className="text-gray-500">Preview Run ID:</span>
               <span className="font-mono font-medium">{previewData.runId}</span>
             </div>
+
+            {/* Semester */}
+            {previewData.semesterCode && (
+              <div className="flex items-center gap-2 text-sm">
+                <Calendar className="w-4 h-4 text-gray-400" />
+                <span className="text-gray-500">学期:</span>
+                <span className="font-medium text-blue-600">
+                  {previewData.semesterCode}{previewData.semesterName ? ` (${previewData.semesterName})` : ''}
+                </span>
+              </div>
+            )}
 
             {/* Duration */}
             <div className="flex items-center gap-2 text-sm">
