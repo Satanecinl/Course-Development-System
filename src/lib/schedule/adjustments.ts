@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { resolveSchedulerSemester } from '@/lib/semester'
 import type { ScheduleViewData } from '@/types/schedule'
 import type {
   ScheduleAdjustmentInput,
@@ -53,9 +54,14 @@ export interface EffectiveScheduleItem extends ScheduleViewData {
   targetWeek?: number
 }
 
-export async function getEffectiveScheduleForWeek(week: number): Promise<EffectiveScheduleItem[]> {
-  // 1. Load all base schedule slots
+export async function getEffectiveScheduleForWeek(
+  week: number,
+  semesterId?: number,
+): Promise<EffectiveScheduleItem[]> {
+  // 1. Load base schedule slots (scoped by semester if provided)
+  const slotWhere = semesterId != null ? { semesterId } : {}
   const slots = await prisma.scheduleSlot.findMany({
+    where: slotWhere,
     include: {
       room: true,
       teachingTask: {
@@ -102,18 +108,20 @@ export async function getEffectiveScheduleForWeek(week: number): Promise<Effecti
     })
   }
 
-  // 3. Load active adjustments that affect this week:
-  //    - adjustment.week === currentWeek (source week of MOVE / CANCEL)
-  //    - adjustment.targetWeek === currentWeek (target week of cross-week MOVE)
-  //    - targetWeek is null but week === currentWeek (legacy same-week MOVE)
+  // 3. Load active adjustments that affect this week (scoped by semester)
+  const adjustmentWhere: Record<string, unknown> = {
+    status: 'ACTIVE',
+    OR: [
+      { week },
+      { targetWeek: week },
+    ],
+  }
+  if (semesterId != null) {
+    adjustmentWhere.semesterId = semesterId
+  }
+
   const adjustments = await prisma.scheduleAdjustment.findMany({
-    where: {
-      status: 'ACTIVE',
-      OR: [
-        { week },
-        { targetWeek: week },
-      ],
-    },
+    where: adjustmentWhere,
     include: { newRoom: true },
   })
 
@@ -127,7 +135,6 @@ export async function getEffectiveScheduleForWeek(week: number): Promise<Effecti
     const targetWeek = adj.targetWeek ?? adj.week
 
     if (adj.type === 'CANCEL') {
-      // CANCEL only removes the course from its source week
       if (sourceWeek === week) {
         cancelledSlotIds.add(adj.originalSlotId)
       }
@@ -135,12 +142,10 @@ export async function getEffectiveScheduleForWeek(week: number): Promise<Effecti
     }
 
     if (adj.type === 'MOVE') {
-      // If current week is the source week, mark original slot as moved out
       if (sourceWeek === week) {
         movedOutSlotIds.add(adj.originalSlotId)
       }
 
-      // If current week is the target week, add the moved item
       if (targetWeek === week) {
         const originalItem = baseItems.get(adj.originalSlotId)
         if (originalItem) {
@@ -164,13 +169,10 @@ export async function getEffectiveScheduleForWeek(week: number): Promise<Effecti
   // 5. Build final result
   const result: EffectiveScheduleItem[] = []
   for (const item of baseItems.values()) {
-    // Skip cancelled items
     if (cancelledSlotIds.has(item.slotId)) continue
-    // Skip moved-out items
     if (movedOutSlotIds.has(item.slotId)) continue
     result.push(item)
   }
-  // Add moved-in items
   for (const item of addedItems) {
     result.push(item)
   }
@@ -195,6 +197,10 @@ export async function dryRunScheduleAdjustment(
     return { canApply: false, conflicts: validationErrors, warnings }
   }
 
+  // Resolve semester
+  const semester = await resolveSchedulerSemester({ semesterId: input.semesterId })
+  const semesterId = semester.id
+
   // Check originalSlot exists
   const originalSlot = await prisma.scheduleSlot.findUnique({
     where: { id: input.originalSlotId },
@@ -214,6 +220,16 @@ export async function dryRunScheduleAdjustment(
     return { canApply: false, conflicts, warnings }
   }
 
+  // Check originalSlot belongs to the same semester
+  if (originalSlot.semesterId !== semesterId) {
+    conflicts.push({
+      type: 'INVALID_SLOT',
+      message: `ScheduleSlot #${input.originalSlotId} belongs to semester ${originalSlot.semesterId}, not ${semesterId}`,
+      severity: 'error',
+    })
+    return { canApply: false, conflicts, warnings }
+  }
+
   // Check originalSlot is active in source week
   const task = originalSlot.teachingTask
   const weekType = task.weekType ?? 'ALL'
@@ -225,12 +241,13 @@ export async function dryRunScheduleAdjustment(
     return { canApply: false, conflicts, warnings }
   }
 
-  // Reject duplicate ACTIVE adjustment for same sourceWeek + originalSlotId
+  // Reject duplicate ACTIVE adjustment for same sourceWeek + originalSlotId within same semester
   const existingActive = await prisma.scheduleAdjustment.findFirst({
     where: {
       week: sourceWeek,
       originalSlotId: input.originalSlotId,
       status: 'ACTIVE',
+      semesterId,
     },
   })
   if (existingActive) {
@@ -247,15 +264,12 @@ export async function dryRunScheduleAdjustment(
     return { canApply: true, conflicts, warnings }
   }
 
-  // For MOVE, check conflicts against target week's effective schedule
-  const effectiveItems = await getEffectiveScheduleForWeek(targetWeek)
+  // For MOVE, check conflicts against target week's effective schedule (same semester)
+  const effectiveItems = await getEffectiveScheduleForWeek(targetWeek, semesterId)
   const newDay = input.newDayOfWeek!
   const newSlot = input.newSlotIndex!
   const newRoomId = input.newRoomId ?? null
 
-  // Find items at target position
-  // If same-week MOVE, exclude the original slot itself
-  // If cross-week MOVE, do NOT exclude original slot (it's a normal course in target week)
   const itemsAtTarget = effectiveItems.filter(
     (item) => {
       if (item.dayOfWeek !== newDay || item.slotIndex !== newSlot) return false
@@ -333,6 +347,10 @@ export async function createScheduleAdjustment(input: ScheduleAdjustmentInput) {
     return { success: false, dryRun }
   }
 
+  // semesterId is resolved inside dryRun; resolve again for the create
+  const semester = await resolveSchedulerSemester({ semesterId: input.semesterId })
+  const semesterId = semester.id
+
   const adjustment = await prisma.scheduleAdjustment.create({
     data: {
       type: input.type,
@@ -343,6 +361,7 @@ export async function createScheduleAdjustment(input: ScheduleAdjustmentInput) {
       newSlotIndex: input.newSlotIndex ?? null,
       newRoomId: input.newRoomId ?? null,
       reason: input.reason ?? null,
+      semesterId: semesterId,
     },
   })
 
@@ -351,13 +370,37 @@ export async function createScheduleAdjustment(input: ScheduleAdjustmentInput) {
 
 // ── Void adjustment ──
 
-export async function voidScheduleAdjustment(id: number) {
+export async function voidScheduleAdjustment(id: number, semesterId?: number | null) {
   const adjustment = await prisma.scheduleAdjustment.findUnique({ where: { id } })
   if (!adjustment) {
     return { success: false, error: `Adjustment #${id} not found` }
   }
   if (adjustment.status !== 'ACTIVE') {
     return { success: false, error: `Adjustment status is "${adjustment.status}", only ACTIVE can be voided` }
+  }
+
+  // Resolve semester and validate adjustment belongs to it
+  const semester = await resolveSchedulerSemester({ semesterId })
+  if (adjustment.semesterId !== semester.id) {
+    return {
+      success: false,
+      error: `Adjustment #${id} belongs to semester ${adjustment.semesterId}, not ${semester.id}`,
+    }
+  }
+
+  // Validate the original slot belongs to the same semester
+  const originalSlot = await prisma.scheduleSlot.findUnique({
+    where: { id: adjustment.originalSlotId },
+    select: { id: true, semesterId: true },
+  })
+  if (!originalSlot) {
+    return { success: false, error: `Original ScheduleSlot #${adjustment.originalSlotId} not found` }
+  }
+  if (originalSlot.semesterId !== adjustment.semesterId) {
+    return {
+      success: false,
+      error: `ScheduleSlot #${adjustment.originalSlotId} semester (${originalSlot.semesterId}) does not match adjustment semester (${adjustment.semesterId})`,
+    }
   }
 
   await prisma.scheduleAdjustment.update({

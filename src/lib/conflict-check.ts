@@ -6,6 +6,8 @@ export interface ConflictCheckInput {
   targetDayOfWeek: number
   targetSlotIndex: number
   targetRoomId: number
+  /** Filter conflict checks to this semester's slots only. */
+  semesterId?: number | null
 }
 
 export interface ConflictCheckResult {
@@ -27,6 +29,8 @@ function getSlotLabel(slotIndex: number): string {
 
 /**
  * 核心冲突检测逻辑（基于新 Schema：ScheduleSlot + TeachingTask）
+ *
+ * When semesterId is provided, only checks conflicts within the same semester.
  */
 export async function checkScheduleConflict(
   input: ConflictCheckInput
@@ -53,6 +57,9 @@ export async function checkScheduleConflict(
     throw new Error(`ScheduleSlot ${scheduleSlotId} not found`)
   }
 
+  // Use the moving slot's semesterId if not explicitly provided
+  const semesterId = input.semesterId ?? movingSlot.semesterId
+
   const movingTask = movingSlot.teachingTask
   const movingClassIds = movingTask.taskClasses.map((tc) => tc.classGroupId)
   const movingClassNames = movingTask.taskClasses.map((tc) => tc.classGroup.name)
@@ -70,10 +77,15 @@ export async function checkScheduleConflict(
 
   const targetSlotLabel = getSlotLabel(targetSlotIndex)
 
-  const timeOverlapWhere = {
+  const timeOverlapWhere: Record<string, unknown> = {
     id: { not: scheduleSlotId },
     dayOfWeek: targetDayOfWeek,
     slotIndex: targetSlotIndex,
+  }
+
+  // Scope to same semester
+  if (semesterId != null) {
+    timeOverlapWhere.semesterId = semesterId
   }
 
   const targetRoom = await prisma.room.findUnique({ where: { id: targetRoomId } })

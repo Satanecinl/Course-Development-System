@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requirePermission } from '@/lib/auth/require-permission'
+import { resolveSchedulerSemester } from '@/lib/semester'
 import { getEffectiveScheduleForWeek } from '@/lib/schedule/adjustments'
 import ExcelJS from 'exceljs'
 
@@ -53,7 +54,11 @@ export async function GET(request: NextRequest) {
     // 1. 查询数据
     // If week + applyAdjustments, use effective schedule (includes adjustments)
     if (selectedWeek && applyAdjustments) {
-      const effectiveItems = await getEffectiveScheduleForWeek(selectedWeek)
+      // Resolve semester for scoped export
+      const semester = await resolveSchedulerSemester().catch(() => null)
+      const semesterId = semester?.id
+
+      const effectiveItems = await getEffectiveScheduleForWeek(selectedWeek, semesterId)
 
       // Build Excel from effective items
       const workbook = new ExcelJS.Workbook()

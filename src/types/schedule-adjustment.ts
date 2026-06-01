@@ -10,6 +10,7 @@ export interface ScheduleAdjustmentInput {
   newSlotIndex?: number | null
   newRoomId?: number | null
   reason?: string | null
+  semesterId?: number | null
 }
 
 export interface ScheduleAdjustmentInfo {

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { requirePermission } from '@/lib/auth/require-permission'
+import { resolveSchedulerSemester } from '@/lib/semester'
 import { voidScheduleAdjustment } from '@/lib/schedule/adjustments'
 
 interface RouteContext {
@@ -28,7 +29,12 @@ export async function PATCH(request: Request, context: RouteContext) {
       )
     }
 
-    const result = await voidScheduleAdjustment(id)
+    // Resolve semester
+    const semester = await resolveSchedulerSemester({
+      semesterId: typeof body.semesterId === 'number' ? body.semesterId : undefined,
+    })
+
+    const result = await voidScheduleAdjustment(id, semester.id)
 
     if (!result.success) {
       return NextResponse.json({ success: false, error: result.error }, { status: 400 })
@@ -37,6 +43,23 @@ export async function PATCH(request: Request, context: RouteContext) {
     return NextResponse.json(result)
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error'
+    console.error('[schedule-adjustments/void] error:', message)
+
+    const knownErrors: Record<string, { code: string; status: number }> = {
+      SEMESTER_NOT_FOUND: { code: 'SEMESTER_NOT_FOUND', status: 400 },
+      NO_ACTIVE_SEMESTER: { code: 'NO_ACTIVE_SEMESTER', status: 400 },
+      MULTIPLE_ACTIVE_SEMESTERS: { code: 'MULTIPLE_ACTIVE_SEMESTERS', status: 400 },
+    }
+
+    for (const [prefix, resp] of Object.entries(knownErrors)) {
+      if (message.startsWith(prefix)) {
+        return NextResponse.json(
+          { success: false, error: resp.code, message },
+          { status: resp.status },
+        )
+      }
+    }
+
     return NextResponse.json({ success: false, error: message }, { status: 500 })
   }
 }
