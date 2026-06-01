@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requirePermission } from '@/lib/auth/require-permission'
+import { resolveSchedulerSemester } from '@/lib/semester'
 
 // GET /api/data/schedule-slots — list schedule slots (read-only)
 export async function GET(request: NextRequest) {
@@ -8,7 +9,14 @@ export async function GET(request: NextRequest) {
   if ('error' in auth) return auth.error
 
   try {
+    const { searchParams } = new URL(request.url)
+    const semesterIdParam = searchParams.get('semesterId')
+    const semester = await resolveSchedulerSemester({
+      semesterId: semesterIdParam ? parseInt(semesterIdParam, 10) : undefined,
+    })
+
     const slots = await prisma.scheduleSlot.findMany({
+      where: { semesterId: semester.id },
       select: {
         id: true,
         dayOfWeek: true,

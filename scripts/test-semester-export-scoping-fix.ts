@@ -161,21 +161,21 @@ async function main() {
   check('Course queries not over-scoped (no semesterId)',
     !courseQueries.some(q => q.includes('semesterId')))
 
-  // ─── 8. /api/data/* NOT modified ───
-  console.log('\n─── 8. /api/data/* NOT Modified ───')
+  // ─── 8. /api/data/* scoped ───
+  console.log('\n─── 8. /api/data/* Scoped ───')
 
   const dataSummary = readFile('src/app/api/data/summary/route.ts')
   const dataTasks = readFile('src/app/api/data/teaching-tasks/route.ts')
   const dataSlots = readFile('src/app/api/data/schedule-slots/route.ts')
 
-  check('/api/data/summary NOT modified (留到 admin data pages scoping)',
-    !dataSummary.includes('semesterId'))
+  check('/api/data/summary uses resolveSchedulerSemester',
+    dataSummary.includes('resolveSchedulerSemester'))
 
-  check('/api/data/teaching-tasks NOT modified (留到 admin data pages scoping)',
-    !dataTasks.includes('semesterId'))
+  check('/api/data/teaching-tasks uses resolveSchedulerSemester',
+    dataTasks.includes('resolveSchedulerSemester'))
 
-  check('/api/data/schedule-slots NOT modified (留到 admin data pages scoping)',
-    !dataSlots.includes('semesterId'))
+  check('/api/data/schedule-slots uses resolveSchedulerSemester',
+    dataSlots.includes('resolveSchedulerSemester'))
 
   // ─── Results ───
   console.log('\n════════════════════════════════════════════════════════════')

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requirePermission } from '@/lib/auth/require-permission'
+import { resolveSchedulerSemester } from '@/lib/semester'
 
 const MODEL_MAP: Record<string, keyof typeof prisma> = {
   classgroup: 'classGroup',
@@ -31,6 +32,9 @@ const INCLUDE_MAP: Record<string, object> = {
     room: true,
   },
 }
+
+// Models that are bound to a semester (require semester scoping)
+const SEMESTER_SCOPED_MODELS = new Set(['classgroup', 'teachingtask', 'scheduleslot'])
 
 type PrismaDelegate = {
   findMany: (args?: { take?: number; include?: object }) => Promise<unknown[]>
@@ -91,6 +95,45 @@ async function countReferences(model: string, id: number): Promise<{ count: numb
   }
 }
 
+/**
+ * Resolve semester for the request. Returns null for non-scoped models.
+ * For scoped models, throws NextResponse on error.
+ */
+async function resolveSemesterIfNeeded(
+  model: string,
+  searchParams: URLSearchParams,
+  body?: Record<string, unknown>,
+): Promise<{ id: number; code: string; name: string } | null> {
+  if (!SEMESTER_SCOPED_MODELS.has(model.toLowerCase())) return null
+
+  try {
+    // Prefer explicit semesterId from query, then body
+    const explicitId = searchParams.get('semesterId')
+      ?? (body?.semesterId != null ? Number(body.semesterId) : null)
+    const semester = await resolveSchedulerSemester({
+      semesterId: explicitId != null ? Number(explicitId) : undefined,
+    })
+    return semester
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    if (msg.includes('NO_ACTIVE_SEMESTER') || msg.includes('MULTIPLE_ACTIVE_SEMESTERS') || msg.includes('SEMESTER_NOT_FOUND')) {
+      throw NextResponse.json({ error: msg }, { status: 400 })
+    }
+    throw NextResponse.json({ error: msg }, { status: 500 })
+  }
+}
+
+/**
+ * Build a where clause with optional semesterId filter.
+ */
+function scopedWhere(model: string, semesterId: number | null): Record<string, unknown> {
+  const where: Record<string, unknown> = {}
+  if (SEMESTER_SCOPED_MODELS.has(model.toLowerCase()) && semesterId != null) {
+    where.semesterId = semesterId
+  }
+  return where
+}
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ model: string }> }
@@ -105,10 +148,22 @@ export async function GET(
   }
 
   try {
+    const { searchParams } = new URL(req.url)
+    const semester = await resolveSemesterIfNeeded(model, searchParams)
+
     const include = INCLUDE_MAP[model.toLowerCase()]
-    const data = await delegate.findMany({ take: 500, ...(include ? { include } : {}) })
+    const findArgs: Record<string, unknown> = { take: 500 }
+    if (semester) {
+      findArgs.where = scopedWhere(model, semester.id)
+    }
+    if (include) {
+      findArgs.include = include
+    }
+    const data = await delegate.findMany(findArgs as Parameters<PrismaDelegate['findMany']>[0])
     return NextResponse.json(data)
   } catch (e) {
+    // resolveSemesterIfNeeded may throw NextResponse
+    if (e instanceof NextResponse) return e
     return NextResponse.json({ error: String(e) }, { status: 500 })
   }
 }
@@ -127,11 +182,27 @@ export async function POST(
   }
 
   try {
+    const { searchParams } = new URL(req.url)
     const body = await req.json()
+    const semester = await resolveSemesterIfNeeded(model, searchParams, body)
+
     const data = filterAllowedFields(model, body)
+
+    if (semester) {
+      // Ensure semesterId is set for semester-scoped models
+      if (data.semesterId != null && data.semesterId !== semester.id) {
+        return NextResponse.json(
+          { error: `semesterId 不匹配当前学期，期望 ${semester.id}，收到 ${data.semesterId}` },
+          { status: 400 }
+        )
+      }
+      data.semesterId = semester.id
+    }
+
     const record = await delegate.create({ data })
     return NextResponse.json({ success: true, record })
   } catch (e: unknown) {
+    if (e instanceof NextResponse) return e
     return handlePrismaError(e)
   }
 }
@@ -150,15 +221,38 @@ export async function PUT(
   }
 
   try {
+    const { searchParams } = new URL(req.url)
     const { id, ...body } = await req.json()
     if (!id) {
       return NextResponse.json({ error: '缺少 id 参数' }, { status: 400 })
     }
 
+    const semester = await resolveSemesterIfNeeded(model, searchParams, body)
     const data = filterAllowedFields(model, body)
+
+    if (semester) {
+      // Same-semester guard: verify record belongs to resolved semester
+      const existing = await delegate.findMany({ take: 1, ...(semester ? { where: { id } } : {}) }) as Array<{ id: number; semesterId?: number | null }>
+      if (!existing.length || (existing[0] as Record<string, unknown>).semesterId !== semester.id) {
+        return NextResponse.json(
+          { error: '记录不属于当前学期，无法修改' },
+          { status: 403 }
+        )
+      }
+      // Prevent changing semesterId
+      if (data.semesterId != null && data.semesterId !== semester.id) {
+        return NextResponse.json(
+          { error: '不允许将记录移到其他学期' },
+          { status: 400 }
+        )
+      }
+      data.semesterId = semester.id
+    }
+
     const record = await delegate.update({ where: { id }, data })
     return NextResponse.json({ success: true, record })
   } catch (e: unknown) {
+    if (e instanceof NextResponse) return e
     return handlePrismaError(e)
   }
 }
@@ -177,9 +271,23 @@ export async function DELETE(
   }
 
   try {
+    const { searchParams } = new URL(req.url)
     const { id } = await req.json()
     if (!id) {
       return NextResponse.json({ error: '缺少 id 参数' }, { status: 400 })
+    }
+
+    const semester = await resolveSemesterIfNeeded(model, searchParams)
+
+    if (semester) {
+      // Same-semester guard
+      const existing = await delegate.findMany({ take: 1, ...(semester ? { where: { id } } : {}) }) as Array<{ id: number; semesterId?: number | null }>
+      if (!existing.length || (existing[0] as Record<string, unknown>).semesterId !== semester.id) {
+        return NextResponse.json(
+          { error: '记录不属于当前学期，无法删除' },
+          { status: 403 }
+        )
+      }
     }
 
     const ref = await countReferences(model, id)
@@ -197,6 +305,7 @@ export async function DELETE(
     await delegate.delete({ where: { id } })
     return NextResponse.json({ success: true })
   } catch (e) {
+    if (e instanceof NextResponse) return e
     return NextResponse.json({ error: String(e) }, { status: 500 })
   }
 }
