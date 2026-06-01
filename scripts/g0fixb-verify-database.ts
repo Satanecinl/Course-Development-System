@@ -99,7 +99,7 @@ async function main() {
 
   for (const className of targetClasses) {
     console.log(`\n  📋 ${className}`)
-    const cg = await prisma.classGroup.findUnique({ where: { name: className } })
+    const cg = await prisma.classGroup.findFirst({ where: { name: className } })
     if (!cg) {
       console.log(`    [SKIP] 班级不存在`)
       continue

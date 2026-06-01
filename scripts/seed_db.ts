@@ -259,18 +259,25 @@ async function main() {
   for (const r of records) {
     const name = r.class_info.class_name;
     if (!name || classGroupMap.has(name)) continue;
-    const cg = await prisma.classGroup.upsert({
-      where: { name },
-      update: {
-        advisorName: r.class_info.advisor_name ?? undefined,
-        advisorPhone: r.class_info.advisor_phone ?? undefined,
-      },
-      create: {
-        name,
-        advisorName: r.class_info.advisor_name ?? null,
-        advisorPhone: r.class_info.advisor_phone ?? null,
-      },
-    });
+    const existing = await prisma.classGroup.findFirst({ where: { name } });
+    let cg;
+    if (existing) {
+      cg = await prisma.classGroup.update({
+        where: { id: existing.id },
+        data: {
+          advisorName: r.class_info.advisor_name ?? undefined,
+          advisorPhone: r.class_info.advisor_phone ?? undefined,
+        },
+      });
+    } else {
+      cg = await prisma.classGroup.create({
+        data: {
+          name,
+          advisorName: r.class_info.advisor_name ?? null,
+          advisorPhone: r.class_info.advisor_phone ?? null,
+        },
+      });
+    }
     classGroupMap.set(name, cg.id);
   }
   console.log(`  ClassGroup: ${classGroupMap.size} 条`);

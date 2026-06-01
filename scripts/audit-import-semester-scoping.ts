@@ -92,6 +92,39 @@ async function main() {
     })
   }
 
+  // ── 1b. Check ClassGroup schema for scoped uniqueness ──
+  console.log('\n─── 1b. ClassGroup Schema ───')
+  const classGroupModelMatch = schema.match(/model ClassGroup \{[\s\S]*?\n\}/)
+  const classGroupModel = classGroupModelMatch ? classGroupModelMatch[0] : ''
+  const cgHasNameUnique = /^\s+name\s+String\s+@unique/m.test(classGroupModel)
+  const cgHasCompositeUnique = classGroupModel.includes('@@unique([semesterId, name]')
+  const cgSemesterIdNullable = /^\s+semesterId\s+Int\?/m.test(classGroupModel)
+  console.log(`  ClassGroup.name @unique: ${cgHasNameUnique ? 'YES (BAD)' : 'NO (GOOD)'}`)
+  console.log(`  ClassGroup @@unique([semesterId, name]): ${cgHasCompositeUnique ? 'YES' : 'NO'}`)
+  console.log(`  ClassGroup.semesterId nullable: ${cgSemesterIdNullable ? 'YES' : 'NO'}`)
+
+  if (cgHasNameUnique) {
+    findings.push({
+      riskId: nextMedium(),
+      severity: 'MEDIUM',
+      title: 'ClassGroup.name still has @unique (global uniqueness)',
+      file: 'prisma/schema.prisma',
+      evidence: 'ClassGroup.name still has @unique constraint. This prevents cross-semester same-name ClassGroups.',
+      recommendation: 'Remove @unique from name and use @@unique([semesterId, name]) instead.',
+    })
+  }
+
+  if (!cgHasCompositeUnique) {
+    findings.push({
+      riskId: nextMedium(),
+      severity: 'MEDIUM',
+      title: 'ClassGroup missing @@unique([semesterId, name])',
+      file: 'prisma/schema.prisma',
+      evidence: 'ClassGroup does not have @@unique([semesterId, name]) composite unique constraint.',
+      recommendation: 'Add @@unique([semesterId, name]) to ClassGroup model.',
+    })
+  }
+
   // ── 2. Check importer.ts for semesterId usage ──
   console.log('\n─── 2. Importer Core (importer.ts) ───')
   const importer = readFile('src/lib/import/importer.ts')
@@ -154,21 +187,21 @@ async function main() {
 
   // ── 4. Check ClassGroup lookup for semester scoping ──
   console.log('\n─── 4. ClassGroup Lookup Scoping ───')
-  const cgLookupMatch = importer.match(/classGroup\.findUnique\(\{[\s\S]*?where:\s*\{[^}]*\}/g)
-  const cgLookupHasSemester = cgLookupMatch?.some(m => m.includes('semesterId')) ?? false
-  console.log(`  ClassGroup findUnique scoped by semesterId: ${cgLookupHasSemester ? 'YES' : 'NO'}`)
+  const cgFindUniqueByName = importer.match(/classGroup\.findUnique\(\{[\s\S]*?where:\s*\{\s*name/g)
+  const cgFindFirstScoped = importer.match(/classGroup\.findFirst\(\{[\s\S]*?where:\s*\{[\s\S]*?semesterId[\s\S]*?name/g)
+  const cgLookupScoped = (cgFindFirstScoped && cgFindFirstScoped.length > 0) ?? false
+  const cgStillUsesFindUniqueByName = (cgFindUniqueByName && cgFindUniqueByName.length > 0) ?? false
+  console.log(`  ClassGroup findUnique({ where: { name } }) still exists: ${cgStillUsesFindUniqueByName ? 'YES (BAD)' : 'NO (GOOD)'}`)
+  console.log(`  ClassGroup findFirst scoped by semesterId+name: ${cgLookupScoped ? 'YES' : 'NO'}`)
 
-  // Note: ClassGroup.name is @unique, so findUnique on name is globally safe.
-  // Importer now writes semesterId when creating new ClassGroups.
-  // But if same-name ClassGroups across semesters are desired, this would need scoping.
-  if (!cgLookupHasSemester && importerCreatesClassGroup) {
+  if (cgStillUsesFindUniqueByName && importerCreatesClassGroup) {
     findings.push({
       riskId: nextMedium(),
       severity: 'MEDIUM',
-      title: 'ClassGroup lookup uses global name uniqueness, not semester-scoped',
+      title: 'ClassGroup lookup still uses findUnique({ where: { name } })',
       file: 'src/lib/import/importer.ts',
-      evidence: 'executeImportInTransaction() finds ClassGroup by name only (line 466): classGroup.findUnique({ where: { name } }). ClassGroup.name is globally @unique. New ClassGroups now receive semesterId, but cross-semester same-name ClassGroups are blocked by the global unique constraint. Deferred to Fix-B.',
-      recommendation: 'Current design is safe if ClassGroup.name remains globally unique. If per-semester ClassGroup names are needed, refactor to @@unique([semesterId, name]). Deferred to Fix-B.',
+      evidence: 'executeImportInTransaction() still finds ClassGroup by name only using findUnique. With @@unique([semesterId, name]) this will fail to compile.',
+      recommendation: 'Change to findFirst({ where: { semesterId, name } }).',
     })
   }
 
@@ -279,8 +312,8 @@ async function main() {
   }
 
   // ── 10. Check confirmed/confirming guard ──
-  console.log('\n─── 10. Global Confirmed Guard ───')
-  const confirmGuardMatch = importer.match(/importBatch\.findFirst\(\{[\s\S]*?status.*?confirmed[\s\S]*?\}\)/)
+  console.log('\n─── 10. Confirmed Guard Scoping ───')
+  const confirmGuardMatch = importer.match(/importBatch\.findFirst\(\{[\s\S]*?status[\s\S]*?confirmed[\s\S]*?\}\)/g)
   const confirmGuardScoped = confirmGuardMatch?.some(m => m.includes('semesterId')) ?? false
   console.log(`  confirmed/confirming guard scoped by semester: ${confirmGuardScoped ? 'YES' : 'NO'}`)
 
@@ -290,8 +323,8 @@ async function main() {
       severity: 'MEDIUM',
       title: 'Confirmed/confirming guard is global, not semester-scoped',
       file: 'src/lib/import/importer.ts',
-      evidence: 'confirmImportBatch() checks for existing confirmed/confirming batches (line 821-826) across ALL semesters. This blocks import for ANY semester if ANY batch is confirmed/confirming. Known remaining issue deferred to Fix-B.',
-      recommendation: 'Scope the guard to the same semester. Deferred to Fix-B.',
+      evidence: 'confirmImportBatch() checks for existing confirmed/confirming batches across ALL semesters. This blocks import for ANY semester if ANY batch is confirmed/confirming.',
+      recommendation: 'Scope the guard to the same semester by adding semesterId to the where clause.',
     })
   }
 

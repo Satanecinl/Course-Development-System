@@ -233,7 +233,7 @@ async function diagnoseTargetClasses() {
   const findings: string[] = []
 
   for (const className of TARGET_CLASSES) {
-    const cg = await prisma.classGroup.findUnique({ where: { name: className } })
+    const cg = await prisma.classGroup.findFirst({ where: { name: className } })
     if (!cg) {
       findings.push(`\n班级 "${className}" 不存在于数据库`)
       continue

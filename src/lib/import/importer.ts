@@ -469,7 +469,7 @@ async function executeImportInTransaction(
   for (const name of classNames) {
     const values = studentCountByClass.get(name)
     const studentCount = values ? [...values][0] : null
-    const existing = await tx.classGroup.findUnique({ where: { name }, select: { id: true, studentCount: true } })
+    const existing = await tx.classGroup.findFirst({ where: { semesterId, name }, select: { id: true, studentCount: true } })
     if (existing) {
       classGroupMap.set(name, existing.id)
       if (existing.studentCount == null && studentCount != null) {
@@ -662,7 +662,7 @@ export async function confirmImportBatchDryRun(
 
   // 查询已有实体
   const [existingClassGroups, existingTeachers, existingCourses, existingRooms] = await Promise.all([
-    prisma.classGroup.findMany({ where: { name: { in: [...classNames] } }, select: { name: true, studentCount: true } }),
+    prisma.classGroup.findMany({ where: { semesterId, name: { in: [...classNames] } }, select: { name: true, studentCount: true } }),
     prisma.teacher.findMany({ where: { name: { in: [...teacherNames] } }, select: { name: true } }),
     prisma.course.findMany({ where: { name: { in: [...courseNames] } }, select: { name: true } }),
     prisma.room.findMany({ where: { name: { in: [...roomNames] } }, select: { name: true } }),
@@ -840,13 +840,13 @@ export async function confirmImportBatch(
     }
   }
 
-  // 3. confirmed / confirming guard
+  // 3. confirmed / confirming guard (scoped to target semester)
   const existingConfirmed = await prisma.importBatch.findFirst({
-    where: { id: { not: batchId }, status: { in: ['confirmed', 'confirming'] } },
+    where: { id: { not: batchId }, status: { in: ['confirmed', 'confirming'] }, semesterId },
     select: { id: true, status: true },
   })
   if (existingConfirmed) {
-    throw new Error(`已有 ImportBatch #${existingConfirmed.id} 状态为 "${existingConfirmed.status}"，当前阶段不支持重复确认导入`)
+    throw new Error(`学期 ${semesterId} 已有 ImportBatch #${existingConfirmed.id} 状态为 "${existingConfirmed.status}"，不允许重复确认导入`)
   }
 
   // 4. 原子 pending → confirming

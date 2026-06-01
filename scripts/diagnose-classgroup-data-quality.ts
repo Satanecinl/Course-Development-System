@@ -102,7 +102,7 @@ async function main() {
   console.log('=== K9-DQ-1: ClassGroup Data Quality Audit ===\n')
 
   // ── Step 1: Find target class ──
-  const targetClass = await prisma.classGroup.findUnique({
+  const targetClass = await prisma.classGroup.findFirst({
     where: { name: TARGET_CLASS },
     select: { id: true, name: true, studentCount: true },
   })

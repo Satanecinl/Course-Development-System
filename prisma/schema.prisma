@@ -30,7 +30,7 @@ model Semester {
 
 model ClassGroup {
   id           Int                 @id @default(autoincrement())
-  name         String              @unique
+  name         String
   studentCount Int?
   advisorName  String?
   advisorPhone String?
@@ -40,6 +40,7 @@ model ClassGroup {
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
 
+  @@unique([semesterId, name])
   @@index([semesterId])
 }
 
