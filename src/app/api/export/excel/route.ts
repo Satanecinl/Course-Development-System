@@ -134,7 +134,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Original path: raw schedule without adjustments
-    const where: Record<string, unknown> = {}
+    // Resolve semester for scoped export
+    const semesterIdParam = searchParams.get('semesterId')
+    const semester = await resolveSchedulerSemester({
+      semesterId: semesterIdParam ? parseInt(semesterIdParam, 10) : undefined,
+    })
+
+    const where: Record<string, unknown> = { semesterId: semester.id }
 
     if (viewType && targetId && !isNaN(targetId)) {
       if (viewType === 'class') {
@@ -169,7 +175,7 @@ export async function GET(request: NextRequest) {
     })
 
     // 2. 获取视图标题
-    let sheetTitle = '课程表'
+    let sheetTitle = `${semester.name} 课程表`
     if (viewType === 'class' && targetId) {
       const cg = await prisma.classGroup.findUnique({ where: { id: targetId }, select: { name: true } })
       if (cg) sheetTitle = `${cg.name} 课程表`

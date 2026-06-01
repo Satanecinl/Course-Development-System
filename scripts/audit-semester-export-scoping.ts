@@ -171,8 +171,8 @@ async function main() {
     info(`Regular path reads ScheduleSlot: ${hasRegularPath}`)
 
     // Check if regular path has semester filter
-    // The regular path is the else branch (no applyAdjustments)
-    const regularPathSection = content.split('applyAdjustments')[1] || ''
+    // The regular path is after 'Original path' comment
+    const regularPathSection = content.split('Original path')[1] || ''
     const regularHasSemesterFilter = regularPathSection.includes('semesterId')
 
     check('regular Excel export 路径已 semester scoped', regularHasSemesterFilter,
@@ -287,17 +287,22 @@ async function main() {
   const mediumRisks: string[] = []
   const scopedItems: string[] = []
 
-  // Excel export
+  // Excel export — adjustment-aware path
   if (excelRouteContent.includes('resolveSchedulerSemester')) {
     scopedItems.push('Excel export adjustment-aware path')
   }
-  const regularSection = excelRouteContent.split('applyAdjustments')[1] || ''
-  if (!regularSection.includes('semesterId') && regularSection.includes('scheduleSlot.findMany')) {
+  // Excel export — regular path
+  const regularSection = excelRouteContent.split('Original path')[1] || ''
+  if (regularSection.includes('semesterId') && regularSection.includes('scheduleSlot.findMany')) {
+    scopedItems.push('Excel export regular path')
+  } else if (regularSection.includes('scheduleSlot.findMany')) {
     highRisks.push('Excel export regular path: reads all ScheduleSlots without semester filter')
   }
 
   // Schedule API
-  if (!scheduleRouteContent.includes('semesterId')) {
+  if (scheduleRouteContent.includes('semesterId') && scheduleRouteContent.includes('resolveSchedulerSemester')) {
+    scopedItems.push('Schedule API (/api/schedule)')
+  } else if (scheduleRouteContent.includes('scheduleSlot.findMany')) {
     highRisks.push('Schedule API (/api/schedule): reads all ScheduleSlots without semester filter')
   }
 
@@ -330,12 +335,15 @@ async function main() {
   console.log(`\n  🟢 已 SCOPED: ${scopedItems.length}`)
   for (const s of scopedItems) console.log(`    - ${s}`)
 
-  console.log(`\n  推荐后续阶段: K10-SEMESTER-EXPORT-SCOPING-FIX`)
-  console.log(`  修复范围:`)
-  console.log(`    1. Excel export regular path: 添加 semesterId filter`)
-  console.log(`    2. Schedule API (/api/schedule): 添加 semesterId filter`)
-  console.log(`    3. Data APIs: 评估是否需要 semester filter (低优先级)`)
-  console.log(`    4. 普通课表导出: 需先决定是否需要 semester selector`)
+  if (highRisks.length > 0) {
+    console.log(`\n  推荐后续阶段: K10-SEMESTER-EXPORT-SCOPING-FIX`)
+  } else if (mediumRisks.length > 0) {
+    console.log(`\n  推荐后续阶段: K10-SEMESTER-ADMIN-DATA-PAGES-SCOPING-AUDIT`)
+    console.log(`  修复范围:`)
+    console.log(`    1. Data APIs: 评估是否需要 semester filter (低优先级)`)
+  } else {
+    console.log(`\n  所有导出入口已 scoped，无遗留风险`)
+  }
 
   console.log('\n════════════════════════════════════════════════════════════')
 }

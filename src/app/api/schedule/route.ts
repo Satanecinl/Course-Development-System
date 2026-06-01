@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { resolveSchedulerSemester } from '@/lib/semester'
 import { getEffectiveScheduleForWeek } from '@/lib/schedule/adjustments'
 import { requirePermission } from '@/lib/auth/require-permission'
 
@@ -14,14 +15,20 @@ export async function GET(request: NextRequest) {
     const weekParam = searchParams.get('week')
     const applyAdjustments = searchParams.get('applyAdjustments') === 'true'
     const week = weekParam ? parseInt(weekParam, 10) : null
+    const semesterIdParam = searchParams.get('semesterId')
+
+    // Resolve semester (explicit or active)
+    const semester = await resolveSchedulerSemester({
+      semesterId: semesterIdParam ? parseInt(semesterIdParam, 10) : undefined,
+    })
 
     // If week + applyAdjustments, use effective schedule
     if (week != null && applyAdjustments) {
-      const effectiveItems = await getEffectiveScheduleForWeek(week)
+      const effectiveItems = await getEffectiveScheduleForWeek(week, semester.id)
       return NextResponse.json(effectiveItems)
     }
 
-    const where: Record<string, unknown> = {}
+    const where: Record<string, unknown> = { semesterId: semester.id }
 
     if (viewType && targetId && !isNaN(targetId)) {
       if (viewType === 'class') {
