@@ -126,8 +126,8 @@ async function main() {
       (counts as any)[name] === 0 ? 'DATA LOSS DETECTED' : undefined)
   }
 
-  // Semester 可以为 0（未做 backfill）
-  check('Semester count = 0 (未做 backfill)', counts.Semester === 0)
+  // Semester 至少 1 个（默认学期已创建）
+  check('Semester count >= 1 (默认学期已创建)', counts.Semester >= 1)
 
   // ── 4. 安全边界检查 ──
   console.log('\n─── 4. 安全边界检查 ───\n')
