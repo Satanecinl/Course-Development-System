@@ -168,15 +168,16 @@ addFinding({
 
 const teachingTaskRoute = readFile('src/app/api/teaching-task/[id]/route.ts')
 const ttUpdatesSlots = /scheduleSlot\.updateMany/.test(teachingTaskRoute) || /scheduleSlot\.update/.test(teachingTaskRoute)
-const ttHasConflictCheck = teachingTaskRoute.includes('checkScheduleConflict')
+const ttHasConflictCheck = teachingTaskRoute.includes('checkScheduleConflict') || teachingTaskRoute.includes('checkWeekOverlap')
 const ttHasSemesterGuard = teachingTaskRoute.includes('semesterId') && (
   teachingTaskRoute.includes('guard') || teachingTaskRoute.includes('existing') || teachingTaskRoute.includes('semester')
 )
 
 if (ttUpdatesSlots) {
+  const ttSeverity = ttHasConflictCheck ? 'NONE' : 'MEDIUM'
   addFinding({
     id: 'K11-MUTATION-MEDIUM-3',
-    severity: 'MEDIUM',
+    severity: ttSeverity,
     area: 'PUT /api/teaching-task/[id]',
     description: `Teaching task PUT 通过 scheduleSlot.updateMany 批量更新所有关联 slot 的 roomId，${ttHasConflictCheck ? '有' : '无'} conflict check，${ttHasSemesterGuard ? '有' : '无'} same-semester guard。批量 roomId 变更可能制造教室冲突。`,
     evidence: `updatesSlots: ${ttUpdatesSlots}; hasConflictCheck: ${ttHasConflictCheck}; hasSemesterGuard: ${ttHasSemesterGuard}`,

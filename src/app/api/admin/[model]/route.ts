@@ -91,6 +91,10 @@ async function countReferences(model: string, id: number): Promise<{ count: numb
       const count = await prisma.scheduleSlot.count({ where: { teachingTaskId: id } })
       return count > 0 ? { count, type: '排课时段' } : null
     }
+    case 'scheduleslot': {
+      const count = await prisma.scheduleAdjustment.count({ where: { originalSlotId: id } })
+      return count > 0 ? { count, type: '调课记录' } : null
+    }
     default:
       return null
   }

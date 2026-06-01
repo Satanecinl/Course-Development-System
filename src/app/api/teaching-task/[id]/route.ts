@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requirePermission } from '@/lib/auth/require-permission'
+import { checkWeekOverlap, WeekConstraint } from '@/lib/conflict'
 
 export async function PUT(
   request: NextRequest,
@@ -78,10 +79,74 @@ export async function PUT(
       })
 
       // 3. Update all ScheduleSlots for this task
-      await tx.scheduleSlot.updateMany({
-        where: { teachingTaskId: taskId },
-        data: { roomId: roomId ?? null },
-      })
+      if (roomId != null) {
+        await tx.scheduleSlot.updateMany({
+          where: { teachingTaskId: taskId },
+          data: { roomId: roomId ?? null },
+        })
+
+        // Post-update conflict check: verify new roomId doesn't create conflicts
+        const updatedSlots = await tx.scheduleSlot.findMany({
+          where: { teachingTaskId: taskId },
+          select: { id: true, dayOfWeek: true, slotIndex: true, semesterId: true },
+        })
+
+        const movingWeek: WeekConstraint = {
+          start: startWeek,
+          end: endWeek,
+          type: weekType as WeekConstraint['type'],
+        }
+
+        const conflicts: string[] = []
+        const dayLabels = ['', '周一', '周二', '周三', '周四', '周五', '周六', '周日']
+        const slotLabels = ['', '1-2节', '3-4节', '5-6节', '7-8节', '9-10节', '11-12节', '中午']
+
+        for (const slot of updatedSlots) {
+          const timeWhere: Record<string, unknown> = {
+            id: { not: slot.id },
+            dayOfWeek: slot.dayOfWeek,
+            slotIndex: slot.slotIndex,
+            roomId: roomId,
+          }
+          if (slot.semesterId != null) {
+            timeWhere.semesterId = slot.semesterId
+          }
+
+          const roomOccupied = await tx.scheduleSlot.findMany({
+            where: timeWhere,
+            include: {
+              teachingTask: {
+                include: { course: true, taskClasses: { include: { classGroup: true } } },
+              },
+            },
+          })
+
+          for (const occ of roomOccupied) {
+            const occWeek: WeekConstraint = {
+              start: occ.teachingTask.startWeek,
+              end: occ.teachingTask.endWeek,
+              type: occ.teachingTask.weekType as WeekConstraint['type'],
+            }
+            if (checkWeekOverlap(movingWeek, occWeek)) {
+              const classes = occ.teachingTask.taskClasses.map(tc => tc.classGroup.name).join('、')
+              conflicts.push(
+                `${dayLabels[slot.dayOfWeek]}${slotLabels[slot.slotIndex]}教室已被${classes}的《${occ.teachingTask.course?.name}》占用`,
+              )
+            }
+          }
+        }
+
+        if (conflicts.length > 0) {
+          const err = new Error('教室冲突') as Error & { conflicts: string[] }
+          err.conflicts = conflicts
+          throw err
+        }
+      } else {
+        await tx.scheduleSlot.updateMany({
+          where: { teachingTaskId: taskId },
+          data: { roomId: null },
+        })
+      }
 
       // 4. Sync TeachingTaskClass
       await tx.teachingTaskClass.deleteMany({
@@ -136,6 +201,13 @@ export async function PUT(
 
     return NextResponse.json(viewData)
   } catch (error) {
+    const err = error as Error & { conflicts?: string[] }
+    if (err.conflicts) {
+      return NextResponse.json(
+        { error: err.message, conflicts: err.conflicts },
+        { status: 409 },
+      )
+    }
     console.error('Teaching task update error:', error)
     return NextResponse.json(
       { error: 'Internal server error', details: String(error) },
