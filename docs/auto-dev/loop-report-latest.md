@@ -2,25 +2,25 @@
 
 ## 1. Loop 信息
 
-- Loop 编号：2
-- 阶段名：K11-SCHEDULE-MUTATION-SERVER-GUARD-FIX-B
-- 阶段类型：fix
-- 开始 commit：20a5903
-- 结束 commit：547b73c
+- Loop 编号：3
+- 阶段名：K11-SCHEDULE-MUTATION-SERVER-GUARD-VALIDATION
+- 阶段类型：validation
+- 开始 commit：54a17e8
+- 结束 commit：6350710
 - 工作区状态：clean
 
 ## 2. 本轮目标
 
-修复 MEDIUM-2（admin DELETE 无引用检查）和 MEDIUM-3（teaching task PUT updateMany 无 conflict check）。
+验证 Fix-A/Fix-B 后所有 guard 真实生效。
 
 ## 3. 修改文件
 
-- `src/app/api/admin/[model]/route.ts` — countReferences 增加 scheduleslot case，检查 ScheduleAdjustment 引用
-- `src/app/api/teaching-task/[id]/route.ts` — updateMany 后增加 post-update 冲突检查（教室冲突），冲突时抛出 409
-- `scripts/audit-schedule-mutation-server-guards.ts` — MEDIUM-2/MEDIUM-3 severity 动态化
+- `scripts/validate-schedule-mutation-server-guards.ts`（新增）— 37 项验证
+- `docs/k11-schedule-mutation-server-guard-validation.md`（新增）— 文档
 
 ## 4. 验证结果
 
+- validation 脚本：37 PASS, 0 FAIL, 1 SKIP
 - Fix-A 验证脚本：27/27 PASS（回归通过）
 - audit：0 HIGH, 1 MEDIUM, 3 LOW
 - build：通过
@@ -28,7 +28,7 @@
 ## 5. 风险变化
 
 - HIGH：0 → 0
-- MEDIUM：3 → 1
+- MEDIUM：1 → 1
 - LOW：3 → 3
 
 ## 6. 禁止事项确认
@@ -36,11 +36,11 @@
 - 未修改 Prisma schema
 - 未运行 db push / migrate / reset
 - 未修改 prisma/dev.db
-- 未修改 solver/parser/importer/seed
+- 未修改业务代码
 
 ## 7. 下一轮判断
 
-- 是否允许继续：是
-- 下一推荐阶段：K11-SCHEDULE-MUTATION-SERVER-GUARD-VALIDATION
-- 是否需要人工确认：否
-- 停止原因：无
+- 是否允许继续：**否**（loop limit 3/3）
+- 下一推荐阶段：无
+- 是否需要人工确认：**是**
+- 停止原因：Loop limit reached. K11 validation passed.
