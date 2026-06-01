@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requirePermission } from '@/lib/auth/require-permission'
 import type { ImportStrategy } from '@/lib/import/importer'
 import { confirmImportBatchDryRun, confirmImportBatch } from '@/lib/import/importer'
+import { resolveSchedulerSemester } from '@/lib/semester'
 
 interface ConfirmRequest {
   batchId: number
@@ -25,9 +26,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: `不支持的 strategy: ${body.strategy}` }, { status: 400 })
     }
 
+    // 解析目标 semester
+    const semester = await resolveSchedulerSemester()
+
     // dryRun 模式
     if (body.dryRun === true) {
-      const plan = await confirmImportBatchDryRun(body.batchId, body.strategy)
+      const plan = await confirmImportBatchDryRun(body.batchId, body.strategy, semester.id)
       return NextResponse.json({ success: true, dryRun: true, plan })
     }
 
@@ -39,7 +43,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const result = await confirmImportBatch(body.batchId, body.strategy)
+    const result = await confirmImportBatch(body.batchId, body.strategy, semester.id)
     return NextResponse.json({ success: true, dryRun: false, result })
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e)

@@ -7,6 +7,7 @@ import type { ImportParseResult, ImportParseError, ImportScheduleRecord } from '
 import { runPythonScript } from '@/lib/server/python-runner'
 import { computeImportParseStats, computeImportParseQuality } from '@/lib/import/parse-utils'
 import { prisma } from '@/lib/prisma'
+import { resolveSchedulerSemester } from '@/lib/semester'
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024 // 20MB
 const PARSE_TIMEOUT_MS = 60_000 // 60 seconds
@@ -105,6 +106,9 @@ export async function POST(request: NextRequest) {
     fs.copyFileSync(tmpDocx, stableDocx)
     fs.copyFileSync(tmpJson, stableJson)
 
+    // 解析目标 semester
+    const semester = await resolveSchedulerSemester()
+
     // 创建 pending ImportBatch
     const batch = await prisma.importBatch.create({
       data: {
@@ -116,12 +120,14 @@ export async function POST(request: NextRequest) {
         warningsJson: JSON.stringify(quality.warnings),
         status: 'pending',
         recordCount: records.length,
+        semesterId: semester.id,
       },
     })
 
-    const body: ImportParseResult & { batchId: number } = {
+    const body: ImportParseResult & { batchId: number; semesterId: number } = {
       success: true,
       batchId: batch.id,
+      semesterId: semester.id,
       filename: file.name,
       stats,
       quality,

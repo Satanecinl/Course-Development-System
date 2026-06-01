@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requirePermission } from '@/lib/auth/require-permission'
 import { prisma } from '@/lib/prisma'
+import { resolveSchedulerSemester } from '@/lib/semester'
 
 function safeJsonParse<T>(json: string | null | undefined, fallback: T): T {
   if (!json) return fallback
@@ -30,6 +31,8 @@ export async function GET(request: Request, context: RouteContext) {
       )
     }
 
+    const semester = await resolveSchedulerSemester()
+
     const batch = await prisma.importBatch.findUnique({
       where: { id },
       select: {
@@ -47,6 +50,7 @@ export async function GET(request: Request, context: RouteContext) {
         statsJson: true,
         qualityJson: true,
         warningsJson: true,
+        semesterId: true,
       },
     })
 
@@ -54,6 +58,13 @@ export async function GET(request: Request, context: RouteContext) {
       return NextResponse.json(
         { success: false, error: 'Batch not found' },
         { status: 404 }
+      )
+    }
+
+    if (batch.semesterId != null && batch.semesterId !== semester.id) {
+      return NextResponse.json(
+        { success: false, error: `Batch belongs to semester ${batch.semesterId}, not ${semester.id}` },
+        { status: 409 }
       )
     }
 
@@ -130,6 +141,7 @@ export async function GET(request: Request, context: RouteContext) {
         confirmedAt: batch.confirmedAt,
         rolledBackAt: batch.rolledBackAt,
         errorMessage: batch.errorMessage,
+        semesterId: batch.semesterId,
 
         stats: safeJsonParse(batch.statsJson, null),
         quality: safeJsonParse(batch.qualityJson, null),

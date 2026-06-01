@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requirePermission } from '@/lib/auth/require-permission'
 import { prisma } from '@/lib/prisma'
+import { resolveSchedulerSemester } from '@/lib/semester'
 
 interface AbandonRequestBody {
   confirmText?: string
@@ -35,15 +36,23 @@ export async function POST(request: Request, context: RouteContext) {
     }
 
     // Only pending batches can be abandoned
+    const semester = await resolveSchedulerSemester()
     const batch = await prisma.importBatch.findUnique({
       where: { id },
-      select: { id: true, status: true },
+      select: { id: true, status: true, semesterId: true },
     })
 
     if (!batch) {
       return NextResponse.json(
         { success: false, error: `Batch #${id} not found` },
         { status: 404 }
+      )
+    }
+
+    if (batch.semesterId != null && batch.semesterId !== semester.id) {
+      return NextResponse.json(
+        { success: false, error: `Batch belongs to semester ${batch.semesterId}, not ${semester.id}` },
+        { status: 409 }
       )
     }
 

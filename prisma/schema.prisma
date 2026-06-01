@@ -25,6 +25,7 @@ model Semester {
   scheduleAdjustments ScheduleAdjustment[]
   schedulingRuns      SchedulingRun[]
   schedulingConfigs   SchedulingConfig[]
+  importBatches       ImportBatch[]
 }
 
 model ClassGroup {
@@ -279,11 +280,15 @@ model ImportBatch {
   errorMessage     String?
   confirmedAt      DateTime?
   rolledBackAt     DateTime?
+  semesterId       Int?
+  semester         Semester? @relation(fields: [semesterId], references: [id])
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
   teachingTasks TeachingTask[]
   scheduleSlots ScheduleSlot[]
+
+  @@index([semesterId])
 }
 
 // ─── Auth / RBAC Models ─────────────────────────────────────────────

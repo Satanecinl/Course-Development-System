@@ -338,10 +338,15 @@ interface PreparedData {
   mergeWarnings: string[]
 }
 
-async function prepareRecords(batchId: number): Promise<PreparedData> {
+async function prepareRecords(batchId: number, targetSemesterId?: number): Promise<PreparedData> {
   const batch = await prisma.importBatch.findUnique({ where: { id: batchId } })
   if (!batch) throw new Error(`ImportBatch ${batchId} 不存在`)
   if (batch.status !== 'pending') throw new Error(`ImportBatch ${batchId} 状态为 "${batch.status}"，只允许 pending 状态`)
+
+  // Validate batch semesterId against target semester
+  if (batch.semesterId != null && targetSemesterId != null && batch.semesterId !== targetSemesterId) {
+    throw new Error(`ImportBatch ${batchId} 属于学期 ${batch.semesterId}，不能导入到学期 ${targetSemesterId}`)
+  }
 
   const jsonPath = join(process.cwd(), batch.parsedJsonPath!)
   if (!existsSync(jsonPath)) throw new Error(`解析文件不存在: ${jsonPath}`)
@@ -433,6 +438,7 @@ async function executeImportInTransaction(
   tx: TxClient,
   prepared: PreparedData,
   batchId: number,
+  semesterId: number,
 ): Promise<ImportExecutionResult> {
   const { records, classification, classNames, teacherNames, courseNames, roomNames, taskKeyToClassNames, taskKeyToRecord, taskKeys, slotKeyToRecord, slotKeys, missingTeacherCount, missingRoomCount } = prepared
 
@@ -475,7 +481,7 @@ async function executeImportInTransaction(
         warnings.push(`CLASS_STUDENT_COUNT_CONFLICT: ${name} 出现多个不同人数: ${[...values].sort((a, b) => a - b).join(', ')}`)
       }
     } else {
-      const cg = await tx.classGroup.create({ data: { name, studentCount } })
+      const cg = await tx.classGroup.create({ data: { name, studentCount, semesterId } })
       classGroupMap.set(name, cg.id)
       classGroupCreated++
     }
@@ -537,9 +543,9 @@ async function executeImportInTransaction(
     const classGroupNames = taskKeyToClassNames.get(taskKey) ?? new Set<string>()
     const classGroupIds = [...classGroupNames].map((n) => classGroupMap.get(n)).filter((id): id is number => id != null).sort((a, b) => a - b)
 
-    // 查找已有 TeachingTask：同 courseId + teacherId + weekType + startWeek + endWeek + remark
+    // 查找已有 TeachingTask：同 semesterId + courseId + teacherId + weekType + startWeek + endWeek + remark
     const existingTasks = await tx.teachingTask.findMany({
-      where: { courseId, teacherId, weekType, startWeek, endWeek, remark: remark || null },
+      where: { semesterId, courseId, teacherId, weekType, startWeek, endWeek, remark: remark || null },
       include: { taskClasses: { select: { classGroupId: true } } },
     })
 
@@ -566,6 +572,7 @@ async function executeImportInTransaction(
           endWeek,
           remark: remark || null,
           importBatchId: batchId,
+          semesterId,
         },
       })
       taskKeyToTaskId.set(taskKey, task.id)
@@ -597,16 +604,16 @@ async function executeImportInTransaction(
     const roomName = roomStr === '**NULL_ROOM**' ? null : roomStr
     const roomId = roomName ? (roomMap.get(roomName) ?? null) : null
 
-    // 查找已有 ScheduleSlot（去重 key: teachingTaskId + dayOfWeek + slotIndex + roomId）
+    // 查找已有 ScheduleSlot（去重 key: semesterId + teachingTaskId + dayOfWeek + slotIndex + roomId）
     const existingSlot = await tx.scheduleSlot.findFirst({
-      where: { teachingTaskId, dayOfWeek, slotIndex, roomId },
+      where: { semesterId, teachingTaskId, dayOfWeek, slotIndex, roomId },
     })
 
     if (existingSlot) {
       slotReused++
     } else {
       await tx.scheduleSlot.create({
-        data: { teachingTaskId, roomId, dayOfWeek, slotIndex, importBatchId: batchId },
+        data: { teachingTaskId, roomId, dayOfWeek, slotIndex, importBatchId: batchId, semesterId },
       })
       slotCreated++
     }
@@ -634,8 +641,9 @@ async function executeImportInTransaction(
 export async function confirmImportBatchDryRun(
   batchId: number,
   strategy: ImportStrategy,
+  semesterId: number,
 ): Promise<ImportPlan> {
-  const prepared = await prepareRecords(batchId)
+  const prepared = await prepareRecords(batchId, semesterId)
   const { quality, classification, records, classNames, teacherNames, courseNames, roomNames, eventKeyToClassNames, taskKeyToClassNames, taskKeys, slotKeys, missingTeacherCount, missingRoomCount, mergeWarnings } = prepared
 
   if (!classification.canImport) {
@@ -750,8 +758,9 @@ export async function confirmImportBatchDryRun(
 export async function simulateConfirmImportBatch(
   batchId: number,
   strategy: ImportStrategy,
+  semesterId: number,
 ): Promise<ImportExecutionResult> {
-  const prepared = await prepareRecords(batchId)
+  const prepared = await prepareRecords(batchId, semesterId)
 
   if (!prepared.classification.canImport) {
     return {
@@ -769,7 +778,7 @@ export async function simulateConfirmImportBatch(
 
   try {
     await prisma.$transaction(async (tx) => {
-      const result = await executeImportInTransaction(tx, prepared, batchId)
+      const result = await executeImportInTransaction(tx, prepared, batchId, semesterId)
       throw new RollbackSignal(result)
     })
     // 理论上不会到达这里
@@ -798,14 +807,28 @@ export interface ConfirmImportResult {
 export async function confirmImportBatch(
   batchId: number,
   strategy: ImportStrategy,
+  semesterId: number,
 ): Promise<ConfirmImportResult> {
   // 1. 读取 ImportBatch
   const batch = await prisma.importBatch.findUnique({ where: { id: batchId } })
   if (!batch) throw new Error(`ImportBatch ${batchId} 不存在`)
   if (batch.status !== 'pending') throw new Error(`ImportBatch ${batchId} 状态为 "${batch.status}"，只允许 pending 状态`)
 
+  // Validate batch semesterId against target semester
+  if (batch.semesterId != null && batch.semesterId !== semesterId) {
+    throw new Error(`ImportBatch ${batchId} 属于学期 ${batch.semesterId}，不能导入到学期 ${semesterId}`)
+  }
+
+  // Bind legacy null semesterId to target semester
+  if (batch.semesterId == null) {
+    await prisma.importBatch.update({
+      where: { id: batchId },
+      data: { semesterId },
+    })
+  }
+
   // 2. 读取 parsedJson + quality gate
-  const prepared = await prepareRecords(batchId)
+  const prepared = await prepareRecords(batchId, semesterId)
 
   // canImport=false → 直接返回，不修改 batch 状态
   if (!prepared.classification.canImport) {
@@ -838,7 +861,7 @@ export async function confirmImportBatch(
   // 5. 执行真实 transaction
   try {
     const execResult = await prisma.$transaction(async (tx) => {
-      const result = await executeImportInTransaction(tx, prepared, batchId)
+      const result = await executeImportInTransaction(tx, prepared, batchId, semesterId)
 
       // 在 transaction 内更新 ImportBatch 为 confirmed
       await tx.importBatch.update({

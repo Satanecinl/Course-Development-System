@@ -62,6 +62,7 @@ export interface ImportParseQuality {
 export interface ImportParseResult {
   success: true
   batchId?: number
+  semesterId?: number
   filename?: string
   stats: ImportParseStats
   quality: ImportParseQuality
@@ -137,6 +138,7 @@ export interface ImportBatchListItem {
   createdAt: string
   confirmedAt: string | null
   rolledBackAt: string | null
+  semesterId: number | null
 }
 
 export interface ImportBatchDetail extends ImportBatchListItem {
@@ -160,6 +162,7 @@ export interface ImportBatchDetail extends ImportBatchListItem {
 export interface ImportBatchListResponse {
   success: true
   batches: ImportBatchListItem[]
+  semesterId?: number
 }
 
 export interface ImportBatchDetailResponse {

@@ -18,6 +18,12 @@ async function main() {
 
   console.log(`找到 pending ImportBatch: id=${batch.id}\n`)
 
+  const activeSemester = await prisma.semester.findFirst({ where: { isActive: true } })
+  if (!activeSemester) {
+    console.error('No active semester found')
+    process.exit(1)
+  }
+
   // 记录导入前数据库数量
   const before = {
     classGroup: await prisma.classGroup.count(),
@@ -42,7 +48,7 @@ async function main() {
   console.log()
 
   // 执行事务回滚演练
-  const result = await simulateConfirmImportBatch(batch.id, 'UPSERT_BY_NATURAL_KEY')
+  const result = await simulateConfirmImportBatch(batch.id, 'UPSERT_BY_NATURAL_KEY', activeSemester.id)
 
   console.log('--- Execution Result ---')
   console.log(`  simulated:              ${result.simulated}`)

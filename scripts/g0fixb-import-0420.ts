@@ -84,6 +84,13 @@ async function main() {
   const stats = computeImportParseStats(records)
   const quality = computeImportParseQuality(records)
 
+  // Resolve active semester for batch
+  const activeSemesterForBatch = await prisma.semester.findFirst({ where: { isActive: true } })
+  if (!activeSemesterForBatch) {
+    console.error('❌ No active semester found')
+    process.exit(1)
+  }
+
   const batch = await prisma.importBatch.create({
     data: {
       filename: '2026年春季学期课程表(0420).docx',
@@ -94,6 +101,7 @@ async function main() {
       warningsJson: JSON.stringify(quality.warnings),
       status: 'pending',
       recordCount: records.length,
+      semesterId: activeSemesterForBatch.id,
     },
   })
 
@@ -103,7 +111,8 @@ async function main() {
 
   // ── 5. dry-run ──
   console.log('\n--- Confirm Dry-Run ---')
-  const plan = await confirmImportBatchDryRun(batch.id, 'UPSERT_BY_NATURAL_KEY')
+  console.log(`  semester: ${activeSemesterForBatch.name} (id=${activeSemesterForBatch.id})`)
+  const plan = await confirmImportBatchDryRun(batch.id, 'UPSERT_BY_NATURAL_KEY', activeSemesterForBatch.id)
 
   console.log(`  canImport: ${plan.canImport}`)
   console.log(`  recordCount: ${plan.recordCount}`)
@@ -129,7 +138,7 @@ async function main() {
 
   // ── 6. 真实 confirm ──
   console.log('\n--- 真实 Confirm ---')
-  const result = await confirmImportBatch(batch.id, 'UPSERT_BY_NATURAL_KEY')
+  const result = await confirmImportBatch(batch.id, 'UPSERT_BY_NATURAL_KEY', activeSemesterForBatch.id)
 
   console.log(`  success: ${result.success}`)
   console.log(`  canImport: ${result.canImport}`)

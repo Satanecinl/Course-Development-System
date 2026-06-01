@@ -37,6 +37,8 @@ async function main() {
     const stats = computeImportParseStats(records)
     const quality = computeImportParseQuality(records)
 
+    const semesterForTemp = await prisma.semester.findFirst({ where: { isActive: true } })
+
     const created = await prisma.importBatch.create({
       data: {
         filename: 'test-dry-run-0420.docx',
@@ -47,6 +49,7 @@ async function main() {
         warningsJson: JSON.stringify(quality.warnings),
         status: 'pending',
         recordCount: records.length,
+        semesterId: semesterForTemp?.id,
       },
     })
     tempBatchId = created.id
@@ -55,6 +58,12 @@ async function main() {
   }
 
   console.log(`找到 pending ImportBatch: id=${batch.id}, filename="${batch.filename}"\n`)
+
+  const activeSemester = await prisma.semester.findFirst({ where: { isActive: true } })
+  if (!activeSemester) {
+    console.error('No active semester found')
+    process.exit(1)
+  }
 
   // 记录 dry-run 前的数据库状态
   const beforeTaskCount = await prisma.teachingTask.count()
@@ -65,7 +74,7 @@ async function main() {
   const records: ImportScheduleRecord[] = JSON.parse(readFileSync(jsonPath, 'utf-8'))
   const uniqueClassNames = new Set(records.map((r) => r.class_info?.class_name).filter(Boolean))
 
-  const plan = await confirmImportBatchDryRun(batch.id, 'UPSERT_BY_NATURAL_KEY')
+  const plan = await confirmImportBatchDryRun(batch.id, 'UPSERT_BY_NATURAL_KEY', activeSemester.id)
 
   // ── 输出计划摘要 ──
   console.log('========== Dry-Run Import Plan ==========')

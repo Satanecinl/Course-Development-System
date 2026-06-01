@@ -17,6 +17,12 @@ async function main() {
 
   console.log(`找到 pending ImportBatch: id=${batch.id}\n`)
 
+  const activeSemester = await prisma.semester.findFirst({ where: { isActive: true } })
+  if (!activeSemester) {
+    console.error('No active semester found')
+    process.exit(1)
+  }
+
   let failed = false
 
   function check(name: string, ok: boolean, detail: string) {
@@ -27,7 +33,7 @@ async function main() {
   // ── Guard 1: dryRun true 可用 ──
   console.log('--- Guard Tests ---')
   try {
-    const plan = await confirmImportBatchDryRun(batch.id, 'UPSERT_BY_NATURAL_KEY')
+    const plan = await confirmImportBatchDryRun(batch.id, 'UPSERT_BY_NATURAL_KEY', activeSemester.id)
     check('dryRun=true 可用', plan.canImport === true, `canImport=${plan.canImport}`)
   } catch (e) {
     check('dryRun=true 可用', false, String(e))
@@ -36,7 +42,7 @@ async function main() {
   // ── Guard 2: batch status 不是 pending 时拒绝 ──
   try {
     // 用一个不存在的 batchId
-    await confirmImportBatchDryRun(999999, 'UPSERT_BY_NATURAL_KEY')
+    await confirmImportBatchDryRun(999999, 'UPSERT_BY_NATURAL_KEY', activeSemester.id)
     check('不存在的 batchId 拒绝', false, 'should have thrown')
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
@@ -53,7 +59,7 @@ async function main() {
   const beforeSlotCount = await prisma.scheduleSlot.count()
 
   // 再次调用 dryRun（确保不写库）
-  await confirmImportBatchDryRun(batch.id, 'UPSERT_BY_NATURAL_KEY')
+  await confirmImportBatchDryRun(batch.id, 'UPSERT_BY_NATURAL_KEY', activeSemester.id)
 
   const afterTaskCount = await prisma.teachingTask.count()
   const afterSlotCount = await prisma.scheduleSlot.count()

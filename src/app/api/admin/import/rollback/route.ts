@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { requirePermission } from '@/lib/auth/require-permission'
 import { buildRollbackPlan, rollbackImportBatch } from '@/lib/import/rollback'
+import { resolveSchedulerSemester } from '@/lib/semester'
+import { prisma } from '@/lib/prisma'
 
 interface RollbackRequestBody {
   batchId?: number
@@ -19,6 +21,27 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { success: false, error: 'batchId is required and must be a number' },
         { status: 400 }
+      )
+    }
+
+    // 解析目标 semester 并校验 batch semesterId
+    const semester = await resolveSchedulerSemester()
+    const batch = await prisma.importBatch.findUnique({
+      where: { id: body.batchId },
+      select: { id: true, semesterId: true, status: true },
+    })
+
+    if (!batch) {
+      return NextResponse.json(
+        { success: false, error: `Batch #${body.batchId} not found` },
+        { status: 404 }
+      )
+    }
+
+    if (batch.semesterId != null && batch.semesterId !== semester.id) {
+      return NextResponse.json(
+        { success: false, error: `Batch belongs to semester ${batch.semesterId}, not ${semester.id}` },
+        { status: 409 }
       )
     }
 

@@ -42,7 +42,15 @@ async function main() {
   console.log()
 
   try {
-    const result = await confirmImportBatch(batch.id, 'UPSERT_BY_NATURAL_KEY')
+    // Resolve active semester
+    const activeSemester = await prisma.semester.findFirst({ where: { isActive: true } })
+    if (!activeSemester) {
+      console.error('No active semester found. Please set one active semester.')
+      process.exit(1)
+    }
+    console.log(`Using semester: ${activeSemester.name} (id=${activeSemester.id})\n`)
+
+    const result = await confirmImportBatch(batch.id, 'UPSERT_BY_NATURAL_KEY', activeSemester.id)
 
     console.log('--- Confirm Result ---')
     console.log(`  success:            ${result.success}`)

@@ -159,6 +159,7 @@ async function main() {
   console.log(`  ClassGroup findUnique scoped by semesterId: ${cgLookupHasSemester ? 'YES' : 'NO'}`)
 
   // Note: ClassGroup.name is @unique, so findUnique on name is globally safe.
+  // Importer now writes semesterId when creating new ClassGroups.
   // But if same-name ClassGroups across semesters are desired, this would need scoping.
   if (!cgLookupHasSemester && importerCreatesClassGroup) {
     findings.push({
@@ -166,8 +167,8 @@ async function main() {
       severity: 'MEDIUM',
       title: 'ClassGroup lookup uses global name uniqueness, not semester-scoped',
       file: 'src/lib/import/importer.ts',
-      evidence: 'executeImportInTransaction() finds ClassGroup by name only (line 466): classGroup.findUnique({ where: { name } }). ClassGroup.name is globally @unique. If same-name classes across semesters are needed, this lookup would collide.',
-      recommendation: 'Current design is safe if ClassGroup.name remains globally unique. If per-semester ClassGroup names are needed, add semesterId to the where clause.',
+      evidence: 'executeImportInTransaction() finds ClassGroup by name only (line 466): classGroup.findUnique({ where: { name } }). ClassGroup.name is globally @unique. New ClassGroups now receive semesterId, but cross-semester same-name ClassGroups are blocked by the global unique constraint. Deferred to Fix-B.',
+      recommendation: 'Current design is safe if ClassGroup.name remains globally unique. If per-semester ClassGroup names are needed, refactor to @@unique([semesterId, name]). Deferred to Fix-B.',
     })
   }
 
@@ -289,8 +290,8 @@ async function main() {
       severity: 'MEDIUM',
       title: 'Confirmed/confirming guard is global, not semester-scoped',
       file: 'src/lib/import/importer.ts',
-      evidence: 'confirmImportBatch() checks for existing confirmed/confirming batches (line 821-826) across ALL semesters. This blocks import for ANY semester if ANY batch is confirmed/confirming.',
-      recommendation: 'Scope the guard to the same semester when ImportBatch gains semesterId.',
+      evidence: 'confirmImportBatch() checks for existing confirmed/confirming batches (line 821-826) across ALL semesters. This blocks import for ANY semester if ANY batch is confirmed/confirming. Known remaining issue deferred to Fix-B.',
+      recommendation: 'Scope the guard to the same semester. Deferred to Fix-B.',
     })
   }
 
@@ -301,14 +302,18 @@ async function main() {
   console.log(`  data-loader filters by semesterId: ${dataLoaderScopesBySemester ? 'YES' : 'NO'}`)
 
   if (dataLoaderScopesBySemester) {
-    findings.push({
-      riskId: nextHigh(),
-      severity: 'HIGH',
-      title: 'Imported data with null semesterId invisible to semester-scoped scheduler',
-      file: 'src/lib/scheduler/data-loader.ts',
-      evidence: 'loadSchedulingContext() filters TeachingTask and ScheduleSlot by { semesterId } (lines 30-31). Records created by import with semesterId=null will NOT be loaded by the scheduler, creating a complete disconnect between import and scheduling.',
-      recommendation: 'Import MUST set semesterId on created records. Without this, imported data is invisible to the scheduler.',
-    })
+    // Check if importer now writes semesterId
+    const importerWritesSemesterId = importer.includes('semesterId') && /teachingTask\.create\(\{[\s\S]*?semesterId/.test(importer)
+    if (!importerWritesSemesterId) {
+      findings.push({
+        riskId: nextHigh(),
+        severity: 'HIGH',
+        title: 'Imported data with null semesterId invisible to semester-scoped scheduler',
+        file: 'src/lib/scheduler/data-loader.ts',
+        evidence: 'loadSchedulingContext() filters TeachingTask and ScheduleSlot by { semesterId } (lines 30-31). Records created by import with semesterId=null will NOT be loaded by the scheduler, creating a complete disconnect between import and scheduling.',
+        recommendation: 'Import MUST set semesterId on created records. Without this, imported data is invisible to the scheduler.',
+      })
+    }
   }
 
   // ── 12. Check conflict-check for null semesterId handling ──
@@ -320,14 +325,17 @@ async function main() {
   console.log(`  null fallback to slot's semesterId: ${conflictNullFallback ? 'YES' : 'NO'}`)
 
   if (conflictNullFallback) {
-    findings.push({
-      riskId: nextMedium(),
-      severity: 'MEDIUM',
-      title: 'Conflict check falls back to slot semesterId which may be null for imported data',
-      file: 'src/lib/conflict-check.ts',
-      evidence: 'checkScheduleConflict() uses input.semesterId ?? movingSlot.semesterId (line 61). If imported slots have semesterId=null, the conflict check will use null, potentially scoping to other null-semesterId slots or not scoping at all.',
-      recommendation: 'Ensure imported records have proper semesterId so conflict checks work correctly.',
-    })
+    const importerWritesSemesterId = importer.includes('semesterId') && /scheduleSlot\.create\(\{[\s\S]*?semesterId/.test(importer)
+    if (!importerWritesSemesterId) {
+      findings.push({
+        riskId: nextMedium(),
+        severity: 'MEDIUM',
+        title: 'Conflict check falls back to slot semesterId which may be null for imported data',
+        file: 'src/lib/conflict-check.ts',
+        evidence: 'checkScheduleConflict() uses input.semesterId ?? movingSlot.semesterId (line 61). If imported slots have semesterId=null, the conflict check will use null, potentially scoping to other null-semesterId slots or not scoping at all.',
+        recommendation: 'Ensure imported records have proper semesterId so conflict checks work correctly.',
+      })
+    }
   }
 
   // ── 13. Check for deleteMany in import pipeline ──
