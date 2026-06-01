@@ -107,7 +107,12 @@ export async function GET(request: NextRequest) {
         if (row < 0 || row >= 6 || col < 0 || col >= 7) continue
         const classLabel = item.classNames.length > 1 ? `\n[${item.classNames.map((cn) => cn.replace(/^.*?(\d+)班$/, '$1')).join('/')}]` : ''
         const adjustedMark = item.isAdjusted ? ' [调课]' : ''
-        grid[row][col] = `${item.courseName}${adjustedMark}\n${item.teacherName || '待定'}\n${item.roomName || ''}${classLabel}`
+        const cellContent = `${item.courseName}${adjustedMark}\n${item.teacherName || '待定'}\n${item.roomName || ''}${classLabel}`
+        if (grid[row][col]) {
+          grid[row][col] += `\n${'─'.repeat(8)}\n${cellContent}`
+        } else {
+          grid[row][col] = cellContent
+        }
       }
 
       for (let rowIdx = 0; rowIdx < 6; rowIdx++) {
@@ -116,13 +121,22 @@ export async function GET(request: NextRequest) {
         excelRow.getCell(1).font = { bold: true }
         excelRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' }
         excelRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F0F0' } }
+        // Dynamic row height based on max courses in any cell of this row
+        let maxCourses = 1
+        for (let colIdx = 0; colIdx < 7; colIdx++) {
+          const cellVal = grid[rowIdx][colIdx]
+          if (cellVal) {
+            const count = (cellVal.match(/─{8}/g) || []).length + 1
+            if (count > maxCourses) maxCourses = count
+          }
+        }
         for (let colIdx = 0; colIdx < 7; colIdx++) {
           const cell = excelRow.getCell(colIdx + 2)
           cell.value = grid[rowIdx][colIdx]
           cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
           cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } }
         }
-        excelRow.height = 55
+        excelRow.height = Math.max(55, 20 + maxCourses * 40)
       }
 
       const buffer = await workbook.xlsx.writeBuffer()
@@ -242,7 +256,11 @@ export async function GET(request: NextRequest) {
         : ''
 
       const cellText = `${task.course.name}${weekLabel}\n${task.teacher?.name || '待定'}\n${slot.room?.name || ''}${classLabel}`
-      grid[row][col] = cellText
+      if (grid[row][col]) {
+        grid[row][col] += `\n${'─'.repeat(8)}\n${cellText}`
+      } else {
+        grid[row][col] = cellText
+      }
     }
 
     // 写入网格行
@@ -252,6 +270,16 @@ export async function GET(request: NextRequest) {
       excelRow.getCell(1).font = { bold: true }
       excelRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' }
       excelRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F0F0' } }
+
+      // Dynamic row height based on max courses in any cell of this row
+      let maxCourses = 1
+      for (let colIdx = 0; colIdx < 7; colIdx++) {
+        const cellVal = grid[rowIdx][colIdx]
+        if (cellVal) {
+          const count = (cellVal.match(/─{8}/g) || []).length + 1
+          if (count > maxCourses) maxCourses = count
+        }
+      }
 
       for (let colIdx = 0; colIdx < 7; colIdx++) {
         const cell = excelRow.getCell(colIdx + 2)
@@ -264,7 +292,7 @@ export async function GET(request: NextRequest) {
           right: { style: 'thin' },
         }
       }
-      excelRow.height = 55
+      excelRow.height = Math.max(55, 20 + maxCourses * 40)
     }
 
     // 4. 流式返回
