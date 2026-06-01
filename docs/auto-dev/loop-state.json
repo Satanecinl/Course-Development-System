@@ -1,0 +1,18 @@
+{
+  "loop": 1,
+  "phase": "K11-SCHEDULE-MUTATION-SERVER-GUARD-FIX-A",
+  "phaseType": "fix",
+  "status": "PASS",
+  "commit": "16c3bb6",
+  "workingTreeClean": true,
+  "buildPassed": true,
+  "lintStatus": "historical-errors-only",
+  "remainingHigh": 0,
+  "remainingMedium": 3,
+  "remainingLow": 3,
+  "nextRecommendedPhase": "K11-SCHEDULE-MUTATION-SERVER-GUARD-FIX-B",
+  "nextLoopAllowed": true,
+  "mustStop": false,
+  "mustStopReason": null,
+  "requiresHumanReview": false
+}
