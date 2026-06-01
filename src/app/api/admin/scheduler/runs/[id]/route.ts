@@ -41,6 +41,10 @@ interface RunDetail {
 
   lockedSlotIds: number[]
   lockedSlotCount: number
+
+  semesterId: number | null
+  semesterCode: string | null
+  semesterName: string | null
 }
 
 interface ChangeDetail {
@@ -96,6 +100,7 @@ export async function GET(
     const run = await prisma.schedulingRun.findUnique({
       where: { id: runId },
       include: {
+        semester: true,
         changes: {
           orderBy: { id: 'asc' },
         },
@@ -155,6 +160,9 @@ export async function GET(
       errorMessage: run.errorMessage,
       lockedSlotIds,
       lockedSlotCount,
+      semesterId: run.semesterId,
+      semesterCode: run.semester?.code ?? null,
+      semesterName: run.semester?.name ?? null,
     }
 
     const changes: ChangeDetail[] = run.changes.map((c) => ({

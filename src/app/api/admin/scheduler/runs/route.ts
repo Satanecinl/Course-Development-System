@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requirePermission } from '@/lib/auth/require-permission'
+import { resolveSchedulerSemester } from '@/lib/semester'
 
 // ── Types ──
 
@@ -43,6 +44,11 @@ interface RunListResponse {
     pageSize: number
     total: number
     totalPages: number
+    semester: {
+      id: number
+      code: string
+      name: string
+    }
   }
 }
 
@@ -132,8 +138,14 @@ export async function GET(request: NextRequest) {
     // Filters
     const mode = searchParams.get('mode')
     const status = searchParams.get('status')
+    const semesterIdParam = searchParams.get('semesterId')
 
-    const where: Record<string, unknown> = {}
+    // Resolve semester (explicit or active default)
+    const semester = await resolveSchedulerSemester({
+      semesterId: semesterIdParam ? parseInt(semesterIdParam, 10) : undefined,
+    })
+
+    const where: Record<string, unknown> = { semesterId: semester.id }
     if (mode) {
       where.mode = mode.toUpperCase()
     }
@@ -189,6 +201,11 @@ export async function GET(request: NextRequest) {
         pageSize,
         total,
         totalPages,
+        semester: {
+          id: semester.id,
+          code: semester.code,
+          name: semester.name,
+        },
       },
     }
 

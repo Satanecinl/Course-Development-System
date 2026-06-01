@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { buildInitialState } from './solver'
 import { calculateInitialScore, calculateScoreWithDetails } from './score'
 import {
-  computeDatabaseFingerprintFromSlots,
+  computeSemesterScopedFingerprint,
   type PreviewProposedChange,
 } from './preview'
 import type {
@@ -56,12 +56,18 @@ function countConflictsByType(
 
 /**
  * Load scheduling context using a given Prisma client (supports transaction client).
+ * Scoped by semesterId when provided.
  */
 async function loadSchedulingContextWithClient(
   client: Prisma.TransactionClient | typeof prisma,
+  semesterId?: number,
 ): Promise<SchedulingContext> {
+  const taskWhere = semesterId != null ? { semesterId } : {}
+  const slotWhere = semesterId != null ? { semesterId } : {}
+
   const [tasks, rooms, slots] = await Promise.all([
     client.teachingTask.findMany({
+      where: taskWhere,
       include: {
         course: true,
         teacher: true,
@@ -72,6 +78,7 @@ async function loadSchedulingContextWithClient(
       include: { availabilities: true },
     }) as Promise<RoomWithAvailability[]>,
     client.scheduleSlot.findMany({
+      where: slotWhere,
       include: {
         room: true,
         teachingTask: {
@@ -193,6 +200,12 @@ export async function applySchedulerPreview(
     throw new Error('PREVIEW_FINGERPRINT_MISSING')
   }
 
+  // 3a. Validate semesterId on preview run
+  const semesterId = previewRun.semesterId
+  if (semesterId == null) {
+    throw new Error('PREVIEW_RUN_MISSING_SEMESTER_ID: Cannot apply a preview that has no semesterId.')
+  }
+
   // 4. Parse proposed changes from resultSnapshot
   let snapshot: {
     proposedChanges?: PreviewProposedChange[]
@@ -217,8 +230,9 @@ export async function applySchedulerPreview(
     throw new Error('PREVIEW_CHANGED_SLOT_COUNT_MISMATCH')
   }
 
-  // 5. Compute current database fingerprint
+  // 5. Compute current semester-scoped database fingerprint
   const currentSlots = await prisma.scheduleSlot.findMany({
+    where: { semesterId },
     select: {
       id: true,
       teachingTaskId: true,
@@ -228,13 +242,13 @@ export async function applySchedulerPreview(
     },
     orderBy: { id: 'asc' },
   })
-  const currentFingerprint = computeDatabaseFingerprintFromSlots(currentSlots)
+  const currentFingerprint = computeSemesterScopedFingerprint(semesterId, currentSlots)
 
   if (currentFingerprint !== previewRun.databaseFingerprint) {
     throw new Error('DATABASE_FINGERPRINT_MISMATCH')
   }
 
-  // 6. Pre-validate: every proposed slot exists in current DB
+  // 6. Pre-validate: every proposed slot exists in current DB (within same semester)
   const currentSlotMap = new Map(currentSlots.map((s) => [s.id, s]))
   for (const change of proposedChanges) {
     const slot = currentSlotMap.get(change.scheduleSlotId)
@@ -251,6 +265,7 @@ export async function applySchedulerPreview(
     const applyRun = await tx.schedulingRun.create({
       data: {
         configId: previewRun.configId,
+        semesterId: semesterId,
         mode: 'APPLY',
         status: 'APPLYING',
         operatorId: options.operatorId ?? null,
@@ -280,6 +295,13 @@ export async function applySchedulerPreview(
       const slot = txSlotMap.get(change.scheduleSlotId)
       if (!slot) {
         throw new Error(`TX_SLOT_NOT_FOUND: ${change.scheduleSlotId}`)
+      }
+
+      // Verify slot belongs to the same semester
+      if (slot.semesterId !== semesterId) {
+        throw new Error(
+          `SLOT_SEMESTER_MISMATCH: ${change.scheduleSlotId} semesterId=${slot.semesterId} expected=${semesterId}`,
+        )
       }
 
       // Verify current values match preview old values
@@ -328,8 +350,8 @@ export async function applySchedulerPreview(
       })
     }
 
-    // 7d. Post-apply scoring inside transaction
-    const postCtx = await loadSchedulingContextWithClient(tx)
+    // 7d. Post-apply scoring inside transaction (semester-scoped)
+    const postCtx = await loadSchedulingContextWithClient(tx, semesterId)
     const postState = buildInitialState(postCtx)
     const postScore = calculateInitialScore(postCtx, postState)
     const postDetails = calculateScoreWithDetails(postCtx, postState)
@@ -347,8 +369,9 @@ export async function applySchedulerPreview(
       )
     }
 
-    // 7e. Compute post-apply fingerprint
+    // 7e. Compute post-apply semester-scoped fingerprint
     const postSlots = await tx.scheduleSlot.findMany({
+      where: { semesterId },
       select: {
         id: true,
         teachingTaskId: true,
@@ -358,7 +381,7 @@ export async function applySchedulerPreview(
       },
       orderBy: { id: 'asc' },
     })
-    const postFingerprint = computeDatabaseFingerprintFromSlots(postSlots)
+    const postFingerprint = computeSemesterScopedFingerprint(semesterId, postSlots)
 
     // 7f. Update APPLY run to COMPLETED
     const completedAt = new Date()

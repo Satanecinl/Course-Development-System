@@ -59,6 +59,12 @@ interface RunListItem {
   operatorNameSnapshot: string | null
 }
 
+interface RunListItemWithSemester extends RunListItem {
+  semesterId?: number | null
+  semesterCode?: string | null
+  semesterName?: string | null
+}
+
 interface ChangeDetail {
   id: number
   scheduleSlotId: number
@@ -84,6 +90,9 @@ interface RunDetailData {
     errorMessage: string | null
     lockedSlotIds: number[]
     lockedSlotCount: number
+    semesterId?: number | null
+    semesterCode?: string | null
+    semesterName?: string | null
   }
   changes: ChangeDetail[]
 }
@@ -156,6 +165,7 @@ export default function HistoryContent() {
 
   const [modeFilter, setModeFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [semesterName, setSemesterName] = useState<string | null>(null)
 
   const [expandedRunId, setExpandedRunId] = useState<number | null>(null)
   const [detailData, setDetailData] = useState<Record<number, RunDetailData>>({})
@@ -183,6 +193,7 @@ export default function HistoryContent() {
 
       setItems(json.data.items)
       setPagination(json.data)
+      setSemesterName(json.data.semester?.name ?? null)
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       setError(msg)
@@ -296,6 +307,9 @@ export default function HistoryContent() {
         </Button>
         <div className="text-sm text-gray-500 ml-auto">
           共 {pagination.total} 条记录
+          {semesterName && (
+            <span className="ml-2 text-blue-600">· {semesterName}</span>
+          )}
         </div>
       </div>
 
@@ -511,6 +525,9 @@ function RunDetailView({ data }: { data: RunDetailData }) {
         <InfoItem icon={<User className="w-3.5 h-3.5" />} label="操作者" value={run.operatorNameSnapshot || '-'} />
         <InfoItem icon={<Hash className="w-3.5 h-3.5" />} label="变更数量" value={String(run.changedSlotCount)} />
         <InfoItem icon={<Lock className="w-3.5 h-3.5" />} label="锁定槽位" value={String(run.lockedSlotCount ?? 0)} />
+        {run.semesterCode && (
+          <InfoItem icon={<BookOpen className="w-3.5 h-3.5" />} label="学期" value={`${run.semesterCode} (${run.semesterName ?? ''})`} />
+        )}
       </div>
 
       {/* Locked Slot IDs */}

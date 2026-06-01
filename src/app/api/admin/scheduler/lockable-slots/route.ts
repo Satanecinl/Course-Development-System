@@ -1,13 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requirePermission } from '@/lib/auth/require-permission'
 import { prisma } from '@/lib/prisma'
+import { resolveSchedulerSemester } from '@/lib/semester'
 
 export async function GET(request: NextRequest) {
   const auth = await requirePermission('schedule:adjust', request)
   if ('error' in auth) return auth.error
 
   try {
+    const { searchParams } = new URL(request.url)
+    const semesterIdParam = searchParams.get('semesterId')
+
+    // Resolve semester
+    const semester = await resolveSchedulerSemester({
+      semesterId: semesterIdParam ? parseInt(semesterIdParam, 10) : undefined,
+    })
+
     const slots = await prisma.scheduleSlot.findMany({
+      where: { semesterId: semester.id },
       include: {
         room: {
           select: {
@@ -82,11 +92,32 @@ export async function GET(request: NextRequest) {
       data: {
         items,
         total: items.length,
+        semester: {
+          id: semester.id,
+          code: semester.code,
+          name: semester.name,
+        },
       },
     })
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e)
     console.error('[scheduler/lockable-slots] error:', message)
+
+    const knownErrors: Record<string, { code: string; status: number }> = {
+      SEMESTER_NOT_FOUND: { code: 'SEMESTER_NOT_FOUND', status: 400 },
+      NO_ACTIVE_SEMESTER: { code: 'NO_ACTIVE_SEMESTER', status: 400 },
+      MULTIPLE_ACTIVE_SEMESTERS: { code: 'MULTIPLE_ACTIVE_SEMESTERS', status: 400 },
+    }
+
+    for (const [prefix, resp] of Object.entries(knownErrors)) {
+      if (message.startsWith(prefix)) {
+        return NextResponse.json(
+          { success: false, error: resp.code, message },
+          { status: resp.status },
+        )
+      }
+    }
+
     return NextResponse.json(
       { success: false, error: 'FETCH_FAILED', message },
       { status: 500 },

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { loadSchedulingContext } from './data-loader'
 import { buildInitialState, solve } from './solver'
 import { calculateInitialScore, calculateScoreWithDetails } from './score'
+import { resolveSchedulerSemester, type ResolvedSemester } from '@/lib/semester'
 import type { SchedulingContext, ScheduleState, SlotWithRelations } from './types'
 
 // ── Types ──
@@ -48,31 +49,41 @@ export interface PreviewResult {
 
   lockedSlotIds: number[]
   lockedSlotCount: number
+
+  semesterId: number
+  semesterCode: string
+  semesterName: string
 }
 
 // ── Helpers ──
 
 /**
- * Compute a stable fingerprint of current ScheduleSlot placements.
+ * Compute a stable fingerprint of current ScheduleSlot placements for a given semester.
  * Used to detect concurrent modifications before apply.
  */
 export function computeDatabaseFingerprint(): string {
-  // We fetch slots outside the service to allow testability,
-  // but for simplicity we do it inline here.
-  // This function is synchronous-compat via a pre-fetched array.
-  // Caller should pass slots instead for testing.
   throw new Error('Use computeDatabaseFingerprintFromSlots(slots)')
 }
 
 export function computeDatabaseFingerprintFromSlots(
   slots: { id: number; teachingTaskId: number; dayOfWeek: number; slotIndex: number; roomId: number | null }[],
 ): string {
-  // Sort by slotId for stability
   const sorted = [...slots].sort((a, b) => a.id - b.id)
   const payload = sorted
     .map((s) => `${s.id}:${s.teachingTaskId}:${s.dayOfWeek}:${s.slotIndex}:${s.roomId ?? 0}`)
     .join('|')
   return createHash('sha256').update(payload).digest('hex').slice(0, 16)
+}
+
+/**
+ * Compute a semester-scoped fingerprint: prefix with semesterId and slot count.
+ */
+export function computeSemesterScopedFingerprint(
+  semesterId: number,
+  slots: { id: number; teachingTaskId: number; dayOfWeek: number; slotIndex: number; roomId: number | null }[],
+): string {
+  const base = computeDatabaseFingerprintFromSlots(slots)
+  return createHash('sha256').update(`sem${semesterId}:${slots.length}:${base}`).digest('hex').slice(0, 16)
 }
 
 function countConflictsByType(
@@ -146,6 +157,8 @@ export interface PreviewOptions {
   operatorId?: number | null
   operatorName?: string | null
   configId?: number
+  /** Explicit semesterId. If not provided, uses active semester. */
+  semesterId?: number | null
 }
 
 const SOLVER_VERSION = 'lahc-hard-first-v3'
@@ -160,10 +173,13 @@ export async function createSchedulerPreview(
   const randomSeed = options.randomSeed ?? Math.floor(Math.random() * 0x7fffffff)
   const lockedSlotIds = options.lockedSlotIds ?? []
 
-  // 1. Load scheduling context
-  const ctx = await loadSchedulingContext()
+  // 0. Resolve semester
+  const semester = await resolveSchedulerSemester({ semesterId: options.semesterId })
 
-  // 2. Compute database fingerprint from current DB state
+  // 1. Load scheduling context (scoped by semester)
+  const ctx = await loadSchedulingContext({ semesterId: semester.id })
+
+  // 2. Compute semester-scoped database fingerprint
   const fingerprintSlots = ctx.slots.map((s) => ({
     id: s.id,
     teachingTaskId: s.teachingTaskId,
@@ -171,7 +187,7 @@ export async function createSchedulerPreview(
     slotIndex: s.slotIndex,
     roomId: s.roomId,
   }))
-  const databaseFingerprint = computeDatabaseFingerprintFromSlots(fingerprintSlots)
+  const databaseFingerprint = computeSemesterScopedFingerprint(semester.id, fingerprintSlots)
 
   // 3. Build initial state and score
   const initialState = buildInitialState(ctx)
@@ -196,7 +212,6 @@ export async function createSchedulerPreview(
   const completedAt = new Date()
   const durationMs = completedAt.getTime() - startedAt.getTime()
 
-  // The seed actually used by the solver (generated if not provided)
   const usedSeed = solveResult.usedSeed
 
   // 5. Calculate best score with details
@@ -239,6 +254,9 @@ export async function createSchedulerPreview(
     solverMetrics: solveResult.metrics ?? null,
     lockedSlotIds,
     lockedSlotCount: lockedSlotIds.length,
+    semesterId: semester.id,
+    semesterCode: semester.code,
+    semesterName: semester.name,
   })
 
   const conflictSummary = JSON.stringify({
@@ -271,6 +289,7 @@ export async function createSchedulerPreview(
   const run = await prisma.schedulingRun.create({
     data: {
       configId: configId,
+      semesterId: semester.id,
       mode: 'PREVIEW',
       status,
       operatorId: options.operatorId ?? null,
@@ -323,5 +342,8 @@ export async function createSchedulerPreview(
     randomSeed: usedSeed,
     lockedSlotIds,
     lockedSlotCount: lockedSlotIds.length,
+    semesterId: semester.id,
+    semesterCode: semester.code,
+    semesterName: semester.name,
   }
 }

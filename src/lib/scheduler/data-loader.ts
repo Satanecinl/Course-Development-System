@@ -9,14 +9,31 @@ import {
   classKey,
 } from './types'
 
+export interface LoadSchedulingContextOptions {
+  /** Filter semester-bound models by this semesterId. */
+  semesterId?: number
+}
+
 /**
  * 一次性加载所有排课数据并构建内存索引。
  * 后续算法逻辑中禁止再调 Prisma 查库，全部从 Context 读取。
+ *
+ * When semesterId is provided, TeachingTask / ScheduleSlot are filtered to that semester.
+ * Room / Teacher / Course remain global.
  */
-export async function loadSchedulingContext(): Promise<SchedulingContext> {
+export async function loadSchedulingContext(
+  options?: LoadSchedulingContextOptions,
+): Promise<SchedulingContext> {
+  const semesterId = options?.semesterId
+
+  // Build where clause for semester-scoped models
+  const taskWhere = semesterId != null ? { semesterId } : {}
+  const slotWhere = semesterId != null ? { semesterId } : {}
+
   // ── 并行拉取三张表 ──
   const [tasks, rooms, slots] = await Promise.all([
     prisma.teachingTask.findMany({
+      where: taskWhere,
       include: {
         course: true,
         teacher: true,
@@ -27,6 +44,7 @@ export async function loadSchedulingContext(): Promise<SchedulingContext> {
       include: { availabilities: true },
     }) as Promise<RoomWithAvailability[]>,
     prisma.scheduleSlot.findMany({
+      where: slotWhere,
       include: {
         room: true,
         teachingTask: {

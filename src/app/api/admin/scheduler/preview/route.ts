@@ -2,12 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requirePermission } from '@/lib/auth/require-permission'
 import { createSchedulerPreview } from '@/lib/scheduler/preview'
 import { prisma } from '@/lib/prisma'
+import { resolveSchedulerSemester } from '@/lib/semester'
 
 interface PreviewRequest {
   maxIterations?: number
   lahcWindowSize?: number
   randomSeed?: number
   lockedSlotIds?: number[]
+  semesterId?: number
 }
 
 export async function POST(request: NextRequest) {
@@ -26,6 +28,11 @@ export async function POST(request: NextRequest) {
       : 500
 
     const randomSeed = typeof body.randomSeed === 'number' ? body.randomSeed : null
+
+    // Resolve semester early (for lockedSlotIds validation)
+    const semester = await resolveSchedulerSemester({
+      semesterId: typeof body.semesterId === 'number' ? body.semesterId : undefined,
+    })
 
     // Validate lockedSlotIds
     let lockedSlotIds: number[] = []
@@ -58,11 +65,11 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // Verify all slot IDs exist in database
+      // Verify all slot IDs exist in database and belong to the same semester
       if (lockedSlotIds.length > 0) {
         const existingSlots = await prisma.scheduleSlot.findMany({
           where: { id: { in: lockedSlotIds } },
-          select: { id: true },
+          select: { id: true, semesterId: true },
         })
         const existingIds = new Set(existingSlots.map(s => s.id))
         const invalidIds = lockedSlotIds.filter(id => !existingIds.has(id))
@@ -78,6 +85,20 @@ export async function POST(request: NextRequest) {
             { status: 400 },
           )
         }
+
+        // Verify all locked slots belong to the same semester
+        const wrongSemesterSlots = existingSlots.filter(s => s.semesterId !== semester.id)
+        if (wrongSemesterSlots.length > 0) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: 'LOCKED_SLOT_SEMESTER_MISMATCH',
+              message: `The following slot IDs belong to a different semester: ${wrongSemesterSlots.map(s => s.id).join(', ')}`,
+              mismatchedIds: wrongSemesterSlots.map(s => s.id),
+            },
+            { status: 400 },
+          )
+        }
       }
     }
 
@@ -88,6 +109,7 @@ export async function POST(request: NextRequest) {
       lockedSlotIds,
       operatorId: auth.user.id,
       operatorName: auth.user.displayName,
+      semesterId: semester.id,
     })
 
     return NextResponse.json({
@@ -97,6 +119,22 @@ export async function POST(request: NextRequest) {
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e)
     console.error('[scheduler/preview] error:', message)
+
+    const knownErrors: Record<string, { code: string; status: number }> = {
+      SEMESTER_NOT_FOUND: { code: 'SEMESTER_NOT_FOUND', status: 400 },
+      NO_ACTIVE_SEMESTER: { code: 'NO_ACTIVE_SEMESTER', status: 400 },
+      MULTIPLE_ACTIVE_SEMESTERS: { code: 'MULTIPLE_ACTIVE_SEMESTERS', status: 400 },
+    }
+
+    for (const [prefix, resp] of Object.entries(knownErrors)) {
+      if (message.startsWith(prefix)) {
+        return NextResponse.json(
+          { success: false, error: resp.code, message },
+          { status: resp.status },
+        )
+      }
+    }
+
     return NextResponse.json(
       { success: false, error: 'PREVIEW_FAILED', message },
       { status: 500 },

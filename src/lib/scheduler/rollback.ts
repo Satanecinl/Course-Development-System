@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { buildInitialState } from './solver'
 import { calculateInitialScore, calculateScoreWithDetails } from './score'
 import {
-  computeDatabaseFingerprintFromSlots,
+  computeSemesterScopedFingerprint,
 } from './preview'
 import type {
   SchedulingContext,
@@ -55,12 +55,18 @@ function countConflictsByType(
 
 /**
  * Load scheduling context using a given Prisma client (supports transaction client).
+ * Scoped by semesterId when provided.
  */
 async function loadSchedulingContextWithClient(
   client: Prisma.TransactionClient | typeof prisma,
+  semesterId?: number,
 ): Promise<SchedulingContext> {
+  const taskWhere = semesterId != null ? { semesterId } : {}
+  const slotWhere = semesterId != null ? { semesterId } : {}
+
   const [tasks, rooms, slots] = await Promise.all([
     client.teachingTask.findMany({
+      where: taskWhere,
       include: {
         course: true,
         teacher: true,
@@ -71,6 +77,7 @@ async function loadSchedulingContextWithClient(
       include: { availabilities: true },
     }) as Promise<RoomWithAvailability[]>,
     client.scheduleSlot.findMany({
+      where: slotWhere,
       include: {
         room: true,
         teachingTask: {
@@ -172,6 +179,12 @@ export async function rollbackSchedulerApply(
     throw new Error('APPLY_NOT_COMPLETED')
   }
 
+  // 3a. Validate semesterId on apply run
+  const semesterId = applyRun.semesterId
+  if (semesterId == null) {
+    throw new Error('APPLY_RUN_MISSING_SEMESTER_ID: Cannot rollback an apply that has no semesterId.')
+  }
+
   // 4. Check no existing completed rollback for this apply run
   const existingRollback = await prisma.schedulingRun.findFirst({
     where: {
@@ -196,8 +209,9 @@ export async function rollbackSchedulerApply(
     throw new Error('APPLY_CHANGED_SLOT_COUNT_MISMATCH')
   }
 
-  // 6. Compute current database fingerprint
+  // 6. Compute current semester-scoped database fingerprint
   const currentSlots = await prisma.scheduleSlot.findMany({
+    where: { semesterId },
     select: {
       id: true,
       teachingTaskId: true,
@@ -207,7 +221,7 @@ export async function rollbackSchedulerApply(
     },
     orderBy: { id: 'asc' },
   })
-  const currentFingerprint = computeDatabaseFingerprintFromSlots(currentSlots)
+  const currentFingerprint = computeSemesterScopedFingerprint(semesterId, currentSlots)
 
   // 7. Pre-validate: every target slot exists and current values match apply new values
   const currentSlotMap = new Map(currentSlots.map((s) => [s.id, s]))
@@ -240,6 +254,7 @@ export async function rollbackSchedulerApply(
     const rollbackRun = await tx.schedulingRun.create({
       data: {
         configId: applyRun.configId,
+        semesterId: semesterId,
         mode: 'ROLLBACK',
         status: 'ROLLING_BACK',
         operatorId: options.operatorId ?? null,
@@ -270,6 +285,13 @@ export async function rollbackSchedulerApply(
       const slot = txSlotMap.get(change.scheduleSlotId)
       if (!slot) {
         throw new Error(`TX_SLOT_NOT_FOUND: ${change.scheduleSlotId}`)
+      }
+
+      // Verify slot belongs to the same semester
+      if (slot.semesterId !== semesterId) {
+        throw new Error(
+          `SLOT_SEMESTER_MISMATCH: ${change.scheduleSlotId} semesterId=${slot.semesterId} expected=${semesterId}`,
+        )
       }
 
       // Verify current values match apply new values
@@ -318,15 +340,16 @@ export async function rollbackSchedulerApply(
       })
     }
 
-    // 8d. Post-rollback scoring inside transaction
-    const postCtx = await loadSchedulingContextWithClient(tx)
+    // 8d. Post-rollback scoring inside transaction (semester-scoped)
+    const postCtx = await loadSchedulingContextWithClient(tx, semesterId)
     const postState = buildInitialState(postCtx)
     const postScore = calculateInitialScore(postCtx, postState)
     const postDetails = calculateScoreWithDetails(postCtx, postState)
     const postHc = countConflictsByType(postDetails.details)
 
-    // 8e. Compute post-rollback fingerprint
+    // 8e. Compute post-rollback semester-scoped fingerprint
     const postSlots = await tx.scheduleSlot.findMany({
+      where: { semesterId },
       select: {
         id: true,
         teachingTaskId: true,
@@ -336,7 +359,7 @@ export async function rollbackSchedulerApply(
       },
       orderBy: { id: 'asc' },
     })
-    const postFingerprint = computeDatabaseFingerprintFromSlots(postSlots)
+    const postFingerprint = computeSemesterScopedFingerprint(semesterId, postSlots)
 
     // 8f. Update ROLLBACK run to COMPLETED
     const completedAt = new Date()
