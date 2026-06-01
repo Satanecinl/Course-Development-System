@@ -1,8 +1,12 @@
 /**
- * K10 Import Semester Scoping Fix-A Verification
+ * K10 Import Semester Scoping Fix-A Verification (updated for Fix-B baseline)
  *
  * Read-only verification script. Does NOT write to the database.
  * Checks that import main flow correctly threads semesterId.
+ *
+ * Baseline update: ClassGroup checks updated to reflect Fix-B final design
+ * (@@unique([semesterId, name]) instead of name @unique).
+ * Confirm route check updated to match Fix-B refactored call signature.
  */
 
 import * as fs from 'fs'
@@ -82,7 +86,7 @@ check(
 
 check(
   'confirm route calls resolveSchedulerSemester()',
-  confirmRoute.includes('resolveSchedulerSemester()'),
+  confirmRoute.includes('resolveSchedulerSemester('),
 )
 
 check(
@@ -227,21 +231,21 @@ check(
   !solverModified,
 )
 
-// ── 10. ClassGroup global unique preserved ──
+// ── 10. ClassGroup unique (updated for Fix-B final design) ──
 
 check(
-  'ClassGroup.name @unique preserved',
-  /model ClassGroup[\s\S]*?name\s+String\s+@unique/.test(schema),
+  'ClassGroup.name does NOT have @unique (Fix-B: replaced by composite unique)',
+  !/^\s+name\s+String\s+@unique/m.test(schema.match(/model ClassGroup \{[\s\S]*?\n\}/)?.[0] ?? ''),
 )
 
 check(
-  'ClassGroup does NOT have @@unique([semesterId, name])',
-  !/model ClassGroup[\s\S]*?@@unique\(\[semesterId,\s*name\]\)/.test(schema),
+  'ClassGroup has @@unique([semesterId, name]) (Fix-B final design)',
+  /model ClassGroup[\s\S]*?@@unique\(\[semesterId,\s*name\]\)/.test(schema),
 )
 
 // ── Output ──
 
-console.log('\n=== K10 Import Semester Scoping Fix-A Verification ===\n')
+console.log('\n=== K10 Import Semester Scoping Fix-A Verification (Fix-B baseline) ===\n')
 
 let passed = 0
 let failed = 0
