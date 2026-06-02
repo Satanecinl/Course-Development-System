@@ -87,7 +87,7 @@ function countFiles(dir: string) {
 // ═══════════════════════════════════════
 
 const conflictCheckRoute = readFile('src/app/api/conflict-check/route.ts')
-const conflictLib = readFile('src/lib/conflict-check.ts')
+const conflictLib = readFile('src/lib/schedule/conflict-check.ts')
 const guardLib = readFile('src/lib/schedule/slot-mutation-guard.ts')
 const adjustmentsLib = readFile('src/lib/schedule/adjustments.ts')
 const solverLib = readFile('src/lib/scheduler/solver.ts')
@@ -102,15 +102,15 @@ const conflictTs = readFile('src/lib/conflict.ts')
 // ═══════════════════════════════════════
 
 const apiCCExists = fileExists('src/app/api/conflict-check/route.ts')
-const apiCCUsesCheckLib = conflictCheckRoute.includes('checkScheduleConflict')
+const apiCCUsesCheckLib = conflictCheckRoute.includes('checkScheduleConflicts')
 const apiCCSupportsScheduleSlotId = conflictCheckRoute.includes('scheduleSlotId')
-const apiCCSupportsExclude = conflictLib.includes('id: { not: scheduleSlotId }')
+const apiCCSupportsExclude = /id:\s*\{\s*not:\s*input\.scheduleSlotId\s*\}/.test(conflictLib)
 const apiCCSupportsSemester = conflictCheckRoute.includes('semesterId') && conflictLib.includes('semesterId')
 const apiCCSupportsRoom = conflictCheckRoute.includes('targetRoomId')
 const apiCCSupportsDaySlot = conflictCheckRoute.includes('targetDayOfWeek') && conflictCheckRoute.includes('targetSlotIndex')
-const apiCCChecksTeacher = conflictLib.includes('teacherId')
-const apiCCChecksClass = conflictLib.includes('classGroupId')
-const apiCCChecksRoom = conflictLib.includes('roomId')
+const apiCCChecksTeacher = conflictLib.includes('teacherId') && conflictLib.includes('Teacher conflict')
+const apiCCChecksClass = conflictLib.includes('classGroupId') && conflictLib.includes('Class conflict')
+const apiCCChecksRoom = conflictLib.includes('Room conflict')
 const apiCCUsesWeekOverlap = conflictLib.includes('checkWeekOverlap')
 const apiCCResponseShape = conflictLib.includes('hasConflict: boolean') && conflictLib.includes('conflicts: string[]')
 
@@ -118,7 +118,7 @@ addFinding({
   id: 'K13-CONFLICT-NONE-1',
   severity: 'NONE',
   area: '/api/conflict-check',
-  description: `POST /api/conflict-check 存在并复用 src/lib/conflict-check.checkScheduleConflict。输入：{ scheduleSlotId, targetDayOfWeek, targetSlotIndex, targetRoomId, semesterId? }。输出：{ hasConflict, conflicts: string[] }。覆盖 teacher/class/room + week overlap。exclude via id: { not: scheduleSlotId }。semester scoped。`,
+  description: `POST /api/conflict-check 存在并复用 src/lib/schedule/conflict-check.checkScheduleConflicts。输入：{ scheduleSlotId, targetDayOfWeek, targetSlotIndex, targetRoomId, semesterId? }。输出：{ hasConflict, conflicts: string[] }。覆盖 teacher/class/room + week overlap。exclude via id: { not: input.scheduleSlotId }。semester scoped。`,
   evidence: `exists: ${apiCCExists}; usesCheckLib: ${apiCCUsesCheckLib}; scheduleSlotId: ${apiCCSupportsScheduleSlotId}; exclude: ${apiCCSupportsExclude}; semester: ${apiCCSupportsSemester}; room: ${apiCCSupportsRoom}; day/slot: ${apiCCSupportsDaySlot}; teacher: ${apiCCChecksTeacher}; class: ${apiCCChecksClass}; roomCheck: ${apiCCChecksRoom}; weekOverlap: ${apiCCUsesWeekOverlap}; responseShape: ${apiCCResponseShape}`,
   recommendation: 'N/A',
 })
@@ -128,26 +128,37 @@ addFinding({
 // ═══════════════════════════════════════
 
 const guardHasOwnCheck = guardLib.includes('checkConflictsAtTarget')
-const guardImportsCheckLib = guardLib.includes("from '@/lib/conflict-check'")
-const guardImportsConflict = guardLib.includes("from '@/lib/conflict'")
-const guardReusesCheckLib = guardImportsCheckLib && !guardHasOwnCheck
-const guardHasOwnLogic = guardHasOwnCheck && !guardImportsCheckLib
-const guardChecksTeacher = guardLib.includes('teacherId')
-const guardChecksClass = guardLib.includes('classGroupId')
-const guardChecksRoom = guardLib.includes('targetRoom')
-const guardUsesWeekOverlap = guardLib.includes('checkWeekOverlap')
+const guardImportsSharedHelper = guardLib.includes("from '@/lib/schedule/conflict-check'")
+const guardReusesSharedHelper = guardLib.includes('checkScheduleConflicts(')
+const guardChecksTeacher = guardLib.includes('teacherId') && !guardReusesSharedHelper
+const guardChecksClass = guardLib.includes('classGroupId') && !guardReusesSharedHelper
+const guardChecksRoom = guardLib.includes('targetRoom') && !guardReusesSharedHelper
 const guardHasSemester = guardLib.includes('semesterId')
-const guardHasExclude = guardLib.includes('id: { not: excludeSlotId }')
 const guardResponseShape = guardLib.includes('conflicts?:') && guardLib.includes('ok: boolean')
 
-addFinding({
-  id: 'K13-CONFLICT-MEDIUM-1',
-  severity: 'MEDIUM',
-  area: 'slot-mutation-guard.ts',
-  description: `slot-mutation-guard.ts ${guardHasOwnCheck ? '内部定义独立冲突检查 checkConflictsAtTarget' : '复用外部 checkScheduleConflict'}，${guardImportsConflict ? '使用共享的 @/lib/conflict (checkWeekOverlap)' : '使用独立 week overlap'}。核心规则（teacher/class/room + week overlap + exclude + semester）与 conflict-check 一致，但 query 逻辑完全独立复制。`,
-  evidence: `ownCheck: ${guardHasOwnCheck}; importsCheckLib: ${guardImportsCheckLib}; importsConflict: ${guardImportsConflict}; teacher: ${guardChecksTeacher}; class: ${guardChecksClass}; room: ${guardChecksRoom}; weekOverlap: ${guardUsesWeekOverlap}; semester: ${guardHasSemester}; exclude: ${guardHasExclude}; responseShape: ${guardResponseShape}`,
-  recommendation: '将 checkConflictsAtTarget 抽离为共享 pure function 或直接复用 checkScheduleConflict。',
-})
+const sharedHelperExists = fileExists('src/lib/schedule/conflict-check.ts')
+const sharedHelperExports = readFile('src/lib/schedule/conflict-check.ts').includes('export async function checkScheduleConflicts')
+const routeUsesSharedHelper = conflictCheckRoute.includes('checkScheduleConflicts')
+
+if (guardReusesSharedHelper && sharedHelperExists && sharedHelperExports && routeUsesSharedHelper) {
+  addFinding({
+    id: 'K13-CONFLICT-MEDIUM-1',
+    severity: 'NONE',
+    area: 'slot-mutation-guard.ts',
+    description: `slot-mutation-guard.ts 复用 @/lib/schedule/conflict-check.checkScheduleConflicts。/api/conflict-check 也复用同一 helper。核心规则（teacher/class/room + week overlap + semester + exclude）统一。无重复 query 逻辑。`,
+    evidence: `sharedHelper: ${sharedHelperExists}/${sharedHelperExports}; routeUsesShared: ${routeUsesSharedHelper}; guardReuses: ${guardReusesSharedHelper}; ownCheck: ${guardHasOwnCheck}`,
+    recommendation: 'N/A',
+  })
+} else {
+  addFinding({
+    id: 'K13-CONFLICT-MEDIUM-1',
+    severity: 'MEDIUM',
+    area: 'slot-mutation-guard.ts',
+    description: `slot-mutation-guard.ts ${guardHasOwnCheck ? '内部定义独立冲突检查 checkConflictsAtTarget' : '未复用共享 helper'}，与 /api/conflict-check 的核心查询逻辑重复。`,
+    evidence: `sharedHelper: ${sharedHelperExists}; ownCheck: ${guardHasOwnCheck}; guardReuses: ${guardReusesSharedHelper}; routeUsesShared: ${routeUsesSharedHelper}`,
+    recommendation: '让 slot-mutation-guard.ts 复用 @/lib/schedule/conflict-check.checkScheduleConflicts。',
+  })
+}
 
 // ═══════════════════════════════════════
 // 3. schedule adjustment audit
@@ -219,7 +230,7 @@ addFinding({
 
 const weekOverlapFn = conflictTs.includes('export function checkWeekOverlap')
 const expandWeeksFn = conflictTs.includes('export function expandWeeks')
-const guardUsesOverlap = guardLib.includes('checkWeekOverlap')
+const guardUsesOverlap = conflictLib.includes('checkWeekOverlap')
 const adjustmentUsesWeekFilter = adjustmentsLib.includes('isScheduleItemActiveInWeek')
 const solverUsesExpand = scoreLib.includes('expandWeeks')
 
@@ -227,8 +238,8 @@ addFinding({
   id: 'K13-CONFLICT-LOW-2',
   severity: 'LOW',
   area: 'week overlap semantics',
-  description: `week overlap 共享 src/lib/conflict.ts (checkWeekOverlap / expandWeeks)。guard/solver 均复用。adjustment 使用 isScheduleItemActiveInWeek 做单周判断。同一周次语义有多个入口但实现都基于 expandWeeks，语义一致。`,
-  evidence: `checkWeekOverlap: ${weekOverlapFn}; expandWeeks: ${expandWeeksFn}; guardUses: ${guardUsesOverlap}; adjustmentWeekFilter: ${adjustmentUsesWeekFilter}; solverUses: ${solverUsesExpand}`,
+  description: `week overlap 共享 src/lib/conflict.ts (checkWeekOverlap / expandWeeks)。shared helper / solver 均复用。adjustment 使用 isScheduleItemActiveInWeek 做单周判断。同一周次语义有多个入口但实现都基于 expandWeeks，语义一致。`,
+  evidence: `checkWeekOverlap: ${weekOverlapFn}; expandWeeks: ${expandWeeksFn}; sharedHelperUses: ${guardUsesOverlap}; adjustmentWeekFilter: ${adjustmentUsesWeekFilter}; solverUses: ${solverUsesExpand}`,
   recommendation: 'N/A',
 })
 
@@ -260,7 +271,7 @@ addFinding({
 
 const apiShapeHasConflict = conflictLib.includes('hasConflict: boolean')
 const apiShapeHasConflicts = conflictLib.includes('conflicts: string[]')
-const guardShapeHasConflicts = guardLib.includes('conflicts?:') && guardLib.includes('conflicts: string[]')
+const guardShapeHasConflicts = guardLib.includes('conflicts?:') && guardLib.includes('checkScheduleConflicts')
 const adjustmentShapeHasType = adjustmentsLib.includes('type:')
 const adjustmentShapeHasMessage = adjustmentsLib.includes('message:')
 const adjustmentShapeHasRelated = adjustmentsLib.includes('relatedSlotIds')
@@ -269,7 +280,7 @@ addFinding({
   id: 'K13-CONFLICT-MEDIUM-4',
   severity: 'MEDIUM',
   area: 'response shape inconsistency',
-  description: `三套实现 response shape 不同。conflict-check/guard: { hasConflict, conflicts: string[] }。adjustment: { canApply, conflicts: ScheduleAdjustmentConflict[] (typed with type/message/severity/relatedSlotIds), warnings: ... }。前端对 moveSlot 错误显示为 string，前端对 adjustment 错误显示为 typed conflict。`,
+  description: `三套实现 response shape 不同。conflict-check/guard: { hasConflict, conflicts: string[] }（现已共享 helper）。adjustment: { canApply, conflicts: ScheduleAdjustmentConflict[] (typed with type/message/severity/relatedSlotIds), warnings: ... }。前端对 moveSlot 错误显示为 string，前端对 adjustment 错误显示为 typed conflict。`,
   evidence: `api: hasConflict=${apiShapeHasConflict} conflicts=${apiShapeHasConflicts}; guard: conflicts=${guardShapeHasConflicts}; adjustment: type=${adjustmentShapeHasType} message=${adjustmentShapeHasMessage} related=${adjustmentShapeHasRelated}`,
   recommendation: '短期保留差异（mutation guard 是 string message，adjustment 是 typed conflict）。长期可统一为 { hasConflict, conflicts: TypedConflict[] }。',
 })
@@ -278,16 +289,16 @@ addFinding({
 // 9. Count implementations
 // ═══════════════════════════════════════
 
-const conflictFiles = grep('checkScheduleConflict|checkConflictsAtTarget|checkWeekOverlap|hasConflict|teacherConflict|roomConflict|classConflict')
+const conflictFiles = grep('checkScheduleConflict|checkScheduleConflicts|checkConflictsAtTarget|checkWeekOverlap|hasConflict|teacherConflict|roomConflict|classConflict')
 const uniqueFiles = new Set(conflictFiles.map(f => f.file))
 
 addFinding({
   id: 'K13-CONFLICT-LOW-3',
   severity: 'LOW',
   area: 'implementation count',
-  description: `共发现 ${conflictFiles.length} 处冲突相关代码出现在 ${uniqueFiles.size} 个唯一文件中。主要实现：1) src/lib/conflict-check.ts (checkScheduleConflict) 2) src/lib/schedule/slot-mutation-guard.ts (checkConflictsAtTarget) 3) src/lib/schedule/adjustments.ts (inline teacher/class/room check) 4) src/app/api/teaching-task/[id]/route.ts (inline room check) 5) src/lib/scheduler/solver.ts (findHardConflictParticipants)。`,
+  description: `共发现 ${conflictFiles.length} 处冲突相关代码出现在 ${uniqueFiles.size} 个唯一文件中。主要实现：1) src/lib/schedule/conflict-check.ts (checkScheduleConflicts, shared) 2) src/lib/schedule/slot-mutation-guard.ts (复用 shared helper) 3) src/lib/schedule/adjustments.ts (inline teacher/class/room check) 4) src/app/api/teaching-task/[id]/route.ts (inline room check) 5) src/lib/scheduler/solver.ts (findHardConflictParticipants)。`,
   evidence: `total conflict-related references: ${conflictFiles.length}; unique files: ${uniqueFiles.size}; files: ${[...uniqueFiles].join(', ')}`,
-  recommendation: '后续可考虑将第 1+2 项合并为共享 conflict engine。',
+  recommendation: '后续可考虑将第 3+4 项也接入 shared helper。',
 })
 
 // ═══════════════════════════════════════
@@ -304,11 +315,12 @@ console.log(`Unique conflict files: ${uniqueFiles.size}`)
 console.log()
 
 console.log('─── Conflict Check Implementations ───')
-console.log('  1. /api/conflict-check → src/lib/conflict-check.ts (checkScheduleConflict)')
-console.log('  2. slot-mutation-guard.ts → internal checkConflictsAtTarget')
-console.log('  3. adjustments.ts → inline teacherConflict/roomConflict/classConflict')
-console.log('  4. teaching-task/[id]/route.ts → inline room check')
-console.log('  5. scheduler/solver.ts → findHardConflictParticipants (HC1-HC5)')
+console.log('  1. shared: src/lib/schedule/conflict-check.ts (checkScheduleConflicts)')
+console.log('     └ used by /api/conflict-check')
+console.log('     └ used by slot-mutation-guard.ts (unified in K13-Fix-A)')
+console.log('  2. adjustments.ts → inline teacherConflict/roomConflict/classConflict')
+console.log('  3. teaching-task/[id]/route.ts → inline room check')
+console.log('  4. scheduler/solver.ts → findHardConflictParticipants (HC1-HC5)')
 console.log()
 
 console.log('─── Rule Coverage Comparison ───')
@@ -316,6 +328,7 @@ console.log('  Implementation                  | Teacher | Class | Room | Week |
 console.log('  --------------------------------|---------|-------|------|------|----------|--------')
 console.log('  /api/conflict-check             |   YES   |  YES  | YES  | YES  |   YES    |  YES')
 console.log('  slot-mutation-guard.ts          |   YES   |  YES  | YES  | YES  |   YES    |  YES')
+console.log('    (via shared helper)           |         |       |      |      |          |')
 console.log('  adjustments.ts                  |   YES   |  YES  | YES  | via filter | YES | partial')
 console.log('  teaching-task/[id] inline       |    NO   |   NO  | YES  | YES  |   YES    |  YES')
 console.log('  solver HC1-HC5                  |   YES   |  YES  | YES  | YES  |    -     |   -')

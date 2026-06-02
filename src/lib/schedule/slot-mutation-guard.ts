@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma'
-import { checkWeekOverlap, WeekConstraint } from '@/lib/conflict'
 import { resolveSchedulerSemester } from '@/lib/semester'
+import { checkScheduleConflicts } from '@/lib/schedule/conflict-check'
 
 export interface SlotMutationGuardResult {
   ok: boolean
@@ -13,6 +13,11 @@ export interface SlotMutationGuardResult {
 /**
  * Guard for PUT /api/schedule-slot/[id].
  * Validates same-semester + conflict check before update.
+ *
+ * Conflict check rules are shared with /api/conflict-check via
+ * @/lib/schedule/conflict-check.checkScheduleConflicts. This function
+ * ONLY owns the mutation-specific guard (slot/task existence, same-semester
+ * boundary, response envelope) — it does NOT re-implement conflict rules.
  */
 export async function guardSlotUpdate(
   slotId: number,
@@ -29,11 +34,6 @@ export async function guardSlotUpdate(
       teachingTask: {
         select: {
           semesterId: true,
-          teacherId: true,
-          startWeek: true,
-          endWeek: true,
-          weekType: true,
-          taskClasses: { select: { classGroupId: true } },
         },
       },
     },
@@ -53,16 +53,13 @@ export async function guardSlotUpdate(
     return { ok: false, error: 'Slot does not belong to the active semester', status: 403 }
   }
 
-  const conflicts = await checkConflictsAtTarget(
-    slotId,
-    slot.teachingTask.teacherId,
-    slot.teachingTask.taskClasses.map(tc => tc.classGroupId),
-    { start: slot.teachingTask.startWeek, end: slot.teachingTask.endWeek, type: slot.teachingTask.weekType as WeekConstraint['type'] },
+  const { conflicts } = await checkScheduleConflicts({
+    scheduleSlotId: slotId,
     targetDayOfWeek,
     targetSlotIndex,
     targetRoomId,
     semesterId,
-  )
+  })
 
   if (conflicts.length > 0) {
     return { ok: false, error: 'Schedule conflict detected', status: 409, conflicts }
@@ -83,15 +80,7 @@ export async function guardSlotCreate(
 ): Promise<SlotMutationGuardResult> {
   const task = await prisma.teachingTask.findUnique({
     where: { id: teachingTaskId },
-    select: {
-      id: true,
-      semesterId: true,
-      teacherId: true,
-      startWeek: true,
-      endWeek: true,
-      weekType: true,
-      taskClasses: { select: { classGroupId: true } },
-    },
+    select: { id: true, semesterId: true },
   })
 
   if (!task) {
@@ -107,16 +96,13 @@ export async function guardSlotCreate(
     return { ok: true, semesterId }
   }
 
-  const conflicts = await checkConflictsAtTarget(
-    0,
-    task.teacherId,
-    task.taskClasses.map(tc => tc.classGroupId),
-    { start: task.startWeek, end: task.endWeek, type: task.weekType as WeekConstraint['type'] },
+  const { conflicts } = await checkScheduleConflicts({
+    teachingTaskId,
     targetDayOfWeek,
     targetSlotIndex,
     targetRoomId,
     semesterId,
-  )
+  })
 
   if (conflicts.length > 0) {
     return { ok: false, error: 'Schedule conflict detected', status: 409, conflicts }
@@ -144,11 +130,6 @@ export async function guardAdminSlotUpdate(
       teachingTask: {
         select: {
           semesterId: true,
-          teacherId: true,
-          startWeek: true,
-          endWeek: true,
-          weekType: true,
-          taskClasses: { select: { classGroupId: true } },
         },
       },
     },
@@ -171,16 +152,13 @@ export async function guardAdminSlotUpdate(
     return { ok: true }
   }
 
-  const conflicts = await checkConflictsAtTarget(
-    slotId,
-    slot.teachingTask.teacherId,
-    slot.teachingTask.taskClasses.map(tc => tc.classGroupId),
-    { start: slot.teachingTask.startWeek, end: slot.teachingTask.endWeek, type: slot.teachingTask.weekType as WeekConstraint['type'] },
-    targetDay,
-    targetSlot,
-    targetRoom,
+  const { conflicts } = await checkScheduleConflicts({
+    scheduleSlotId: slotId,
+    targetDayOfWeek: targetDay,
+    targetSlotIndex: targetSlot,
+    targetRoomId: targetRoom,
     semesterId,
-  )
+  })
 
   if (conflicts.length > 0) {
     return { ok: false, error: 'Schedule conflict detected', status: 409, conflicts }
@@ -205,100 +183,4 @@ export async function guardAdminSlotCreate(
   }
 
   return guardSlotCreate(teachingTaskId, dayOfWeek, slotIndex, roomId)
-}
-
-// ── Internal conflict check logic ──
-
-async function checkConflictsAtTarget(
-  excludeSlotId: number,
-  teacherId: number | null,
-  classGroupIds: number[],
-  movingWeek: WeekConstraint,
-  targetDay: number,
-  targetSlot: number,
-  targetRoom: number,
-  semesterId: number,
-): Promise<string[]> {
-  const conflicts: string[] = []
-
-  const dayLabel = ['', '周一', '周二', '周三', '周四', '周五', '周六', '周日'][targetDay] || `周${targetDay}`
-  const slotLabel = ['', '1-2节', '3-4节', '5-6节', '7-8节', '9-10节', '11-12节', '中午'][targetSlot] || `${targetSlot * 2 - 1}-${targetSlot * 2}节`
-
-  const timeWhere: Record<string, unknown> = {
-    id: { not: excludeSlotId },
-    dayOfWeek: targetDay,
-    slotIndex: targetSlot,
-    semesterId,
-  }
-
-  // Room conflict
-  const roomSlots = await prisma.scheduleSlot.findMany({
-    where: { ...timeWhere, roomId: targetRoom },
-    include: {
-      teachingTask: {
-        include: {
-          course: true,
-          teacher: true,
-          taskClasses: { include: { classGroup: true } },
-        },
-      },
-    },
-  })
-
-  const targetRoomRecord = await prisma.room.findUnique({ where: { id: targetRoom }, select: { name: true } })
-
-  for (const s of roomSlots) {
-    const occWeek: WeekConstraint = { start: s.teachingTask.startWeek, end: s.teachingTask.endWeek, type: s.teachingTask.weekType as WeekConstraint['type'] }
-    if (checkWeekOverlap(movingWeek, occWeek)) {
-      const classes = s.teachingTask.taskClasses.map(tc => tc.classGroup.name).join('、')
-      conflicts.push(`教室${targetRoomRecord?.name || targetRoom}在${dayLabel}${slotLabel}已被${classes}的《${s.teachingTask.course?.name}》占用`)
-    }
-  }
-
-  // Teacher conflict
-  if (teacherId) {
-    const teacherSlots = await prisma.scheduleSlot.findMany({
-      where: { ...timeWhere, teachingTask: { teacherId } },
-      include: {
-        room: true,
-        teachingTask: {
-          include: { course: true, taskClasses: { include: { classGroup: true } } },
-        },
-      },
-    })
-
-    for (const s of teacherSlots) {
-      const occWeek: WeekConstraint = { start: s.teachingTask.startWeek, end: s.teachingTask.endWeek, type: s.teachingTask.weekType as WeekConstraint['type'] }
-      if (checkWeekOverlap(movingWeek, occWeek)) {
-        const classes = s.teachingTask.taskClasses.map(tc => tc.classGroup.name).join('、')
-        conflicts.push(`教师在${dayLabel}${slotLabel}已有《${s.teachingTask.course?.name}》（${classes}，教室：${s.room?.name || '未知'}）`)
-      }
-    }
-  }
-
-  // Class conflict
-  if (classGroupIds.length > 0) {
-    const classSlots = await prisma.scheduleSlot.findMany({
-      where: {
-        ...timeWhere,
-        teachingTask: { taskClasses: { some: { classGroupId: { in: classGroupIds } } } },
-      },
-      include: {
-        room: true,
-        teachingTask: {
-          include: { course: true, teacher: true, taskClasses: { include: { classGroup: true } } },
-        },
-      },
-    })
-
-    for (const s of classSlots) {
-      const occWeek: WeekConstraint = { start: s.teachingTask.startWeek, end: s.teachingTask.endWeek, type: s.teachingTask.weekType as WeekConstraint['type'] }
-      if (checkWeekOverlap(movingWeek, occWeek)) {
-        const classes = s.teachingTask.taskClasses.map(tc => tc.classGroup.name).join('、')
-        conflicts.push(`班级在${dayLabel}${slotLabel}已有《${s.teachingTask.course?.name}》（教师：${s.teachingTask.teacher?.name || '未知'}，教室：${s.room?.name || '未知'}）`)
-      }
-    }
-  }
-
-  return conflicts
 }

@@ -88,9 +88,9 @@ check('Python parser not modified', fs.existsSync(parserPath) && !fs.readFileSyn
 const importerPath = path.join(ROOT, 'src', 'lib', 'import', 'importer.ts')
 check('Importer not modified', fs.existsSync(importerPath))
 
-// conflict-check.ts not modified
-const conflictLib = fs.readFileSync(path.join(ROOT, 'src', 'lib', 'conflict-check.ts'), 'utf-8')
-check('conflict-check.ts core logic not modified', conflictLib.includes('export async function checkScheduleConflict'))
+// shared conflict-check.ts not modified
+const conflictLib = fs.readFileSync(path.join(ROOT, 'src', 'lib', 'schedule', 'conflict-check.ts'), 'utf-8')
+check('shared conflict-check.ts core logic not modified', conflictLib.includes('export async function checkScheduleConflicts'))
 
 // No UI semester selector component added
 const hasSemesterSelectorComponent = grid.includes('SemesterSelector') || grid.includes('semester-selector') || grid.includes('semesterSelector')

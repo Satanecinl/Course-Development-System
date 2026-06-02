@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { checkScheduleConflict } from '@/lib/conflict-check'
+import { checkScheduleConflicts } from '@/lib/schedule/conflict-check'
 import { requirePermission } from '@/lib/auth/require-permission'
 import { resolveSchedulerSemester } from '@/lib/semester'
 
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       semesterId: typeof requestSemesterId === 'number' ? requestSemesterId : undefined,
     })
 
-    const result = await checkScheduleConflict({
+    const result = await checkScheduleConflicts({
       scheduleSlotId,
       targetDayOfWeek,
       targetSlotIndex,
