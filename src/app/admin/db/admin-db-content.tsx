@@ -19,9 +19,10 @@ import { ScheduleImportDialog } from '@/components/schedule-import-dialog'
 import { ImportBatchHistory } from '@/components/import-batch-history'
 import { ScheduleSlotDialog } from '@/components/admin-db/schedule-slot-dialog'
 import { TeachingTaskDialog } from '@/components/admin-db/teaching-task-dialog'
+import { useHasPermission } from '@/components/layout/current-user-context'
 import type { EntityOption } from '@/components/combobox'
 import type { DbRecord } from '@/lib/admin-db/types'
-import { TABLES, MASTER_TABLES, DEDICATED_TABLES, getFormFields, getDefaultFormData } from '@/lib/admin-db/config'
+import { TABLES, MASTER_TABLES, DEDICATED_TABLES, getFormFields, getDefaultFormData, getAdminModelWritePermission } from '@/lib/admin-db/config'
 import { getColumns, getCellValue } from '@/lib/admin-db/columns'
 import { fetchAdminTableRecords, fetchAdminTableCounts, fetchEntityOptions as apiFetchEntityOptions, fetchTaskOptions as apiFetchTaskOptions, createNamedEntity } from '@/lib/admin-db/api'
 
@@ -68,6 +69,11 @@ export default function AdminDbContent() {
 
   // 导入历史弹窗状态
   const [importHistoryOpen, setImportHistoryOpen] = useState(false)
+
+  // K15-FIX-E: Model-specific permission gating
+  const canWriteCurrentModel = useHasPermission(getAdminModelWritePermission(activeTable))
+  const canDelete = useHasPermission('data:delete')
+  const canImport = useHasPermission('import:manage')
 
   // 下拉选项
   const [courses, setCourses] = useState<EntityOption[]>([])
@@ -129,6 +135,10 @@ export default function AdminDbContent() {
   // ── 通用弹窗 (master 表) ──
 
   function openCreate() {
+    if (!canWriteCurrentModel) {
+      toast.error('无权限', { description: `当前模型需要 ${getAdminModelWritePermission(activeTable)}` })
+      return
+    }
     if (activeTable === 'teachingtask') {
       openTaskCreate()
       return
@@ -144,6 +154,10 @@ export default function AdminDbContent() {
   }
 
   function openEdit(record: DbRecord) {
+    if (!canWriteCurrentModel) {
+      toast.error('无权限', { description: `当前模型需要 ${getAdminModelWritePermission(activeTable)}` })
+      return
+    }
     if (activeTable === 'teachingtask') {
       openTaskEdit(record)
       return
@@ -164,6 +178,10 @@ export default function AdminDbContent() {
   }
 
   async function handleSave() {
+    if (!canWriteCurrentModel) {
+      toast.error('无权限', { description: `当前模型需要 ${getAdminModelWritePermission(activeTable)}` })
+      return
+    }
     const fields = getFormFields(activeTable)
     for (const f of fields) {
       if (f.required && !String(formData[f.key] || '').trim()) {
@@ -215,6 +233,10 @@ export default function AdminDbContent() {
   }
 
   async function deleteRecord(id: number) {
+    if (!canDelete) {
+      toast.error('无权限', { description: '删除操作需要 data:delete 权限' })
+      return
+    }
     if (!confirm('确定要删除这条记录吗？此操作不可撤销。')) return
 
     try {
@@ -280,6 +302,10 @@ export default function AdminDbContent() {
   }
 
   async function handleTaskSave() {
+    if (!canWriteCurrentModel) {
+      toast.error('无权限', { description: '当前模型需要 teaching-task:write' })
+      return
+    }
     if (!taskForm.courseId) {
       toast.error('请选择课程')
       return
@@ -369,6 +395,10 @@ export default function AdminDbContent() {
   }
 
   async function handleSlotSave() {
+    if (!canWriteCurrentModel) {
+      toast.error('无权限', { description: '当前模型需要 schedule:write' })
+      return
+    }
     if (!slotForm.teachingTaskId) {
       toast.error('请选择教学任务')
       return
@@ -474,6 +504,8 @@ export default function AdminDbContent() {
           onImportClick={() => setImportOpen(true)}
           onAddClick={openCreate}
           onHistoryClick={() => setImportHistoryOpen(true)}
+          canCreate={canWriteCurrentModel}
+          canImport={canImport}
         />
 
         <AdminDataTable
@@ -484,6 +516,8 @@ export default function AdminDbContent() {
           getCellValue={getCellValue}
           onEdit={openEdit}
           onDelete={deleteRecord}
+          canEdit={canWriteCurrentModel}
+          canDelete={canDelete}
         />
       </main>
 

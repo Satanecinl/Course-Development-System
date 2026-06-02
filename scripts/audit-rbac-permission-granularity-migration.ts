@@ -357,6 +357,15 @@ const adminGenericScheduleslotUsesScheduleWrite = adminGenericRoute.includes("re
 const adminGenericTeachingtaskUsesTeachingTaskWrite = adminGenericRoute.includes("return 'teaching-task:write'") && adminGenericHasHelper
 const phaseDDone = adminGenericScheduleslotUsesScheduleWrite && adminGenericTeachingtaskUsesTeachingTaskWrite && !adminGenericStillUsesDataWrite
 
+// Phase E Detection: admin frontend data page uses model-specific permission gating
+const adminDbContent = readFile('src/app/admin/db/admin-db-content.tsx') ?? ''
+const adminConfigSrc = readFile('src/lib/admin-db/config.ts') ?? ''
+const adminFrontendHasModelHelper = adminConfigSrc.includes('getAdminModelWritePermission')
+const adminFrontendUsesModelHelper = adminDbContent.includes('getAdminModelWritePermission') && adminDbContent.includes('useHasPermission')
+const adminFrontendGatesCreate = adminDbContent.includes('canWriteCurrentModel')
+const adminFrontendGatesDelete = adminDbContent.includes('canDelete')
+const phaseEDone = adminFrontendHasModelHelper && adminFrontendUsesModelHelper && adminFrontendGatesCreate && adminFrontendGatesDelete
+
 // ─── Output ───────────────────────────────────────────────────────
 
 console.log('═'.repeat(70))
@@ -386,7 +395,7 @@ console.log(`  Admin generic still uses data:write: ${adminGenericStillUsesDataW
 console.log(`  Phase B (dedicated routes): ${dedicatedRouteMigrationDone ? 'DONE' : 'PENDING'}`)
 console.log(`  Phase C (frontend gating): ${phaseCDone ? 'DONE' : 'PENDING'}`)
 console.log(`  Phase D (admin generic route): ${phaseDDone ? 'DONE' : 'PENDING'}`)
-console.log(`  Phase E (admin frontend model gating): PENDING`)
+console.log(`  Phase E (admin frontend model gating): ${phaseEDone ? 'DONE' : 'PENDING'}`)
 
 console.log('\n── Permission Strings ──')
 for (const p of PERMISSIONS) console.log(`  ${p}`)
@@ -439,29 +448,47 @@ const findings: Finding[] = []
 
 findings.push({
   id: 'K15-RBAC-MEDIUM-1',
-  severity: 'MEDIUM',
+  severity: (phaseADone && dedicatedRouteMigrationDone && phaseDDone) ? 'LOW' : 'MEDIUM',
   area: 'data:write scope',
-  description: 'data:write covers both ordinary data CRUD (classgroup, teacher, course) and schedule-sensitive operations (scheduleslot, teachingtask) via the admin generic route and dedicated routes.',
-  evidence: `Admin generic POST/PUT uses data:write for all models. Dedicated /api/schedule-slot and /api/teaching-task routes also use data:write. ${dataWriteUseSites.filter((s) => s.scheduleSensitive).length} schedule-sensitive sites share data:write with ordinary data sites.`,
-  recommendation: 'Consider splitting into data:write (ordinary) + schedule:write (scheduleslot) + teaching-task:write (teachingtask). See recommended taxonomy.',
+  description: (phaseADone && dedicatedRouteMigrationDone && phaseDDone)
+    ? 'data:write is now scoped to ordinary data CRUD (classgroup, teacher, course, room). Schedule-sensitive models (scheduleslot, teachingtask) use granular permissions (schedule:write, teaching-task:write) in both dedicated and admin generic routes.'
+    : 'data:write covers both ordinary data CRUD (classgroup, teacher, course) and schedule-sensitive operations (scheduleslot, teachingtask) via the admin generic route and dedicated routes.',
+  evidence: (phaseADone && dedicatedRouteMigrationDone && phaseDDone)
+    ? `Dedicated routes use schedule:write/teaching-task:write. Admin generic uses getAdminWritePermission. ${dataWriteUseSites.filter((s) => s.scheduleSensitive).length} schedule-sensitive sites remain sharing data:write.`
+    : `Admin generic POST/PUT uses data:write for all models. Dedicated /api/schedule-slot and /api/teaching-task routes also use data:write. ${dataWriteUseSites.filter((s) => s.scheduleSensitive).length} schedule-sensitive sites share data:write with ordinary data sites.`,
+  recommendation: (phaseADone && dedicatedRouteMigrationDone && phaseDDone)
+    ? 'No further action needed for server-side. Consider frontend admin data page model-specific gating (Phase E).'
+    : 'Consider splitting into data:write (ordinary) + schedule:write (scheduleslot) + teaching-task:write (teachingtask). See recommended taxonomy.',
 })
 
 findings.push({
   id: 'K15-RBAC-MEDIUM-2',
-  severity: 'MEDIUM',
+  severity: phaseDDone ? 'NONE' : 'MEDIUM',
   area: 'admin generic route',
-  description: 'Admin generic route applies uniform data:write to all models, preventing model-specific permission granularity.',
-  evidence: 'src/app/api/admin/[model]/route.ts POST line 181 and PUT line 234 both use requirePermission("data:write") for all 6 models in MODEL_MAP.',
-  recommendation: 'Phase D of migration: introduce per-model permission matrix in admin generic route, or extract schedule-sensitive models to dedicated routes.',
+  description: phaseDDone
+    ? 'Admin generic route now uses model-specific write permissions via getAdminWritePermission helper. scheduleslot uses schedule:write, teachingtask uses teaching-task:write, ordinary models use data:write.'
+    : 'Admin generic route applies uniform data:write to all models, preventing model-specific permission granularity.',
+  evidence: phaseDDone
+    ? 'src/app/api/admin/[model]/route.ts has getAdminWritePermission helper returning schedule:write for scheduleslot and teaching-task:write for teachingtask.'
+    : 'src/app/api/admin/[model]/route.ts POST line 181 and PUT line 234 both use requirePermission("data:write") for all 6 models in MODEL_MAP.',
+  recommendation: phaseDDone
+    ? 'No further action needed. Model-specific permissions are enforced server-side.'
+    : 'Phase D of migration: introduce per-model permission matrix in admin generic route, or extract schedule-sensitive models to dedicated routes.',
 })
 
 findings.push({
   id: 'K15-RBAC-MEDIUM-3',
-  severity: 'MEDIUM',
+  severity: phaseCDone ? 'LOW' : 'MEDIUM',
   area: 'frontend gating mismatch',
-  description: 'Schedule grid drag-to-edit uses data:write, while schedule adjustments use schedule:adjust. A user with schedule:adjust but not data:write cannot drag slots but can create adjustments (and vice versa).',
-  evidence: 'schedule-grid.tsx line 60: useHasPermission("data:write"). schedule-adjustment-dialog.tsx line 54: useHasPermission("schedule:adjust"). These are different permission axes for overlapping schedule mutation operations.',
-  recommendation: 'After permission split, schedule grid drag should gate on schedule:write (or schedule:adjust if combined). Current mismatch is intentional (K14-FIX-A) but should be revisited during migration.',
+  description: phaseCDone
+    ? 'Schedule grid drag-to-edit now uses schedule:write, while schedule adjustments use schedule:adjust. These are different permission axes but both are schedule-scoped. The original data:write/schedule:adjust mismatch is resolved.'
+    : 'Schedule grid drag-to-edit uses data:write, while schedule adjustments use schedule:adjust. A user with schedule:adjust but not data:write cannot drag slots but can create adjustments (and vice versa).',
+  evidence: phaseCDone
+    ? 'schedule-grid.tsx uses useHasPermission("schedule:write"). schedule-adjustment-dialog.tsx uses useHasPermission("schedule:adjust"). Both are schedule-scoped permissions.'
+    : 'schedule-grid.tsx line 60: useHasPermission("data:write"). schedule-adjustment-dialog.tsx line 54: useHasPermission("schedule:adjust"). These are different permission axes for overlapping schedule mutation operations.',
+  recommendation: phaseCDone
+    ? 'No further action needed. schedule:write (admin CRUD) and schedule:adjust (dashboard drag + scheduler) are distinct use cases.'
+    : 'After permission split, schedule grid drag should gate on schedule:write (or schedule:adjust if combined). Current mismatch is intentional (K14-FIX-A) but should be revisited during migration.',
 })
 
 findings.push({
@@ -571,6 +598,17 @@ if (phaseDDone) {
   })
 }
 
+if (phaseEDone) {
+  findings.push({
+    id: 'K15-RBAC-NONE-7',
+    severity: 'NONE',
+    area: 'Phase E admin frontend model gating',
+    description: 'Admin frontend data page now uses model-specific permission gating. Create/edit/save buttons are gated by getAdminModelWritePermission. Delete buttons are gated by data:delete. Defensive no-op checks in all write handlers.',
+    evidence: `admin-db-config has getAdminModelWritePermission helper=${adminFrontendHasModelHelper}, admin-db-content uses useHasPermission with model helper=${adminFrontendUsesModelHelper}, gates create=${adminFrontendGatesCreate}, gates delete=${adminFrontendGatesDelete}.`,
+    recommendation: 'Phase E complete. K15 migration is DONE. All phases (A/B/C/D/E) are complete.',
+  })
+}
+
 // ─── Output Findings ──────────────────────────────────────────────
 
 console.log('\n── Findings ──')
@@ -610,7 +648,14 @@ console.log('')
 console.log('  Recommendation: Option A — minimal split preserves backward compatibility while addressing the core issue (data:write covering schedule-sensitive operations).')
 
 console.log('\n── Migration Recommendation ──')
-if (phaseADone && dedicatedRouteMigrationDone && phaseCDone && phaseDDone) {
+if (phaseADone && dedicatedRouteMigrationDone && phaseCDone && phaseDDone && phaseEDone) {
+  console.log(`  Phase A: DONE — schedule:write and teaching-task:write defined and seeded to ADMIN`)
+  console.log(`  Phase B (dedicated routes): DONE — schedule-slot/teaching-task routes use new permissions`)
+  console.log(`  Phase C (frontend gating): DONE — schedule-grid uses schedule:write`)
+  console.log(`  Phase D (admin generic route): DONE — admin/[model] uses model-specific permissions`)
+  console.log(`  Phase E (admin frontend model gating): DONE — admin data page uses model-specific permission gating`)
+  console.log(`  K15 migration is COMPLETE.`)
+} else if (phaseADone && dedicatedRouteMigrationDone && phaseCDone && phaseDDone) {
   console.log(`  Phase A: DONE — schedule:write and teaching-task:write defined and seeded to ADMIN`)
   console.log(`  Phase B (dedicated routes): DONE — schedule-slot/teaching-task routes use new permissions`)
   console.log(`  Phase C (frontend gating): DONE — schedule-grid uses schedule:write`)

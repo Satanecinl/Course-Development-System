@@ -1,7 +1,19 @@
+import type { PermissionKey } from '@/lib/auth/types'
+
 export interface TableConfig {
   key: string
   label: string
   color: string
+}
+
+// K15-FIX-E: Model-specific write permission mapping.
+// Schedule-sensitive models use granular permissions aligned with server matrix.
+// Ordinary models continue to use data:write.
+export function getAdminModelWritePermission(model: string): PermissionKey {
+  const m = model.toLowerCase()
+  if (m === 'scheduleslot') return 'schedule:write'
+  if (m === 'teachingtask') return 'teaching-task:write'
+  return 'data:write'
 }
 
 export const TABLES: TableConfig[] = [

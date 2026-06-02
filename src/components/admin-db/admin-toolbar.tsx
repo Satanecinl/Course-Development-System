@@ -8,9 +8,11 @@ interface AdminToolbarProps {
   onImportClick: () => void
   onAddClick: () => void
   onHistoryClick?: () => void
+  canCreate?: boolean
+  canImport?: boolean
 }
 
-export function AdminToolbar({ tableName, recordCount, onImportClick, onAddClick, onHistoryClick }: AdminToolbarProps) {
+export function AdminToolbar({ tableName, recordCount, onImportClick, onAddClick, onHistoryClick, canCreate = true, canImport = true }: AdminToolbarProps) {
   return (
     <div className="mb-4 flex items-center justify-between">
       <div className="flex items-center gap-2">
@@ -31,14 +33,16 @@ export function AdminToolbar({ tableName, recordCount, onImportClick, onAddClick
         )}
         <button
           onClick={onImportClick}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          disabled={!canImport}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Upload className="w-4 h-4" />
           导入课程表
         </button>
         <button
           onClick={onAddClick}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium"
+          disabled={!canCreate}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Plus className="w-4 h-4" />
           新增

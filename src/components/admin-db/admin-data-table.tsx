@@ -12,9 +12,11 @@ interface AdminDataTableProps {
   getCellValue: (record: DbRecord, col: string, table: string) => unknown
   onEdit: (record: DbRecord) => void
   onDelete: (id: number) => void
+  canEdit?: boolean
+  canDelete?: boolean
 }
 
-export function AdminDataTable({ records, loading, columns, activeTable, getCellValue, onEdit, onDelete }: AdminDataTableProps) {
+export function AdminDataTable({ records, loading, columns, activeTable, getCellValue, onEdit, onDelete, canEdit = true, canDelete = true }: AdminDataTableProps) {
   if (loading) {
     return <div className="flex items-center justify-center h-64 text-gray-500">加载中...</div>
   }
@@ -56,22 +58,26 @@ export function AdminDataTable({ records, loading, columns, activeTable, getCell
                 ))}
                 <td className="px-4 py-3 text-right">
                   <div className="inline-flex items-center gap-2">
-                    <button
-                      onClick={() => onEdit(record)}
-                      className="inline-flex items-center gap-1 px-2 py-1 text-blue-600 hover:bg-blue-50 rounded transition-colors text-xs"
-                      title="编辑"
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                      编辑
-                    </button>
-                    <button
-                      onClick={() => onDelete(record.id)}
-                      className="inline-flex items-center gap-1 px-2 py-1 text-red-600 hover:bg-red-50 rounded transition-colors text-xs"
-                      title="删除"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      删除
-                    </button>
+                    {canEdit && (
+                      <button
+                        onClick={() => onEdit(record)}
+                        className="inline-flex items-center gap-1 px-2 py-1 text-blue-600 hover:bg-blue-50 rounded transition-colors text-xs"
+                        title="编辑"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                        编辑
+                      </button>
+                    )}
+                    {canDelete && (
+                      <button
+                        onClick={() => onDelete(record.id)}
+                        className="inline-flex items-center gap-1 px-2 py-1 text-red-600 hover:bg-red-50 rounded transition-colors text-xs"
+                        title="删除"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        删除
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>

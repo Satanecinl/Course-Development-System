@@ -105,7 +105,17 @@ for (const file of adminDbFiles) {
     break
   }
 }
-check(!frontendHasPermissionCheck, 'Frontend admin-db has NO client-side permission checks (buttons always visible)')
+
+// Phase E detection: admin-db-content uses getAdminModelWritePermission + useHasPermission
+const adminDbContent = readFile('src/app/admin/db/admin-db-content.tsx')
+const adminConfigSrc = readFile('src/lib/admin-db/config.ts')
+const phaseEFrontendHasHelper = adminConfigSrc.includes('getAdminModelWritePermission')
+const phaseEFrontendUsesHelper = adminDbContent.includes('getAdminModelWritePermission') && adminDbContent.includes('useHasPermission')
+const phaseEFrontendGatesCreate = adminDbContent.includes('canWriteCurrentModel')
+const phaseEFrontendGatesDelete = adminDbContent.includes('canDelete')
+const phaseEDone = phaseEFrontendHasHelper && phaseEFrontendUsesHelper && phaseEFrontendGatesCreate && phaseEFrontendGatesDelete
+
+check(phaseEDone || !frontendHasPermissionCheck, phaseEDone ? 'Frontend admin-db has model-specific permission gating (Phase E DONE)' : 'Frontend admin-db has NO client-side permission checks (buttons always visible)')
 
 // ─── 4. Schedule-Sensitive Model Guards ──────────────────────────
 
@@ -137,15 +147,21 @@ const findings = [
     area: 'admin generic server matrix',
     description: 'Admin generic route now uses model-specific write permissions via getAdminWritePermission helper. scheduleslot uses schedule:write, teachingtask uses teaching-task:write, ordinary models use data:write.',
     evidence: 'getAdminWritePermission returns schedule:write for scheduleslot, teaching-task:write for teachingtask, data:write for others. POST and PUT both use the helper.',
-    recommendation: 'Phase D server matrix done. Frontend admin model-specific gating pending (Phase E).',
+    recommendation: 'Phase D server matrix done. Frontend admin model-specific gating also complete (Phase E).',
   },
   {
     id: 'K15-ADMIN-MATRIX-MEDIUM-3',
-    severity: 'MEDIUM',
+    severity: phaseEDone ? 'NONE' : 'MEDIUM',
     area: 'frontend no model-specific gating',
-    description: 'Admin data page frontend has zero client-side permission checks. All write buttons are always visible. A user with data:write but lacking schedule:write/teaching-task:write will see buttons but get 403 on click.',
-    evidence: 'No useHasPermission calls in src/components/admin-db/ or src/app/admin/db/.',
-    recommendation: 'Add frontend model-specific permission gating in Phase E to prevent 403 UX.',
+    description: phaseEDone
+      ? 'Admin data page frontend now has model-specific permission gating. Create/edit/save are gated by getAdminModelWritePermission. Delete is gated by data:delete.'
+      : 'Admin data page frontend has zero client-side permission checks. All write buttons are always visible. A user with data:write but lacking schedule:write/teaching-task:write will see buttons but get 403 on click.',
+    evidence: phaseEDone
+      ? 'admin-db-content.tsx uses useHasPermission(getAdminModelWritePermission(activeTable)) for canWriteCurrentModel and useHasPermission("data:delete") for canDelete.'
+      : 'No useHasPermission calls in src/components/admin-db/ or src/app/admin/db/.',
+    recommendation: phaseEDone
+      ? 'Phase E done. Frontend model-specific gating complete.'
+      : 'Add frontend model-specific permission gating in Phase E to prevent 403 UX.',
   },
   {
     id: 'K15-ADMIN-MATRIX-LOW-1',
@@ -186,6 +202,20 @@ const findings = [
     description: 'Admin generic route has proper guards: mutation guard for scheduleslot, teacher conflict guard for teachingtask, semester scoping, referential integrity on DELETE.',
     evidence: 'guardAdminSlotCreate, guardAdminSlotUpdate, guardAdminTaskUpdate, resolveSemesterIfNeeded, countReferences all present.',
     recommendation: 'No action needed.',
+  },
+  {
+    id: 'K15-ADMIN-MATRIX-NONE-5',
+    severity: 'NONE',
+    area: 'Phase E admin frontend model gating',
+    description: phaseEDone
+      ? 'Admin frontend data page now uses model-specific permission gating. Create/edit/save are gated by getAdminModelWritePermission(activeTable). Delete is gated by data:delete. Defensive no-op in all write handlers.'
+      : 'Phase E not yet done — admin frontend has no model-specific permission checks.',
+    evidence: phaseEDone
+      ? 'admin-db-config.ts has getAdminModelWritePermission. admin-db-content.tsx uses useHasPermission(getAdminModelWritePermission(activeTable)) for canWriteCurrentModel, useHasPermission("data:delete") for canDelete.'
+      : 'No model-specific permission checks in admin frontend.',
+    recommendation: phaseEDone
+      ? 'Phase E complete. K15 migration is DONE.'
+      : 'Phase E pending — add frontend model-specific permission gating.',
   },
 ]
 
