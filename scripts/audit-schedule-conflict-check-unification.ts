@@ -310,7 +310,7 @@ addFinding({
   area: 'response shape inconsistency',
   description: `三套实现 response shape 不同。conflict-check/guard: { hasConflict, conflicts: string[] }（现已共享 helper）。adjustment: { canApply, conflicts: ScheduleAdjustmentConflict[] (typed with type/message/severity/relatedSlotIds), warnings: ... }。前端对 moveSlot 错误显示为 string，前端对 adjustment 错误显示为 typed conflict。`,
   evidence: `api: hasConflict=${apiShapeHasConflict} conflicts=${apiShapeHasConflicts}; guard: conflicts=${guardShapeHasConflicts}; adjustment: type=${adjustmentShapeHasType} message=${adjustmentShapeHasMessage} related=${adjustmentShapeHasRelated}`,
-  recommendation: '短期保留差异（mutation guard 是 string message，adjustment 是 typed conflict）。长期可统一为 { hasConflict, conflicts: TypedConflict[] }。',
+  recommendation: 'K13-SCHEDULE-CONFLICT-RESPONSE-SHAPE-AUDIT（2026-06-02，scripts/audit-schedule-conflict-response-shapes.ts）已对 response shape 做专项审计。短期保留差异（mutation guard 是 string message，adjustment 是 typed conflict）。长期可统一为 internal typed + external compatible string[]（见 docs/k13-schedule-conflict-response-shape-audit.md 第 14.2 节）。',
 })
 
 // ═══════════════════════════════════════
