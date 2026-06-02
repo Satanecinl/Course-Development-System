@@ -106,20 +106,23 @@ if (!dedicatedRouteUsesPermission) {
 }
 
 // ─── 2. Dedicated Route Conflict Check Coverage ───────────────────
+// K16-FIX-A: dedicated route now uses guardTeachingTaskUpdateSemantics
+// which covers teacherId, roomId, classGroupIds, week, and semester guards.
 
-const dedicatedChecksRoomChange = dedicatedRoute.includes('checkScheduleConflicts') && dedicatedRoute.includes('targetRoomId')
-const dedicatedChecksTeacherChange = false // static detection: dedicated route does not call guardAdminTaskUpdate or checkScheduleConflicts for teacherId
-const dedicatedChecksSemesterGuard = false // static detection: no resolveSemesterIfNeeded or same-semester check in dedicated route
-const dedicatedChecksWeekChange = false // static detection: no guard for weekType/startWeek/endWeek changes
-const dedicatedChecksClassGroupChange = false // static detection: no guard for classGroupIds changes
+const dedicatedUsesSharedGuard = dedicatedRoute.includes('guardTeachingTaskUpdateSemantics')
+const dedicatedChecksRoomChange = dedicatedUsesSharedGuard || (dedicatedRoute.includes('checkScheduleConflicts') && dedicatedRoute.includes('targetRoomId'))
+const dedicatedChecksTeacherChange = dedicatedUsesSharedGuard
+const dedicatedChecksSemesterGuard = dedicatedUsesSharedGuard
+const dedicatedChecksWeekChange = dedicatedUsesSharedGuard
+const dedicatedChecksClassGroupChange = dedicatedUsesSharedGuard
 
 if (!dedicatedChecksRoomChange) {
   add({
     id: 'K16-TT-MUTATION-MEDIUM-1',
     severity: 'MEDIUM',
-    title: 'Dedicated route does not call checkScheduleConflicts for roomId change',
-    evidence: `DEDICATED_ROUTE contains checkScheduleConflicts=${dedicatedRoute.includes('checkScheduleConflicts')}, targetRoomId=${dedicatedRoute.includes('targetRoomId')}.`,
-    recommendation: 'Add checkScheduleConflicts guard for roomId changes.',
+    title: 'Dedicated route does not guard roomId change',
+    evidence: `DEDICATED_ROUTE uses guardTeachingTaskUpdateSemantics=${dedicatedUsesSharedGuard}, checkScheduleConflicts=${dedicatedRoute.includes('checkScheduleConflicts')}.`,
+    recommendation: 'Add conflict guard for roomId changes.',
   })
 }
 
@@ -128,8 +131,8 @@ if (!dedicatedChecksTeacherChange) {
     id: 'K16-TT-MUTATION-HIGH-3',
     severity: 'HIGH',
     title: 'Dedicated route does not guard teacherId change against schedule conflicts',
-    evidence: 'DEDICATED_ROUTE does not call guardAdminTaskUpdate or checkScheduleConflicts for teacherId changes. TeacherId is updated directly in tx.teachingTask.update at line ~83.',
-    recommendation: 'Add checkScheduleConflicts guard for teacherId changes (similar to admin generic route guardAdminTaskUpdate).',
+    evidence: 'DEDICATED_ROUTE does not call guardTeachingTaskUpdateSemantics or checkScheduleConflicts for teacherId changes.',
+    recommendation: 'Add checkScheduleConflicts guard for teacherId changes.',
   })
 }
 
@@ -138,7 +141,7 @@ if (!dedicatedChecksSemesterGuard) {
     id: 'K16-TT-MUTATION-MEDIUM-2',
     severity: 'MEDIUM',
     title: 'Dedicated route has no semester guard (same-semester check)',
-    evidence: 'DEDICATED_ROUTE does not call resolveSemesterIfNeeded, does not check that task belongs to resolved semester. Admin generic route has this guard.',
+    evidence: 'DEDICATED_ROUTE does not call guardTeachingTaskUpdateSemantics or resolveSemesterIfNeeded. Admin generic route has this guard.',
     recommendation: 'Add same-semester guard in dedicated route to prevent cross-semester edits.',
   })
 }
@@ -148,8 +151,8 @@ if (!dedicatedChecksWeekChange) {
     id: 'K16-TT-MUTATION-MEDIUM-3',
     severity: 'MEDIUM',
     title: 'Dedicated route does not guard weekType/startWeek/endWeek changes',
-    evidence: 'DEDICATED_ROUTE updates weekType/startWeek/endWeek directly in tx.teachingTask.update without conflict re-validation. Changing these can invalidate existing ScheduleSlot week overlap semantics.',
-    recommendation: 'Either re-validate conflicts after week constraint change, or document that week changes are cosmetic for the TeachingTask but not propagated to slots.',
+    evidence: 'DEDICATED_ROUTE does not call guardTeachingTaskUpdateSemantics. Changing these can invalidate existing ScheduleSlot week overlap semantics.',
+    recommendation: 'Add conflict re-validation after week constraint change.',
   })
 }
 
@@ -158,8 +161,8 @@ if (!dedicatedChecksClassGroupChange) {
     id: 'K16-TT-MUTATION-MEDIUM-4',
     severity: 'MEDIUM',
     title: 'Dedicated route does not guard classGroupIds change',
-    evidence: 'DEDICATED_ROUTE calls deleteMany + createMany on TeachingTaskClass without re-validating classGroup conflicts against existing ScheduleSlot occupancies.',
-    recommendation: 'Add checkScheduleConflicts guard for classGroupIds changes (using new classGroupIds as classGroupIds input).',
+    evidence: 'DEDICATED_ROUTE does not call guardTeachingTaskUpdateSemantics. ClassGroup changes are not validated against existing slots.',
+    recommendation: 'Add checkScheduleConflicts guard for classGroupIds changes.',
   })
 }
 
@@ -209,8 +212,8 @@ if (!guardCoversRoom) {
     id: 'K16-TT-MUTATION-LOW-1',
     severity: 'LOW',
     title: 'guardAdminTaskUpdate does not cover roomId changes (by design, but worth documenting)',
-    evidence: 'TT_GUARD returns { ok: true } if data.teacherId is undefined. Admin generic route FIELD_WHITELIST for teachingtask does not include roomId, so this is by design. However, if whitelist changes in the future, roomId changes would bypass the guard.',
-    recommendation: 'Add explicit early-return documentation: "guardAdminTaskUpdate only guards teacherId; roomId is not in the teachingtask FIELD_WHITELIST."',
+    evidence: 'TT_GUARD returns { ok: true } if data.teacherId is undefined. Admin generic route FIELD_WHITELIST for teachingtask does not include roomId, so this is by design.',
+    recommendation: 'Add explicit early-return documentation.',
   })
 }
 
@@ -220,11 +223,71 @@ if (!guardReusesCheckSchedule) {
     severity: 'MEDIUM',
     title: 'guardAdminTaskUpdate does not reuse checkScheduleConflicts',
     evidence: 'TT_GUARD does not call checkScheduleConflicts. The guard would not detect teacher/classGroup/room conflicts.',
-    recommendation: 'Reuse checkScheduleConflicts in guardAdminTaskUpdate (the conflict-check engine used by other guards).',
+    recommendation: 'Reuse checkScheduleConflicts in guardAdminTaskUpdate.',
   })
 }
 
-// ─── 5. checkScheduleConflicts Relies on TeachingTask Relation ───
+// ─── 5. guardTeachingTaskUpdateSemantics Coverage ─────────────────
+// K16-FIX-A: new comprehensive guard function
+
+const ttGuardHasComprehensiveGuard = ttGuard.includes('guardTeachingTaskUpdateSemantics')
+const comprehensiveGuardCoversTeacher = ttGuard.includes('effectiveTeacherId') || ttGuard.includes('teacherChanged')
+const comprehensiveGuardCoversSemester = ttGuard.includes('不允许将教学任务移到其他学期') || ttGuard.includes('skipSemesterGuard')
+const comprehensiveGuardCoversWeek = ttGuard.includes('hasWeekChange') || ttGuard.includes('newWeekConstraint')
+const comprehensiveGuardCoversClassGroup = ttGuard.includes('classGroupChanged') || ttGuard.includes('effectiveClassGroupIds')
+const comprehensiveGuardCoversRoom = ttGuard.includes('roomChanged') || ttGuard.includes('targetRoomId')
+
+if (!ttGuardHasComprehensiveGuard) {
+  add({
+    id: 'K16-TT-MUTATION-HIGH-9',
+    severity: 'HIGH',
+    title: 'guardTeachingTaskUpdateSemantics function missing from teaching-task-mutation-guard.ts',
+    evidence: `TT_GUARD does not contain guardTeachingTaskUpdateSemantics.`,
+    recommendation: 'Add the comprehensive guard function covering teacherId, semester, week, classGroupIds, and roomId.',
+  })
+}
+
+if (!comprehensiveGuardCoversTeacher) {
+  add({
+    id: 'K16-TT-MUTATION-HIGH-10',
+    severity: 'HIGH',
+    title: 'guardTeachingTaskUpdateSemantics does not cover teacherId',
+    evidence: 'TT_GUARD comprehensive guard missing teacherChanged/effectiveTeacherId logic.',
+    recommendation: 'Add teacherId conflict check in comprehensive guard.',
+  })
+}
+
+if (!comprehensiveGuardCoversSemester) {
+  add({
+    id: 'K16-TT-MUTATION-MEDIUM-14',
+    severity: 'MEDIUM',
+    title: 'guardTeachingTaskUpdateSemantics does not cover same-semester guard',
+    evidence: 'TT_GUARD comprehensive guard missing semester guard logic.',
+    recommendation: 'Add same-semester check in comprehensive guard.',
+  })
+}
+
+if (!comprehensiveGuardCoversWeek) {
+  add({
+    id: 'K16-TT-MUTATION-MEDIUM-15',
+    severity: 'MEDIUM',
+    title: 'guardTeachingTaskUpdateSemantics does not cover week constraint guard',
+    evidence: 'TT_GUARD comprehensive guard missing week constraint check logic.',
+    recommendation: 'Add week constraint validation in comprehensive guard.',
+  })
+}
+
+if (!comprehensiveGuardCoversClassGroup) {
+  add({
+    id: 'K16-TT-MUTATION-MEDIUM-16',
+    severity: 'MEDIUM',
+    title: 'guardTeachingTaskUpdateSemantics does not cover classGroupIds guard',
+    evidence: 'TT_GUARD comprehensive guard missing classGroupChanged logic.',
+    recommendation: 'Add classGroupIds conflict check in comprehensive guard.',
+  })
+}
+
+// ─── 6. checkScheduleConflicts Relies on TeachingTask Relation ───
 
 const conflictCheckReadsTeacher = conflictCheck.includes('teacherId')
 const conflictCheckReadsClassGroup = conflictCheck.includes('classGroupIds')
@@ -260,7 +323,7 @@ if (!conflictCheckReadsWeek) {
   })
 }
 
-// ─── 6. Multiple TeachingTask Update Paths ────────────────────────
+// ─── 7. Multiple TeachingTask Update Paths ────────────────────────
 
 const dedicatedUpdatePath = dedicatedRoute.includes('teachingTask.update')
 const adminGenericUpdatePath = adminGeneric.includes('teachingTask.update') || adminGeneric.includes('teachingTask\\')
@@ -324,7 +387,7 @@ if (otherNonTrivial.length > 0) {
   }
 }
 
-// ─── 7. updateMany / Unchecked / Raw SQL Bypass Paths ────────────
+// ─── 8. updateMany / Unchecked / Raw SQL Bypass Paths ────────────
 
 const hasUpdateManyOnTask = otherUpdatePaths.some(p => p.includes('updateMany') && p.includes('teachingTask'))
 if (hasUpdateManyOnTask) {
@@ -339,7 +402,6 @@ if (hasUpdateManyOnTask) {
 
 const hasRawSqlOnTask = otherUpdatePaths.some(p => p.includes('$queryRaw') || p.includes('$executeRaw')) &&
   allSrcFiles.some(f => readFile(f).match(/teachingTask.*\$queryRaw|teachingTask.*\$executeRaw/))
-// (Detection by string match only — false positives acceptable as LOW.)
 
 const dedicatedRouteHasRawSql = dedicatedRoute.includes('$queryRaw') || dedicatedRoute.includes('$executeRaw')
 if (dedicatedRouteHasRawSql) {
@@ -352,7 +414,7 @@ if (dedicatedRouteHasRawSql) {
   })
 }
 
-// ─── 8. POST /api/teaching-task Permission ────────────────────────
+// ─── 9. POST /api/teaching-task Permission ────────────────────────
 
 const dedicatedCreateExists = dedicatedCreate.length > 0
 const dedicatedCreateUsesDataWrite = dedicatedCreate.includes("requirePermission('data:write'")
@@ -364,11 +426,11 @@ if (dedicatedCreateExists && dedicatedCreateUsesDataWrite && !dedicatedCreateUse
     severity: 'LOW',
     title: 'POST /api/teaching-task uses data:write (not teaching-task:write)',
     evidence: `DEDICATED_CREATE line ~7: requirePermission('data:write'). POST does not call conflict check (no existing slots at create time, acceptable).`,
-    recommendation: 'Optionally migrate to teaching-task:write for consistency with PUT. Currently acceptable since create has no existing-slot conflict surface.',
+    recommendation: 'Optionally migrate to teaching-task:write for consistency with PUT.',
   })
 }
 
-// ─── 9. ScheduleSlot ↔ TeachingTask Relation ─────────────────────
+// ─── 10. ScheduleSlot ↔ TeachingTask Relation ─────────────────────
 
 const scheduleSlotHasTeachingTask = schema.includes('model ScheduleSlot') && schema.includes('teachingTaskId')
 const teachingTaskHasScheduleSlots = schema.includes('model TeachingTask') && schema.includes('scheduleSlots')
@@ -391,24 +453,23 @@ if (!dedicatedPropagatesRoomToSlot) {
     severity: 'LOW',
     title: 'Dedicated route does not propagate roomId change to ScheduleSlots',
     evidence: `DEDICATED_ROUTE: scheduleSlot.updateMany=${dedicatedRoute.includes('scheduleSlot.updateMany')}, roomId: roomId=${dedicatedRoute.includes('roomId: roomId')}.`,
-    recommendation: 'Verify slot.roomId is updated when roomId changes. If not, slots are out of sync with task.',
+    recommendation: 'Verify slot.roomId is updated when roomId changes.',
   })
 }
 
 // Check that dedicated route does NOT propagate teacherId/classGroup/week to slot
-// (These are read from TeachingTask on-the-fly, so not stored on Slot — acceptable.)
 const dedicatedPropagatesTeacherToSlot = dedicatedRoute.includes('scheduleSlot.updateMany') && dedicatedRoute.match(/scheduleSlot\.updateMany[\s\S]{0,200}teacherId/)
 if (dedicatedPropagatesTeacherToSlot) {
   add({
     id: 'K16-TT-MUTATION-MEDIUM-12',
     severity: 'MEDIUM',
     title: 'Dedicated route propagates teacherId to ScheduleSlot (denormalized)',
-    evidence: 'ScheduleSlot does not have a teacherId field in schema.prisma. Direct write to scheduleSlot.teacherId would fail or require schema change.',
-    recommendation: 'Confirm this is not a real write path — ScheduleSlot reads teacherId via TeachingTask relation.',
+    evidence: 'ScheduleSlot does not have a teacherId field in schema.prisma.',
+    recommendation: 'Confirm this is not a real write path.',
   })
 }
 
-// ─── 10. Frontend Callers ────────────────────────────────────────
+// ─── 11. Frontend Callers ────────────────────────────────────────
 
 const frontendCallsDedicatedPut = adminDbContent.includes('/api/teaching-task/${editingTask?.id}') ||
   adminDbContent.includes("fetch(`/api/teaching-task/${editingTask")
@@ -425,13 +486,13 @@ if (!frontendCallsDedicatedPut || !frontendCallsDedicatedPost) {
   })
 }
 
-// ─── 11. NONE findings (resolved / non-issues) ────────────────────
+// ─── 12. NONE findings (resolved / non-issues) ────────────────────
 
 add({
   id: 'K16-TT-MUTATION-NONE-1',
   severity: 'NONE',
   title: 'Dedicated route uses teaching-task:write permission',
-  evidence: `DEDICATED_ROUTE line 21: requirePermission('teaching-task:write'). Permission enforcement is in place.`,
+  evidence: `DEDICATED_ROUTE: requirePermission('teaching-task:write'). Permission enforcement is in place.`,
   recommendation: 'No action needed.',
 })
 
@@ -439,15 +500,15 @@ add({
   id: 'K16-TT-MUTATION-NONE-2',
   severity: 'NONE',
   title: 'Admin generic route enforces model-specific permission via getAdminWritePermission',
-  evidence: `ADMIN_GENERIC line 246: requirePermission(getAdminWritePermission(model), req). For teachingtask, returns 'teaching-task:write'.`,
+  evidence: `ADMIN_GENERIC: requirePermission(getAdminWritePermission(model), req). For teachingtask, returns 'teaching-task:write'.`,
   recommendation: 'No action needed.',
 })
 
 add({
   id: 'K16-TT-MUTATION-NONE-3',
   severity: 'NONE',
-  title: 'Dedicated route uses checkScheduleConflicts for roomId change',
-  evidence: `DEDICATED_ROUTE lines ~94-127: guard loop over existing slots calling checkScheduleConflicts with targetRoomId. Returns Error.conflicts if any conflict.`,
+  title: 'Dedicated route uses guardTeachingTaskUpdateSemantics for all conflict checks',
+  evidence: `DEDICATED_ROUTE calls guardTeachingTaskUpdateSemantics which covers teacherId, roomId, classGroupIds, week, and semester guards.`,
   recommendation: 'No action needed for roomId path.',
 })
 
@@ -455,7 +516,7 @@ add({
   id: 'K16-TT-MUTATION-NONE-4',
   severity: 'NONE',
   title: 'Admin generic route calls guardAdminTaskUpdate for teachingtask PUT',
-  evidence: `ADMIN_GENERIC lines ~306-314: if (model.toLowerCase() === 'teachingtask') { const guardResult = await guardAdminTaskUpdate(id, data) ... }.`,
+  evidence: `ADMIN_GENERIC: if (model.toLowerCase() === 'teachingtask') { const guardResult = await guardAdminTaskUpdate(id, data) ... }.`,
   recommendation: 'No action needed.',
 })
 
@@ -471,7 +532,7 @@ add({
   id: 'K16-TT-MUTATION-NONE-6',
   severity: 'NONE',
   title: 'guardAdminTaskUpdate reuses checkScheduleConflicts',
-  evidence: `TT_GUARD line 73: const result = await checkScheduleConflicts({...}). Reuses the shared conflict engine.`,
+  evidence: `TT_GUARD: const result = await checkScheduleConflicts({...}). Reuses the shared conflict engine.`,
   recommendation: 'No action needed.',
 })
 
@@ -488,6 +549,47 @@ add({
   severity: 'NONE',
   title: 'No raw SQL in dedicated teaching-task routes',
   evidence: `DEDICATED_ROUTE and DEDICATED_CREATE do not contain $queryRaw or $executeRaw.`,
+  recommendation: 'No action needed.',
+})
+
+// K16-FIX-A: guardTeachingTaskUpdateSemantics coverage
+add({
+  id: 'K16-TT-MUTATION-NONE-9',
+  severity: 'NONE',
+  title: 'guardTeachingTaskUpdateSemantics covers teacherId via checkScheduleConflicts',
+  evidence: `TT_GUARD comprehensive guard: teacherChanged flag, effectiveTeacherId, checkScheduleConflicts loop over existing slots.`,
+  recommendation: 'No action needed.',
+})
+
+add({
+  id: 'K16-TT-MUTATION-NONE-10',
+  severity: 'NONE',
+  title: 'guardTeachingTaskUpdateSemantics covers same-semester guard',
+  evidence: `TT_GUARD comprehensive guard: checks existing.semesterId !== proposed.semesterId.`,
+  recommendation: 'No action needed.',
+})
+
+add({
+  id: 'K16-TT-MUTATION-NONE-11',
+  severity: 'NONE',
+  title: 'guardTeachingTaskUpdateSemantics covers week constraint guard',
+  evidence: `TT_GUARD comprehensive guard: hasWeekChange flag, expandWeeks overlap check for existing slots.`,
+  recommendation: 'No action needed.',
+})
+
+add({
+  id: 'K16-TT-MUTATION-NONE-12',
+  severity: 'NONE',
+  title: 'guardTeachingTaskUpdateSemantics covers classGroupIds guard',
+  evidence: `TT_GUARD comprehensive guard: classGroupChanged flag, effectiveClassGroupIds, checkScheduleConflicts loop.`,
+  recommendation: 'No action needed.',
+})
+
+add({
+  id: 'K16-TT-MUTATION-NONE-13',
+  severity: 'NONE',
+  title: 'guardTeachingTaskUpdateSemantics covers roomId guard',
+  evidence: `TT_GUARD comprehensive guard: roomChanged flag, targetRoomId from proposed, checkScheduleConflicts loop.`,
   recommendation: 'No action needed.',
 })
 
@@ -519,6 +621,7 @@ if (otherUpdatePaths.length === 0) {
 console.log(`\n  Static checks:`)
 console.log(`    dedicated PUT exists: ${dedicatedRouteExists}`)
 console.log(`    dedicated PUT uses teaching-task:write: ${dedicatedRouteUsesPermission}`)
+console.log(`    dedicated PUT uses guardTeachingTaskUpdateSemantics: ${dedicatedUsesSharedGuard}`)
 console.log(`    dedicated PUT checks roomId: ${dedicatedChecksRoomChange}`)
 console.log(`    dedicated PUT checks teacherId: ${dedicatedChecksTeacherChange}`)
 console.log(`    dedicated PUT checks semester: ${dedicatedChecksSemesterGuard}`)
@@ -529,6 +632,12 @@ console.log(`    admin generic calls guardAdminTaskUpdate: ${adminGenericHasTask
 console.log(`    admin generic teachingtask whitelist: ${adminGenericTeacingtaskWhitelist}`)
 console.log(`    guardAdminTaskUpdate covers teacherId: ${guardCoversTeacher}`)
 console.log(`    guardAdminTaskUpdate reuses checkScheduleConflicts: ${guardReusesCheckSchedule}`)
+console.log(`    guardTeachingTaskUpdateSemantics exists: ${ttGuardHasComprehensiveGuard}`)
+console.log(`    comprehensive guard covers teacherId: ${comprehensiveGuardCoversTeacher}`)
+console.log(`    comprehensive guard covers semester: ${comprehensiveGuardCoversSemester}`)
+console.log(`    comprehensive guard covers week: ${comprehensiveGuardCoversWeek}`)
+console.log(`    comprehensive guard covers classGroup: ${comprehensiveGuardCoversClassGroup}`)
+console.log(`    comprehensive guard covers room: ${comprehensiveGuardCoversRoom}`)
 console.log(`    checkScheduleConflicts reads teacherId: ${conflictCheckReadsTeacher}`)
 console.log(`    checkScheduleConflicts reads classGroupIds: ${conflictCheckReadsClassGroup}`)
 console.log(`    checkScheduleConflicts reads week: ${conflictCheckReadsWeek}`)

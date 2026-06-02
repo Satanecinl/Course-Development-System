@@ -107,12 +107,16 @@ check('admin POST 409 preserves { error, conflicts } + conflictDetails', /error:
 check('admin PUT 409 preserves { error, conflicts } + conflictDetails', /error:\s*guardResult\.error,\s*conflicts:\s*guardResult\.conflicts,\s*conflictDetails:\s*guardResult\.conflictDetails/.test(adminRoute))
 
 // ── 7. teaching-task/[id] route 409 response ──
+// K16-FIX-A: dedicated route now uses guardResult directly (pre-transaction guard)
+// instead of throwing Error.conflicts. The catch block still handles unexpected errors.
 
 const ttRoute = read('src/app/api/teaching-task/[id]/route.ts')
-check('teaching-task route still uses Error.conflicts pattern', /err\.conflicts\s*=\s*conflicts/.test(ttRoute))
-check('teaching-task route adds Error.conflictDetails', /err\.conflictDetails\s*=\s*conflictDetails/.test(ttRoute))
-check('teaching-task catch returns { error, conflicts, conflictDetails }', /error:\s*err\.message,\s*conflicts:\s*err\.conflicts,\s*conflictDetails:\s*err\.conflictDetails/.test(ttRoute))
-check('teaching-task catch still returns status 409', /status:\s*409/.test(ttRoute))
+const ttUsesGuardResult = /guardResult\.conflicts/.test(ttRoute)
+const ttUsesErrorPattern = /err\.conflicts\s*=\s*conflicts/.test(ttRoute)
+check('teaching-task route uses guardResult or Error.conflicts for conflict handling', ttUsesGuardResult || ttUsesErrorPattern)
+check('teaching-task route returns conflictDetails in 409', /conflictDetails:\s*(guardResult\.conflictDetails|err\.conflictDetails)/.test(ttRoute))
+check('teaching-task 409 preserves { error, conflicts, conflictDetails }', /error:\s*(guardResult\.error|err\.message)/.test(ttRoute) && /conflicts:\s*(guardResult\.conflicts|err\.conflicts)/.test(ttRoute))
+check('teaching-task 409 still returns status 409', /status:\s*(guardResult\.status\s*\?\?\s*409|409)/.test(ttRoute))
 
 // ── 8. adjustment dry-run envelope preserved ──
 
@@ -169,8 +173,8 @@ check('No new /api/scheduler/run', !exists('src/app/api/scheduler/run'))
 check('conflicts: string[] still defined in shared helper', /conflicts:\s*string\[\]/.test(ccLib))
 check('hasConflict: boolean still defined in shared helper', /hasConflict:\s*boolean/.test(ccLib))
 check('conflicts?: string[] still in SlotMutationGuardResult', /conflicts\?:\s*string\[\]/.test(guard))
-check('error: string still in 409 responses', /error:\s*guardResult\.error/.test(slotPut) || /error:\s*err\.message/.test(ttRoute))
-check('conflicts: err.conflicts still in teaching-task catch', /conflicts:\s*err\.conflicts/.test(ttRoute))
+check('error: string still in 409 responses', /error:\s*guardResult\.error/.test(slotPut) || /error:\s*(guardResult\.error|err\.message)/.test(ttRoute))
+check('conflicts returned in teaching-task 409', /conflicts:\s*(guardResult\.conflicts|err\.conflicts)/.test(ttRoute))
 
 // ── 12. verification scripts still pass string[] shape checks (no breaking) ──
 

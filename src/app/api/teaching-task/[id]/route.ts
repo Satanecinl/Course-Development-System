@@ -1,17 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requirePermission } from '@/lib/auth/require-permission'
-import { checkScheduleConflicts } from '@/lib/schedule/conflict-check'
-import type { ScheduleConflictDetail } from '@/lib/schedule/conflict-rules'
-
-// Type augmentation for K13-FIX-D: thread typed conflict details through
-// the existing Error.conflicts pattern without changing the public route
-// shape. Routes still return `{ error, conflicts }`; they additionally
-// surface `conflictDetails` in 409 responses.
-type ConflictError = Error & {
-  conflicts?: string[]
-  conflictDetails?: ScheduleConflictDetail[]
-}
+import { guardTeachingTaskUpdateSemantics } from '@/lib/schedule/teaching-task-mutation-guard'
 
 export async function PUT(
   request: NextRequest,
@@ -64,7 +54,29 @@ export async function PUT(
     const trimmedCourseName = courseName.trim()
     const validClassGroupIds = Array.isArray(classGroupIds)
       ? classGroupIds.filter((id): id is number => typeof id === 'number')
-      : []
+      : undefined
+
+    // K16-FIX-A: Comprehensive semantic guard before any writes.
+    // Covers teacherId, roomId, classGroupIds, week constraints, and semester.
+    const guardResult = await guardTeachingTaskUpdateSemantics(taskId, {
+      teacherId,
+      roomId,
+      weekType,
+      startWeek,
+      endWeek,
+      classGroupIds: validClassGroupIds,
+    })
+
+    if (!guardResult.ok) {
+      return NextResponse.json(
+        {
+          error: guardResult.error,
+          conflicts: guardResult.conflicts ?? [],
+          conflictDetails: guardResult.conflictDetails ?? [],
+        },
+        { status: guardResult.status ?? 409 },
+      )
+    }
 
     const result = await prisma.$transaction(async (tx) => {
       // 1. Find or create Course
@@ -88,44 +100,9 @@ export async function PUT(
         },
       })
 
-      // 3. Pre-update conflict check: verify new roomId doesn't create conflicts
-      //    for any slot that will be updated. Uses shared checkScheduleConflicts
-      //    (same engine as /api/conflict-check and slot-mutation-guard).
+      // 3. Propagate roomId to all associated ScheduleSlots.
+      //    Conflict check was already done by the guard above.
       if (roomId != null) {
-        const existingSlots = await tx.scheduleSlot.findMany({
-          where: { teachingTaskId: taskId },
-          select: { id: true, dayOfWeek: true, slotIndex: true, semesterId: true },
-        })
-
-        const taskSemester = await tx.teachingTask.findUnique({
-          where: { id: taskId },
-          select: { semesterId: true },
-        })
-
-        const conflicts: string[] = []
-        const conflictDetails: ScheduleConflictDetail[] = []
-        for (const slot of existingSlots) {
-          const result = await checkScheduleConflicts({
-            scheduleSlotId: slot.id,
-            teachingTaskId: taskId,
-            targetDayOfWeek: slot.dayOfWeek,
-            targetSlotIndex: slot.slotIndex,
-            targetRoomId: roomId,
-            semesterId: slot.semesterId ?? taskSemester?.semesterId ?? undefined,
-          })
-          if (result.hasConflict) {
-            conflicts.push(...result.conflicts)
-            if (result.conflictDetails) conflictDetails.push(...result.conflictDetails)
-          }
-        }
-
-        if (conflicts.length > 0) {
-          const err = new Error('教室冲突') as ConflictError
-          err.conflicts = conflicts
-          err.conflictDetails = conflictDetails
-          throw err
-        }
-
         await tx.scheduleSlot.updateMany({
           where: { teachingTaskId: taskId },
           data: { roomId: roomId ?? null },
@@ -142,7 +119,7 @@ export async function PUT(
         where: { teachingTaskId: taskId },
       })
 
-      if (validClassGroupIds.length > 0) {
+      if (validClassGroupIds && validClassGroupIds.length > 0) {
         await tx.teachingTaskClass.createMany({
           data: validClassGroupIds.map((classGroupId) => ({
             teachingTaskId: taskId,
@@ -190,7 +167,7 @@ export async function PUT(
 
     return NextResponse.json(viewData)
   } catch (error) {
-    const err = error as ConflictError
+    const err = error as { conflicts?: string[]; conflictDetails?: unknown[]; message?: string }
     if (err.conflicts) {
       return NextResponse.json(
         { error: err.message, conflicts: err.conflicts, conflictDetails: err.conflictDetails },
