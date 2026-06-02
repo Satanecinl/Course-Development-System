@@ -100,6 +100,31 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
     const item = items[itemIndex]
     const targetSlotIndex = parseSlotLabel(newSlotLabel)
 
+    // Preflight: conflict check before optimistic update
+    const preflightBody: Record<string, unknown> = {
+      scheduleSlotId: slotId,
+      targetDayOfWeek: newDay,
+      targetSlotIndex: targetSlotIndex,
+      targetRoomId: newRoomId,
+    }
+    // Pass semesterId if available from the item data
+    if ('semesterId' in item && (item as Record<string, unknown>).semesterId != null) {
+      preflightBody.semesterId = (item as Record<string, unknown>).semesterId
+    }
+
+    const preflightRes = await fetch('/api/conflict-check', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(preflightBody),
+    })
+
+    if (preflightRes.ok) {
+      const preflightResult = await preflightRes.json()
+      if (preflightResult.hasConflict && preflightResult.conflicts?.length > 0) {
+        throw new Error(preflightResult.conflicts.join('\n'))
+      }
+    }
+
     // 保存快照用于回滚
     const oldItems = [...items]
 
@@ -124,7 +149,11 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
         }),
       })
 
-      if (!updateRes.ok) throw new Error('Update failed')
+      if (!updateRes.ok) {
+        const errBody = await updateRes.json().catch(() => null)
+        const msg = errBody?.conflicts?.join('\n') || errBody?.error || '服务器更新失败'
+        throw new Error(msg)
+      }
       const updatedItem = await updateRes.json()
 
       // 确认更新
@@ -134,10 +163,10 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
         ),
       })
       return true
-    } catch {
+    } catch (err) {
       // 回滚
       set({ scheduleItems: oldItems })
-      return false
+      throw err
     }
   },
 

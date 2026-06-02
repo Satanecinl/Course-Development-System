@@ -122,9 +122,9 @@ export function ScheduleGrid({ items, selectedWeek, onAdjust, onVoidAdjustment }
     }
 
     // 步骤 2：无冲突，执行乐观更新 + API 调用
-    const success = await moveSlot(item.slotId, newDay, newSlot, newRoomId)
+    try {
+      await moveSlot(item.slotId, newDay, newSlot, newRoomId)
 
-    if (success) {
       toast.success('调课成功', {
         description: `${item.courseName} → ${DAYS.find((d) => d.value === newDay)?.label} ${newSlot}`,
       })
@@ -151,8 +151,9 @@ export function ScheduleGrid({ items, selectedWeek, onAdjust, onVoidAdjustment }
           }
         }
       }
-    } else {
-      toast.error('调课失败', { description: '服务器更新失败，已自动回滚' })
+    } catch (moveErr) {
+      const msg = moveErr instanceof Error ? moveErr.message : '服务器更新失败，已自动回滚'
+      toast.error('调课失败', { description: msg })
     }
   }
 
