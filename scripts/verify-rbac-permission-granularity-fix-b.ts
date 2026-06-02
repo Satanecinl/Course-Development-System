@@ -139,15 +139,17 @@ check(
   'admin generic route still handles teachingtask model'
 )
 
-// ─── 6. Frontend gating NOT migrated ─────────────────────────────
+// ─── 6. Frontend gating status (flexible: pre-Phase C or post-Phase C) ──
 
-console.log('\n6. Frontend Gating NOT Migrated')
+console.log('\n6. Frontend Gating Status')
 
 const scheduleGrid = readFile('src/components/schedule-grid.tsx')
 
+const gridUsesScheduleWrite = scheduleGrid.includes("useHasPermission('schedule:write')")
+const gridUsesDataWrite = scheduleGrid.includes("useHasPermission('data:write')")
 check(
-  scheduleGrid.includes("useHasPermission('data:write')"),
-  'schedule-grid still uses data:write (Phase C pending)'
+  gridUsesScheduleWrite || gridUsesDataWrite,
+  `schedule-grid: ${gridUsesScheduleWrite ? 'uses schedule:write (Phase C done)' : 'uses data:write (Phase C pending)'}`
 )
 
 const adjDialog = readFile('src/components/schedule-adjustment-dialog.tsx')

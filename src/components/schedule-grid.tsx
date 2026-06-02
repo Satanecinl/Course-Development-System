@@ -52,12 +52,12 @@ interface ScheduleGridProps {
 export function ScheduleGrid({ items, selectedWeek, onAdjust, onVoidAdjustment }: ScheduleGridProps) {
   const { scheduleItems, moveSlot } = useScheduleStore()
   const [activeItem, setActiveItem] = useState<ScheduleViewData | null>(null)
-  // K14-FIX-A: data:write gates drag-to-edit. Permission resolved from
-  // CurrentUserContext (server-resolved in ProtectedShell). If the user lacks
-  // data:write, the drag handlers are no-ops and we toast. Server-side
-  // requirePermission('data:write') on /api/schedule-slot/[id] PUT is the
-  // final security boundary — this is a UX / 防止误操作加固.
-  const canWriteSchedule = useHasPermission('data:write')
+  // K14-FIX-A / K15-FIX-C: schedule:write gates drag-to-edit. Permission
+  // resolved from CurrentUserContext (server-resolved in ProtectedShell).
+  // If the user lacks schedule:write, drag handlers are no-ops and we toast.
+  // Server-side requirePermission('schedule:write') on /api/schedule-slot/[id]
+  // PUT is the final security boundary — this is a UX / 防止误操作加固.
+  const canWriteSchedule = useHasPermission('schedule:write')
 
   const displayItems = items ?? scheduleItems
 

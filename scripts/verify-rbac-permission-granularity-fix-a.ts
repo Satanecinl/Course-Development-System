@@ -129,15 +129,24 @@ if (slotCreateMigrated && slotUpdateMigrated && taskUpdateMigrated) {
   console.log('\n  → Phase B route migration not yet done: dedicated routes still use data:write')
 }
 
-// ─── 5. Frontend gating NOT migrated ─────────────────────────────
+// ─── 5. Frontend gating status (flexible: pre-Phase C or post-Phase C) ──
 
-console.log('\n5. Frontend Gating NOT Migrated (Expected)')
+console.log('\n5. Frontend Gating Status')
 
 const scheduleGrid = readFile('src/components/schedule-grid.tsx')
+const gridUsesScheduleWrite = scheduleGrid.includes("useHasPermission('schedule:write')")
+const gridUsesDataWrite = scheduleGrid.includes("useHasPermission('data:write')")
 check(
-  scheduleGrid.includes("useHasPermission('data:write')"),
-  'schedule-grid still uses data:write (not migrated to schedule:write)'
+  gridUsesScheduleWrite || gridUsesDataWrite,
+  `schedule-grid: ${gridUsesScheduleWrite ? 'uses schedule:write (Phase C done)' : 'uses data:write (Phase C pending)'}`
 )
+
+// Report Phase C status
+if (gridUsesScheduleWrite) {
+  console.log('\n  → Phase C frontend migration detected: schedule-grid uses schedule:write')
+} else {
+  console.log('\n  → Phase C frontend migration not yet done: schedule-grid still uses data:write')
+}
 
 // ─── 6. Infrastructure NOT modified ──────────────────────────────
 
