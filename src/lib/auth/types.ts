@@ -26,6 +26,7 @@ export interface CreateSessionResult {
 export const ALL_PERMISSIONS = [
   'schedule:view',
   'schedule:adjust',
+  'schedule:write',
   'data:read',
   'data:write',
   'data:delete',
@@ -34,6 +35,7 @@ export const ALL_PERMISSIONS = [
   'settings:manage',
   'users:manage',
   'diagnostics:view',
+  'teaching-task:write',
 ] as const
 
 export type PermissionKey = (typeof ALL_PERMISSIONS)[number]

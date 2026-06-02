@@ -311,6 +311,23 @@ if (schedAdjFile) {
   }
 }
 
+// ─── Phase A Detection ────────────────────────────────────────────
+
+const hasScheduleWrite = PERMISSIONS.includes('schedule:write')
+const hasTeachingTaskWrite = PERMISSIONS.includes('teaching-task:write')
+const phaseADone = hasScheduleWrite && hasTeachingTaskWrite
+
+// Check if seed-auth maps new permissions to ADMIN
+const seedContent = readFile('scripts/seed-auth.ts') ?? ''
+const seedMapsScheduleWrite = seedContent.includes("'schedule:write'")
+const seedMapsTeachingTaskWrite = seedContent.includes("'teaching-task:write'")
+
+// Check if routes still use data:write (not migrated)
+const routesStillUseDataWrite = scheduleCapabilities.length > 0
+
+// Check if frontend still uses data:write for schedule-grid
+const frontendStillUsesDataWrite = frontendGates.some((g) => g.permission === 'data:write' && g.area.includes('schedule-grid'))
+
 // ─── Output ───────────────────────────────────────────────────────
 
 console.log('═'.repeat(70))
@@ -326,6 +343,19 @@ console.log(`Ordinary data use sites: ${dataWriteUseSites.filter((s) => !s.sched
 console.log(`Frontend gating sites: ${frontendGates.length}`)
 console.log(`Import API routes using import:manage: ${importUseSites.length}`)
 console.log(`Schedule:adjust use sites (src): ${adjustUseSites.length}`)
+
+console.log('\n── Phase A Status ──')
+console.log(`  schedule:write in ALL_PERMISSIONS: ${hasScheduleWrite ? 'YES' : 'NO'}`)
+console.log(`  teaching-task:write in ALL_PERMISSIONS: ${hasTeachingTaskWrite ? 'YES' : 'NO'}`)
+console.log(`  schedule:write in seed-auth descriptions: ${seedMapsScheduleWrite ? 'YES' : 'NO'}`)
+console.log(`  teaching-task:write in seed-auth descriptions: ${seedMapsTeachingTaskWrite ? 'YES' : 'NO'}`)
+console.log(`  Phase A complete: ${phaseADone ? 'YES' : 'NO'}`)
+console.log(`  Route migration pending: ${routesStillUseDataWrite ? 'YES (routes still use data:write)' : 'NO'}`)
+console.log(`  Frontend migration pending: ${frontendStillUsesDataWrite ? 'YES (schedule-grid still uses data:write)' : 'NO'}`)
+console.log(`  Admin generic matrix migration pending: YES`)
+console.log(`  Phase B (frontend gating): PENDING`)
+console.log(`  Phase C (dedicated routes): PENDING`)
+console.log(`  Phase D (admin generic route): PENDING`)
 
 console.log('\n── Permission Strings ──')
 for (const p of PERMISSIONS) console.log(`  ${p}`)
@@ -466,6 +496,17 @@ findings.push({
   recommendation: 'No change needed.',
 })
 
+if (phaseADone) {
+  findings.push({
+    id: 'K15-RBAC-NONE-3',
+    severity: 'NONE',
+    area: 'Phase A completion',
+    description: 'schedule:write and teaching-task:write have been added to ALL_PERMISSIONS and seed-auth. ADMIN role will receive these permissions on next seed. Routes and frontend still use data:write (pending Phase B/C/D).',
+    evidence: `ALL_PERMISSIONS now contains ${PERMISSIONS.length} permissions. schedule:write=${hasScheduleWrite}, teaching-task:write=${hasTeachingTaskWrite}. Route migration pending: ${routesStillUseDataWrite}. Frontend migration pending: ${frontendStillUsesDataWrite}.`,
+    recommendation: 'Phase A complete. Proceed to Phase B (frontend gating), Phase C (dedicated routes), Phase D (admin generic route) in subsequent stages.',
+  })
+}
+
 // ─── Output Findings ──────────────────────────────────────────────
 
 console.log('\n── Findings ──')
@@ -505,9 +546,17 @@ console.log('')
 console.log('  Recommendation: Option A — minimal split preserves backward compatibility while addressing the core issue (data:write covering schedule-sensitive operations).')
 
 console.log('\n── Migration Recommendation ──')
-console.log(`  Fix-A allowed: YES (conditional)`)
-console.log(`  Suggested first phase: Add schedule:write + teaching-task:write constants and seed them alongside existing permissions. No route changes.`)
-console.log(`  Minimum scope: Phase A only — add constants, seed new permissions to ADMIN role, update tests. Routes still use data:write.`)
+if (phaseADone) {
+  console.log(`  Phase A: DONE — schedule:write and teaching-task:write defined and seeded to ADMIN`)
+  console.log(`  Phase B (frontend gating): PENDING — schedule-grid still uses data:write`)
+  console.log(`  Phase C (dedicated routes): PENDING — schedule-slot/teaching-task routes still use data:write`)
+  console.log(`  Phase D (admin generic route): PENDING — admin/[model] still uses data:write for all models`)
+  console.log(`  Next step: Phase B or C — migrate frontend gating or dedicated routes to new permissions`)
+} else {
+  console.log(`  Fix-A allowed: YES (conditional)`)
+  console.log(`  Suggested first phase: Add schedule:write + teaching-task:write constants and seed them alongside existing permissions. No route changes.`)
+  console.log(`  Minimum scope: Phase A only — add constants, seed new permissions to ADMIN role, update tests. Routes still use data:write.`)
+}
 
 console.log('\n' + '═'.repeat(70))
 console.log('Audit complete.')

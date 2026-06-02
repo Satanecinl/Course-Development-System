@@ -229,6 +229,7 @@ function getPermissionDescription(key: string): string {
   const descriptions: Record<string, string> = {
     'schedule:view': '查看课表',
     'schedule:adjust': '调课',
+    'schedule:write': '写入课表时段',
     'data:read': '读取数据',
     'data:write': '写入数据',
     'data:delete': '删除数据',
@@ -237,6 +238,7 @@ function getPermissionDescription(key: string): string {
     'settings:manage': '管理系统设置',
     'users:manage': '管理用户',
     'diagnostics:view': '查看诊断',
+    'teaching-task:write': '写入教学任务',
   }
   return descriptions[key] ?? key
 }
