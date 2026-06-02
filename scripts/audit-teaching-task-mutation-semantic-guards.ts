@@ -15,31 +15,6 @@ function readFile(relPath: string): string {
   return fs.readFileSync(abs, 'utf-8')
 }
 
-function readLines(relPath: string): string[] {
-  const content = readFile(relPath)
-  if (!content) return []
-  return content.split('\n')
-}
-
-function findLineOf(file: string, pattern: string | RegExp): number {
-  const lines = readLines(file)
-  const re = typeof pattern === 'string' ? new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')) : pattern
-  for (let i = 0; i < lines.length; i++) {
-    if (re.test(lines[i])) return i + 1
-  }
-  return 0
-}
-
-function findAllLinesOf(file: string, pattern: string | RegExp): number[] {
-  const lines = readLines(file)
-  const re = typeof pattern === 'string' ? new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')) : pattern
-  const out: number[] = []
-  for (let i = 0; i < lines.length; i++) {
-    if (re.test(lines[i])) out.push(i + 1)
-  }
-  return out
-}
-
 // ─── Read source files ────────────────────────────────────────────
 
 const DEDICATED_ROUTE = 'src/app/api/teaching-task/[id]/route.ts'
@@ -327,8 +302,6 @@ if (!conflictCheckReadsWeek) {
 
 const dedicatedUpdatePath = dedicatedRoute.includes('teachingTask.update')
 const adminGenericUpdatePath = adminGeneric.includes('teachingTask.update') || adminGeneric.includes('teachingTask\\')
-const importerUpdatePath = false // importer uses create, not update
-const solverUpdatePath = false // solver uses update on scheduleSlot, not teachingTask
 
 // Check for any other teachingTask.update patterns
 const allSrcFiles = [
@@ -399,9 +372,6 @@ if (hasUpdateManyOnTask) {
     recommendation: 'Verify all teachingTask.updateMany call sites are in import/solver transactional bulk paths with their own validation.',
   })
 }
-
-const hasRawSqlOnTask = otherUpdatePaths.some(p => p.includes('$queryRaw') || p.includes('$executeRaw')) &&
-  allSrcFiles.some(f => readFile(f).match(/teachingTask.*\$queryRaw|teachingTask.*\$executeRaw/))
 
 const dedicatedRouteHasRawSql = dedicatedRoute.includes('$queryRaw') || dedicatedRoute.includes('$executeRaw')
 if (dedicatedRouteHasRawSql) {
@@ -474,7 +444,6 @@ if (dedicatedPropagatesTeacherToSlot) {
 const frontendCallsDedicatedPut = adminDbContent.includes('/api/teaching-task/${editingTask?.id}') ||
   adminDbContent.includes("fetch(`/api/teaching-task/${editingTask")
 const frontendCallsDedicatedPost = adminDbContent.includes("fetch('/api/teaching-task'")
-const frontendCallsAdminGeneric = adminDbContent.includes("fetch(`/api/admin/teachingtask`") || adminDbContent.includes("fetch(`/api/admin/${activeTable}`")
 
 if (!frontendCallsDedicatedPut || !frontendCallsDedicatedPost) {
   add({

@@ -168,10 +168,15 @@ addFinding({
 
 const teachingTaskRoute = readFile('src/app/api/teaching-task/[id]/route.ts')
 const ttUpdatesSlots = /scheduleSlot\.updateMany/.test(teachingTaskRoute) || /scheduleSlot\.update/.test(teachingTaskRoute)
-const ttHasConflictCheck = teachingTaskRoute.includes('checkScheduleConflict') || teachingTaskRoute.includes('checkWeekOverlap')
-const ttHasSemesterGuard = teachingTaskRoute.includes('semesterId') && (
+// K16-FIX-B: Recognize guardTeachingTaskUpdateSemantics as a valid conflict check.
+// The dedicated route calls this shared guard pre-transaction, which internally
+// uses checkScheduleConflicts for teacherId/roomId/classGroupIds and expandWeeks
+// for week constraints, plus a same-semester check.
+const ttUsesSharedGuard = teachingTaskRoute.includes('guardTeachingTaskUpdateSemantics')
+const ttHasConflictCheck = ttUsesSharedGuard || teachingTaskRoute.includes('checkScheduleConflict') || teachingTaskRoute.includes('checkWeekOverlap')
+const ttHasSemesterGuard = ttUsesSharedGuard || (teachingTaskRoute.includes('semesterId') && (
   teachingTaskRoute.includes('guard') || teachingTaskRoute.includes('existing') || teachingTaskRoute.includes('semester')
-)
+))
 
 if (ttUpdatesSlots) {
   const ttSeverity = ttHasConflictCheck ? 'NONE' : 'MEDIUM'
@@ -188,7 +193,7 @@ if (ttUpdatesSlots) {
 // ── 6. No server-side conflict enforcement ──
 
 const conflictCheckCallers = grep('checkScheduleConflict')
-const guardCallers = grep('guardSlot|guardAdminSlot|slot-mutation-guard')
+const guardCallers = grep('guardSlot|guardAdminSlot|guardTeachingTaskUpdate|slot-mutation-guard|teaching-task-mutation-guard')
 const mutationCallers = conflictCheckCallers.filter(f =>
   f.file.includes('route.ts') && !f.file.includes('conflict-check/route.ts')
 )
