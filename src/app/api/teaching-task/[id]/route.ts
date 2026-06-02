@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requirePermission } from '@/lib/auth/require-permission'
-import { checkWeekOverlap, WeekConstraint } from '@/lib/conflict'
+import { checkScheduleConflicts } from '@/lib/schedule/conflict-check'
 
 export async function PUT(
   request: NextRequest,
@@ -78,61 +78,32 @@ export async function PUT(
         },
       })
 
-      // 3. Update all ScheduleSlots for this task
+      // 3. Pre-update conflict check: verify new roomId doesn't create conflicts
+      //    for any slot that will be updated. Uses shared checkScheduleConflicts
+      //    (same engine as /api/conflict-check and slot-mutation-guard).
       if (roomId != null) {
-        await tx.scheduleSlot.updateMany({
-          where: { teachingTaskId: taskId },
-          data: { roomId: roomId ?? null },
-        })
-
-        // Post-update conflict check: verify new roomId doesn't create conflicts
-        const updatedSlots = await tx.scheduleSlot.findMany({
+        const existingSlots = await tx.scheduleSlot.findMany({
           where: { teachingTaskId: taskId },
           select: { id: true, dayOfWeek: true, slotIndex: true, semesterId: true },
         })
 
-        const movingWeek: WeekConstraint = {
-          start: startWeek,
-          end: endWeek,
-          type: weekType as WeekConstraint['type'],
-        }
+        const taskSemester = await tx.teachingTask.findUnique({
+          where: { id: taskId },
+          select: { semesterId: true },
+        })
 
         const conflicts: string[] = []
-        const dayLabels = ['', '周一', '周二', '周三', '周四', '周五', '周六', '周日']
-        const slotLabels = ['', '1-2节', '3-4节', '5-6节', '7-8节', '9-10节', '11-12节', '中午']
-
-        for (const slot of updatedSlots) {
-          const timeWhere: Record<string, unknown> = {
-            id: { not: slot.id },
-            dayOfWeek: slot.dayOfWeek,
-            slotIndex: slot.slotIndex,
-            roomId: roomId,
-          }
-          if (slot.semesterId != null) {
-            timeWhere.semesterId = slot.semesterId
-          }
-
-          const roomOccupied = await tx.scheduleSlot.findMany({
-            where: timeWhere,
-            include: {
-              teachingTask: {
-                include: { course: true, taskClasses: { include: { classGroup: true } } },
-              },
-            },
+        for (const slot of existingSlots) {
+          const result = await checkScheduleConflicts({
+            scheduleSlotId: slot.id,
+            teachingTaskId: taskId,
+            targetDayOfWeek: slot.dayOfWeek,
+            targetSlotIndex: slot.slotIndex,
+            targetRoomId: roomId,
+            semesterId: slot.semesterId ?? taskSemester?.semesterId ?? undefined,
           })
-
-          for (const occ of roomOccupied) {
-            const occWeek: WeekConstraint = {
-              start: occ.teachingTask.startWeek,
-              end: occ.teachingTask.endWeek,
-              type: occ.teachingTask.weekType as WeekConstraint['type'],
-            }
-            if (checkWeekOverlap(movingWeek, occWeek)) {
-              const classes = occ.teachingTask.taskClasses.map(tc => tc.classGroup.name).join('、')
-              conflicts.push(
-                `${dayLabels[slot.dayOfWeek]}${slotLabels[slot.slotIndex]}教室已被${classes}的《${occ.teachingTask.course?.name}》占用`,
-              )
-            }
+          if (result.hasConflict) {
+            conflicts.push(...result.conflicts)
           }
         }
 
@@ -141,6 +112,11 @@ export async function PUT(
           err.conflicts = conflicts
           throw err
         }
+
+        await tx.scheduleSlot.updateMany({
+          where: { teachingTaskId: taskId },
+          data: { roomId: roomId ?? null },
+        })
       } else {
         await tx.scheduleSlot.updateMany({
           where: { teachingTaskId: taskId },

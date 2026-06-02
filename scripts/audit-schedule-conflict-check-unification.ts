@@ -188,20 +188,36 @@ addFinding({
 // 4. teaching-task PUT inline check
 // ═══════════════════════════════════════
 
-const ttHasOwnCheck = teachingTaskRoute.includes('checkWeekOverlap')
-const ttChecksRoom = teachingTaskRoute.includes('教室已被')
+const ttHasOwnCheck = teachingTaskRoute.includes('checkWeekOverlap') && !teachingTaskRoute.includes('checkScheduleConflicts')
+const ttCallsSharedHelper = teachingTaskRoute.includes('checkScheduleConflicts(')
+const ttChecksRoom = teachingTaskRoute.includes('教室已被') || teachingTaskRoute.includes('教室冲突')
 const ttChecksTeacher = false // teaching-task only checks room conflict for batch update
 const ttChecksClass = false
 const ttHasSemester = teachingTaskRoute.includes('semesterId')
+// Use a non-greedy regex anchored to the where block to avoid leaking into a
+// subsequent data: { roomId: ... } clause.
+const ttInlineRoomQuery = /tx\.scheduleSlot\.findMany\(\{[\s\S]*?where:\s*\{[^{}]*?roomId:/.test(teachingTaskRoute)
+const ttReturns409 = teachingTaskRoute.includes('status: 409')
 
-addFinding({
-  id: 'K13-CONFLICT-MEDIUM-3',
-  severity: 'MEDIUM',
-  area: 'teaching-task/[id] inline check',
-  description: `PUT /api/teaching-task/[id] 在 updateMany 后内联执行 room conflict 检查（post-update）。仅检查 room 冲突，不检查 teacher/class 冲突。week overlap 复用 checkWeekOverlap。与 /api/conflict-check 规则不同（更窄），存在规则漂移风险。`,
-  evidence: `ownCheck: ${ttHasOwnCheck}; checksRoom: ${ttChecksRoom}; checksTeacher: ${ttChecksTeacher}; checksClass: ${ttChecksClass}; semester: ${ttHasSemester}`,
-  recommendation: '调用 guardSlotUpdate 或 checkScheduleConflict 进行完整检查。',
-})
+if (ttCallsSharedHelper && !ttInlineRoomQuery) {
+  addFinding({
+    id: 'K13-CONFLICT-MEDIUM-3',
+    severity: 'NONE',
+    area: 'teaching-task/[id] conflict check',
+    description: `PUT /api/teaching-task/[id] 在 updateMany 前调用共享 checkScheduleConflicts 检查 room 冲突。无独立 room conflict query。冲突时 throw Error({conflicts})，catch 返回 409。规则与 /api/conflict-check 统一（teacher + classGroup + room + week overlap + semester + exclude self）。`,
+    evidence: `callsShared: ${ttCallsSharedHelper}; inlineRoomQuery: ${ttInlineRoomQuery}; ownCheck: ${ttHasOwnCheck}; checksRoom: ${ttChecksRoom}; semester: ${ttHasSemester}; returns409: ${ttReturns409}`,
+    recommendation: 'N/A',
+  })
+} else {
+  addFinding({
+    id: 'K13-CONFLICT-MEDIUM-3',
+    severity: 'MEDIUM',
+    area: 'teaching-task/[id] inline check',
+    description: `PUT /api/teaching-task/[id] 仍存在 inline room conflict check，未复用 checkScheduleConflicts。规则与 /api/conflict-check 不同（更窄），存在规则漂移风险。`,
+    evidence: `callsShared: ${ttCallsSharedHelper}; inlineRoomQuery: ${ttInlineRoomQuery}; ownCheck: ${ttHasOwnCheck}; checksRoom: ${ttChecksRoom}; semester: ${ttHasSemester}`,
+    recommendation: '调用 checkScheduleConflicts。',
+  })
+}
 
 // ═══════════════════════════════════════
 // 5. scheduler / solver hard conflict
@@ -296,9 +312,9 @@ addFinding({
   id: 'K13-CONFLICT-LOW-3',
   severity: 'LOW',
   area: 'implementation count',
-  description: `共发现 ${conflictFiles.length} 处冲突相关代码出现在 ${uniqueFiles.size} 个唯一文件中。主要实现：1) src/lib/schedule/conflict-check.ts (checkScheduleConflicts, shared) 2) src/lib/schedule/slot-mutation-guard.ts (复用 shared helper) 3) src/lib/schedule/adjustments.ts (inline teacher/class/room check) 4) src/app/api/teaching-task/[id]/route.ts (inline room check) 5) src/lib/scheduler/solver.ts (findHardConflictParticipants)。`,
+  description: `共发现 ${conflictFiles.length} 处冲突相关代码出现在 ${uniqueFiles.size} 个唯一文件中。主要实现：1) src/lib/schedule/conflict-check.ts (checkScheduleConflicts, shared) 2) src/lib/schedule/slot-mutation-guard.ts (复用 shared helper) 3) src/app/api/teaching-task/[id]/route.ts (复用 shared helper) 4) src/lib/schedule/adjustments.ts (inline teacher/class/room check) 5) src/lib/scheduler/solver.ts (findHardConflictParticipants)。`,
   evidence: `total conflict-related references: ${conflictFiles.length}; unique files: ${uniqueFiles.size}; files: ${[...uniqueFiles].join(', ')}`,
-  recommendation: '后续可考虑将第 3+4 项也接入 shared helper。',
+  recommendation: '后续可考虑将第 4 项 (adjustments.ts) 也接入 shared helper。',
 })
 
 // ═══════════════════════════════════════
@@ -318,9 +334,9 @@ console.log('─── Conflict Check Implementations ───')
 console.log('  1. shared: src/lib/schedule/conflict-check.ts (checkScheduleConflicts)')
 console.log('     └ used by /api/conflict-check')
 console.log('     └ used by slot-mutation-guard.ts (unified in K13-Fix-A)')
+console.log('     └ used by teaching-task/[id]/route.ts (unified in K13-Fix-B)')
 console.log('  2. adjustments.ts → inline teacherConflict/roomConflict/classConflict')
-console.log('  3. teaching-task/[id]/route.ts → inline room check')
-console.log('  4. scheduler/solver.ts → findHardConflictParticipants (HC1-HC5)')
+console.log('  3. scheduler/solver.ts → findHardConflictParticipants (HC1-HC5)')
 console.log()
 
 console.log('─── Rule Coverage Comparison ───')
@@ -329,8 +345,9 @@ console.log('  --------------------------------|---------|-------|------|------|
 console.log('  /api/conflict-check             |   YES   |  YES  | YES  | YES  |   YES    |  YES')
 console.log('  slot-mutation-guard.ts          |   YES   |  YES  | YES  | YES  |   YES    |  YES')
 console.log('    (via shared helper)           |         |       |      |      |          |')
+console.log('  teaching-task/[id] route        |   YES   |  YES  | YES  | YES  |   YES    |  YES')
+console.log('    (via shared helper)           |         |       |      |      |          |')
 console.log('  adjustments.ts                  |   YES   |  YES  | YES  | via filter | YES | partial')
-console.log('  teaching-task/[id] inline       |    NO   |   NO  | YES  | YES  |   YES    |  YES')
 console.log('  solver HC1-HC5                  |   YES   |  YES  | YES  | YES  |    -     |   -')
 console.log()
 
