@@ -7,6 +7,15 @@ import type {
   ScheduleAdjustmentDryRunResult,
 } from '@/types/schedule-adjustment'
 import { isScheduleItemActiveInWeek } from './week-filter'
+import {
+  isRoomConflict as ruleIsRoomConflict,
+  isTeacherConflict as ruleIsTeacherConflict,
+  isClassGroupConflict as ruleIsClassGroupConflict,
+  isSameTimeSlot as ruleIsSameTimeSlot,
+  isWeekOverlapping as ruleIsWeekOverlapping,
+  type ScheduleConflictOccupancy,
+} from '@/lib/schedule/conflict-rules'
+import { expandWeeks as ruleExpandWeeks, type WeekConstraint } from '@/lib/conflict'
 
 // ── Validation ──
 
@@ -270,6 +279,10 @@ export async function dryRunScheduleAdjustment(
   const newSlot = input.newSlotIndex!
   const newRoomId = input.newRoomId ?? null
 
+  // Build occupancy list from effective items at the target day/slot.
+  // The effective schedule is already scoped to targetWeek, so week overlap
+  // is implicit — but the pure rules helper also re-checks the candidate's
+  // weeks (which will be [targetWeek]) for symmetry.
   const itemsAtTarget = effectiveItems.filter(
     (item) => {
       if (item.dayOfWeek !== newDay || item.slotIndex !== newSlot) return false
@@ -278,50 +291,81 @@ export async function dryRunScheduleAdjustment(
     },
   )
 
-  // Teacher conflict
+  const originalClassGroupIds = task.taskClasses.map((tc) => tc.classGroupId)
+  const taskWeekConstraint: WeekConstraint = {
+    start: startWeek,
+    end: endWeek,
+    type: (weekType ?? 'ALL') as WeekConstraint['type'],
+  }
+  const taskWeeks = Array.from(ruleExpandWeeks(taskWeekConstraint)).sort((a, b) => a - b)
+
+  const occupancies: ScheduleConflictOccupancy[] = itemsAtTarget.map((item) => ({
+    id: item.slotId,
+    teachingTaskId: item.taskId,
+    teacherId: item.teacherId ?? null,
+    classGroupIds: item.classGroupIds ?? [],
+    roomId: item.roomId ?? null,
+    dayOfWeek: item.dayOfWeek,
+    slotIndex: item.slotIndex,
+    weekConstraint: {
+      start: item.startWeek ?? 1,
+      end: item.endWeek ?? 16,
+      type: (item.weekType ?? 'ALL') as WeekConstraint['type'],
+    },
+  }))
+
+  // Teacher conflict (first match wins — matches original behavior)
   const teacherId = task.teacherId
   if (teacherId) {
-    const teacherConflict = itemsAtTarget.find((item) => item.teacherId === teacherId)
+    const teacherConflict = occupancies.find(
+      (occ) =>
+        ruleIsSameTimeSlot({ dayOfWeek: newDay, slotIndex: newSlot }, occ) &&
+        ruleIsWeekOverlapping(taskWeeks, occ.weekConstraint) &&
+        ruleIsTeacherConflict({ teacherId }, occ),
+    )
     if (teacherConflict) {
       conflicts.push({
         type: 'TEACHER_CONFLICT',
         message: `Teacher ${task.teacher?.name} already has a class at this time in week ${targetWeek}`,
         severity: 'error',
-        relatedSlotIds: [teacherConflict.slotId],
+        relatedSlotIds: [teacherConflict.id!],
       })
     }
   }
 
-  // Class conflict
-  const originalClassGroupIds = task.taskClasses.map((tc) => tc.classGroupId)
-  for (const item of itemsAtTarget) {
-    if (!item.classGroupIds) continue
-    const overlap = item.classGroupIds.filter((id) => originalClassGroupIds.includes(id))
-    if (overlap.length > 0) {
-      const overlapClass = task.taskClasses.find((tc) => tc.classGroupId === overlap[0])?.classGroup.name ?? 'Unknown'
-      conflicts.push({
-        type: 'CLASS_CONFLICT',
-        message: `Class ${overlapClass} already has a class at this time in week ${targetWeek}`,
-        severity: 'error',
-        relatedSlotIds: [item.slotId],
-      })
-    }
+  // Class conflict (one per overlapping occupancy — matches original behavior)
+  for (const occ of occupancies) {
+    if (!ruleIsSameTimeSlot({ dayOfWeek: newDay, slotIndex: newSlot }, occ)) continue
+    if (!ruleIsWeekOverlapping(taskWeeks, occ.weekConstraint)) continue
+    if (!ruleIsClassGroupConflict({ classGroupIds: originalClassGroupIds }, occ)) continue
+    const overlapClass = task.taskClasses.find((tc) => occ.classGroupIds.includes(tc.classGroupId))?.classGroup.name ?? 'Unknown'
+    conflicts.push({
+      type: 'CLASS_CONFLICT',
+      message: `Class ${overlapClass} already has a class at this time in week ${targetWeek}`,
+      severity: 'error',
+      relatedSlotIds: [occ.id!],
+    })
   }
 
-  // Room conflict
+  // Room conflict (first match wins — matches original behavior)
   if (newRoomId) {
-    const roomConflict = itemsAtTarget.find((item) => item.roomId === newRoomId)
+    const roomConflict = occupancies.find(
+      (occ) =>
+        ruleIsSameTimeSlot({ dayOfWeek: newDay, slotIndex: newSlot }, occ) &&
+        ruleIsWeekOverlapping(taskWeeks, occ.weekConstraint) &&
+        ruleIsRoomConflict({ roomId: newRoomId }, occ),
+    )
     if (roomConflict) {
       conflicts.push({
         type: 'ROOM_CONFLICT',
         message: `Room is already occupied at this time in week ${targetWeek}`,
         severity: 'error',
-        relatedSlotIds: [roomConflict.slotId],
+        relatedSlotIds: [roomConflict.id!],
       })
     }
   }
 
-  // Capacity conflict
+  // Capacity conflict (adjustment-specific — kept in adjustment layer)
   if (newRoomId) {
     const room = await prisma.room.findUnique({ where: { id: newRoomId } })
     if (room) {

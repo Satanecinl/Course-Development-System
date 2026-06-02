@@ -164,8 +164,9 @@ if (guardReusesSharedHelper && sharedHelperExists && sharedHelperExports && rout
 // 3. schedule adjustment audit
 // ═══════════════════════════════════════
 
-const adjustmentHasOwnCheck = adjustmentsLib.includes('teacherConflict') || adjustmentsLib.includes('roomConflict') || adjustmentsLib.includes('classConflict')
+const adjustmentHasOwnCheck = (adjustmentsLib.includes('teacherConflict') || adjustmentsLib.includes('roomConflict') || adjustmentsLib.includes('classConflict')) && !adjustmentsLib.includes('ruleIsTeacherConflict') && !adjustmentsLib.includes('ruleIsRoomConflict') && !adjustmentsLib.includes('ruleIsClassGroupConflict')
 const adjustmentUsesCheckLib = adjustmentsLib.includes('checkScheduleConflict')
+const adjustmentUsesRuleKernel = adjustmentsLib.includes('ruleIsTeacherConflict') || adjustmentsLib.includes('ruleIsRoomConflict') || adjustmentsLib.includes('ruleIsClassGroupConflict')
 const adjustmentUsesWeekOverlap = adjustmentsLib.includes('checkWeekOverlap')
 const adjustmentChecksTeacher = adjustmentsLib.includes('TEACHER_CONFLICT')
 const adjustmentChecksClass = adjustmentsLib.includes('CLASS_CONFLICT')
@@ -175,14 +176,25 @@ const adjustmentHasSemester = adjustmentsLib.includes('semesterId')
 const adjustmentResolvesSemester = adjustmentsLib.includes('resolveSchedulerSemester')
 const adjustmentResponseShape = adjustmentsLib.includes('canApply: boolean') && adjustmentsLib.includes('conflicts: ScheduleAdjustmentConflict[]')
 
-addFinding({
-  id: 'K13-CONFLICT-MEDIUM-2',
-  severity: 'MEDIUM',
-  area: 'schedule adjustment',
-  description: `src/lib/schedule/adjustments.ts ${adjustmentHasOwnCheck ? '实现独立冲突检查' : '复用 checkScheduleConflict'}。覆盖 teacher/class/room + capacity。semester scoped via resolveSchedulerSemester。使用 effective schedule（应用历史 adjustment），与直接 slot mutation guard 的基线 scope 不同。`,
-  evidence: `ownCheck: ${adjustmentHasOwnCheck}; usesCheckLib: ${adjustmentUsesCheckLib}; weekOverlap: ${adjustmentUsesWeekOverlap}; teacher: ${adjustmentChecksTeacher}; class: ${adjustmentChecksClass}; room: ${adjustmentChecksRoom}; capacity: ${adjustmentChecksCapacity}; semester: ${adjustmentHasSemester}; resolveSemester: ${adjustmentResolvesSemester}; responseShape: ${adjustmentResponseShape}`,
-  recommendation: '复用 checkScheduleConflict 的核心查询逻辑（teacher/class/room 查询可抽为纯函数）。adjustment 的 effective schedule scope 是合法的语义差异。',
-})
+if (adjustmentUsesRuleKernel && adjustmentChecksCapacity) {
+  addFinding({
+    id: 'K13-CONFLICT-MEDIUM-2',
+    severity: 'NONE',
+    area: 'schedule adjustment',
+    description: `src/lib/schedule/adjustments.ts 复用 @/lib/schedule/conflict-rules 的纯规则 kernel（ruleIsTeacherConflict / ruleIsRoomConflict / ruleIsClassGroupConflict）。effective schedule 仍由 adjustment 层构造（语义差异保留）。capacity 仍为 adjustment 独有（warning severity）。response shape 仍为 typed ScheduleAdjustmentConflict。`,
+    evidence: `usesRuleKernel: ${adjustmentUsesRuleKernel}; ownCheck: ${adjustmentHasOwnCheck}; usesCheckLib: ${adjustmentUsesCheckLib}; weekOverlap: ${adjustmentUsesWeekOverlap}; teacher: ${adjustmentChecksTeacher}; class: ${adjustmentChecksClass}; room: ${adjustmentChecksRoom}; capacity: ${adjustmentChecksCapacity}; semester: ${adjustmentHasSemester}; resolveSemester: ${adjustmentResolvesSemester}; responseShape: ${adjustmentResponseShape}`,
+    recommendation: 'N/A — adjustment-specific 语义保留。',
+  })
+} else {
+  addFinding({
+    id: 'K13-CONFLICT-MEDIUM-2',
+    severity: 'MEDIUM',
+    area: 'schedule adjustment',
+    description: `src/lib/schedule/adjustments.ts ${adjustmentHasOwnCheck ? '实现独立冲突检查' : '复用 checkScheduleConflict'}。覆盖 teacher/class/room + capacity。semester scoped via resolveSchedulerSemester。使用 effective schedule（应用历史 adjustment），与直接 slot mutation guard 的基线 scope 不同。`,
+    evidence: `ownCheck: ${adjustmentHasOwnCheck}; usesCheckLib: ${adjustmentUsesCheckLib}; weekOverlap: ${adjustmentUsesWeekOverlap}; teacher: ${adjustmentChecksTeacher}; class: ${adjustmentChecksClass}; room: ${adjustmentChecksRoom}; capacity: ${adjustmentChecksCapacity}; semester: ${adjustmentHasSemester}; resolveSemester: ${adjustmentResolvesSemester}; responseShape: ${adjustmentResponseShape}`,
+    recommendation: '复用 checkScheduleConflict 的核心查询逻辑（teacher/class/room 查询可抽为纯函数）。adjustment 的 effective schedule scope 是合法的语义差异。',
+  })
+}
 
 // ═══════════════════════════════════════
 // 4. teaching-task PUT inline check
@@ -312,9 +324,9 @@ addFinding({
   id: 'K13-CONFLICT-LOW-3',
   severity: 'LOW',
   area: 'implementation count',
-  description: `共发现 ${conflictFiles.length} 处冲突相关代码出现在 ${uniqueFiles.size} 个唯一文件中。主要实现：1) src/lib/schedule/conflict-check.ts (checkScheduleConflicts, shared) 2) src/lib/schedule/slot-mutation-guard.ts (复用 shared helper) 3) src/app/api/teaching-task/[id]/route.ts (复用 shared helper) 4) src/lib/schedule/adjustments.ts (inline teacher/class/room check) 5) src/lib/scheduler/solver.ts (findHardConflictParticipants)。`,
+  description: `共发现 ${conflictFiles.length} 处冲突相关代码出现在 ${uniqueFiles.size} 个唯一文件中。主要实现：1) src/lib/schedule/conflict-rules.ts (纯规则 kernel, shared) 2) src/lib/schedule/conflict-check.ts (checkScheduleConflicts, 复用 rule kernel) 3) src/lib/schedule/slot-mutation-guard.ts (复用 shared helper) 4) src/app/api/teaching-task/[id]/route.ts (复用 shared helper) 5) src/lib/schedule/adjustments.ts (复用纯规则 kernel，effective schedule/capacity/typed response 保留) 6) src/lib/scheduler/solver.ts (findHardConflictParticipants)。`,
   evidence: `total conflict-related references: ${conflictFiles.length}; unique files: ${uniqueFiles.size}; files: ${[...uniqueFiles].join(', ')}`,
-  recommendation: '后续可考虑将第 4 项 (adjustments.ts) 也接入 shared helper。',
+  recommendation: 'K13 Fix-C 已抽取纯规则 kernel 并让 shared helper + dry-run 复用。adjustment-specific 语义（effective schedule、capacity warning、typed response）保留。',
 })
 
 // ═══════════════════════════════════════

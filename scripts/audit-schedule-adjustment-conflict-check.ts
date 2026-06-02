@@ -72,6 +72,7 @@ const dryRunChecks = {
   loadsRoom: /prisma\.room\.findUnique/.test(dryRunFn),
   sumsStudentCount: /studentCount\s*\?\?\s*50/.test(dryRunFn),
   callsSharedHelper: /checkScheduleConflicts/.test(dryRunFn),
+  usesRuleKernel: /ruleIsTeacherConflict|ruleIsClassGroupConflict|ruleIsRoomConflict/.test(adjustments),
   usesCheckWeekOverlap: /checkWeekOverlap\(/.test(dryRunFn),
   usesExpandWeeks: /expandWeeks\(/.test(dryRunFn),
   returnsCanApply: /canApply: conflicts\.length === 0/.test(dryRunFn),
@@ -223,22 +224,36 @@ interface Finding {
 
 const findings: Finding[] = []
 
-// MEDIUM-1: dry-run has independent teacher/class/room check
+// MEDIUM-1: dry-run has independent teacher/class/room check (and not using rule kernel)
 if (
   dryRunChecks.checksTeacher &&
   dryRunChecks.checksClassGroup &&
   dryRunChecks.checksRoom &&
-  !dryRunChecks.callsSharedHelper
+  !dryRunChecks.callsSharedHelper &&
+  !dryRunChecks.usesRuleKernel
 ) {
   findings.push({
     riskId: 'K13-ADJUSTMENT-MEDIUM-1',
     severity: 'MEDIUM',
     area: 'adjustment dry-run conflict logic',
     description:
-      'dryRunScheduleAdjustment 实现独立的 teacher/class/room 冲突检查（通过 effective schedule 内存比对），未复用 src/lib/schedule/conflict-check.checkScheduleConflicts。两套实现存在长期漂移风险。',
-    evidence: `teacher=${dryRunChecks.checksTeacher} class=${dryRunChecks.checksClassGroup} room=${dryRunChecks.checksRoom} callsSharedHelper=${dryRunChecks.callsSharedHelper}`,
+      'dryRunScheduleAdjustment 实现独立的 teacher/class/room 冲突检查（通过 effective schedule 内存比对），未复用 src/lib/schedule/conflict-check.checkScheduleConflicts 或 src/lib/schedule/conflict-rules。两套实现存在长期漂移风险。',
+    evidence: `teacher=${dryRunChecks.checksTeacher} class=${dryRunChecks.checksClassGroup} room=${dryRunChecks.checksRoom} callsSharedHelper=${dryRunChecks.callsSharedHelper} usesRuleKernel=${dryRunChecks.usesRuleKernel}`,
     recommendation:
-      '短期保留独立实现（effective schedule 内存比对 vs helper 的 Prisma query 不可直接互换）。Fix-C 可将冲突检测拆为纯函数（teacherIds/classGroupIds/roomId + WeekConstraint → 内存中比对 effectiveItems），由 dry-run 调用。再以 helper 作为 slot mutation guard 的统一来源。',
+      'Fix-C 已抽出纯规则 helper 并让 dry-run 复用。',
+  })
+}
+
+// NONE-6: dry-run uses rule kernel (Fix-C refactor target)
+if (dryRunChecks.usesRuleKernel) {
+  findings.push({
+    riskId: 'K13-ADJUSTMENT-NONE-6',
+    severity: 'NONE',
+    area: 'dry-run rule kernel reuse',
+    description:
+      'dryRunScheduleAdjustment 复用 src/lib/schedule/conflict-rules 的纯规则函数（ruleIsTeacherConflict / ruleIsClassGroupConflict / ruleIsRoomConflict）。teacher/class/room 冲突规则文本与 shared checkScheduleConflicts 统一。effective schedule 仍由 adjustment 层构造。',
+    evidence: `usesRuleKernel=${dryRunChecks.usesRuleKernel} checksTeacher=${dryRunChecks.checksTeacher} checksClass=${dryRunChecks.checksClassGroup} checksRoom=${dryRunChecks.checksRoom}`,
+    recommendation: '无需修改。',
   })
 }
 
@@ -327,6 +342,7 @@ if (voidChecks.noConflictRecheck) {
 // LOW-3: rule 重复维护
 if (
   !dryRunChecks.callsSharedHelper &&
+  !dryRunChecks.usesRuleKernel &&
   sharedHelperChecks.exportsCheckFn
 ) {
   findings.push({
@@ -337,6 +353,19 @@ if (
       'teacher/class/room 冲突规则同时存在于 adjustments.ts（effective 内存比对）和 src/lib/schedule/conflict-check.ts（Prisma query + checkWeekOverlap）。规则文本逻辑相似但数据来源不同，长期维护有漂移风险。',
     evidence: `adjustmentChecksTeacher=${dryRunChecks.checksTeacher} helperExists=${sharedHelperChecks.exportsCheckFn}`,
     recommendation: 'Fix-C 抽出纯函数（teacherIds / classGroupIds / roomId + WeekConstraint → 对 effectiveItems 集合查冲突），同时给 helper 加同款纯函数（针对 baseItems），保持规则文本统一。',
+  })
+}
+
+// NONE: rule kernel extracted (Fix-C complete)
+if (dryRunChecks.usesRuleKernel && sharedHelperChecks.exportsCheckFn) {
+  findings.push({
+    riskId: 'K13-ADJUSTMENT-NONE-7',
+    severity: 'NONE',
+    area: 'rule kernel shared',
+    description:
+      'adjustments.ts 和 shared checkScheduleConflicts 都通过 src/lib/schedule/conflict-rules 的纯规则函数（ruleIsTeacherConflict / ruleIsClassGroupConflict / ruleIsRoomConflict / isSameTimeSlot / isWeekOverlapping）实现 teacher/class/room/week 判断。规则文本统一，数据源不同（effective items vs base slots），这是合法的语义差异。',
+    evidence: `usesRuleKernel=${dryRunChecks.usesRuleKernel} helperExists=${sharedHelperChecks.exportsCheckFn}`,
+    recommendation: '无需修改。',
   })
 }
 
