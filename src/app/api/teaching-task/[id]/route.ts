@@ -2,6 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requirePermission } from '@/lib/auth/require-permission'
 import { checkScheduleConflicts } from '@/lib/schedule/conflict-check'
+import type { ScheduleConflictDetail } from '@/lib/schedule/conflict-rules'
+
+// Type augmentation for K13-FIX-D: thread typed conflict details through
+// the existing Error.conflicts pattern without changing the public route
+// shape. Routes still return `{ error, conflicts }`; they additionally
+// surface `conflictDetails` in 409 responses.
+type ConflictError = Error & {
+  conflicts?: string[]
+  conflictDetails?: ScheduleConflictDetail[]
+}
 
 export async function PUT(
   request: NextRequest,
@@ -93,6 +103,7 @@ export async function PUT(
         })
 
         const conflicts: string[] = []
+        const conflictDetails: ScheduleConflictDetail[] = []
         for (const slot of existingSlots) {
           const result = await checkScheduleConflicts({
             scheduleSlotId: slot.id,
@@ -104,12 +115,14 @@ export async function PUT(
           })
           if (result.hasConflict) {
             conflicts.push(...result.conflicts)
+            if (result.conflictDetails) conflictDetails.push(...result.conflictDetails)
           }
         }
 
         if (conflicts.length > 0) {
-          const err = new Error('教室冲突') as Error & { conflicts: string[] }
+          const err = new Error('教室冲突') as ConflictError
           err.conflicts = conflicts
+          err.conflictDetails = conflictDetails
           throw err
         }
 
@@ -177,10 +190,10 @@ export async function PUT(
 
     return NextResponse.json(viewData)
   } catch (error) {
-    const err = error as Error & { conflicts?: string[] }
+    const err = error as ConflictError
     if (err.conflicts) {
       return NextResponse.json(
-        { error: err.message, conflicts: err.conflicts },
+        { error: err.message, conflicts: err.conflicts, conflictDetails: err.conflictDetails },
         { status: 409 },
       )
     }

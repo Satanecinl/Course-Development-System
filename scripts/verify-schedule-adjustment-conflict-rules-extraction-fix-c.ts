@@ -59,7 +59,16 @@ check('Pure rules helper exports isTeacherConflict', /export function isTeacherC
 check('Pure rules helper exports isClassGroupConflict', /export function isClassGroupConflict/.test(rules))
 check('Pure rules helper exports isRoomConflict', /export function isRoomConflict/.test(rules))
 check('Pure rules helper exports findRuleMatches', /export function findRuleMatches/.test(rules))
-check('Pure rules helper does NOT contain capacity logic (no capacity keyword in code)', !/\bcapacity\b/i.test(rules.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')))
+// Strip comments and string literals (K13-FIX-D adds 'capacity' as a string
+// union member for ScheduleConflictDetailType; the rule kernel still has no
+// capacity IMPLEMENTATION).
+const rulesNoStrings = rules
+  .replace(/\/\*[\s\S]*?\*\//g, '')
+  .replace(/\/\/.*$/gm, '')
+  .replace(/'[^']*'/g, "''")
+  .replace(/"[^"]*"/g, '""')
+  .replace(/`[^`]*`/g, '``')
+check('Pure rules helper does NOT contain capacity logic (no capacity keyword in code)', !/\bcapacity\b/i.test(rulesNoStrings))
 
 // ── 4. Shared conflict-check delegates to rule kernel ──
 

@@ -61,9 +61,9 @@ check('Route has no checkWeekOverlap call', !ttRoute.includes('checkWeekOverlap(
 
 // ── 5. Route still returns 409 on conflict ──
 
-check('Route throws Error with conflicts on conflict', /err\.conflicts\s*=\s*conflicts[\s\S]{0,50}throw err/.test(ttRoute))
+check('Route throws Error with conflicts on conflict', /err\.conflicts\s*=\s*conflicts[\s\S]{0,80}throw err/.test(ttRoute))
 check('Route catch block returns 409', ttRoute.includes('status: 409'))
-check('Route catch block returns error + conflicts fields', ttRoute.includes('{ error: err.message, conflicts: err.conflicts }'))
+check('Route catch block returns error + conflicts fields (additive conflictDetails OK)', /\{ error: err\.message,\s*conflicts: err\.conflicts/.test(ttRoute) && /conflictDetails:\s*err\.conflictDetails/.test(ttRoute))
 
 // ── 6. Route still does scheduleSlot.updateMany ──
 

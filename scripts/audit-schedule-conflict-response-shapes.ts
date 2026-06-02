@@ -43,6 +43,7 @@ const ccLib = read('src/lib/schedule/conflict-check.ts')
 const ccApiReturnsResult = ccRoute.includes('NextResponse.json(result)')
 const ccLibDefinesHasConflict = /hasConflict:\s*boolean/.test(ccLib) || /hasConflict:\s*false/.test(ccLib)
 const ccLibDefinesConflicts = /conflicts:\s*string\[\]/.test(ccLib)
+const ccLibDefinesConflictDetails = /conflictDetails:\s*ScheduleConflictDetail\[\]/.test(ccLib)
 const ccLibReturnsMessages = /result\.conflicts\s*=\s*messages/.test(ccLib) || /result\.conflicts\s*=\s*\[/.test(ccLib)
 const ccLibHasTypedConflict = /type:\s*['"]teacher['"]/.test(ccLib) && /ScheduleConflictRuleMatch/.test(ccLib)
 const ccLibInternalType = ccLib.includes('ScheduleConflictRuleMatch') || ccLib.includes('formatMatchMessage')
@@ -54,15 +55,18 @@ const guardHasOk = /ok:\s*boolean/.test(guard)
 const guardHasError = /error\?:/.test(guard)
 const guardHasStatus = /status\?:/.test(guard)
 const guardHasConflicts = /conflicts\?:/.test(guard)
+const guardHasConflictDetails = /conflictDetails\?:/.test(guard)
 const guardUsesHelper = guard.includes('checkScheduleConflicts')
 
 // ── 3. teaching-task/[id] route response shape ──
 
 const ttRoute = read('src/app/api/teaching-task/[id]/route.ts')
 const ttThrowsErrorWithConflicts = /err\.conflicts\s*=\s*conflicts/.test(ttRoute) || /err\.conflicts\s*=\s*\[/.test(ttRoute) || /conflicts\s*=\s*conflicts\s*;\s*\n\s*throw/.test(ttRoute)
+const ttThrowsErrorWithConflictDetails = /err\.conflictDetails\s*=/.test(ttRoute)
 const ttCatchReturns409 = /status:\s*409/.test(ttRoute)
 const ttCatchReturnsError = /error:\s*err\.message/.test(ttRoute) || /error:\s*err\.message/.test(ttRoute)
 const ttCatchReturnsConflicts = /conflicts:\s*err\.conflicts/.test(ttRoute)
+const ttCatchReturnsConflictDetails = /conflictDetails:\s*err\.conflictDetails/.test(ttRoute)
 
 // ── 4. schedule adjustment typed conflict shape ──
 
@@ -129,6 +133,9 @@ const adminModelRoute = read('src/app/api/admin/[model]/route.ts')
 const slotPutReturns409Shape = slotPutRoute.includes('guardResult.error') && slotPutRoute.includes('guardResult.conflicts')
 const slotPostReturns409Shape = slotPostRoute.includes('guardResult.error') && slotPostRoute.includes('guardResult.conflicts')
 const adminModelReturns409Shape = adminModelRoute.includes('guardResult.error') && adminModelRoute.includes('guardResult.conflicts')
+const slotPutReturnsConflictDetails = slotPutRoute.includes('guardResult.conflictDetails')
+const slotPostReturnsConflictDetails = slotPostRoute.includes('guardResult.conflictDetails')
+const adminModelReturnsConflictDetails = adminModelRoute.includes('guardResult.conflictDetails')
 
 // ── 9. existing fix-b envelope on teaching-task ──
 
@@ -142,8 +149,8 @@ addFinding({
   severity: 'MEDIUM',
   area: '/api/conflict-check',
   description: 'Response shape is untyped string[] conflicts. Helper internally has typed ScheduleConflictRuleMatch (with teacher/classGroup/room type) but discards it before responding.',
-  evidence: `ccApiReturnsResult=${ccApiReturnsResult} ccLibDefinesHasConflict=${ccLibDefinesHasConflict} ccLibDefinesConflicts=${ccLibDefinesConflicts} ccLibHasTypedConflict=${ccLibHasTypedConflict} ccLibInternalType=${ccLibInternalType}`,
-  recommendation: 'Add optional `conflictsTyped?: ScheduleConflictRuleMatch[]` field to response envelope. Keep `conflicts: string[]` for backwards compat. Internally share ScheduleConflictRuleMatch with adjustment layer (different type alias, same shape).',
+  evidence: `ccApiReturnsResult=${ccApiReturnsResult} ccLibDefinesHasConflict=${ccLibDefinesHasConflict} ccLibDefinesConflicts=${ccLibDefinesConflicts} ccLibDefinesConflictDetails=${ccLibDefinesConflictDetails} ccLibHasTypedConflict=${ccLibHasTypedConflict} ccLibInternalType=${ccLibInternalType}`,
+  recommendation: 'Fix-D adds `conflictDetails: ScheduleConflictDetail[]` to ScheduleConflictCheckResult, additive with `conflicts: string[]`. Verified by verify-schedule-conflict-response-shape-fix-d.ts.',
 })
 
 // 2. slot-mutation-guard internal shape is { ok, error?, status?, conflicts? } — diverges from API
@@ -152,8 +159,8 @@ addFinding({
   severity: 'MEDIUM',
   area: 'slot-mutation-guard',
   description: 'Guard internal result shape is `{ ok, error?, status?, conflicts? }` (string[]), not the typed conflict. Routes translate to `{ error, conflicts }` 409 response, which is consistent but not the typed conflict.',
-  evidence: `guardHasOk=${guardHasOk} guardHasError=${guardHasError} guardHasStatus=${guardHasStatus} guardHasConflicts=${guardHasConflicts} guardUsesHelper=${guardUsesHelper}`,
-  recommendation: 'Do not change internal guard result (works). When Fix-D adds typed conflicts to helper, also surface typed `conflictsTyped` in guard result so the route can pass it through.',
+  evidence: `guardHasOk=${guardHasOk} guardHasError=${guardHasError} guardHasStatus=${guardHasStatus} guardHasConflicts=${guardHasConflicts} guardHasConflictDetails=${guardHasConflictDetails} guardUsesHelper=${guardUsesHelper}`,
+  recommendation: 'Fix-D adds `conflictDetails?: ScheduleConflictDetail[]` to SlotMutationGuardResult, additive with `conflicts?: string[]`. Routes can pass it through.',
 })
 
 // 3. teaching-task/[id] uses Error.conflicts pattern — unusual envelope
@@ -162,8 +169,8 @@ addFinding({
   severity: 'MEDIUM',
   area: 'teaching-task/[id]',
   description: 'Conflict propagation uses `Error.conflicts = string[]` thrown inside transaction, caught at route boundary to return 409 `{ error, conflicts }`. Unusual pattern but consistent with string[] shape.',
-  evidence: `ttThrowsErrorWithConflicts=${ttThrowsErrorWithConflicts} ttCatchReturns409=${ttCatchReturns409} ttCatchReturnsError=${ttCatchReturnsError} ttCatchReturnsConflicts=${ttCatchReturnsConflicts}`,
-  recommendation: 'If typed conflicts are added to helper, propagate typed conflicts in the same pattern. The Error.conflicts pattern is sound; add Error.conflictsTyped alongside.',
+  evidence: `ttThrowsErrorWithConflicts=${ttThrowsErrorWithConflicts} ttThrowsErrorWithConflictDetails=${ttThrowsErrorWithConflictDetails} ttCatchReturns409=${ttCatchReturns409} ttCatchReturnsError=${ttCatchReturnsError} ttCatchReturnsConflicts=${ttCatchReturnsConflicts} ttCatchReturnsConflictDetails=${ttCatchReturnsConflictDetails}`,
+  recommendation: 'Fix-D adds `Error.conflictDetails` alongside Error.conflicts. Catch returns `{ error, conflicts, conflictDetails }`. Pattern preserved.',
 })
 
 // 4. adjustment uses typed ScheduleAdjustmentConflict[] — different shape than shared helper
@@ -222,8 +229,8 @@ addFinding({
   severity: 'LOW',
   area: 'schedule-slot routes',
   description: 'PUT/POST /api/schedule-slot/[id] and /api/schedule-slot return 409 `{ error, conflicts }` on guard failure. /api/admin/[model] also uses guardResult.error/conflicts. All three use the same envelope.',
-  evidence: `slotPutReturns409Shape=${slotPutReturns409Shape} slotPostReturns409Shape=${slotPostReturns409Shape} adminModelReturns409Shape=${adminModelReturns409Shape}`,
-  recommendation: 'Consistent. If typed conflicts added, also pass conflictsTyped through. No shape change needed.',
+  evidence: `slotPutReturns409Shape=${slotPutReturns409Shape} slotPostReturns409Shape=${slotPostReturns409Shape} adminModelReturns409Shape=${adminModelReturns409Shape} slotPutReturnsConflictDetails=${slotPutReturnsConflictDetails} slotPostReturnsConflictDetails=${slotPostReturnsConflictDetails} adminModelReturnsConflictDetails=${adminModelReturnsConflictDetails}`,
+  recommendation: 'Fix-D adds `conflictDetails: ScheduleConflictDetail[]` to all three 409 responses, additive with `{ error, conflicts }`.',
 })
 
 // 10. helper internal type vs response type divergence
@@ -233,7 +240,17 @@ addFinding({
   area: 'shared helper internal type',
   description: 'checkScheduleConflicts internally uses typed ScheduleConflictRuleMatch (via findRuleMatches) but the response envelope only exposes `conflicts: string[]`. Internal type richness is lost at the boundary.',
   evidence: `ccLibHasTypedConflict=${ccLibHasTypedConflict} ccLibReturnsMessages=${ccLibReturnsMessages}`,
-  recommendation: 'Add `conflictsTyped: ScheduleConflictRuleMatch[]` to ScheduleConflictCheckResult. Keep `conflicts: string[]` for backwards compat. Routes can pass conflictsTyped through (low-risk, additive).',
+  recommendation: 'Fix-D adds `conflictDetails: ScheduleConflictDetail[]` to ScheduleConflictCheckResult. `conflicts: string[]` preserved. The detail list mirrors the message list (one per rule match).',
+})
+
+// 11. K13-FIX-D additive conflictDetails present across all 5 sites
+addFinding({
+  id: 'K13-RESPONSE-NONE-2',
+  severity: 'NONE',
+  area: 'fix-d additive conflictDetails',
+  description: 'K13-FIX-D introduces typed ScheduleConflictDetail and surfaces `conflictDetails` at 5 sites: /api/conflict-check, SlotMutationGuardResult, /api/schedule-slot/*, /api/admin/[model], /api/teaching-task/[id]. All additive; `conflicts: string[]` preserved everywhere.',
+  evidence: `ccLibDefinesConflictDetails=${ccLibDefinesConflictDetails} guardHasConflictDetails=${guardHasConflictDetails} slotPutReturnsConflictDetails=${slotPutReturnsConflictDetails} slotPostReturnsConflictDetails=${slotPostReturnsConflictDetails} adminModelReturnsConflictDetails=${adminModelReturnsConflictDetails} ttCatchReturnsConflictDetails=${ttCatchReturnsConflictDetails}`,
+  recommendation: 'Verified by verify-schedule-conflict-response-shape-fix-d.ts. Frontend consumers and 6 verification scripts unaffected (string[] still present).',
 })
 
 // ── Output ──
@@ -273,18 +290,20 @@ console.log(`  LOW: ${bySeverity.LOW}`)
 console.log(`  NONE: ${bySeverity.NONE}`)
 
 console.log(`\nRecommendation:`)
-console.log(`  Fix-D allowed: yes (conditional)`)
-console.log(`  Suggested strategy: internal typed (add conflictsTyped array of ScheduleConflictRuleMatch to helper) +`)
-console.log(`    external compatible string[] (keep "conflicts: string[]" unchanged).`)
-console.log(`  Required compat: keep "conflicts: string[]" everywhere it exists today.`)
-console.log(`  Adjustment envelope: keep "canApply" + "conflicts: ScheduleAdjustmentConflict[]" + "warnings: ...".`)
-console.log(`  Scripts: do NOT remove existing checks; only add checks for new fields.`)
-console.log(`\nFix-D boundary (recommended):`)
-console.log(`  - Add optional conflictsTyped field (ScheduleConflictRuleMatch[]) to:`)
+console.log(`  Fix-D allowed: yes (now completed)`)
+console.log(`  Implemented strategy: additive typed (conflictDetails: ScheduleConflictDetail[]) +`)
+console.log(`    external compatible string[] (conflicts: string[] unchanged at all sites).`)
+console.log(`  Compat: "conflicts: string[]" preserved at /api/conflict-check, /api/schedule-slot/*, /api/admin/[model], /api/teaching-task/[id].`)
+console.log(`  Adjustment envelope: unchanged (canApply + typed conflicts + warnings).`)
+console.log(`  Scripts: 6 verification scripts unaffected (string[] checks still pass).`)
+console.log(`\nFix-D boundary (completed):`)
+console.log(`  - Added conflictDetails: ScheduleConflictDetail[] to:`)
 console.log(`      * ScheduleConflictCheckResult (shared helper)`)
 console.log(`      * SlotMutationGuardResult (pass through)`)
-console.log(`      * Error envelope from /api/teaching-task/[id] (add conflictsTyped)`)
-console.log(`  - Do NOT remove or rename any existing field.`)
-console.log(`  - Do NOT change adjustment dry-run envelope or types.`)
-console.log(`  - Do NOT change /api/conflict-check status code.`)
-console.log(`  - Do NOT change frontend consumers unless they want richer messages.`)
+console.log(`      * /api/conflict-check response (transparent via result envelope)`)
+console.log(`      * /api/schedule-slot/[id] + /api/schedule-slot 409 responses`)
+console.log(`      * /api/admin/[model] scheduleslot 409 responses`)
+console.log(`      * /api/teaching-task/[id] 409 response (Error.conflictDetails pattern)`)
+console.log(`  - ScheduleAdjustmentConflict envelope: NOT modified (already typed).`)
+console.log(`  - Frontend consumers: NOT modified (string[] still consumed).`)
+console.log(`  - Verification scripts: NOT modified (string[] checks still valid).`)

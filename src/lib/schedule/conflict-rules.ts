@@ -79,6 +79,120 @@ export interface ScheduleConflictRuleMatch {
   message: string
 }
 
+// ── Unified typed conflict detail (Fix-D additive) ──
+//
+// This is the cross-boundary typed shape added in K13-FIX-D. It is
+// produced alongside `conflicts: string[]` so the existing API contracts
+// remain stable. All fields are optional except `type` / `severity` /
+// `message`.
+//
+// - `type` mirrors the rule kind (teacher / classGroup / room) plus
+//   'capacity' and 'unknown' for boundaries the rule kernel does not
+//   cover (capacity is adjustment-specific; unknown is a safety net).
+// - `severity` lets callers distinguish error vs warning (capacity is a
+//   warning, not a blocking conflict).
+// - Entity id fields are populated when the source has them, so the UI
+//   can deep-link to a room/teacher/class without re-parsing message.
+// - `source` records which boundary produced the detail (helpful when
+//   the same shape is used by /api/conflict-check, slot-mutation-guard,
+//   teaching-task, and adjustment).
+
+export type ScheduleConflictDetailType =
+  | 'teacher'
+  | 'classGroup'
+  | 'room'
+  | 'capacity'
+  | 'unknown'
+
+export type ScheduleConflictSeverity = 'error' | 'warning'
+
+export type ScheduleConflictSource =
+  | 'conflict-check'
+  | 'slot-mutation'
+  | 'teaching-task'
+  | 'adjustment'
+
+export interface ScheduleConflictDetail {
+  type: ScheduleConflictDetailType
+  severity: ScheduleConflictSeverity
+  message: string
+  scheduleSlotId?: number
+  teachingTaskId?: number
+  roomId?: number
+  teacherId?: number
+  classGroupIds?: number[]
+  dayOfWeek?: number
+  slotIndex?: number
+  weeks?: number[]
+  source?: ScheduleConflictSource
+}
+
+/**
+ * Convert a single rule match + occupancy into a typed
+ * ScheduleConflictDetail. Does NOT format a message — callers fill
+ * `message` separately (typically via formatRuleMatchMessage). The
+ * returned detail is JSON-safe and free of Prisma model instances.
+ */
+export function toConflictDetailFromMatch(
+  match: ScheduleConflictRuleMatch,
+  occupancy: ScheduleConflictOccupancy,
+  options: { source?: ScheduleConflictSource } = {},
+): ScheduleConflictDetail {
+  return {
+    type: match.type,
+    severity: 'error',
+    message: match.message,
+    scheduleSlotId: occupancy.id ?? undefined,
+    teachingTaskId: occupancy.teachingTaskId ?? undefined,
+    roomId: occupancy.roomId ?? undefined,
+    teacherId: occupancy.teacherId ?? undefined,
+    classGroupIds: occupancy.classGroupIds,
+    dayOfWeek: occupancy.dayOfWeek,
+    slotIndex: occupancy.slotIndex,
+    weeks: Array.from(expandWeeks(occupancy.weekConstraint)).sort((a, b) => a - b),
+    source: options.source ?? 'conflict-check',
+  }
+}
+
+/**
+ * Convert a rule match list to typed ScheduleConflictDetail[] and
+ * return the corresponding string[] messages.
+ *
+ * Pure — no I/O, no Prisma. The caller must supply
+ * `formatMessage` (typically formatRuleMatchMessage) to populate
+ * `message` on each detail. If the caller has already populated
+ * `match.message`, pass `formatMessage: () => null` to keep it as-is.
+ */
+export function toConflictDetails(
+  matches: ScheduleConflictRuleMatch[],
+  occupancies: ScheduleConflictOccupancy[],
+  formatMessage: (match: ScheduleConflictRuleMatch, occupancy: ScheduleConflictOccupancy | null) => string | null,
+  options: { source?: ScheduleConflictSource } = {},
+): { details: ScheduleConflictDetail[]; messages: string[] } {
+  const details: ScheduleConflictDetail[] = []
+  const messages: string[] = []
+  for (const match of matches) {
+    const occ = occupancies.find((o) => o.id === match.occupancyId) ?? null
+    let message = match.message
+    if (!message) {
+      const formatted = formatMessage(match, occ)
+      message = formatted ?? ''
+    }
+    if (occ) {
+      details.push(toConflictDetailFromMatch(match, occ, options))
+    } else {
+      details.push({
+        type: match.type,
+        severity: 'error',
+        message,
+        source: options.source ?? 'conflict-check',
+      })
+    }
+    if (message) messages.push(message)
+  }
+  return { details, messages }
+}
+
 // ── Time / week predicates ──
 
 export function isSameTimeSlot(

@@ -209,7 +209,7 @@ export async function POST(
       const guardResult = await guardAdminSlotCreate(data.teachingTaskId as number, data)
       if (!guardResult.ok) {
         return NextResponse.json(
-          { error: guardResult.error, conflicts: guardResult.conflicts },
+          { error: guardResult.error, conflicts: guardResult.conflicts, conflictDetails: guardResult.conflictDetails },
           { status: guardResult.status ?? 400 },
         )
       }
@@ -273,7 +273,7 @@ export async function PUT(
       const guardResult = await guardAdminSlotUpdate(id, data)
       if (!guardResult.ok) {
         return NextResponse.json(
-          { error: guardResult.error, conflicts: guardResult.conflicts },
+          { error: guardResult.error, conflicts: guardResult.conflicts, conflictDetails: guardResult.conflictDetails },
           { status: guardResult.status ?? 400 },
         )
       }

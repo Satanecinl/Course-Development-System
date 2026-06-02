@@ -21,7 +21,9 @@ import { prisma } from '@/lib/prisma'
 import { expandWeeks, type WeekConstraint } from '@/lib/conflict'
 import {
   findRuleMatches,
+  toConflictDetails,
   type ScheduleConflictCandidate,
+  type ScheduleConflictDetail,
   type ScheduleConflictOccupancy,
 } from '@/lib/schedule/conflict-rules'
 
@@ -44,6 +46,12 @@ export interface ScheduleConflictCheckInput {
 export interface ScheduleConflictCheckResult {
   hasConflict: boolean
   conflicts: string[]
+  /**
+   * K13-FIX-D additive typed conflict details. Always present (possibly
+   * empty). Provides type/severity/entity ids alongside the existing
+   * `conflicts: string[]` messages. JSON-safe; no Prisma model instances.
+   */
+  conflictDetails: ScheduleConflictDetail[]
 }
 
 /**
@@ -174,6 +182,7 @@ export async function checkScheduleConflicts(
   const result: ScheduleConflictCheckResult = {
     hasConflict: false,
     conflicts: [],
+    conflictDetails: [],
   }
 
   const ctx = await resolveTaskContext(input)
@@ -237,19 +246,24 @@ export async function checkScheduleConflicts(
     return result
   }
 
-  // Format each rule match as a Chinese string. The original
-  // checkScheduleConflicts produced one message per (occupancy, rule-type)
-  // pair; we preserve that by iterating the matches and rebuilding each
-  // message from the candidate + occupancy context.
-  const messages: string[] = []
-  for (const match of ruleMatches) {
-    const occ = occupancies.find((o) => o.id === match.occupancyId)
-    if (!occ) continue
-    messages.push(formatMatchMessage(match.type, candidate, occ, targetRoomLabel))
-  }
+  // Build both `conflicts: string[]` and `conflictDetails: ScheduleConflictDetail[]`
+  // from the same rule match list. `formatMatchMessage` (inline) populates the
+  // message field on each detail via the closure-captured `targetRoomLabel`,
+  // then `toConflictDetails` does the conversion. Additive in K13-FIX-D; the
+  // `conflicts: string[]` field is preserved for backwards compatibility.
+  const { details, messages } = toConflictDetails(
+    ruleMatches,
+    occupancies,
+    (match, occ) => {
+      if (!occ) return null
+      return formatMatchMessage(match.type, candidate, occ, targetRoomLabel)
+    },
+    { source: 'conflict-check' },
+  )
 
   result.hasConflict = true
   result.conflicts = messages
+  result.conflictDetails = details
   return result
 }
 

@@ -306,11 +306,11 @@ const adjustmentShapeHasRelated = adjustmentsLib.includes('relatedSlotIds')
 
 addFinding({
   id: 'K13-CONFLICT-MEDIUM-4',
-  severity: 'MEDIUM',
+  severity: 'NONE',
   area: 'response shape inconsistency',
-  description: `三套实现 response shape 不同。conflict-check/guard: { hasConflict, conflicts: string[] }（现已共享 helper）。adjustment: { canApply, conflicts: ScheduleAdjustmentConflict[] (typed with type/message/severity/relatedSlotIds), warnings: ... }。前端对 moveSlot 错误显示为 string，前端对 adjustment 错误显示为 typed conflict。`,
+  description: `K13-FIX-D（2026-06-02，scripts/verify-schedule-conflict-response-shape-fix-d.ts）已通过 additive typed conflictDetails 解决。三套 response shape 现在都暴露 typed 信息：conflict-check/guard: { hasConflict, conflicts, conflictDetails }；adjustment: { canApply, conflicts: typed, warnings: typed }（与 conflictDetails 概念兼容但 envelope 业务差异保留）。前端仍可使用 string message。`,
   evidence: `api: hasConflict=${apiShapeHasConflict} conflicts=${apiShapeHasConflicts}; guard: conflicts=${guardShapeHasConflicts}; adjustment: type=${adjustmentShapeHasType} message=${adjustmentShapeHasMessage} related=${adjustmentShapeHasRelated}`,
-  recommendation: 'K13-SCHEDULE-CONFLICT-RESPONSE-SHAPE-AUDIT（2026-06-02，scripts/audit-schedule-conflict-response-shapes.ts）已对 response shape 做专项审计。短期保留差异（mutation guard 是 string message，adjustment 是 typed conflict）。长期可统一为 internal typed + external compatible string[]（见 docs/k13-schedule-conflict-response-shape-audit.md 第 14.2 节）。',
+  recommendation: '已解决（K13-FIX-D，commit 计划）。详见 docs/k13-schedule-conflict-response-shape-fix-d.md。',
 })
 
 // ═══════════════════════════════════════

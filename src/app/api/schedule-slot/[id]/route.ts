@@ -52,7 +52,7 @@ export async function PUT(
     )
     if (!guardResult.ok) {
       return NextResponse.json(
-        { error: guardResult.error, conflicts: guardResult.conflicts },
+        { error: guardResult.error, conflicts: guardResult.conflicts, conflictDetails: guardResult.conflictDetails },
         { status: guardResult.status ?? 400 },
       )
     }

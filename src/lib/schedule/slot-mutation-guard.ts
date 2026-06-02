@@ -1,12 +1,20 @@
 import { prisma } from '@/lib/prisma'
 import { resolveSchedulerSemester } from '@/lib/semester'
 import { checkScheduleConflicts } from '@/lib/schedule/conflict-check'
+import type { ScheduleConflictDetail } from '@/lib/schedule/conflict-rules'
 
 export interface SlotMutationGuardResult {
   ok: boolean
   error?: string
   status?: number
   conflicts?: string[]
+  /**
+   * K13-FIX-D additive typed conflict details, surfaced from
+   * checkScheduleConflicts. Always present (possibly empty) when `ok`
+   * is false. Routes may pass it through to clients that want to
+   * deep-link to the conflicting entity.
+   */
+  conflictDetails?: ScheduleConflictDetail[]
   semesterId?: number
 }
 
@@ -53,7 +61,7 @@ export async function guardSlotUpdate(
     return { ok: false, error: 'Slot does not belong to the active semester', status: 403 }
   }
 
-  const { conflicts } = await checkScheduleConflicts({
+  const { conflicts, conflictDetails } = await checkScheduleConflicts({
     scheduleSlotId: slotId,
     targetDayOfWeek,
     targetSlotIndex,
@@ -62,7 +70,7 @@ export async function guardSlotUpdate(
   })
 
   if (conflicts.length > 0) {
-    return { ok: false, error: 'Schedule conflict detected', status: 409, conflicts }
+    return { ok: false, error: 'Schedule conflict detected', status: 409, conflicts, conflictDetails }
   }
 
   return { ok: true, semesterId }
@@ -96,7 +104,7 @@ export async function guardSlotCreate(
     return { ok: true, semesterId }
   }
 
-  const { conflicts } = await checkScheduleConflicts({
+  const { conflicts, conflictDetails } = await checkScheduleConflicts({
     teachingTaskId,
     targetDayOfWeek,
     targetSlotIndex,
@@ -105,7 +113,7 @@ export async function guardSlotCreate(
   })
 
   if (conflicts.length > 0) {
-    return { ok: false, error: 'Schedule conflict detected', status: 409, conflicts }
+    return { ok: false, error: 'Schedule conflict detected', status: 409, conflicts, conflictDetails }
   }
 
   return { ok: true, semesterId }
@@ -152,7 +160,7 @@ export async function guardAdminSlotUpdate(
     return { ok: true }
   }
 
-  const { conflicts } = await checkScheduleConflicts({
+  const { conflicts, conflictDetails } = await checkScheduleConflicts({
     scheduleSlotId: slotId,
     targetDayOfWeek: targetDay,
     targetSlotIndex: targetSlot,
@@ -161,7 +169,7 @@ export async function guardAdminSlotUpdate(
   })
 
   if (conflicts.length > 0) {
-    return { ok: false, error: 'Schedule conflict detected', status: 409, conflicts }
+    return { ok: false, error: 'Schedule conflict detected', status: 409, conflicts, conflictDetails }
   }
 
   return { ok: true, semesterId }
