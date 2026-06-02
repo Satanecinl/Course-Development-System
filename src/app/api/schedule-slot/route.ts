@@ -5,7 +5,7 @@ import { guardSlotCreate } from '@/lib/schedule/slot-mutation-guard'
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = await requirePermission('data:write', request)
+    const auth = await requirePermission('schedule:write', request)
     if ('error' in auth) return auth.error
     const body = await request.json()
     const { teachingTaskId, roomId, dayOfWeek, slotIndex } = body as {

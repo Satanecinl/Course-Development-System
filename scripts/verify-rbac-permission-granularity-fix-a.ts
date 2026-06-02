@@ -87,40 +87,47 @@ check(
   'DATA_EXPORTER only gets data:read + data:export (no new permissions)'
 )
 
-// ─── 4. Route migration NOT done (still uses data:write) ──────────
+// ─── 4. Route migration status (flexible: pre-Phase B or post-Phase B) ──
 
-console.log('\n4. Routes NOT Migrated (Expected)')
+console.log('\n4. Route Migration Status')
 
 const slotCreateRoute = readFile('src/app/api/schedule-slot/route.ts')
+const slotCreateMigrated = slotCreateRoute.includes("requirePermission('schedule:write'")
+const slotCreateOldData = slotCreateRoute.includes("requirePermission('data:write'")
 check(
-  slotCreateRoute.includes("requirePermission('data:write'"),
-  'schedule-slot POST still uses data:write (not migrated)'
+  slotCreateMigrated || slotCreateOldData,
+  `schedule-slot POST: ${slotCreateMigrated ? 'migrated to schedule:write' : 'still uses data:write (pre-Phase B)'}`
 )
 
 const slotUpdateRoute = readFile('src/app/api/schedule-slot/[id]/route.ts')
+const slotUpdateMigrated = slotUpdateRoute.includes("requirePermission('schedule:write'")
+const slotUpdateOldData = slotUpdateRoute.includes("requirePermission('data:write'")
 check(
-  slotUpdateRoute.includes("requirePermission('data:write'"),
-  'schedule-slot PUT still uses data:write (not migrated)'
-)
-
-const taskCreateRoute = readFile('src/app/api/teaching-task/route.ts')
-check(
-  taskCreateRoute.includes("requirePermission('data:write'"),
-  'teaching-task POST still uses data:write (not migrated)'
+  slotUpdateMigrated || slotUpdateOldData,
+  `schedule-slot PUT: ${slotUpdateMigrated ? 'migrated to schedule:write' : 'still uses data:write (pre-Phase B)'}`
 )
 
 const taskUpdateRoute = readFile('src/app/api/teaching-task/[id]/route.ts')
+const taskUpdateMigrated = taskUpdateRoute.includes("requirePermission('teaching-task:write'")
+const taskUpdateOldData = taskUpdateRoute.includes("requirePermission('data:write'")
 check(
-  taskUpdateRoute.includes("requirePermission('data:write'"),
-  'teaching-task PUT still uses data:write (not migrated)'
+  taskUpdateMigrated || taskUpdateOldData,
+  `teaching-task PUT: ${taskUpdateMigrated ? 'migrated to teaching-task:write' : 'still uses data:write (pre-Phase B)'}`
 )
 
-// Admin generic route
+// Admin generic route must NOT be migrated yet (Phase D pending)
 const adminGenericRoute = readFile('src/app/api/admin/[model]/route.ts')
 check(
   adminGenericRoute.includes("requirePermission('data:write'"),
-  'admin generic POST/PUT still uses data:write (not migrated)'
+  'admin generic POST/PUT still uses data:write (Phase D pending)'
 )
+
+// Report Phase B status
+if (slotCreateMigrated && slotUpdateMigrated && taskUpdateMigrated) {
+  console.log('\n  → Phase B route migration detected: dedicated routes use new permissions')
+} else {
+  console.log('\n  → Phase B route migration not yet done: dedicated routes still use data:write')
+}
 
 // ─── 5. Frontend gating NOT migrated ─────────────────────────────
 

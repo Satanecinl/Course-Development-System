@@ -18,7 +18,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const auth = await requirePermission('data:write', request)
+    const auth = await requirePermission('teaching-task:write', request)
     if ('error' in auth) return auth.error
 
     const { id } = await params
