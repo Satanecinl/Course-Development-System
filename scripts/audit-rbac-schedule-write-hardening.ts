@@ -168,13 +168,21 @@ addFinding({
 })
 
 // F2: data:write covers teaching-task PUT
+// K14-FIX-B: admin generic teachingtask PUT now has pre-update teacher conflict guard
+const adminRouteContent = exists('src/app/api/admin/[model]/route.ts') ? read('src/app/api/admin/[model]/route.ts') : ''
+const adminTeachingtaskHasGuard = /guardAdminTaskUpdate\(/.test(adminRouteContent)
+const teachingTaskGuardExists = exists('src/lib/schedule/teaching-task-mutation-guard.ts')
 addFinding({
   id: 'K14-RBAC-MEDIUM-2',
-  severity: 'MEDIUM',
+  severity: adminTeachingtaskHasGuard ? 'NONE' : 'MEDIUM',
   area: 'TeachingTask write path',
-  description: '/api/teaching-task and /api/teaching-task/[id] use data:write. A user with data:write can change teacher/room/course/teacherId of any teaching task, which indirectly alters the schedule output (because slots derive from teaching task). No conflict check runs on /api/teaching-task POST (POST creates new task; PUT runs pre-update room conflict check).',
-  evidence: `ttPutUsesWrite=${ttPutUsesWrite} ttPostUsesWrite=${ttPostUsesWrite}`,
-  recommendation: 'Fix-A: keep current model. Optionally introduce teaching-task:write for finer split.',
+  description: adminTeachingtaskHasGuard
+    ? 'K14-FIX-B: admin generic teachingtask PUT now calls guardAdminTaskUpdate, which checks teacher conflicts on existing ScheduleSlots when teacherId changes. Uses same checkScheduleConflicts engine as slot-mutation-guard. Dedicated /api/teaching-task/[id] PUT already had room conflict guard.'
+    : '/api/teaching-task and /api/teaching-task/[id] use data:write. A user with data:write can change teacher/room/course/teacherId of any teaching task, which indirectly alters the schedule output (because slots derive from teaching task). No conflict check runs on /api/teaching-task POST (POST creates new task; PUT runs pre-update room conflict check).',
+  evidence: `ttPutUsesWrite=${ttPutUsesWrite} ttPostUsesWrite=${ttPostUsesWrite} adminTeachingtaskHasGuard=${adminTeachingtaskHasGuard} teachingTaskGuardExists=${teachingTaskGuardExists}`,
+  recommendation: adminTeachingtaskHasGuard
+    ? 'Verified. Admin teachingtask PUT guard aligned with dedicated route pattern.'
+    : 'Fix-A: keep current model. Optionally introduce teaching-task:write for finer split.',
 })
 
 // F3: schedule:adjust covers dry-run, create, void
@@ -204,7 +212,7 @@ addFinding({
   area: 'Admin generic route',
   description: 'K14-FIX-A: /api/admin/[model] PUT scheduleslot path now defensively re-asserts data.semesterId from guardResult.semesterId (matches POST behavior in lines 216-218). Existing semesterId injection at line 268 (data.semesterId = semester.id) and same-semester guard remain. Server-side check unchanged.',
   evidence: `adminModelPutHasSemesterId=${adminModelPutHasSemesterId} adminModelPutHasGuardSemester=${adminModelPutHasGuardSemester} adminModelPutHasGuard=${adminModelPutHasGuard}`,
-  recommendation: 'Verified. Teachingtask PUT generic route vs dedicated route inconsistency remains a known risk (out of Fix-A scope, deferred to K14-FIX-B).',
+  recommendation: 'Verified. K14-FIX-B: admin teachingtask PUT now has guardAdminTaskUpdate for teacher conflict checking, aligning with dedicated route pattern.',
 })
 
 // F6: conflict-check uses schedule:view (not read-public)

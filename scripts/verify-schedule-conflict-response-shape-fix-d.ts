@@ -102,7 +102,7 @@ check('schedule-slot POST 409 adds conflictDetails', /conflictDetails:\s*guardRe
 
 const adminRoute = read('src/app/api/admin/[model]/route.ts')
 const admin409Count = (adminRoute.match(/guardResult\.conflictDetails/g) ?? []).length
-check('admin [model] route has 2 conflictDetails return sites (POST + PUT)', admin409Count === 2, `found ${admin409Count}`)
+check('admin [model] route has 3 conflictDetails return sites (POST + PUT scheduleslot + PUT teachingtask)', admin409Count === 3, `found ${admin409Count}`)
 check('admin POST 409 preserves { error, conflicts } + conflictDetails', /error:\s*guardResult\.error,\s*conflicts:\s*guardResult\.conflicts,\s*conflictDetails:\s*guardResult\.conflictDetails/.test(adminRoute))
 check('admin PUT 409 preserves { error, conflicts } + conflictDetails', /error:\s*guardResult\.error,\s*conflicts:\s*guardResult\.conflicts,\s*conflictDetails:\s*guardResult\.conflictDetails/.test(adminRoute))
 

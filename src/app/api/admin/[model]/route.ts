@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { requirePermission } from '@/lib/auth/require-permission'
 import { resolveSchedulerSemester } from '@/lib/semester'
 import { guardAdminSlotUpdate, guardAdminSlotCreate } from '@/lib/schedule/slot-mutation-guard'
+import { guardAdminTaskUpdate } from '@/lib/schedule/teaching-task-mutation-guard'
 
 const MODEL_MAP: Record<string, keyof typeof prisma> = {
   classgroup: 'classGroup',
@@ -284,6 +285,20 @@ export async function PUT(
       // does this in lines below). Server guard is the final security boundary.
       if (guardResult.semesterId && !data.semesterId) {
         data.semesterId = guardResult.semesterId
+      }
+    }
+
+    // K14-FIX-B: conflict guard for teachingtask PUT.
+    // When teacherId changes on a task with existing ScheduleSlots, check
+    // each slot for teacher conflicts with the new teacher. Uses the same
+    // checkScheduleConflicts engine as slot-mutation-guard and /api/conflict-check.
+    if (model.toLowerCase() === 'teachingtask') {
+      const guardResult = await guardAdminTaskUpdate(id, data)
+      if (!guardResult.ok) {
+        return NextResponse.json(
+          { error: guardResult.error, conflicts: guardResult.conflicts, conflictDetails: guardResult.conflictDetails },
+          { status: guardResult.status ?? 400 },
+        )
       }
     }
 
