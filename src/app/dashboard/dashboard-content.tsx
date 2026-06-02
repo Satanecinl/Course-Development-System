@@ -11,6 +11,7 @@ import { ViewType, DAYS, TIME_SLOTS } from '@/types/schedule'
 import type { ScheduleViewData } from '@/types/schedule'
 import { type WeekFilter } from '@/lib/schedule/week-filter'
 import { voidScheduleAdjustment } from '@/lib/schedule/adjustment-client'
+import { useHasPermission } from '@/components/layout/current-user-context'
 import {
   Dialog,
   DialogContent,
@@ -170,6 +171,8 @@ export default function DashboardContent() {
   const [voidItem, setVoidItem] = useState<ScheduleViewData | null>(null)
   const [voidConfirmText, setVoidConfirmText] = useState('')
   const [voidExecuting, setVoidExecuting] = useState(false)
+  // K14-FIX-A: schedule:adjust gates the void submission.
+  const canAdjust = useHasPermission('schedule:adjust')
 
   // 初始化加载实体选项
   useEffect(() => {
@@ -282,6 +285,10 @@ export default function DashboardContent() {
 
   async function handleExecuteVoid() {
     if (!voidItem?.adjustmentId) return
+    if (!canAdjust) {
+      toast.error('没有调课权限', { description: '当前账号没有调课权限，无法撤销调课' })
+      return
+    }
     setVoidExecuting(true)
     try {
       await voidScheduleAdjustment(voidItem.adjustmentId)
@@ -472,7 +479,8 @@ export default function DashboardContent() {
             <Button
               variant="destructive"
               onClick={handleExecuteVoid}
-              disabled={voidConfirmText !== 'VOID_ADJUSTMENT' || voidExecuting}
+              disabled={!canAdjust || voidConfirmText !== 'VOID_ADJUSTMENT' || voidExecuting}
+              title={canAdjust ? undefined : '当前账号没有调课权限'}
             >
               {voidExecuting ? '撤销中...' : '确认撤销'}
             </Button>

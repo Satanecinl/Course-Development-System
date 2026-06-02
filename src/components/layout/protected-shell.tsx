@@ -10,6 +10,7 @@ import { getCurrentUser } from '@/lib/auth/current-user'
 import { filterNavItems } from '@/lib/auth/navigation'
 import { AppSidebar } from './app-sidebar'
 import { AppHeader } from './app-header'
+import { CurrentUserProvider } from './current-user-context'
 
 interface ProtectedShellProps {
   children: React.ReactNode
@@ -35,23 +36,33 @@ export async function ProtectedShell({ children }: ProtectedShellProps) {
   const navItems = filterNavItems(user.permissions)
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
-      {/* Sidebar */}
-      <AppSidebar navItems={navItems} />
+    <CurrentUserProvider
+      user={{
+        id: user.id,
+        username: user.username,
+        displayName: user.displayName,
+        roles: user.roles,
+        permissions: user.permissions,
+      }}
+    >
+      <div className="flex h-screen overflow-hidden bg-gray-50">
+        {/* Sidebar */}
+        <AppSidebar navItems={navItems} />
 
-      {/* Main area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <AppHeader
-          displayName={user.displayName || user.username}
-          roles={user.roles}
-        />
+        {/* Main area */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Header */}
+          <AppHeader
+            displayName={user.displayName || user.username}
+            roles={user.roles}
+          />
 
-        {/* Content */}
-        <main className="flex-1 overflow-auto">
-          {children}
-        </main>
+          {/* Content */}
+          <main className="flex-1 overflow-auto">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </CurrentUserProvider>
   )
 }

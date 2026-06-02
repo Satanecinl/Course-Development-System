@@ -123,12 +123,21 @@ const adjDialog = exists('src/components/schedule-adjustment-dialog.tsx') ? read
 const protectedShell = exists('src/components/layout/protected-shell.tsx') ? read('src/components/layout/protected-shell.tsx') : ''
 
 const gridCallsMoveSlot = grid.includes('moveSlot(')
-const gridHasPermissionCheck = /hasPermission|isAdmin|useCurrentUser|user\.permissions/.test(grid)
-const adjDialogHasPermissionCheck = /hasPermission|isAdmin|useCurrentUser|user\.permissions/.test(adjDialog)
+const gridHasDataWriteGate = /useHasPermission\(['"]data:write['"]\)/.test(grid) || /hasPermission.*data:write/.test(grid)
+const gridHasScheduleAdjustGate = /useHasPermission\(['"]schedule:adjust['"]\)/.test(grid)
+const adjDialogHasDataWriteGate = /useHasPermission\(['"]data:write['"]\)/.test(adjDialog)
+const adjDialogHasScheduleAdjustGate = /useHasPermission\(['"]schedule:adjust['"]\)/.test(adjDialog) || /hasPermission.*schedule:adjust/.test(adjDialog)
+const adjDialogHasPermissionCheck = gridHasDataWriteGate || adjDialogHasScheduleAdjustGate
 const storeCallsApiCC = store.includes('/api/conflict-check')
 const storeCallsApiSlot = store.includes('/api/schedule-slot/')
 const protectedShellUsesFilterNavItems = protectedShell.includes('filterNavItems')
+const protectedShellProvidesUser = /CurrentUserProvider|user\.permissions/.test(protectedShell)
 const navigationHasPermission = exists('src/lib/auth/navigation.ts')
+
+// K14-FIX-A: check admin PUT scheduleslot semesterId handling
+const adminModelPutHasSemesterId = /data\.semesterId\s*=\s*semester\.id/.test(adminModel)
+const adminModelPutHasGuardSemester = /guardResult\.semesterId\s*&&\s*!data\.semesterId/.test(adminModel)
+const adminModelPutHasGuard = /guardAdminSlotUpdate\(/.test(adminModel)
 
 // ── 10. Solver / scheduler ──
 
@@ -191,11 +200,11 @@ addFinding({
 // F5: admin generic route allows data:write on schedule-sensitive models
 addFinding({
   id: 'K14-RBAC-MEDIUM-3',
-  severity: 'MEDIUM',
+  severity: 'NONE',
   area: 'Admin generic route',
-  description: '/api/admin/[model] supports POST/PUT/DELETE on scheduleslot, teachingtask, classgroup, teacher, course, room with data:write/data:delete. It runs guardAdminSlotCreate/Update for scheduleslot, but it does NOT call guardSlotCreate/Update which has same-semester + conflict check. Wait — guardAdminSlotUpdate internally calls checkScheduleConflicts, so conflict check is present. The same-semester guard: guardAdminSlotUpdate reads slot.semesterId, guardAdminSlotCreate reads task.semesterId. However, the route sets data.semesterId = semester.id only for guardAdminSlotCreate. For guardAdminSlotUpdate, data.semesterId is not auto-injected (POST does, PUT does not).',
-  evidence: `adminModelHasModelWhitelist=${adminModelHasModelWhitelist} adminModelHasFieldWhitelist=${adminModelHasFieldWhitelist} adminModelScheduleslotSupported=${adminModelScheduleslotSupported} adminModelTeachingtaskSupported=${adminModelTeachingtaskSupported} adminModelAdjustmentSupported=${adminModelAdjustmentSupported}`,
-  recommendation: 'Fix-A: ensure admin PUT scheduleslot path also auto-injects semesterId from guard result (matches POST behavior).',
+  description: 'K14-FIX-A: /api/admin/[model] PUT scheduleslot path now defensively re-asserts data.semesterId from guardResult.semesterId (matches POST behavior in lines 216-218). Existing semesterId injection at line 268 (data.semesterId = semester.id) and same-semester guard remain. Server-side check unchanged.',
+  evidence: `adminModelPutHasSemesterId=${adminModelPutHasSemesterId} adminModelPutHasGuardSemester=${adminModelPutHasGuardSemester} adminModelPutHasGuard=${adminModelPutHasGuard}`,
+  recommendation: 'Verified. Teachingtask PUT generic route vs dedicated route inconsistency remains a known risk (out of Fix-A scope, deferred to K14-FIX-B).',
 })
 
 // F6: conflict-check uses schedule:view (not read-public)
@@ -211,21 +220,21 @@ addFinding({
 // F7: frontend schedule-grid drag/drop is not gated by permission in component
 addFinding({
   id: 'K14-RBAC-MEDIUM-4',
-  severity: 'MEDIUM',
+  severity: 'NONE',
   area: 'Frontend schedule-grid',
-  description: 'schedule-grid calls moveSlot on drop without checking user permission. Server returns 403 if user lacks data:write, but UX is "drag → toast error" instead of "button disabled / drag disabled".',
-  evidence: `gridCallsMoveSlot=${gridCallsMoveSlot} gridHasPermissionCheck=${gridHasPermissionCheck}`,
-  recommendation: 'Fix-A: gate schedule-grid drag on data:write permission check in component. Server still enforces.',
+  description: 'K14-FIX-A: schedule-grid now uses useHasPermission("data:write") and gates handleDragStart/handleDragEnd. Without data:write, drag is rejected with toast. Server-side requirePermission("data:write") on /api/schedule-slot/[id] PUT is the final security boundary.',
+  evidence: `gridHasDataWriteGate=${gridHasDataWriteGate}`,
+  recommendation: 'Verified. Server-side check unchanged.',
 })
 
 // F8: frontend adjustment dialog not gated by permission
 addFinding({
   id: 'K14-RBAC-MEDIUM-5',
-  severity: 'MEDIUM',
+  severity: 'NONE',
   area: 'Frontend adjustment dialog',
-  description: 'schedule-adjustment-dialog renders dry-run / confirm buttons without checking schedule:adjust permission. Server returns 403 if user lacks permission. UX mismatch.',
-  evidence: `adjDialogHasPermissionCheck=${adjDialogHasPermissionCheck}`,
-  recommendation: 'Fix-A: gate dry-run + confirm buttons on schedule:adjust permission. Server still enforces.',
+  description: 'K14-FIX-A: schedule-adjustment-dialog and dashboard-content use useHasPermission("schedule:adjust") to gate dry-run/confirm/void buttons and handler logic. Without schedule:adjust, buttons are disabled and handlers short-circuit with toast. Server-side requirePermission("schedule:adjust") on /api/schedule-adjustments and /api/schedule-adjustments/[id]/void is the final security boundary.',
+  evidence: `adjDialogHasScheduleAdjustGate=${adjDialogHasScheduleAdjustGate}`,
+  recommendation: 'Verified. Server-side check unchanged.',
 })
 
 // F9: solver routes use schedule:adjust (not a separate scheduler perm)

@@ -17,6 +17,7 @@ import type { ScheduleViewData } from '@/types/schedule'
 import type { EntityOption } from '@/components/combobox'
 import type { ScheduleAdjustmentDryRunResult } from '@/types/schedule-adjustment'
 import { dryRunScheduleAdjustment, createScheduleAdjustment } from '@/lib/schedule/adjustment-client'
+import { useHasPermission } from '@/components/layout/current-user-context'
 
 interface ScheduleAdjustmentDialogProps {
   open: boolean
@@ -46,6 +47,11 @@ export function ScheduleAdjustmentDialog({
   const [confirmLoading, setConfirmLoading] = useState(false)
   const [confirmError, setConfirmError] = useState<string | null>(null)
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
+  // K14-FIX-A: schedule:adjust gates the real "create adjustment" submit
+  // and the void submit (in dashboard-content). Server-side
+  // requirePermission('schedule:adjust') on /api/schedule-adjustments and
+  // /api/schedule-adjustments/[id]/void remains the final security boundary.
+  const canAdjust = useHasPermission('schedule:adjust')
 
   // Reset form when item changes
   useEffect(() => {
@@ -68,6 +74,10 @@ export function ScheduleAdjustmentDialog({
 
   async function handleDryRun() {
     if (!item) return
+    if (!canAdjust) {
+      toast.error('没有调课权限', { description: '当前账号没有调课权限' })
+      return
+    }
     setDryRunLoading(true)
     setDryRunResult(null)
     setConfirmError(null)
@@ -95,6 +105,11 @@ export function ScheduleAdjustmentDialog({
 
   async function handleConfirm() {
     if (!item) return
+    if (!canAdjust) {
+      toast.error('没有调课权限', { description: '当前账号没有调课权限' })
+      setConfirmDialogOpen(false)
+      return
+    }
     setConfirmDialogOpen(false)
     setConfirmLoading(true)
     setConfirmError(null)
@@ -226,14 +241,22 @@ export function ScheduleAdjustmentDialog({
                 variant="outline"
                 size="sm"
                 onClick={handleDryRun}
-                disabled={dryRunLoading || confirmLoading || isSamePosition}
+                disabled={!canAdjust || dryRunLoading || confirmLoading || isSamePosition}
+                title={canAdjust ? undefined : '当前账号没有调课权限'}
               >
                 {dryRunLoading ? '检查中...' : '检查冲突'}
               </Button>
               <Button
                 size="sm"
-                onClick={() => setConfirmDialogOpen(true)}
-                disabled={!dryRunResult?.canApply || confirmLoading || isSamePosition}
+                onClick={() => {
+                  if (!canAdjust) {
+                    toast.error('没有调课权限', { description: '当前账号没有调课权限' })
+                    return
+                  }
+                  setConfirmDialogOpen(true)
+                }}
+                disabled={!canAdjust || !dryRunResult?.canApply || confirmLoading || isSamePosition}
+                title={canAdjust ? undefined : '当前账号没有调课权限'}
               >
                 确认调课
               </Button>
@@ -306,7 +329,7 @@ export function ScheduleAdjustmentDialog({
             <Button variant="outline" onClick={() => setConfirmDialogOpen(false)} disabled={confirmLoading}>
               取消
             </Button>
-            <Button onClick={handleConfirm} disabled={confirmLoading}>
+            <Button onClick={handleConfirm} disabled={!canAdjust || confirmLoading} title={canAdjust ? undefined : '当前账号没有调课权限'}>
               {confirmLoading ? '保存中...' : '确认调课'}
             </Button>
           </DialogFooter>

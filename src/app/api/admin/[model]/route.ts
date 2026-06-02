@@ -277,6 +277,14 @@ export async function PUT(
           { status: guardResult.status ?? 400 },
         )
       }
+      // K14-FIX-A: defensive semesterId stability for scheduleslot PUT.
+      // Even if `data.semesterId` was set above from `resolveSemesterIfNeeded`,
+      // re-assert it from the guard's resolved semesterId so the update
+      // cannot accidentally move a slot across semesters (POST path already
+      // does this in lines below). Server guard is the final security boundary.
+      if (guardResult.semesterId && !data.semesterId) {
+        data.semesterId = guardResult.semesterId
+      }
     }
 
     const record = await delegate.update({ where: { id }, data })

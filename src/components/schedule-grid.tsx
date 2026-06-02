@@ -13,6 +13,7 @@ import {
 } from '@/store/scheduleStore'
 import { ScheduleViewData } from '@/types/schedule'
 import type { WeekFilter } from '@/lib/schedule/week-filter'
+import { useHasPermission } from '@/components/layout/current-user-context'
 
 interface GridCellProps {
   day: number
@@ -51,6 +52,12 @@ interface ScheduleGridProps {
 export function ScheduleGrid({ items, selectedWeek, onAdjust, onVoidAdjustment }: ScheduleGridProps) {
   const { scheduleItems, moveSlot } = useScheduleStore()
   const [activeItem, setActiveItem] = useState<ScheduleViewData | null>(null)
+  // K14-FIX-A: data:write gates drag-to-edit. Permission resolved from
+  // CurrentUserContext (server-resolved in ProtectedShell). If the user lacks
+  // data:write, the drag handlers are no-ops and we toast. Server-side
+  // requirePermission('data:write') on /api/schedule-slot/[id] PUT is the
+  // final security boundary — this is a UX / 防止误操作加固.
+  const canWriteSchedule = useHasPermission('data:write')
 
   const displayItems = items ?? scheduleItems
 
@@ -63,6 +70,11 @@ export function ScheduleGrid({ items, selectedWeek, onAdjust, onVoidAdjustment }
   }
 
   function handleDragStart(event: DragStartEvent) {
+    if (!canWriteSchedule) {
+      setActiveItem(null)
+      toast.error('没有写权限', { description: '当前账号没有排课写入权限，无法拖拽修改课表' })
+      return
+    }
     const { active } = event
     const data = active.data.current
     if (data?.type === 'schedule-item') {
@@ -73,6 +85,11 @@ export function ScheduleGrid({ items, selectedWeek, onAdjust, onVoidAdjustment }
   async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
     setActiveItem(null)
+
+    if (!canWriteSchedule) {
+      toast.error('没有写权限', { description: '当前账号没有排课写入权限，无法修改课表' })
+      return
+    }
 
     if (!over) return
 
