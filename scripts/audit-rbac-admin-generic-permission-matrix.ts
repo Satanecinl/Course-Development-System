@@ -56,8 +56,14 @@ check(adminRoute.includes('SEMESTER_SCOPED_MODELS'), 'has semester-scoped model 
 check(adminRoute.includes('countReferences'), 'has referential integrity check on DELETE')
 
 // Check if model-specific permission matrix exists
-const hasModelSpecificMatrix = adminRoute.includes('PERMISSION_MATRIX') || adminRoute.includes('modelPermission') || adminRoute.includes('getModelPermission')
-check(!hasModelSpecificMatrix, 'No model-specific permission matrix (uniform data:write)')
+const hasModelSpecificMatrix = adminRoute.includes('getAdminWritePermission') || adminRoute.includes('PERMISSION_MATRIX') || adminRoute.includes('modelPermission')
+check(hasModelSpecificMatrix, 'Model-specific permission matrix exists (getAdminWritePermission)')
+
+// Check if schedule-sensitive models use granular permissions in generic route
+const genericRouteUsesScheduleWrite = adminRoute.includes("return 'schedule:write'") && adminRoute.includes('getAdminWritePermission')
+const genericRouteUsesTeachingTaskWrite = adminRoute.includes("return 'teaching-task:write'") && adminRoute.includes('getAdminWritePermission')
+check(genericRouteUsesScheduleWrite, 'Generic route scheduleslot uses schedule:write')
+check(genericRouteUsesTeachingTaskWrite, 'Generic route teachingtask uses teaching-task:write')
 
 // ─── 2. Dedicated Route Permissions ──────────────────────────────
 
@@ -126,20 +132,12 @@ console.log('\n── Findings ──\n')
 
 const findings = [
   {
-    id: 'K15-ADMIN-MATRIX-MEDIUM-1',
-    severity: 'MEDIUM',
-    area: 'admin generic route uniform permission',
-    description: 'Admin generic route uses data:write for POST/PUT on all 6 models. scheduleslot and teachingtask are schedule-sensitive but share the same permission as classgroup/teacher/course/room.',
-    evidence: 'route.ts:181 POST data:write, route.ts:234 PUT data:write. 6 models in MODEL_MAP.',
-    recommendation: 'Migrate scheduleslot write to schedule:write, teachingtask write to teaching-task:write in generic route.',
-  },
-  {
-    id: 'K15-ADMIN-MATRIX-MEDIUM-2',
-    severity: 'MEDIUM',
-    area: 'dedicated vs generic permission inconsistency',
-    description: 'Dedicated routes use granular permissions (schedule:write, teaching-task:write) but the generic admin route still uses data:write for the same model operations.',
-    evidence: 'schedule-slot POST/PUT: schedule:write (dedicated) vs data:write (generic). teaching-task PUT: teaching-task:write (dedicated) vs data:write (generic).',
-    recommendation: 'Align generic route permissions with dedicated routes for consistency.',
+    id: 'K15-ADMIN-MATRIX-NONE-4',
+    severity: 'NONE',
+    area: 'admin generic server matrix',
+    description: 'Admin generic route now uses model-specific write permissions via getAdminWritePermission helper. scheduleslot uses schedule:write, teachingtask uses teaching-task:write, ordinary models use data:write.',
+    evidence: 'getAdminWritePermission returns schedule:write for scheduleslot, teaching-task:write for teachingtask, data:write for others. POST and PUT both use the helper.',
+    recommendation: 'Phase D server matrix done. Frontend admin model-specific gating pending (Phase E).',
   },
   {
     id: 'K15-ADMIN-MATRIX-MEDIUM-3',
@@ -147,7 +145,7 @@ const findings = [
     area: 'frontend no model-specific gating',
     description: 'Admin data page frontend has zero client-side permission checks. All write buttons are always visible. A user with data:write but lacking schedule:write/teaching-task:write will see buttons but get 403 on click.',
     evidence: 'No useHasPermission calls in src/components/admin-db/ or src/app/admin/db/.',
-    recommendation: 'After server-side migration, add frontend model-specific permission gating to prevent 403 UX.',
+    recommendation: 'Add frontend model-specific permission gating in Phase E to prevent 403 UX.',
   },
   {
     id: 'K15-ADMIN-MATRIX-LOW-1',

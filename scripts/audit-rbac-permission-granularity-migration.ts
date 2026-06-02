@@ -351,6 +351,12 @@ const phaseCDone = frontendUsesScheduleWrite && !frontendStillUsesDataWrite
 const adminGenericRoute = readFile('src/app/api/admin/[model]/route.ts') ?? ''
 const adminGenericStillUsesDataWrite = adminGenericRoute.includes("requirePermission('data:write'")
 
+// Phase D Detection: admin generic route uses model-specific permissions
+const adminGenericHasHelper = adminGenericRoute.includes('getAdminWritePermission')
+const adminGenericScheduleslotUsesScheduleWrite = adminGenericRoute.includes("return 'schedule:write'") && adminGenericHasHelper
+const adminGenericTeachingtaskUsesTeachingTaskWrite = adminGenericRoute.includes("return 'teaching-task:write'") && adminGenericHasHelper
+const phaseDDone = adminGenericScheduleslotUsesScheduleWrite && adminGenericTeachingtaskUsesTeachingTaskWrite && !adminGenericStillUsesDataWrite
+
 // ─── Output ───────────────────────────────────────────────────────
 
 console.log('═'.repeat(70))
@@ -379,7 +385,8 @@ console.log(`  Frontend migration pending: ${frontendStillUsesDataWrite ? 'YES (
 console.log(`  Admin generic still uses data:write: ${adminGenericStillUsesDataWrite ? 'YES' : 'NO'}`)
 console.log(`  Phase B (dedicated routes): ${dedicatedRouteMigrationDone ? 'DONE' : 'PENDING'}`)
 console.log(`  Phase C (frontend gating): ${phaseCDone ? 'DONE' : 'PENDING'}`)
-console.log(`  Phase D (admin generic route): PENDING`)
+console.log(`  Phase D (admin generic route): ${phaseDDone ? 'DONE' : 'PENDING'}`)
+console.log(`  Phase E (admin frontend model gating): PENDING`)
 
 console.log('\n── Permission Strings ──')
 for (const p of PERMISSIONS) console.log(`  ${p}`)
@@ -553,6 +560,17 @@ if (phaseCDone) {
   })
 }
 
+if (phaseDDone) {
+  findings.push({
+    id: 'K15-RBAC-NONE-6',
+    severity: 'NONE',
+    area: 'Phase D admin generic server matrix',
+    description: 'Admin generic route now uses model-specific write permissions. scheduleslot uses schedule:write, teachingtask uses teaching-task:write, ordinary models use data:write. Frontend admin data page has no model-specific gating.',
+    evidence: `Admin generic has getAdminWritePermission helper. scheduleslot uses schedule:write=${adminGenericScheduleslotUsesScheduleWrite}, teachingtask uses teaching-task:write=${adminGenericTeachingtaskUsesTeachingTaskWrite}.`,
+    recommendation: 'Phase D complete. Proceed to Phase E (admin frontend model-specific permission gating).',
+  })
+}
+
 // ─── Output Findings ──────────────────────────────────────────────
 
 console.log('\n── Findings ──')
@@ -592,7 +610,14 @@ console.log('')
 console.log('  Recommendation: Option A — minimal split preserves backward compatibility while addressing the core issue (data:write covering schedule-sensitive operations).')
 
 console.log('\n── Migration Recommendation ──')
-if (phaseADone && dedicatedRouteMigrationDone && phaseCDone) {
+if (phaseADone && dedicatedRouteMigrationDone && phaseCDone && phaseDDone) {
+  console.log(`  Phase A: DONE — schedule:write and teaching-task:write defined and seeded to ADMIN`)
+  console.log(`  Phase B (dedicated routes): DONE — schedule-slot/teaching-task routes use new permissions`)
+  console.log(`  Phase C (frontend gating): DONE — schedule-grid uses schedule:write`)
+  console.log(`  Phase D (admin generic route): DONE — admin/[model] uses model-specific permissions`)
+  console.log(`  Phase E (admin frontend model gating): PENDING — admin data page has no model-specific permission checks`)
+  console.log(`  Next step: Phase E — add frontend model-specific permission gating to admin data page`)
+} else if (phaseADone && dedicatedRouteMigrationDone && phaseCDone) {
   console.log(`  Phase A: DONE — schedule:write and teaching-task:write defined and seeded to ADMIN`)
   console.log(`  Phase B (dedicated routes): DONE — schedule-slot/teaching-task routes use new permissions`)
   console.log(`  Phase C (frontend gating): DONE — schedule-grid uses schedule:write`)

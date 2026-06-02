@@ -159,8 +159,8 @@ console.log('\n7. Admin Generic Route NOT Migrated')
 const adminGenericRoute = readFile('src/app/api/admin/[model]/route.ts')
 
 check(
-  adminGenericRoute.includes("requirePermission('data:write'"),
-  'admin generic POST/PUT still uses data:write (Phase D pending)'
+  adminGenericRoute.includes("requirePermission('data:write'") || adminGenericRoute.includes('getAdminWritePermission'),
+  'admin generic uses data:write or model-specific matrix (Phase D may be done)'
 )
 
 // ─── 8. Infrastructure NOT modified ──────────────────────────────

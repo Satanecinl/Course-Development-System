@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requirePermission } from '@/lib/auth/require-permission'
+import type { PermissionKey } from '@/lib/auth/types'
 import { resolveSchedulerSemester } from '@/lib/semester'
 import { guardAdminSlotUpdate, guardAdminSlotCreate } from '@/lib/schedule/slot-mutation-guard'
 import { guardAdminTaskUpdate } from '@/lib/schedule/teaching-task-mutation-guard'
@@ -21,6 +22,16 @@ const FIELD_WHITELIST: Record<string, string[]> = {
   room: ['name', 'building', 'capacity', 'type'],
   teachingtask: ['courseId', 'teacherId', 'weekType', 'startWeek', 'endWeek', 'remark'],
   scheduleslot: ['teachingTaskId', 'roomId', 'dayOfWeek', 'slotIndex'],
+}
+
+// K15-FIX-D: Model-specific write permission matrix.
+// Schedule-sensitive models use granular permissions aligned with dedicated routes.
+// Ordinary models continue to use data:write.
+function getAdminWritePermission(model: string): PermissionKey {
+  const m = model.toLowerCase()
+  if (m === 'scheduleslot') return 'schedule:write'
+  if (m === 'teachingtask') return 'teaching-task:write'
+  return 'data:write'
 }
 
 const INCLUDE_MAP: Record<string, object> = {
@@ -178,10 +189,10 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ model: string }> }
 ) {
-  const auth = await requirePermission('data:write', req)
+  const { model } = await params
+  const auth = await requirePermission(getAdminWritePermission(model), req)
   if ('error' in auth) return auth.error
 
-  const { model } = await params
   const delegate = getDelegate(model)
   if (!delegate) {
     return NextResponse.json({ error: '未知数据表' }, { status: 400 })
@@ -231,10 +242,10 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ model: string }> }
 ) {
-  const auth = await requirePermission('data:write', req)
+  const { model } = await params
+  const auth = await requirePermission(getAdminWritePermission(model), req)
   if ('error' in auth) return auth.error
 
-  const { model } = await params
   const delegate = getDelegate(model)
   if (!delegate) {
     return NextResponse.json({ error: '未知数据表' }, { status: 400 })

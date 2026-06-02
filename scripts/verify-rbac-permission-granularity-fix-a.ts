@@ -115,11 +115,13 @@ check(
   `teaching-task PUT: ${taskUpdateMigrated ? 'migrated to teaching-task:write' : 'still uses data:write (pre-Phase B)'}`
 )
 
-// Admin generic route must NOT be migrated yet (Phase D pending)
+// Admin generic route: flexible (pre-Phase D or post-Phase D)
 const adminGenericRoute = readFile('src/app/api/admin/[model]/route.ts')
+const adminGenericUsesDataWrite = adminGenericRoute.includes("requirePermission('data:write'")
+const adminGenericUsesMatrix = adminGenericRoute.includes('getAdminWritePermission')
 check(
-  adminGenericRoute.includes("requirePermission('data:write'"),
-  'admin generic POST/PUT still uses data:write (Phase D pending)'
+  adminGenericUsesDataWrite || adminGenericUsesMatrix,
+  `admin generic: ${adminGenericUsesMatrix ? 'uses model-specific matrix (Phase D done)' : 'uses data:write (Phase D pending)'}`
 )
 
 // Report Phase B status
