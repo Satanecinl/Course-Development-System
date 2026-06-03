@@ -82,7 +82,9 @@ model TeachingTask {
   weekType      String              @default("ALL")
   startWeek     Int                 @default(1)
   endWeek       Int                 @default(16)
-  remark        String?
+  remark              String?
+  crossCohortApproved       Boolean  @default(false)
+  crossCohortApprovalReason String?
   importBatchId Int?
   importBatch   ImportBatch?        @relation(fields: [importBatchId], references: [id])
   semesterId    Int?

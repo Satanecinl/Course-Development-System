@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requirePermission } from '@/lib/auth/require-permission'
-import type { ImportStrategy } from '@/lib/import/importer'
+import type { ImportStrategy, CrossCohortApproval } from '@/lib/import/importer'
 import { confirmImportBatchDryRun, confirmImportBatch } from '@/lib/import/importer'
 import { resolveSchedulerSemester } from '@/lib/semester'
 
@@ -10,6 +10,7 @@ interface ConfirmRequest {
   dryRun?: boolean
   confirmText?: string
   semesterId?: number
+  crossCohortApprovals?: CrossCohortApproval[]
 }
 
 export async function POST(request: NextRequest) {
@@ -57,10 +58,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const result = await confirmImportBatch(body.batchId, body.strategy, semester.id)
+    // K19-FIX-B1: crossCohortApprovals 透传到 importer
+    const result = await confirmImportBatch(body.batchId, body.strategy, semester.id, body.crossCohortApprovals)
     return NextResponse.json({ success: true, dryRun: false, result })
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e)
+    // K19-FIX-B1: approval validation failure → 409
+    if (message.includes('CROSS_COHORT_APPROVAL_REQUIRED')) {
+      return NextResponse.json(
+        { success: false, error: message, details: 'cross-cohort approval validation failed' },
+        { status: 409 },
+      )
+    }
     return NextResponse.json({ success: false, error: message }, { status: 500 })
   }
 }

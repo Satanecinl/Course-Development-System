@@ -11,6 +11,13 @@ import type { PrismaClient } from '@prisma/client'
 
 export type ImportStrategy = 'UPSERT_BY_NATURAL_KEY'
 
+/** K19-FIX-B1: cross-cohort approval 透传项 */
+export interface CrossCohortApproval {
+  taskKey: string      // 由 buildApprovalTaskKey 生成的确定性 key
+  approved: boolean
+  reason?: string
+}
+
 export interface StudentCountUpdate {
   className: string
   studentCount: number
@@ -533,6 +540,73 @@ async function prepareRecords(batchId: number, targetSemesterId?: number): Promi
 
 // ── 事务内真实写入逻辑 ──
 
+// K19-FIX-B1: 生成确定性 taskKey，用于匹配 crossCohortApproval
+// key = courseName|teacherName|weekType|startWeek|endWeek
+// 与内部 taskKey 逻辑一致但不含 canonicalSet（canonicalSet 在同一 batch 内同课程同教师通常唯一）
+export function buildApprovalTaskKey(
+  courseName: string,
+  teacherName: string | null,
+  weekType: string,
+  startWeek: number,
+  endWeek: number,
+): string {
+  return [courseName, teacherName ?? '**NULL_TEACHER**', weekType, String(startWeek), String(endWeek)].join('|')
+}
+
+// K19-FIX-B1: 验证 cross-cohort approvals — 在事务内/外均可调用
+export interface CrossCohortApprovalValidationResult {
+  ok: boolean
+  errors: string[]
+  approvalsMap: Map<string, CrossCohortApproval>
+}
+
+export function validateCrossCohortApprovals(
+  warnings: string[],
+  approvals: CrossCohortApproval[] | undefined,
+): CrossCohortApprovalValidationResult {
+  const errors: string[] = []
+
+  // 建立 approval map (last-wins on duplicate taskKey)
+  const approvalsMap = new Map<string, CrossCohortApproval>()
+  if (approvals) {
+    for (const a of approvals) {
+      approvalsMap.set(a.taskKey, a)
+    }
+  }
+
+  // 从 warnings 中提取 LIKELY_ERROR_CROSS_COHORT 和嵌入的 taskKey
+  for (const w of warnings) {
+    if (!w.includes('LIKELY_ERROR_CROSS_COHORT')) continue
+
+    // 提取 taskKey（从 warning 中嵌入的 taskKey=... 提取）
+    const tkMatch = w.match(/taskKey=([^)]+)\)/)
+    const taskKey = tkMatch ? tkMatch[1] : null
+    if (!taskKey) {
+      errors.push(`LIKELY_ERROR warning without embedded taskKey: ${w.substring(0, 120)}`)
+      continue
+    }
+
+    const approval = approvalsMap.get(taskKey)
+    if (!approval) {
+      errors.push(`Missing crossCohortApproval for LIKELY_ERROR taskKey="${taskKey}"`)
+      continue
+    }
+
+    if (!approval.approved) {
+      errors.push(`Cross-cohort approval not granted (approved=false) for taskKey="${taskKey}"`)
+      continue
+    }
+
+    // reason 必填且 >= 5 chars
+    if (!approval.reason || approval.reason.trim().length < 5) {
+      errors.push(`Cross-cohort approval reason required (>= 5 chars) for taskKey="${taskKey}"`)
+      continue
+    }
+  }
+
+  return { ok: errors.length === 0, errors, approvalsMap }
+}
+
 type TxClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0]
 
 async function executeImportInTransaction(
@@ -540,6 +614,7 @@ async function executeImportInTransaction(
   prepared: PreparedData,
   batchId: number,
   semesterId: number,
+  approvalsMap?: Map<string, CrossCohortApproval>,
 ): Promise<ImportExecutionResult> {
   const { records, classification, classNames, teacherNames, courseNames, roomNames, taskKeyToClassNames, taskKeyToRecord, taskKeys, slotKeyToRecord, slotKeys, missingTeacherCount, missingRoomCount } = prepared
 
@@ -686,17 +761,32 @@ async function executeImportInTransaction(
         ? LIKELY_PUBLIC_COURSE_HINTS.some((h) => courseName.includes(h))
         : false
 
-      let allowedCrossCohort = false
+      let crossCohortApproved = false
+      let crossCohortApprovalReason: string | null = null
+      const approvalTaskKey = buildApprovalTaskKey(courseName, teacherName, weekType, startWeek, endWeek)
+
       if (cohortYearSet.size > 1) {
+        // K19-FIX-B1: 查找 approval（operator 通过前端提供的 approval 列表）
+        const approval = approvalsMap?.get(approvalTaskKey)
+
         if (isPublicCourse) {
+          // LEGAL_PUBLIC: 不强制 approval，但如有则记录
           warnings.push(
-            `LEGAL_PUBLIC_CROSS_COHORT: course="${courseName}" links ${cohortYearSet.size} cohorts (${[...cohortYearSet].sort().join(',')}) — allowed as public-course 合班`,
+            `LEGAL_PUBLIC_CROSS_COHORT: course="${courseName}" links ${cohortYearSet.size} cohorts (${[...cohortYearSet].sort().join(',')}) — allowed as public-course 合班 (taskKey=${approvalTaskKey})`,
           )
-          allowedCrossCohort = true
+          if (approval?.approved && approval.reason?.trim().length) {
+            crossCohortApproved = true
+            crossCohortApprovalReason = approval.reason.trim()
+          }
         } else {
+          // LIKELY_ERROR: 必须有 approval 才能进入（由 validateCrossCohortApprovals 阻断）
           warnings.push(
-            `LIKELY_ERROR_CROSS_COHORT: course="${courseName}" links ${cohortYearSet.size} cohorts (${[...cohortYearSet].sort().join(',')}) — not a known public course; review manually`,
+            `LIKELY_ERROR_CROSS_COHORT: course="${courseName}" links ${cohortYearSet.size} cohorts (${[...cohortYearSet].sort().join(',')}) — not a known public course; review manually (taskKey=${approvalTaskKey})`,
           )
+          if (approval?.approved && approval.reason?.trim().length) {
+            crossCohortApproved = true
+            crossCohortApprovalReason = approval.reason.trim()
+          }
         }
       }
 
@@ -710,6 +800,8 @@ async function executeImportInTransaction(
           remark: remark || null,
           importBatchId: batchId,
           semesterId,
+          crossCohortApproved,
+          crossCohortApprovalReason,
         },
       })
       taskKeyToTaskId.set(taskKey, task.id)
@@ -720,8 +812,6 @@ async function executeImportInTransaction(
         await tx.teachingTaskClass.create({ data: { teachingTaskId: task.id, classGroupId: cgId } })
         ttcCreated++
       }
-      // allowedCrossCohort 当前仅作 warning-first 占位，标志未使用
-      void allowedCrossCohort
     }
   }
 
@@ -947,6 +1037,7 @@ export async function confirmImportBatch(
   batchId: number,
   strategy: ImportStrategy,
   semesterId: number,
+  approvals?: CrossCohortApproval[],
 ): Promise<ConfirmImportResult> {
   // 1. 读取 ImportBatch
   const batch = await prisma.importBatch.findUnique({ where: { id: batchId } })
@@ -980,6 +1071,15 @@ export async function confirmImportBatch(
   }
 
   // 3. confirmed / confirming guard (scoped to target semester)
+  // K19-FIX-B1: 检查 LIKELY_ERROR_CROSS_COHORT warnings 是否有对应 approval
+  const crossCohortValidation = validateCrossCohortApprovals(
+    [...prepared.classification.warnings, ...prepared.mergeWarnings],
+    approvals,
+  )
+  if (!crossCohortValidation.ok) {
+    throw new Error(`CROSS_COHORT_APPROVAL_REQUIRED: ${crossCohortValidation.errors.join('; ')}`)
+  }
+
   const existingConfirmed = await prisma.importBatch.findFirst({
     where: { id: { not: batchId }, status: { in: ['confirmed', 'confirming'] }, semesterId },
     select: { id: true, status: true },
@@ -1000,7 +1100,15 @@ export async function confirmImportBatch(
   // 5. 执行真实 transaction
   try {
     const execResult = await prisma.$transaction(async (tx) => {
-      const result = await executeImportInTransaction(tx, prepared, batchId, semesterId)
+      const result = await executeImportInTransaction(tx, prepared, batchId, semesterId, crossCohortValidation.approvalsMap)
+
+      // K19-FIX-B1: versioned warningsJson 持久化
+      const warningsPayload = {
+        version: 2,
+        generatedAt: new Date().toISOString(),
+        warnings: result.warnings,
+        crossCohortApprovals: approvals ?? [],
+      }
 
       // 在 transaction 内更新 ImportBatch 为 confirmed
       await tx.importBatch.update({
@@ -1011,7 +1119,7 @@ export async function confirmImportBatch(
           strategy,
           createdTaskCount: result.teachingTasks.created,
           createdSlotCount: result.scheduleSlots.created,
-          warningsJson: JSON.stringify(result.warnings),
+          warningsJson: JSON.stringify(warningsPayload),
         },
       })
 
