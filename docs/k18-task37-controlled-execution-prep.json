@@ -1,0 +1,257 @@
+{
+  "generatedAt": "2026-06-03T05:22:44.108Z",
+  "phase": "K18-E2",
+  "mode": "read-only",
+  "dbChangesMade": false,
+  "backupCreatedInThisStage": false,
+  "summary": {
+    "taskId": 37,
+    "courseName": "习近平新时代中国特色社会主义思想概论",
+    "teacherName": "房忠敏",
+    "importBatchId": 1,
+    "importBatchStatus": "confirmed",
+    "suggestedNextStage": "K18-E3-TASK37-FINALIZATION-EXECUTE"
+  },
+  "currentState": {
+    "teachingTaskId": 37,
+    "courseName": "习近平新时代中国特色社会主义思想概论",
+    "teacherName": "房忠敏",
+    "importBatchId": 1,
+    "importBatchStatus": "confirmed",
+    "currentClassGroupIds": [
+      3,
+      17,
+      35
+    ],
+    "currentTeachingTaskClassIds": [
+      92,
+      93,
+      94
+    ],
+    "currentStudentCount": 98,
+    "currentCohortYears": [
+      2024,
+      2025
+    ],
+    "currentIsCrossCohort": true,
+    "scheduleSlotId": 43,
+    "roomName": "1号楼虚拟仿真实训室",
+    "roomCapacity": 100
+  },
+  "candidateState": {
+    "candidateClassGroupIds": [
+      3,
+      17
+    ],
+    "candidateTeachingTaskClassIdsToKeep": [
+      92,
+      93
+    ],
+    "candidateLinkToExcludeFromFutureState": {
+      "ttcId": 94,
+      "classGroupId": 35,
+      "classGroupName": "2024级森林草原防火技术1班"
+    },
+    "candidateStudentCount": 61,
+    "candidateCohortYears": [
+      2025
+    ],
+    "candidateIsCrossCohort": false,
+    "preservedTeachingTaskId": 37,
+    "preservedScheduleSlotId": 43,
+    "preservedClassGroupIds": [
+      3,
+      17,
+      35
+    ],
+    "preservedImportBatchId": 1
+  },
+  "readinessChecks": [
+    {
+      "id": "task37_exists",
+      "pass": true,
+      "detail": "Task 37 found: 习近平新时代中国特色社会主义思想概论",
+      "required": true
+    },
+    {
+      "id": "course_is_xi Jinping",
+      "pass": true,
+      "detail": "Course: 习近平新时代中国特色社会主义思想概论",
+      "required": true
+    },
+    {
+      "id": "teacher_is_fangZhongMin",
+      "pass": true,
+      "detail": "Teacher: 房忠敏",
+      "required": true
+    },
+    {
+      "id": "importBatch_1_exists",
+      "pass": true,
+      "detail": "ImportBatch: id=1, status=confirmed",
+      "required": true
+    },
+    {
+      "id": "importBatch_1_confirmed",
+      "pass": true,
+      "detail": "ImportBatch status: confirmed",
+      "required": true
+    },
+    {
+      "id": "current_cg_ids_include_3_17_35",
+      "pass": true,
+      "detail": "CG IDs: [3, 17, 35]",
+      "required": true
+    },
+    {
+      "id": "current_ttc_ids_include_92_93_94",
+      "pass": true,
+      "detail": "TTC IDs: [92, 93, 94]",
+      "required": true
+    },
+    {
+      "id": "ttc_94_belongs_to_task37_and_cg35",
+      "pass": true,
+      "detail": "TTC 94: task=37, cg=35",
+      "required": true
+    },
+    {
+      "id": "cg35_exists",
+      "pass": true,
+      "detail": "CG 35: 2024级森林草原防火技术1班",
+      "required": true
+    },
+    {
+      "id": "scheduleSlot_43_exists",
+      "pass": true,
+      "detail": "Slot 43 found",
+      "required": true
+    },
+    {
+      "id": "scheduleSlot_43_belongs_to_task37",
+      "pass": true,
+      "detail": "Slot 43 belongs to task 37",
+      "required": true
+    },
+    {
+      "id": "candidate_keeps_cg_3_and_17",
+      "pass": true,
+      "detail": "Candidate CG IDs: [3, 17]",
+      "required": true
+    },
+    {
+      "id": "candidate_keeps_at_least_one_cg",
+      "pass": true,
+      "detail": "Candidate CG count: 2",
+      "required": true
+    },
+    {
+      "id": "candidate_preserves_task37",
+      "pass": true,
+      "detail": "Task 37 preserved",
+      "required": true
+    },
+    {
+      "id": "candidate_preserves_slot43",
+      "pass": true,
+      "detail": "Slot 43 preserved",
+      "required": true
+    },
+    {
+      "id": "candidate_preserves_cg35_standalone",
+      "pass": true,
+      "detail": "CG 35 preserved as standalone ClassGroup (unlinked)",
+      "required": true
+    },
+    {
+      "id": "e1_json_current_state_matches_db",
+      "pass": true,
+      "detail": "E1 CG IDs: [3, 17, 35], DB CG IDs: [3, 17, 35]",
+      "required": true
+    },
+    {
+      "id": "d2_json_current_state_matches_db",
+      "pass": true,
+      "detail": "D2 CG IDs: [3, 17, 35], DB CG IDs: [3, 17, 35]",
+      "required": true
+    },
+    {
+      "id": "k18c_decision_is_likely_error",
+      "pass": true,
+      "detail": "K18-C decision: LIKELY_ERROR",
+      "required": true
+    },
+    {
+      "id": "k18b_validator_still_valid",
+      "pass": true,
+      "detail": "K18-B validator script exists: true",
+      "required": true
+    },
+    {
+      "id": "no_db_changes_made",
+      "pass": true,
+      "detail": "Script is read-only, no mutations performed",
+      "required": true
+    }
+  ],
+  "backupReadiness": {
+    "dbPath": "prisma/dev.db",
+    "backupDirectoryCandidate": "prisma/",
+    "backupFileNamePattern": "dev.db.backup-before-k18-task37-finalization-20260603052244",
+    "backupNeededBeforeFutureWrite": true,
+    "backupCreatedInThisStage": false
+  },
+  "futureValidationPlan": {
+    "checks": [
+      "confirm task37 still exists",
+      "confirm candidate classGroups 3 and 17 remain linked",
+      "confirm candidate-excluded link (TTC 94) no longer present in future state",
+      "confirm ClassGroup35 still exists",
+      "confirm ScheduleSlot43 still exists and belongs to task37",
+      "confirm ImportBatch1 unchanged",
+      "confirm no remaining unaccepted cross-cohort task",
+      "run K18-B validator (validate-cross-cohort-data-repair-k18-b)",
+      "run K18-C review (review-task37-source-artifact-k18-c)",
+      "run K18-E1 preview (dry-run-task37-readonly-preview-k18-e1)",
+      "run build / lint / test baseline"
+    ]
+  },
+  "expectedImpact": {
+    "display": {
+      "description": "候选 display 只包含 2025级钢铁智能冶金技术1班（高本贯通）和 2025级森林草原防火技术1班",
+      "candidateClassGroups": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级森林草原防火技术1班"
+      ],
+      "excludedClassGroup": "2024级森林草原防火技术1班"
+    },
+    "adjustment": {
+      "description": "Slot 43 仍属于 task37，调课功能不受影响",
+      "slotId": 43,
+      "dayOfWeek": 1,
+      "slotIndex": 5
+    },
+    "export": {
+      "description": "候选 export 只包含 CG3 和 CG17",
+      "candidateClassGroupNames": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级森林草原防火技术1班"
+      ]
+    },
+    "solverInput": {
+      "description": "候选 student count 61",
+      "expectedStudentCount": 61
+    },
+    "capacity": {
+      "description": "Room capacity 足够",
+      "roomCapacity": 100,
+      "candidateStudentCount": 61,
+      "sufficient": true
+    }
+  },
+  "openQuestions": [
+    "是否需要为 2024级森林草原防火技术1班 创建独立 TeachingTask？(K18-C 建议: 否)",
+    "ClassGroup 35 的学生是否需要在其他课程中重新安排？"
+  ],
+  "suggestedNextStage": "K18-E3-TASK37-FINALIZATION-EXECUTE"
+}
