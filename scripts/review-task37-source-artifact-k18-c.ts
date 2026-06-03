@@ -17,8 +17,6 @@ const prisma = new PrismaClient()
 const OUTPUT_JSON = path.resolve('docs/k18-task37-source-artifact-review.json')
 const OUTPUT_MD = path.resolve('docs/k18-task37-source-artifact-review.md')
 const K17_DECISION_JSON = path.resolve('docs/k17-cross-cohort-review-decision.json')
-const K17_AUDIT_JSON = path.resolve('docs/k17-data-quality-classgroup-matching-audit.json')
-const K18_PLAN_JSON = path.resolve('docs/k18-cross-cohort-data-repair-plan.json')
 const K18_EXEC_JSON = path.resolve('docs/k18-cross-cohort-data-repair-execute.json')
 const IMPORTS_DIR = path.resolve('uploads/imports')
 
@@ -37,6 +35,10 @@ interface SourceEvidence {
   evidenceGaps: string[]
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
 function extractCohortYear(name: string): number | null {
   const m = name.match(/^(\d{4})级/)
   return m ? parseInt(m[1], 10) : null
@@ -47,7 +49,7 @@ function extractTrack(name: string): string | null {
   return m ? m[1] : null
 }
 
-function readJsonSafe(filePath: string): any | null {
+function readJsonSafe(filePath: string): unknown {
   try {
     if (!fs.existsSync(filePath)) return null
     return JSON.parse(fs.readFileSync(filePath, 'utf-8'))
@@ -64,14 +66,16 @@ function searchParsedJsonRecords(
   if (!fs.existsSync(jsonPath)) return results
 
   try {
-    const data = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'))
-    const records: any[] = Array.isArray(data) ? data : (data.records || [])
+    const data: unknown = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'))
+    const records: unknown[] = Array.isArray(data) ? data : (isRecord(data) && Array.isArray(data.records) ? data.records : [])
 
     for (const r of records) {
-      const className = r.class_info?.class_name || r.className || ''
-      const teacher = r.teacher || r.teacherName || ''
-      const course = r.course || r.courseName || ''
-      const remark = r.remark || ''
+      if (!isRecord(r)) continue
+      const classInfo = isRecord(r.class_info) ? r.class_info : undefined
+      const className = (typeof classInfo?.class_name === 'string' ? classInfo.class_name : '') || (typeof r.className === 'string' ? r.className : '')
+      const teacher = (typeof r.teacher === 'string' ? r.teacher : '') || (typeof r.teacherName === 'string' ? r.teacherName : '')
+      const course = (typeof r.course === 'string' ? r.course : '') || (typeof r.courseName === 'string' ? r.courseName : '')
+      const remark = typeof r.remark === 'string' ? r.remark : ''
 
       // Match by course
       if (course.includes('习近平新时代')) {
@@ -234,8 +238,6 @@ async function main() {
 
   // Check historical JSONs for additional context
   const k17Decision = readJsonSafe(K17_DECISION_JSON)
-  const k17Audit = readJsonSafe(K17_AUDIT_JSON)
-  const k18Plan = readJsonSafe(K18_PLAN_JSON)
   const k18Exec = readJsonSafe(K18_EXEC_JSON)
 
   // ── 3. Related tasks analysis ──
@@ -368,9 +370,13 @@ async function main() {
     suggestedNextStage,
     blocking,
     historicalContext: {
-      k17DecisionTask37: k17Decision?.decisions?.find((d: any) => d.taskId === 37) || null,
-      k18RepairExecuted: k18Exec?.applied || false,
-      k18DeletedTtcIds: k18Exec?.deletedLinks?.map((l: any) => l.ttcId) || [],
+      k17DecisionTask37: isRecord(k17Decision) && Array.isArray(k17Decision.decisions)
+        ? (k17Decision.decisions as Record<string, unknown>[]).find((d) => d.taskId === 37) || null
+        : null,
+      k18RepairExecuted: isRecord(k18Exec) ? !!k18Exec.applied : false,
+      k18DeletedTtcIds: isRecord(k18Exec) && Array.isArray(k18Exec.deletedLinks)
+        ? (k18Exec.deletedLinks as Record<string, unknown>[]).map((l) => l.ttcId)
+        : [],
     },
   }
 
