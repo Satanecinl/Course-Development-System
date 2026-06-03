@@ -1,0 +1,334 @@
+{
+  "summary": {
+    "HIGH": 0,
+    "MEDIUM": 4,
+    "LOW": 2,
+    "INFO": 2,
+    "NONE": 0,
+    "BLOCKING": 0,
+    "TOTAL": 8
+  },
+  "findings": [
+    {
+      "id": "K19-RULE-A-001",
+      "severity": "MEDIUM",
+      "category": "WEAK_MATCHING",
+      "title": "ClassGroup matching uses .includes() + subsequence matching after a year/track pre-filter",
+      "evidence": "findMergedClassNames found in: C:/Users/Satanecinl/Desktop/Course Development System/my-app/src/lib/import/importer.ts; .includes() weak matching in src/lib/import/: C:/Users/Satanecinl/Desktop/Course Development System/my-app/src/lib/import/importer.ts, C:/Users/Satanecinl/Desktop/Course Development System/my-app/src/lib/import/parse-utils.ts, C:/Users/Satanecinl/Desktop/Course Development System/my-app/src/lib/import/quality-classifier.ts; subsequence matching present in: C:/Users/Satanecinl/Desktop/Course Development System/my-app/src/lib/import/importer.ts",
+      "files": [
+        "src/lib/import/importer.ts",
+        "src/lib/import/parse-utils.ts",
+        "scripts/seed_db.ts"
+      ],
+      "codeReferences": [
+        "src/lib/import/importer.ts:171-196 filterCandidatesByYearAndTrack",
+        "src/lib/import/importer.ts:227-296 findMergedClassNames",
+        "src/lib/import/importer.ts:243-249 c.name.includes(kw) includes() match",
+        "src/lib/import/importer.ts:265-281 subsequence char-by-char match",
+        "scripts/seed_db.ts:177-237 findMergedClassIds (legacy, similar logic)"
+      ],
+      "affectedHistoricalTasks": [
+        37,
+        168,
+        174,
+        176,
+        181
+      ],
+      "reproductionRisk": "POSSIBLE",
+      "recommendation": "Switch to exact-name-first strategy: (1) try `name === baseClass || name === keyword` first; (2) require candidate cohortYear EQUAL to baseClass cohortYear UNLESS both baseClass and candidate are explicitly marked as public/cross-cohort. Add ambiguity warning for any non-exact match.",
+      "suggestedNextStage": "K19-FIX-A-IMPORT-MATCHING-COHORT-GUARD"
+    },
+    {
+      "id": "K19-RULE-B-001",
+      "severity": "LOW",
+      "category": "REMARK_PARSING",
+      "title": "remark parsing does not distinguish explicit year markers from implicit short forms",
+      "evidence": "parseRemarkKeywords found in: C:/Users/Satanecinl/Desktop/Course Development System/my-app/src/lib/import/importer.ts; 房忠敏+习近平 remark sample: 2025级钢铁智能冶金技术1班（高本贯通） | remark=与森防合班 | 2025级森林草原防火技术1班 | remark=与高本贯通合班 | 2025级护理（二年制）1班 张洪宇[手机号已脱敏] | remark=429 | 2025级护理（二年制）2班张洪宇[手机号已脱敏] | remark=429 | 2025级口腔医学技术1班 | remark=614 | 2025 级口腔医学技术2班 | remark=614 | 2025级高速铁路客运服务1班 | remark=(null) | 2025级高速铁路客运服务1班 | remark=八东一 | 2025级高速铁路客运服务2班 | remark=(null) | 2025级高速铁路客运服务2班 | remark=八东一; cohort-explicit remark count=0",
+      "files": [
+        "src/lib/import/importer.ts:200-225 parseRemarkKeywords",
+        "src/lib/import/importer.ts:227-296 findMergedClassNames",
+        "scripts/seed_db.ts:93-127 parseRemarkKeywords (legacy, same logic)"
+      ],
+      "codeReferences": [
+        "src/lib/import/importer.ts:206-225 parseRemarkKeywords generates multiple keyword variations"
+      ],
+      "affectedHistoricalTasks": [
+        37,
+        168,
+        174,
+        176,
+        181
+      ],
+      "reproductionRisk": "POSSIBLE",
+      "recommendation": "When the remark contains an explicit year marker (e.g. \"2024级森林草原防火技术1班\"), prefer exact-match on the literal substring over the multi-granularity keyword generation. When no explicit year is present, require candidate year to MATCH baseClass year (already done in filterCandidatesByYearAndTrack) AND emit a warning when the merge involves a different track (e.g. 高本贯通 vs 现场工程师).",
+      "suggestedNextStage": "K19-FIX-A-IMPORT-MATCHING-COHORT-GUARD"
+    },
+    {
+      "id": "K19-RULE-C-001",
+      "severity": "LOW",
+      "category": "COHORT_GUARD",
+      "title": "ClassGroup upsert uses name only, no cohort/track guard at write time",
+      "evidence": "ClassGroup.upsert is by name only (line 472-487 of importer.ts). No cohort guard at upsert level.; No references to cohortYear in src/lib/* (cohort inference is only done in audit scripts, not importer)",
+      "files": [
+        "src/lib/import/importer.ts:469-488 ClassGroup upsert",
+        "src/lib/import/importer.ts:171-196 filterCandidatesByYearAndTrack"
+      ],
+      "codeReferences": [
+        "src/lib/import/importer.ts:472 tx.classGroup.findFirst({ where: { semesterId, name } })"
+      ],
+      "affectedHistoricalTasks": [
+        37,
+        168,
+        174,
+        176,
+        181
+      ],
+      "reproductionRisk": "POSSIBLE",
+      "recommendation": "Add a cohortYear assertion when creating a new ClassGroup: if the parsed record contains a cohortYear (from extractYear), assert no existing ClassGroup with same `name` exists in a different cohort (i.e. same core class name but different year).",
+      "suggestedNextStage": "K19-FIX-A-IMPORT-MATCHING-COHORT-GUARD"
+    },
+    {
+      "id": "K19-RULE-D-001",
+      "severity": "MEDIUM",
+      "category": "AUDIT_TRAIL",
+      "title": "TeachingTaskClass creation has no cross-cohort detection or source-evidence retention",
+      "evidence": "executeImportInTransaction in: C:/Users/Satanecinl/Desktop/Course Development System/my-app/src/lib/import/importer.ts; No crossCohort audit at TTC creation (line 581-585 of importer.ts); Confirmed cross-cohort tasks still exist: 0",
+      "files": [
+        "src/lib/import/importer.ts:566-587 TeachingTask create + TTC loop"
+      ],
+      "codeReferences": [
+        "src/lib/import/importer.ts:582-585 tx.teachingTaskClass.create (no cross-cohort check)"
+      ],
+      "affectedHistoricalTasks": [
+        37,
+        168,
+        174,
+        176,
+        181
+      ],
+      "reproductionRisk": "CONFIRMED",
+      "recommendation": "Add a post-creation cross-cohort audit: for each new TeachingTask, compute cohortYearSet from taskClasses; if size > 1, emit a warning and require `crossCohortApproved: true` or explicit `forceCrossCohort: true` in the import request. Default behavior: warning only, do not block. Persistence: add a JSON column or import-level note for traceability.",
+      "suggestedNextStage": "K19-FIX-A-IMPORT-MATCHING-COHORT-GUARD"
+    },
+    {
+      "id": "K19-RULE-E-001",
+      "severity": "MEDIUM",
+      "category": "REIMPORT_RISK",
+      "title": "Re-import of K18 source artifacts should be blocked by filterCandidatesByYearAndTrack, but no canonical regression test verifies this",
+      "evidence": "filterCandidatesByYearAndTrack logic exists at src/lib/import/importer.ts:171-196; K17-FIX-A confirmed: cross-cohort task count reduced from 35 (2026-05-30) to 5 (2026-06-03) after the filter was in place; Current confirmed cross-cohort count (post-K18-B/E3): 0",
+      "files": [
+        "src/lib/import/importer.ts:171-196",
+        "src/lib/import/importer.ts:243-249 includes()",
+        "src/lib/import/importer.ts:265-281 subsequence"
+      ],
+      "codeReferences": [
+        "src/lib/import/importer.ts:184-186 `if (cy && cy !== baseYear) return false`"
+      ],
+      "affectedHistoricalTasks": [
+        37,
+        168,
+        174,
+        176,
+        181
+      ],
+      "reproductionRisk": "POSSIBLE",
+      "recommendation": "Add a regression test fixture covering the K18 source artifacts. Test should: (1) re-run the import dry-run against a copy of the K18 source JSON; (2) assert that no cross-cohort TeachingTask would be created; (3) assert the merged class count matches the post-K18-E3 expected set.",
+      "suggestedNextStage": "K19-TEST-A-IMPORT-MATCHING-REGRESSION-TESTS"
+    },
+    {
+      "id": "K19-RULE-F-001",
+      "severity": "MEDIUM",
+      "category": "LEGAL_CROSS_COHORT",
+      "title": "No mechanism to distinguish legal cross-cohort (public course) from error cross-cohort (false positive)",
+      "evidence": "No crossCohort references in src/** (no explicit cross-cohort approval mechanism); AMBIGUOUS warnings emitted (good): C:/Users/Satanecinl/Desktop/Course Development System/my-app/src/lib/import/importer.ts",
+      "files": [
+        "src/lib/import/importer.ts:445 classification.warnings",
+        "src/lib/import/quality-classifier.ts (no cross-cohort gate)"
+      ],
+      "codeReferences": [
+        "src/lib/import/quality-classifier.ts:144-167 canImport gate (no cross-cohort check)"
+      ],
+      "affectedHistoricalTasks": [
+        37,
+        168,
+        174,
+        176,
+        181
+      ],
+      "reproductionRisk": "CONFIRMED",
+      "recommendation": "Add a public-course allowlist (e.g. the LIKELY_PUBLIC_COURSE_HINTS list used in K17-FIX-A audit) as a WARNING-ONLY signal in classification. When a cross-cohort TeachingTask is created and the course is in the allowlist, emit a warning \"LEGAL_PUBLIC_CROSS_COHORT\". Otherwise emit \"LIKELY_ERROR_CROSS_COHORT\". Default behavior: both are warnings (do not block), but the latter is HIGHER severity in the import warnings list.",
+      "suggestedNextStage": "K19-FIX-A-IMPORT-MATCHING-COHORT-GUARD"
+    },
+    {
+      "id": "K19-INFO-001",
+      "severity": "INFO",
+      "category": "STATISTICS",
+      "title": "K18 historical error cases (all repaired or marked for review)",
+      "evidence": "tasks 168/174/176/181 (4 个专业课 cross-cohort with 2024 cohort 高本贯通 CG22) — REPAIRED in K18-B; task 37 (习近平思想 with 2024 cohort 森林草原防火 CG35) — REMOVED in K18-E3 (TTC94 deleted)",
+      "files": [
+        "docs/k18-cross-cohort-data-repair-execute.md",
+        "docs/k18-task37-finalization-execute.md"
+      ],
+      "codeReferences": [],
+      "affectedHistoricalTasks": [
+        37,
+        168,
+        174,
+        176,
+        181
+      ],
+      "reproductionRisk": "NONE",
+      "recommendation": "Reference for K19-FIX-A regression test fixtures.",
+      "suggestedNextStage": "K19-FIX-A-IMPORT-MATCHING-COHORT-GUARD"
+    },
+    {
+      "id": "K19-INFO-002",
+      "severity": "INFO",
+      "category": "STATISTICS",
+      "title": "Current DB scope",
+      "evidence": "ClassGroups=36, TeachingTasks=308, ImportBatches=37, ScheduleSlots=440; cross-cohort tasks in DB=0; source artifacts=17 JSON / 17 docx",
+      "files": [],
+      "codeReferences": [],
+      "affectedHistoricalTasks": [],
+      "reproductionRisk": "NONE",
+      "recommendation": "Baseline for K19-FIX-A regression test.",
+      "suggestedNextStage": "K19-FIX-A-IMPORT-MATCHING-COHORT-GUARD"
+    }
+  ],
+  "historicalErrorCases": [
+    {
+      "taskId": 168,
+      "course": "机械制图",
+      "teacher": "赵春超",
+      "wrongClassGroup": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "expectedClassGroup": "2025级钢铁智能冶金技术1班（高本贯通） (and 2025 cohort 现场工程师 classes only)",
+      "rootCauseHypothesis": "2025 cohort 现场工程师 CG18/19 remark \"与高本贯通合班\" (implied) or name-similarity \"钢铁智能冶金\" 跨过 cohort filter. Import matching picked up 2024 cohort CG22 (高本贯通) as a match because the 2024 cohort is a 2024-级 candidate and the existing filter only requires `cy === baseYear` when keyword has no explicit year. The base 2025-级高本贯通 class is the source, and the remark \"合班\" or class name substring \"钢铁智能冶金\" was matched against the 2024 cohort CG22.",
+      "currentStatus": "REPAIRED",
+      "sourceFileEvidence": "K18 source artifact review confirms parsed JSON has 2025 cohort classes only for 机械制图",
+      "semanticGuard": "K16 fix-a: guardTeachingTaskUpdateSemantics covers teacher/room/classGroup/week/semester"
+    },
+    {
+      "taskId": 174,
+      "course": "机械制图",
+      "teacher": "张红梅",
+      "wrongClassGroup": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "expectedClassGroup": "2025级钢铁智能冶金技术1班（高本贯通） (and 2025 cohort 现场工程师 classes only)",
+      "rootCauseHypothesis": "Same as task 168 — 2024 cohort 高本贯通 CG22 incorrectly merged via 合班 remark / name-similarity matching.",
+      "currentStatus": "REPAIRED",
+      "sourceFileEvidence": "K18 source artifact review confirms parsed JSON has 2025 cohort classes only for 机械制图",
+      "semanticGuard": "K16 fix-a covers teaching task mutation"
+    },
+    {
+      "taskId": 176,
+      "course": "电子技术",
+      "teacher": "许进",
+      "wrongClassGroup": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "expectedClassGroup": "2025级钢铁智能冶金技术1班（高本贯通） (and 2025 cohort 现场工程师 classes only)",
+      "rootCauseHypothesis": "Same root cause — 2024 cohort 高本贯通 CG22 incorrectly merged via name-similarity \"钢铁智能冶金\" or 合班 remark expansion.",
+      "currentStatus": "REPAIRED",
+      "sourceFileEvidence": "K18 source artifact review confirms parsed JSON has 2025 cohort classes only for 电子技术",
+      "semanticGuard": "K16 fix-a covers teaching task mutation"
+    },
+    {
+      "taskId": 181,
+      "course": "传感器与检测技术",
+      "teacher": "张旭",
+      "wrongClassGroup": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "expectedClassGroup": "2025级钢铁智能冶金技术1班（高本贯通） (and 2025 cohort 现场工程师 classes only)",
+      "rootCauseHypothesis": "Same root cause — 2024 cohort 高本贯通 CG22 incorrectly merged via name-similarity or remark expansion.",
+      "currentStatus": "REPAIRED",
+      "sourceFileEvidence": "K18 source artifact review confirms parsed JSON has 2025 cohort classes only for 传感器与检测技术",
+      "semanticGuard": "K16 fix-a covers teaching task mutation"
+    },
+    {
+      "taskId": 37,
+      "course": "习近平新时代中国特色社会主义思想概论",
+      "teacher": "房忠敏",
+      "wrongClassGroup": "2024级森林草原防火技术1班",
+      "expectedClassGroup": "2025级钢铁智能冶金技术1班（高本贯通） + 2025级森林草原防火技术1班 (only)",
+      "rootCauseHypothesis": "2025 cohort 钢铁智能冶金 1班 (高本贯通) remark \"与森防合班\" → matches \"森防\" → against 2024 cohort 森林草原防火 1班 (CG35). The remark keyword \"森防\" has no explicit year, and baseClass 2025级钢铁智能冶金 is 2025. The cohort filter `cy !== baseYear` only kicks in when keyword has no explicit year, so the filter is active — yet the 2024 candidate is still matched. ACTUAL REPRO: review of source artifacts (K18-C) shows no 2024 record for 房忠敏+习近平 in any parsed JSON. Most likely the import previously (before filter existed) merged it, or the import logic matched via a different path (e.g. previous import batch had a different base year, or seed_db.ts pre-filtered data).",
+      "currentStatus": "NEEDS_REVIEW",
+      "sourceFileEvidence": "No 2024 record for 房忠敏+习近平 in any source artifact (K18-C)",
+      "semanticGuard": "K16 fix-a covers teaching task mutation"
+    }
+  ],
+  "rootCauseHypotheses": [
+    {
+      "id": "RCH-1",
+      "hypothesis": "findMergedClassNames uses .includes() + subsequence matching after a year/track pre-filter. The pre-filter correctly excludes candidates with different cohort year WHEN keyword has no explicit year. However the historical data (K17-FIX-A: 5 cross-cohort tasks pre-K18-B, reduced to 1 after filter existed) suggests the filter was added in a recent commit. The pre-filter-era data is the source of all 5 historical errors.",
+      "supportingEvidence": [
+        "src/lib/import/importer.ts:171-196 filterCandidatesByYearAndTrack",
+        "src/lib/import/importer.ts:243-249 includes() match",
+        "src/lib/import/importer.ts:265-281 subsequence match",
+        "K17-FIX-A: cross-cohort tasks reduced from 35 to 5 after filter existed",
+        "K18-B: 4 tasks fixed by removing wrong ClassGroup links",
+        "K18-E3: 1 task (task 37) fixed by removing wrong ClassGroup link"
+      ]
+    },
+    {
+      "id": "RCH-2",
+      "hypothesis": "Task 37 (习近平思想 + 2024 cohort 森林草原防火 CG35) was likely created by a pre-filter version of the importer or by seed_db.ts (legacy CLI seed). The current importer would not recreate this link because the cohort filter would exclude CG35. Task 37 is the ONLY remaining post-K18 cross-cohort candidate, classified as NEED_MANUAL_REVIEW (K18-C) and LIKELY_ERROR (K18-C review).",
+      "supportingEvidence": [
+        "K18-C source artifact review: no 2024 record for 房忠敏+习近平 in any of 17 source JSON files",
+        "Task 32 (same teacher/course) does NOT link 2024 cohort — strong inconsistency",
+        "Pattern matches the 4 confirmed-error K18-B tasks",
+        "filterCandidatesByYearAndTrack would exclude CG35 from \"森防\" keyword against 2025 baseClass"
+      ]
+    },
+    {
+      "id": "RCH-3",
+      "hypothesis": "There is no source-evidence retention for TeachingTaskClass links. The TeachingTaskClass table does not store which source row / source keyword created the link. This makes post-hoc root-cause analysis expensive (requires correlating import batch to source JSON, then re-running import logic mentally).",
+      "supportingEvidence": [
+        "Prisma schema TeachingTaskClass has only teachingTaskId + classGroupId, no source row reference",
+        "No warningsJson entries link specific TTC to specific source record",
+        "K17-FIX-A had to cross-reference source JSON manually to validate the 4 K18-B errors"
+      ]
+    }
+  ],
+  "affectedFiles": [
+    "src/lib/import/importer.ts",
+    "src/lib/import/parse-utils.ts",
+    "src/lib/import/quality-classifier.ts",
+    "src/lib/import/rollback.ts",
+    "src/app/api/admin/import/confirm/route.ts",
+    "src/app/api/admin/import/parse/route.ts",
+    "scripts/seed_db.ts"
+  ],
+  "recommendedFixPlan": {
+    "option": "Option A: cohort guard + warning-first",
+    "rationale": "Minimally invasive. Does NOT change schema. Does NOT add crossCohortApproved field. Targets the exact root cause (weak matching after pre-filter).",
+    "steps": [
+      "1. Tighten findMergedClassNames: try exact-name first, only fall back to includes() / subsequence when exact fails AND no cohort mismatch exists.",
+      "2. In executeImportInTransaction after TTC creation, compute cohortYearSet and emit two-tier warning: LEGAL_PUBLIC_CROSS_COHORT (allowlist) vs LIKELY_ERROR_CROSS_COHORT (not in allowlist).",
+      "3. Persist warnings in ImportBatch.warningsJson (already supported).",
+      "4. Add regression test fixture (parse 1-2 source artifacts, assert no cross-cohort task created).",
+      "5. Update canImport gate in quality-classifier.ts to optionally include LIKELY_ERROR_CROSS_COHORT as a warning (NOT a blocking reason by default)."
+    ],
+    "filesToModify": [
+      "src/lib/import/importer.ts",
+      "src/lib/import/quality-classifier.ts"
+    ],
+    "filesNotToModify": [
+      "prisma/schema.prisma",
+      "src/app/api/admin/import/**",
+      "src/components/**",
+      "src/lib/scheduler/**"
+    ]
+  },
+  "regressionTestPlan": {
+    "coverage": [
+      "Test 1: 2024/2025 高本贯通相似班级 — should NOT be merged (already covered by filter)",
+      "Test 2: 2024/2025 森林草原防火相似班级 — should NOT be merged",
+      "Test 3: same-cohort 合班 with explicit remark \"与XX合班\" — should be merged (positive case)",
+      "Test 4: public course cross-cohort with explicit \"2024级\" in remark — should be merged if classGroup names match",
+      "Test 5: remark \"2024级森林草原防火技术1班\" appearing on a 2025 cohort class — should be checked for cohort-mismatch warning",
+      "Test 6: re-import K18 source artifact (regression) — should NOT recreate any of the 5 historical errors",
+      "Test 7: ambiguous match (multiple candidates match a keyword) — should emit AMBIGUOUS warning and NOT auto-link"
+    ],
+    "testDataSource": "uploads/imports/*.json (K18 source artifacts, 17 files)",
+    "expectedOutcome": "All 5 historical error patterns are blocked; 1 INFO finding for task 37 (since CG35 was repaired, regression test verifies the link is NOT recreated)"
+  },
+  "suggestedNextStage": "K19-FIX-A-IMPORT-MATCHING-COHORT-GUARD",
+  "rootCauseConfidence": "MEDIUM",
+  "generatedAt": "2026-06-03T07:32:55.453Z"
+}
