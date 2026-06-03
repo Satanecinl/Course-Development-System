@@ -98,7 +98,7 @@
       "severity": "MEDIUM",
       "category": "FrontendOperatorFlow",
       "title": "Import dialog 无 cross-cohort 区分展示",
-      "evidence": "src/components/schedule-import-dialog.tsx:\n  - cross-cohort/approval UI 关键字: 不存在\n  - 现有 warnings 展示: result.quality.warnings (parse 阶段，type 标签) + dryRunResult.warnings (前 20 条 plain text)\n  - 现有 confirm 门: dryRunResult.canImport === true → 允许 confirm\n  - 真实 confirm 按钮: send { confirmText: \"CONFIRM_IMPORT\" }",
+      "evidence": "src/components/schedule-import-dialog.tsx:\n  - cross-cohort/approval UI 关键字: 不存在\n  - warnings 展示 hook: 有 (result.quality.warnings / dryRunResult.warnings)\n  - approval toggle 关键字: 不存在\n  - 现有 confirm 门: dryRunResult.canImport === true -> 允许 confirm\n  - confirmText 校验: 有 (CONFIRM_IMPORT)",
       "files": [
         "src/components/schedule-import-dialog.tsx"
       ],
@@ -286,5 +286,5 @@
     "前端 toggle 行为: 未勾选 → button disabled; 已勾选无 reason → button disabled; 全部满足 → 允许 confirm"
   ],
   "suggestedNextStage": "K19-FIX-B1-SCHEMA-AND-API-CROSS-COHORT-APPROVAL (建议分 B1 backend + B2 frontend 两阶段推进)",
-  "generatedAt": "2026-06-03T10:55:00.387Z"
+  "generatedAt": "2026-06-03T11:01:58.955Z"
 }

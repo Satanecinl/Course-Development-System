@@ -206,9 +206,10 @@ async function main() {
     title: 'Import dialog 无 cross-cohort 区分展示',
     evidence: `src/components/schedule-import-dialog.tsx:
   - cross-cohort/approval UI 关键字: ${dialogHasCrossCohortUI ? '存在' : '不存在'}
-  - 现有 warnings 展示: result.quality.warnings (parse 阶段，type 标签) + dryRunResult.warnings (前 20 条 plain text)
-  - 现有 confirm 门: dryRunResult.canImport === true → 允许 confirm
-  - 真实 confirm 按钮: send { confirmText: "CONFIRM_IMPORT" }`,
+  - warnings 展示 hook: ${dialogShowsWarnings ? '有 (result.quality.warnings / dryRunResult.warnings)' : '无'}
+  - approval toggle 关键字: ${dialogHasApprovalToggle ? '存在' : '不存在'}
+  - 现有 confirm 门: dryRunResult.canImport === true -> 允许 confirm
+  - confirmText 校验: ${dialogHasConfirmText ? '有 (CONFIRM_IMPORT)' : '无'}`,
     files: ['src/components/schedule-import-dialog.tsx'],
     currentBehavior: 'warnings 全部混在同一个 list 中，operator 无法一眼区分 LEGAL_PUBLIC_CROSS_COHORT vs LIKELY_ERROR_CROSS_COHORT vs 普通 warning。',
     risk: '若 dry-run 阶段产生 LIKELY_ERROR_CROSS_COHORT, operator 可能根本没注意（折叠在 "查看 N 条警告" details 中），直接点确认按钮。',
