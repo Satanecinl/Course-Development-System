@@ -1,0 +1,1391 @@
+{
+  "generatedAt": "2026-06-03T01:46:23.609Z",
+  "completedAt": "2026-06-03T01:46:23.643Z",
+  "phase": "K17-FIX-A",
+  "mode": "read-only",
+  "targetClass": "2024级钢铁智能冶金技术1班（高本贯通）",
+  "database": {
+    "classGroupCount": 36,
+    "teachingTaskCount": 308,
+    "teachingTaskClassLinkCount": 451,
+    "crossCohortTeachingTaskCount": 5,
+    "importBatchCount": 37,
+    "confirmedImportBatchCount": 1,
+    "semesterCount": 1
+  },
+  "summary": {
+    "HIGH": 1,
+    "MEDIUM": 9,
+    "LOW": 4,
+    "INFO": 2,
+    "NONE": 0,
+    "TOTAL": 16
+  },
+  "findings": [
+    {
+      "id": "K17-DQ-HIGH-1",
+      "severity": "HIGH",
+      "title": "Target \"2024级钢铁智能冶金技术1班（高本贯通）\" appears in 4 cross-cohort TeachingTask(s) with 2025 cohort; 4 already scheduled",
+      "evidence": "target class id=22, semesterId=1 (既有数据默认学期), studentCount=30, cohortYear=2024. cross-cohort task ids: 168, 174, 176, 181. already-scheduled count: 4.",
+      "affectedTeachingTaskIds": [
+        168,
+        174,
+        176,
+        181
+      ],
+      "affectedClassGroupIds": [
+        22,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19
+      ],
+      "affectedImportBatchIds": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "affectedScheduleSlotCount": 4,
+      "recommendation": "HIGH 风险：目标班级 (2024 cohort) 已与 2025 cohort 在已排课任务中合并。修复前需冻结相关 drag/drop / solver 重新排课 / 导出。建议 K17-FIX-B 决定是否启动 K18 数据修复。",
+      "suggestedNextStage": "K17-FIX-B 决策 → K18 数据修复"
+    },
+    {
+      "id": "K17-DQ-MEDIUM-1",
+      "severity": "MEDIUM",
+      "title": "ImportBatch #1 \"2026年春季学期课程表(0420).docx\" — 5 cross-cohort task(s)",
+      "evidence": "filename=2026年春季学期课程表(0420).docx; status=confirmed; semester=(none); createdTaskCount=308; createdSlotCount=440; suspiciousTaskCount=4; suspiciousTaskIds=[168, 174, 176, 181]",
+      "affectedTeachingTaskIds": [
+        168,
+        174,
+        176,
+        181
+      ],
+      "affectedClassGroupIds": [],
+      "affectedImportBatchIds": [
+        1
+      ],
+      "affectedScheduleSlotCount": 440,
+      "recommendation": "confirmed 批次影响线上课表，修复前需冻结相关调整操作；建议进入 K18 数据修复阶段",
+      "suggestedNextStage": "K17-FIX-B 或 K18"
+    },
+    {
+      "id": "K17-DQ-MEDIUM-2",
+      "severity": "MEDIUM",
+      "title": "[168] 机械制图 — cross-cohort + already scheduled (1 slot(s))",
+      "evidence": "cross-cohort + cross-track: years=2025+2024 tracks=高本贯通+现场工程师; scheduleSlots=1; teacher=赵春超; classes=2025级钢铁智能冶金技术1班（高本贯通）, 2025级钢铁智能冶金技术（现场工程师）, 2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）, 2024级钢铁智能冶金技术1班（高本贯通）",
+      "affectedTeachingTaskIds": [
+        168
+      ],
+      "affectedClassGroupIds": [
+        3,
+        18,
+        19,
+        22
+      ],
+      "affectedImportBatchIds": [
+        1
+      ],
+      "affectedScheduleSlotCount": 1,
+      "recommendation": "已排课任务的合班错误会传导至 schedule display / adjustment / solver input；修复前建议冻结该任务的 drag/drop 与 solver 重新排课",
+      "suggestedNextStage": "K17-FIX-B 或 K18"
+    },
+    {
+      "id": "K17-DQ-MEDIUM-3",
+      "severity": "MEDIUM",
+      "title": "[174] 机械制图 — cross-cohort + already scheduled (1 slot(s))",
+      "evidence": "cross-cohort + cross-track: years=2025+2024 tracks=高本贯通+现场工程师; scheduleSlots=1; teacher=张红梅; classes=2025级钢铁智能冶金技术1班（高本贯通）, 2025级钢铁智能冶金技术（现场工程师）, 2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）, 2024级钢铁智能冶金技术1班（高本贯通）",
+      "affectedTeachingTaskIds": [
+        174
+      ],
+      "affectedClassGroupIds": [
+        3,
+        18,
+        19,
+        22
+      ],
+      "affectedImportBatchIds": [
+        1
+      ],
+      "affectedScheduleSlotCount": 1,
+      "recommendation": "已排课任务的合班错误会传导至 schedule display / adjustment / solver input；修复前建议冻结该任务的 drag/drop 与 solver 重新排课",
+      "suggestedNextStage": "K17-FIX-B 或 K18"
+    },
+    {
+      "id": "K17-DQ-MEDIUM-4",
+      "severity": "MEDIUM",
+      "title": "[176] 电子技术 — cross-cohort + already scheduled (1 slot(s))",
+      "evidence": "cross-cohort + cross-track: years=2025+2024 tracks=高本贯通+现场工程师; scheduleSlots=1; teacher=许进; classes=2025级钢铁智能冶金技术1班（高本贯通）, 2025级钢铁智能冶金技术（现场工程师）, 2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）, 2024级钢铁智能冶金技术1班（高本贯通）",
+      "affectedTeachingTaskIds": [
+        176
+      ],
+      "affectedClassGroupIds": [
+        3,
+        18,
+        19,
+        22
+      ],
+      "affectedImportBatchIds": [
+        1
+      ],
+      "affectedScheduleSlotCount": 1,
+      "recommendation": "已排课任务的合班错误会传导至 schedule display / adjustment / solver input；修复前建议冻结该任务的 drag/drop 与 solver 重新排课",
+      "suggestedNextStage": "K17-FIX-B 或 K18"
+    },
+    {
+      "id": "K17-DQ-MEDIUM-5",
+      "severity": "MEDIUM",
+      "title": "[181] 传感器与检测技术 — cross-cohort + already scheduled (1 slot(s))",
+      "evidence": "cross-cohort + cross-track: years=2025+2024 tracks=高本贯通+现场工程师; scheduleSlots=1; teacher=张旭; classes=2025级钢铁智能冶金技术1班（高本贯通）, 2025级钢铁智能冶金技术（现场工程师）, 2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）, 2024级钢铁智能冶金技术1班（高本贯通）",
+      "affectedTeachingTaskIds": [
+        181
+      ],
+      "affectedClassGroupIds": [
+        3,
+        18,
+        19,
+        22
+      ],
+      "affectedImportBatchIds": [
+        1
+      ],
+      "affectedScheduleSlotCount": 1,
+      "recommendation": "已排课任务的合班错误会传导至 schedule display / adjustment / solver input；修复前建议冻结该任务的 drag/drop 与 solver 重新排课",
+      "suggestedNextStage": "K17-FIX-B 或 K18"
+    },
+    {
+      "id": "K17-DQ-MEDIUM-6",
+      "severity": "MEDIUM",
+      "title": "[168] 机械制图 — cross-cohort (years=2025+2024)",
+      "evidence": "cross-cohort + cross-track: years=2025+2024 tracks=高本贯通+现场工程师 | teacher=赵春超 | classes=2025级钢铁智能冶金技术1班（高本贯通）, 2025级钢铁智能冶金技术（现场工程师）, 2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）, 2024级钢铁智能冶金技术1班（高本贯通） | remark=2024级钢铁智能冶金技术1班（高本贯通） | importBatchId=1 | scheduleSlots=1",
+      "affectedTeachingTaskIds": [
+        168
+      ],
+      "affectedClassGroupIds": [
+        3,
+        18,
+        19,
+        22
+      ],
+      "affectedImportBatchIds": [
+        1
+      ],
+      "affectedScheduleSlotCount": 1,
+      "recommendation": "检查 TeachingTaskClass 是否应拆分为独立任务；如合班为误合并则建议进入 K18 数据修复阶段",
+      "suggestedNextStage": "K17-FIX-B 或 K18 数据修复"
+    },
+    {
+      "id": "K17-DQ-MEDIUM-7",
+      "severity": "MEDIUM",
+      "title": "[174] 机械制图 — cross-cohort (years=2025+2024)",
+      "evidence": "cross-cohort + cross-track: years=2025+2024 tracks=高本贯通+现场工程师 | teacher=张红梅 | classes=2025级钢铁智能冶金技术1班（高本贯通）, 2025级钢铁智能冶金技术（现场工程师）, 2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）, 2024级钢铁智能冶金技术1班（高本贯通） | remark=2024级钢铁智能冶金技术1班（高本贯通） | importBatchId=1 | scheduleSlots=1",
+      "affectedTeachingTaskIds": [
+        174
+      ],
+      "affectedClassGroupIds": [
+        3,
+        18,
+        19,
+        22
+      ],
+      "affectedImportBatchIds": [
+        1
+      ],
+      "affectedScheduleSlotCount": 1,
+      "recommendation": "检查 TeachingTaskClass 是否应拆分为独立任务；如合班为误合并则建议进入 K18 数据修复阶段",
+      "suggestedNextStage": "K17-FIX-B 或 K18 数据修复"
+    },
+    {
+      "id": "K17-DQ-MEDIUM-8",
+      "severity": "MEDIUM",
+      "title": "[176] 电子技术 — cross-cohort (years=2025+2024)",
+      "evidence": "cross-cohort + cross-track: years=2025+2024 tracks=高本贯通+现场工程师 | teacher=许进 | classes=2025级钢铁智能冶金技术1班（高本贯通）, 2025级钢铁智能冶金技术（现场工程师）, 2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）, 2024级钢铁智能冶金技术1班（高本贯通） | remark=2024级钢铁智能冶金技术1班（高本贯通） | importBatchId=1 | scheduleSlots=1",
+      "affectedTeachingTaskIds": [
+        176
+      ],
+      "affectedClassGroupIds": [
+        3,
+        18,
+        19,
+        22
+      ],
+      "affectedImportBatchIds": [
+        1
+      ],
+      "affectedScheduleSlotCount": 1,
+      "recommendation": "检查 TeachingTaskClass 是否应拆分为独立任务；如合班为误合并则建议进入 K18 数据修复阶段",
+      "suggestedNextStage": "K17-FIX-B 或 K18 数据修复"
+    },
+    {
+      "id": "K17-DQ-MEDIUM-9",
+      "severity": "MEDIUM",
+      "title": "[181] 传感器与检测技术 — cross-cohort (years=2025+2024)",
+      "evidence": "cross-cohort + cross-track: years=2025+2024 tracks=高本贯通+现场工程师 | teacher=张旭 | classes=2025级钢铁智能冶金技术1班（高本贯通）, 2025级钢铁智能冶金技术（现场工程师）, 2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）, 2024级钢铁智能冶金技术1班（高本贯通） | remark=2024级钢铁智能冶金技术1班（高本贯通） | importBatchId=1 | scheduleSlots=1",
+      "affectedTeachingTaskIds": [
+        181
+      ],
+      "affectedClassGroupIds": [
+        3,
+        18,
+        19,
+        22
+      ],
+      "affectedImportBatchIds": [
+        1
+      ],
+      "affectedScheduleSlotCount": 1,
+      "recommendation": "检查 TeachingTaskClass 是否应拆分为独立任务；如合班为误合并则建议进入 K18 数据修复阶段",
+      "suggestedNextStage": "K17-FIX-B 或 K18 数据修复"
+    },
+    {
+      "id": "K17-DQ-LOW-1",
+      "severity": "LOW",
+      "title": "[168] 机械制图 — high-similarity class name with different cohort year",
+      "evidence": "class names share non-cohort prefix \"钢铁智能冶金技术1班\": primary year=2025, other year=2024. classes=2025级钢铁智能冶金技术1班（高本贯通） | 2025级钢铁智能冶金技术（现场工程师） | 2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师） | 2024级钢铁智能冶金技术1班（高本贯通）. importBatchId=1. scheduleSlots=1",
+      "affectedTeachingTaskIds": [
+        168
+      ],
+      "affectedClassGroupIds": [
+        3,
+        22
+      ],
+      "affectedImportBatchIds": [
+        1
+      ],
+      "affectedScheduleSlotCount": 1,
+      "recommendation": "校验合班是否合理；如属 import 自动合并产物，考虑拆分",
+      "suggestedNextStage": "K17-FIX-B 或 K18"
+    },
+    {
+      "id": "K17-DQ-LOW-2",
+      "severity": "LOW",
+      "title": "[174] 机械制图 — high-similarity class name with different cohort year",
+      "evidence": "class names share non-cohort prefix \"钢铁智能冶金技术1班\": primary year=2025, other year=2024. classes=2025级钢铁智能冶金技术1班（高本贯通） | 2025级钢铁智能冶金技术（现场工程师） | 2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师） | 2024级钢铁智能冶金技术1班（高本贯通）. importBatchId=1. scheduleSlots=1",
+      "affectedTeachingTaskIds": [
+        174
+      ],
+      "affectedClassGroupIds": [
+        3,
+        22
+      ],
+      "affectedImportBatchIds": [
+        1
+      ],
+      "affectedScheduleSlotCount": 1,
+      "recommendation": "校验合班是否合理；如属 import 自动合并产物，考虑拆分",
+      "suggestedNextStage": "K17-FIX-B 或 K18"
+    },
+    {
+      "id": "K17-DQ-LOW-3",
+      "severity": "LOW",
+      "title": "[176] 电子技术 — high-similarity class name with different cohort year",
+      "evidence": "class names share non-cohort prefix \"钢铁智能冶金技术1班\": primary year=2025, other year=2024. classes=2025级钢铁智能冶金技术1班（高本贯通） | 2025级钢铁智能冶金技术（现场工程师） | 2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师） | 2024级钢铁智能冶金技术1班（高本贯通）. importBatchId=1. scheduleSlots=1",
+      "affectedTeachingTaskIds": [
+        176
+      ],
+      "affectedClassGroupIds": [
+        3,
+        22
+      ],
+      "affectedImportBatchIds": [
+        1
+      ],
+      "affectedScheduleSlotCount": 1,
+      "recommendation": "校验合班是否合理；如属 import 自动合并产物，考虑拆分",
+      "suggestedNextStage": "K17-FIX-B 或 K18"
+    },
+    {
+      "id": "K17-DQ-LOW-4",
+      "severity": "LOW",
+      "title": "[181] 传感器与检测技术 — high-similarity class name with different cohort year",
+      "evidence": "class names share non-cohort prefix \"钢铁智能冶金技术1班\": primary year=2025, other year=2024. classes=2025级钢铁智能冶金技术1班（高本贯通） | 2025级钢铁智能冶金技术（现场工程师） | 2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师） | 2024级钢铁智能冶金技术1班（高本贯通）. importBatchId=1. scheduleSlots=1",
+      "affectedTeachingTaskIds": [
+        181
+      ],
+      "affectedClassGroupIds": [
+        3,
+        22
+      ],
+      "affectedImportBatchIds": [
+        1
+      ],
+      "affectedScheduleSlotCount": 1,
+      "recommendation": "校验合班是否合理；如属 import 自动合并产物，考虑拆分",
+      "suggestedNextStage": "K17-FIX-B 或 K18"
+    },
+    {
+      "id": "K17-DQ-INFO-1",
+      "severity": "INFO",
+      "title": "[37] 习近平新时代中国特色社会主义思想概论 — cross-cohort (years=2025+2024)",
+      "evidence": "cross-cohort on a public/ideology course \"习近平新时代中国特色社会主义思想概论\" — may be legitimate, needs source verification | teacher=房忠敏 | classes=2025级钢铁智能冶金技术1班（高本贯通）, 2025级森林草原防火技术1班, 2024级森林草原防火技术1班 | remark=2024级森林草原防火技术1班 | importBatchId=1 | scheduleSlots=1",
+      "affectedTeachingTaskIds": [
+        37
+      ],
+      "affectedClassGroupIds": [
+        3,
+        17,
+        35
+      ],
+      "affectedImportBatchIds": [
+        1
+      ],
+      "affectedScheduleSlotCount": 1,
+      "recommendation": "公共/思政课跨年级合班需人工核对原始排课表确认是否合理",
+      "suggestedNextStage": "K18 人工审核"
+    },
+    {
+      "id": "K17-DQ-INFO-2",
+      "severity": "INFO",
+      "title": "Database scope summary",
+      "evidence": "ClassGroups=36 (0 missing semesterId); TeachingTasks=308 (0 missing semesterId); ImportBatches=37 (1 confirmed)",
+      "affectedTeachingTaskIds": [],
+      "affectedClassGroupIds": [],
+      "affectedImportBatchIds": [],
+      "affectedScheduleSlotCount": 0,
+      "recommendation": "semesterId null 的记录已通过 K10 backfill 标记为 LEGACY-DEFAULT；本审计仅观察不修复",
+      "suggestedNextStage": "none"
+    }
+  ],
+  "targetClassInvestigation": {
+    "targetClassFound": true,
+    "targetClassId": 22,
+    "targetClassSemesterId": 1,
+    "targetClassSemesterName": "既有数据默认学期",
+    "targetClassStudentCount": 30,
+    "targetClassCohortYear": 2024,
+    "keywordHits": {
+      "钢铁智能冶金": 7,
+      "高本贯通": 2,
+      "2024级": 17
+    },
+    "targetClassGroupNames": [
+      {
+        "id": 3,
+        "name": "2025级钢铁智能冶金技术1班（高本贯通）",
+        "semesterId": 1,
+        "cohortYear": 2025,
+        "track": "高本贯通"
+      },
+      {
+        "id": 4,
+        "name": "2025级钢铁智能冶金技术2班",
+        "semesterId": 1,
+        "cohortYear": 2025,
+        "track": null
+      },
+      {
+        "id": 5,
+        "name": "2025级钢铁智能冶金技术3班",
+        "semesterId": 1,
+        "cohortYear": 2025,
+        "track": null
+      },
+      {
+        "id": 18,
+        "name": "2025级钢铁智能冶金技术（现场工程师）",
+        "semesterId": 1,
+        "cohortYear": 2025,
+        "track": "现场工程师"
+      },
+      {
+        "id": 20,
+        "name": "2024级智能轧钢技术1班",
+        "semesterId": 1,
+        "cohortYear": 2024,
+        "track": null
+      },
+      {
+        "id": 21,
+        "name": "2024级智能轧钢技术2班",
+        "semesterId": 1,
+        "cohortYear": 2024,
+        "track": null
+      },
+      {
+        "id": 22,
+        "name": "2024级钢铁智能冶金技术1班（高本贯通）",
+        "semesterId": 1,
+        "cohortYear": 2024,
+        "track": "高本贯通"
+      },
+      {
+        "id": 23,
+        "name": "2024级钢铁智能冶金技术2班",
+        "semesterId": 1,
+        "cohortYear": 2024,
+        "track": null
+      },
+      {
+        "id": 24,
+        "name": "2024级钢铁智能冶金技术3班",
+        "semesterId": 1,
+        "cohortYear": 2024,
+        "track": null
+      },
+      {
+        "id": 25,
+        "name": "2024级机电一体化技术1班",
+        "semesterId": 1,
+        "cohortYear": 2024,
+        "track": null
+      },
+      {
+        "id": 26,
+        "name": "2024级机电一体化技术2班",
+        "semesterId": 1,
+        "cohortYear": 2024,
+        "track": null
+      },
+      {
+        "id": 27,
+        "name": "2024级机电一体化技术3班",
+        "semesterId": 1,
+        "cohortYear": 2024,
+        "track": null
+      },
+      {
+        "id": 28,
+        "name": "2024级汽车制造与试验技术1班",
+        "semesterId": 1,
+        "cohortYear": 2024,
+        "track": null
+      },
+      {
+        "id": 29,
+        "name": "2024级汽车制造与试验技术2班",
+        "semesterId": 1,
+        "cohortYear": 2024,
+        "track": null
+      },
+      {
+        "id": 30,
+        "name": "2024级汽车制造与试验技术五年制",
+        "semesterId": 1,
+        "cohortYear": 2024,
+        "track": null
+      },
+      {
+        "id": 31,
+        "name": "2024级林业技术1班",
+        "semesterId": 1,
+        "cohortYear": 2024,
+        "track": null
+      },
+      {
+        "id": 32,
+        "name": "2024级林业技术2班",
+        "semesterId": 1,
+        "cohortYear": 2024,
+        "track": null
+      },
+      {
+        "id": 33,
+        "name": "2024级森林草原资源保护1班",
+        "semesterId": 1,
+        "cohortYear": 2024,
+        "track": null
+      },
+      {
+        "id": 34,
+        "name": "2024级森林草原资源保护2班",
+        "semesterId": 1,
+        "cohortYear": 2024,
+        "track": null
+      },
+      {
+        "id": 35,
+        "name": "2024级森林草原防火技术1班",
+        "semesterId": 1,
+        "cohortYear": 2024,
+        "track": null
+      },
+      {
+        "id": 36,
+        "name": "2024级冶金现场工程师班、机电现场工程师班",
+        "semesterId": 1,
+        "cohortYear": 2024,
+        "track": "现场工程师"
+      }
+    ],
+    "targetClassTasks": [
+      {
+        "teachingTaskId": 168,
+        "courseName": "机械制图",
+        "teacherName": "赵春超",
+        "semesterId": 1,
+        "importBatchId": 1,
+        "importBatchStatus": "confirmed",
+        "weekType": "ODD",
+        "startWeek": 1,
+        "endWeek": 16,
+        "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+        "classGroups": [
+          {
+            "classGroupId": 3,
+            "name": "2025级钢铁智能冶金技术1班（高本贯通）",
+            "semesterId": 1,
+            "cohortYear": 2025,
+            "cohortConfidence": "HIGH",
+            "cohortReason": "matched leading YYYY级 (2025)",
+            "track": "高本贯通"
+          },
+          {
+            "classGroupId": 18,
+            "name": "2025级钢铁智能冶金技术（现场工程师）",
+            "semesterId": 1,
+            "cohortYear": 2025,
+            "cohortConfidence": "HIGH",
+            "cohortReason": "matched leading YYYY级 (2025)",
+            "track": "现场工程师"
+          },
+          {
+            "classGroupId": 19,
+            "name": "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+            "semesterId": 1,
+            "cohortYear": 2025,
+            "cohortConfidence": "HIGH",
+            "cohortReason": "matched leading YYYY级 (2025)",
+            "track": "现场工程师"
+          },
+          {
+            "classGroupId": 22,
+            "name": "2024级钢铁智能冶金技术1班（高本贯通）",
+            "semesterId": 1,
+            "cohortYear": 2024,
+            "cohortConfidence": "HIGH",
+            "cohortReason": "matched leading YYYY级 (2024)",
+            "track": "高本贯通"
+          }
+        ],
+        "slotCount": 1
+      },
+      {
+        "teachingTaskId": 174,
+        "courseName": "机械制图",
+        "teacherName": "张红梅",
+        "semesterId": 1,
+        "importBatchId": 1,
+        "importBatchStatus": "confirmed",
+        "weekType": "ODD",
+        "startWeek": 1,
+        "endWeek": 16,
+        "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+        "classGroups": [
+          {
+            "classGroupId": 3,
+            "name": "2025级钢铁智能冶金技术1班（高本贯通）",
+            "semesterId": 1,
+            "cohortYear": 2025,
+            "cohortConfidence": "HIGH",
+            "cohortReason": "matched leading YYYY级 (2025)",
+            "track": "高本贯通"
+          },
+          {
+            "classGroupId": 18,
+            "name": "2025级钢铁智能冶金技术（现场工程师）",
+            "semesterId": 1,
+            "cohortYear": 2025,
+            "cohortConfidence": "HIGH",
+            "cohortReason": "matched leading YYYY级 (2025)",
+            "track": "现场工程师"
+          },
+          {
+            "classGroupId": 19,
+            "name": "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+            "semesterId": 1,
+            "cohortYear": 2025,
+            "cohortConfidence": "HIGH",
+            "cohortReason": "matched leading YYYY级 (2025)",
+            "track": "现场工程师"
+          },
+          {
+            "classGroupId": 22,
+            "name": "2024级钢铁智能冶金技术1班（高本贯通）",
+            "semesterId": 1,
+            "cohortYear": 2024,
+            "cohortConfidence": "HIGH",
+            "cohortReason": "matched leading YYYY级 (2024)",
+            "track": "高本贯通"
+          }
+        ],
+        "slotCount": 1
+      },
+      {
+        "teachingTaskId": 176,
+        "courseName": "电子技术",
+        "teacherName": "许进",
+        "semesterId": 1,
+        "importBatchId": 1,
+        "importBatchStatus": "confirmed",
+        "weekType": "ODD",
+        "startWeek": 1,
+        "endWeek": 16,
+        "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+        "classGroups": [
+          {
+            "classGroupId": 3,
+            "name": "2025级钢铁智能冶金技术1班（高本贯通）",
+            "semesterId": 1,
+            "cohortYear": 2025,
+            "cohortConfidence": "HIGH",
+            "cohortReason": "matched leading YYYY级 (2025)",
+            "track": "高本贯通"
+          },
+          {
+            "classGroupId": 18,
+            "name": "2025级钢铁智能冶金技术（现场工程师）",
+            "semesterId": 1,
+            "cohortYear": 2025,
+            "cohortConfidence": "HIGH",
+            "cohortReason": "matched leading YYYY级 (2025)",
+            "track": "现场工程师"
+          },
+          {
+            "classGroupId": 19,
+            "name": "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+            "semesterId": 1,
+            "cohortYear": 2025,
+            "cohortConfidence": "HIGH",
+            "cohortReason": "matched leading YYYY级 (2025)",
+            "track": "现场工程师"
+          },
+          {
+            "classGroupId": 22,
+            "name": "2024级钢铁智能冶金技术1班（高本贯通）",
+            "semesterId": 1,
+            "cohortYear": 2024,
+            "cohortConfidence": "HIGH",
+            "cohortReason": "matched leading YYYY级 (2024)",
+            "track": "高本贯通"
+          }
+        ],
+        "slotCount": 1
+      },
+      {
+        "teachingTaskId": 181,
+        "courseName": "传感器与检测技术",
+        "teacherName": "张旭",
+        "semesterId": 1,
+        "importBatchId": 1,
+        "importBatchStatus": "confirmed",
+        "weekType": "ODD",
+        "startWeek": 1,
+        "endWeek": 16,
+        "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+        "classGroups": [
+          {
+            "classGroupId": 3,
+            "name": "2025级钢铁智能冶金技术1班（高本贯通）",
+            "semesterId": 1,
+            "cohortYear": 2025,
+            "cohortConfidence": "HIGH",
+            "cohortReason": "matched leading YYYY级 (2025)",
+            "track": "高本贯通"
+          },
+          {
+            "classGroupId": 18,
+            "name": "2025级钢铁智能冶金技术（现场工程师）",
+            "semesterId": 1,
+            "cohortYear": 2025,
+            "cohortConfidence": "HIGH",
+            "cohortReason": "matched leading YYYY级 (2025)",
+            "track": "现场工程师"
+          },
+          {
+            "classGroupId": 19,
+            "name": "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+            "semesterId": 1,
+            "cohortYear": 2025,
+            "cohortConfidence": "HIGH",
+            "cohortReason": "matched leading YYYY级 (2025)",
+            "track": "现场工程师"
+          },
+          {
+            "classGroupId": 22,
+            "name": "2024级钢铁智能冶金技术1班（高本贯通）",
+            "semesterId": 1,
+            "cohortYear": 2024,
+            "cohortConfidence": "HIGH",
+            "cohortReason": "matched leading YYYY级 (2024)",
+            "track": "高本贯通"
+          }
+        ],
+        "slotCount": 1
+      },
+      {
+        "teachingTaskId": 198,
+        "courseName": "金属材料与热处理",
+        "teacherName": "尹和鑫",
+        "semesterId": 1,
+        "importBatchId": 1,
+        "importBatchStatus": "confirmed",
+        "weekType": "ALL",
+        "startWeek": 1,
+        "endWeek": 16,
+        "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+        "classGroups": [
+          {
+            "classGroupId": 22,
+            "name": "2024级钢铁智能冶金技术1班（高本贯通）",
+            "semesterId": 1,
+            "cohortYear": 2024,
+            "cohortConfidence": "HIGH",
+            "cohortReason": "matched leading YYYY级 (2024)",
+            "track": "高本贯通"
+          }
+        ],
+        "slotCount": 2
+      },
+      {
+        "teachingTaskId": 199,
+        "courseName": "大学英语",
+        "teacherName": "于秀杰",
+        "semesterId": 1,
+        "importBatchId": 1,
+        "importBatchStatus": "confirmed",
+        "weekType": "ALL",
+        "startWeek": 1,
+        "endWeek": 16,
+        "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+        "classGroups": [
+          {
+            "classGroupId": 22,
+            "name": "2024级钢铁智能冶金技术1班（高本贯通）",
+            "semesterId": 1,
+            "cohortYear": 2024,
+            "cohortConfidence": "HIGH",
+            "cohortReason": "matched leading YYYY级 (2024)",
+            "track": "高本贯通"
+          }
+        ],
+        "slotCount": 4
+      },
+      {
+        "teachingTaskId": 200,
+        "courseName": "大学日语",
+        "teacherName": "葛书",
+        "semesterId": 1,
+        "importBatchId": 1,
+        "importBatchStatus": "confirmed",
+        "weekType": "ALL",
+        "startWeek": 1,
+        "endWeek": 16,
+        "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+        "classGroups": [
+          {
+            "classGroupId": 22,
+            "name": "2024级钢铁智能冶金技术1班（高本贯通）",
+            "semesterId": 1,
+            "cohortYear": 2024,
+            "cohortConfidence": "HIGH",
+            "cohortReason": "matched leading YYYY级 (2024)",
+            "track": "高本贯通"
+          }
+        ],
+        "slotCount": 4
+      },
+      {
+        "teachingTaskId": 201,
+        "courseName": "材料科学基础",
+        "teacherName": "于耀淇",
+        "semesterId": 1,
+        "importBatchId": 1,
+        "importBatchStatus": "confirmed",
+        "weekType": "ALL",
+        "startWeek": 1,
+        "endWeek": 16,
+        "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+        "classGroups": [
+          {
+            "classGroupId": 22,
+            "name": "2024级钢铁智能冶金技术1班（高本贯通）",
+            "semesterId": 1,
+            "cohortYear": 2024,
+            "cohortConfidence": "HIGH",
+            "cohortReason": "matched leading YYYY级 (2024)",
+            "track": "高本贯通"
+          }
+        ],
+        "slotCount": 3
+      },
+      {
+        "teachingTaskId": 202,
+        "courseName": "冶金传输原理",
+        "teacherName": "尹和鑫",
+        "semesterId": 1,
+        "importBatchId": 1,
+        "importBatchStatus": "confirmed",
+        "weekType": "ALL",
+        "startWeek": 1,
+        "endWeek": 16,
+        "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+        "classGroups": [
+          {
+            "classGroupId": 22,
+            "name": "2024级钢铁智能冶金技术1班（高本贯通）",
+            "semesterId": 1,
+            "cohortYear": 2024,
+            "cohortConfidence": "HIGH",
+            "cohortReason": "matched leading YYYY级 (2024)",
+            "track": "高本贯通"
+          }
+        ],
+        "slotCount": 3
+      },
+      {
+        "teachingTaskId": 203,
+        "courseName": "美育",
+        "teacherName": "张显慧",
+        "semesterId": 1,
+        "importBatchId": 1,
+        "importBatchStatus": "confirmed",
+        "weekType": "ALL",
+        "startWeek": 1,
+        "endWeek": 16,
+        "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+        "classGroups": [
+          {
+            "classGroupId": 22,
+            "name": "2024级钢铁智能冶金技术1班（高本贯通）",
+            "semesterId": 1,
+            "cohortYear": 2024,
+            "cohortConfidence": "HIGH",
+            "cohortReason": "matched leading YYYY级 (2024)",
+            "track": "高本贯通"
+          },
+          {
+            "classGroupId": 23,
+            "name": "2024级钢铁智能冶金技术2班",
+            "semesterId": 1,
+            "cohortYear": 2024,
+            "cohortConfidence": "HIGH",
+            "cohortReason": "matched leading YYYY级 (2024)",
+            "track": null
+          },
+          {
+            "classGroupId": 24,
+            "name": "2024级钢铁智能冶金技术3班",
+            "semesterId": 1,
+            "cohortYear": 2024,
+            "cohortConfidence": "HIGH",
+            "cohortReason": "matched leading YYYY级 (2024)",
+            "track": null
+          }
+        ],
+        "slotCount": 1
+      },
+      {
+        "teachingTaskId": 204,
+        "courseName": "冶金热工基础",
+        "teacherName": "赵春超",
+        "semesterId": 1,
+        "importBatchId": 1,
+        "importBatchStatus": "confirmed",
+        "weekType": "ALL",
+        "startWeek": 1,
+        "endWeek": 16,
+        "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+        "classGroups": [
+          {
+            "classGroupId": 22,
+            "name": "2024级钢铁智能冶金技术1班（高本贯通）",
+            "semesterId": 1,
+            "cohortYear": 2024,
+            "cohortConfidence": "HIGH",
+            "cohortReason": "matched leading YYYY级 (2024)",
+            "track": "高本贯通"
+          }
+        ],
+        "slotCount": 2
+      },
+      {
+        "teachingTaskId": 205,
+        "courseName": "职业素养",
+        "teacherName": "董钇含",
+        "semesterId": 1,
+        "importBatchId": 1,
+        "importBatchStatus": "confirmed",
+        "weekType": "CUSTOM",
+        "startWeek": 5,
+        "endWeek": 8,
+        "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+        "classGroups": [
+          {
+            "classGroupId": 22,
+            "name": "2024级钢铁智能冶金技术1班（高本贯通）",
+            "semesterId": 1,
+            "cohortYear": 2024,
+            "cohortConfidence": "HIGH",
+            "cohortReason": "matched leading YYYY级 (2024)",
+            "track": "高本贯通"
+          },
+          {
+            "classGroupId": 23,
+            "name": "2024级钢铁智能冶金技术2班",
+            "semesterId": 1,
+            "cohortYear": 2024,
+            "cohortConfidence": "HIGH",
+            "cohortReason": "matched leading YYYY级 (2024)",
+            "track": null
+          },
+          {
+            "classGroupId": 24,
+            "name": "2024级钢铁智能冶金技术3班",
+            "semesterId": 1,
+            "cohortYear": 2024,
+            "cohortConfidence": "HIGH",
+            "cohortReason": "matched leading YYYY级 (2024)",
+            "track": null
+          }
+        ],
+        "slotCount": 1
+      },
+      {
+        "teachingTaskId": 206,
+        "courseName": "大学生职业发展与就业指导",
+        "teacherName": "董钇含",
+        "semesterId": 1,
+        "importBatchId": 1,
+        "importBatchStatus": "confirmed",
+        "weekType": "CUSTOM",
+        "startWeek": 9,
+        "endWeek": 16,
+        "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+        "classGroups": [
+          {
+            "classGroupId": 22,
+            "name": "2024级钢铁智能冶金技术1班（高本贯通）",
+            "semesterId": 1,
+            "cohortYear": 2024,
+            "cohortConfidence": "HIGH",
+            "cohortReason": "matched leading YYYY级 (2024)",
+            "track": "高本贯通"
+          },
+          {
+            "classGroupId": 23,
+            "name": "2024级钢铁智能冶金技术2班",
+            "semesterId": 1,
+            "cohortYear": 2024,
+            "cohortConfidence": "HIGH",
+            "cohortReason": "matched leading YYYY级 (2024)",
+            "track": null
+          },
+          {
+            "classGroupId": 24,
+            "name": "2024级钢铁智能冶金技术3班",
+            "semesterId": 1,
+            "cohortYear": 2024,
+            "cohortConfidence": "HIGH",
+            "cohortReason": "matched leading YYYY级 (2024)",
+            "track": null
+          }
+        ],
+        "slotCount": 1
+      },
+      {
+        "teachingTaskId": 207,
+        "courseName": "机械设计基础",
+        "teacherName": "于耀淇",
+        "semesterId": 1,
+        "importBatchId": 1,
+        "importBatchStatus": "confirmed",
+        "weekType": "ALL",
+        "startWeek": 1,
+        "endWeek": 16,
+        "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+        "classGroups": [
+          {
+            "classGroupId": 22,
+            "name": "2024级钢铁智能冶金技术1班（高本贯通）",
+            "semesterId": 1,
+            "cohortYear": 2024,
+            "cohortConfidence": "HIGH",
+            "cohortReason": "matched leading YYYY级 (2024)",
+            "track": "高本贯通"
+          }
+        ],
+        "slotCount": 2
+      },
+      {
+        "teachingTaskId": 208,
+        "courseName": "金属性能检测",
+        "teacherName": "尹和鑫",
+        "semesterId": 1,
+        "importBatchId": 1,
+        "importBatchStatus": "confirmed",
+        "weekType": "ALL",
+        "startWeek": 1,
+        "endWeek": 16,
+        "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+        "classGroups": [
+          {
+            "classGroupId": 22,
+            "name": "2024级钢铁智能冶金技术1班（高本贯通）",
+            "semesterId": 1,
+            "cohortYear": 2024,
+            "cohortConfidence": "HIGH",
+            "cohortReason": "matched leading YYYY级 (2024)",
+            "track": "高本贯通"
+          }
+        ],
+        "slotCount": 2
+      }
+    ],
+    "crossCohortWith2025": [
+      {
+        "teachingTaskId": 168,
+        "courseName": "机械制图",
+        "teacherName": "赵春超",
+        "years": [
+          2025,
+          2024
+        ],
+        "classes": [
+          "2025级钢铁智能冶金技术1班（高本贯通）",
+          "2025级钢铁智能冶金技术（现场工程师）",
+          "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+          "2024级钢铁智能冶金技术1班（高本贯通）"
+        ]
+      },
+      {
+        "teachingTaskId": 174,
+        "courseName": "机械制图",
+        "teacherName": "张红梅",
+        "years": [
+          2025,
+          2024
+        ],
+        "classes": [
+          "2025级钢铁智能冶金技术1班（高本贯通）",
+          "2025级钢铁智能冶金技术（现场工程师）",
+          "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+          "2024级钢铁智能冶金技术1班（高本贯通）"
+        ]
+      },
+      {
+        "teachingTaskId": 176,
+        "courseName": "电子技术",
+        "teacherName": "许进",
+        "years": [
+          2025,
+          2024
+        ],
+        "classes": [
+          "2025级钢铁智能冶金技术1班（高本贯通）",
+          "2025级钢铁智能冶金技术（现场工程师）",
+          "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+          "2024级钢铁智能冶金技术1班（高本贯通）"
+        ]
+      },
+      {
+        "teachingTaskId": 181,
+        "courseName": "传感器与检测技术",
+        "teacherName": "张旭",
+        "years": [
+          2025,
+          2024
+        ],
+        "classes": [
+          "2025级钢铁智能冶金技术1班（高本贯通）",
+          "2025级钢铁智能冶金技术（现场工程师）",
+          "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+          "2024级钢铁智能冶金技术1班（高本贯通）"
+        ]
+      }
+    ],
+    "crossCohortScheduled": [
+      {
+        "teachingTaskId": 168,
+        "courseName": "机械制图",
+        "slotCount": 1,
+        "importBatchId": 1
+      },
+      {
+        "teachingTaskId": 174,
+        "courseName": "机械制图",
+        "slotCount": 1,
+        "importBatchId": 1
+      },
+      {
+        "teachingTaskId": 176,
+        "courseName": "电子技术",
+        "slotCount": 1,
+        "importBatchId": 1
+      },
+      {
+        "teachingTaskId": 181,
+        "courseName": "传感器与检测技术",
+        "slotCount": 1,
+        "importBatchId": 1
+      }
+    ]
+  },
+  "importBatchSummary": {
+    "1": {
+      "crossYearTaskCount": 5,
+      "suspiciousTaskCount": 4,
+      "suspiciousTaskIds": [
+        168,
+        174,
+        176,
+        181
+      ],
+      "confirmed": true
+    },
+    "2": {
+      "crossYearTaskCount": 0,
+      "suspiciousTaskCount": 0,
+      "suspiciousTaskIds": [],
+      "confirmed": false
+    },
+    "3": {
+      "crossYearTaskCount": 0,
+      "suspiciousTaskCount": 0,
+      "suspiciousTaskIds": [],
+      "confirmed": false
+    },
+    "4": {
+      "crossYearTaskCount": 0,
+      "suspiciousTaskCount": 0,
+      "suspiciousTaskIds": [],
+      "confirmed": false
+    },
+    "5": {
+      "crossYearTaskCount": 0,
+      "suspiciousTaskCount": 0,
+      "suspiciousTaskIds": [],
+      "confirmed": false
+    },
+    "6": {
+      "crossYearTaskCount": 0,
+      "suspiciousTaskCount": 0,
+      "suspiciousTaskIds": [],
+      "confirmed": false
+    },
+    "7": {
+      "crossYearTaskCount": 0,
+      "suspiciousTaskCount": 0,
+      "suspiciousTaskIds": [],
+      "confirmed": false
+    },
+    "8": {
+      "crossYearTaskCount": 0,
+      "suspiciousTaskCount": 0,
+      "suspiciousTaskIds": [],
+      "confirmed": false
+    },
+    "9": {
+      "crossYearTaskCount": 0,
+      "suspiciousTaskCount": 0,
+      "suspiciousTaskIds": [],
+      "confirmed": false
+    },
+    "10": {
+      "crossYearTaskCount": 0,
+      "suspiciousTaskCount": 0,
+      "suspiciousTaskIds": [],
+      "confirmed": false
+    },
+    "11": {
+      "crossYearTaskCount": 0,
+      "suspiciousTaskCount": 0,
+      "suspiciousTaskIds": [],
+      "confirmed": false
+    },
+    "12": {
+      "crossYearTaskCount": 0,
+      "suspiciousTaskCount": 0,
+      "suspiciousTaskIds": [],
+      "confirmed": false
+    },
+    "13": {
+      "crossYearTaskCount": 0,
+      "suspiciousTaskCount": 0,
+      "suspiciousTaskIds": [],
+      "confirmed": false
+    },
+    "14": {
+      "crossYearTaskCount": 0,
+      "suspiciousTaskCount": 0,
+      "suspiciousTaskIds": [],
+      "confirmed": false
+    },
+    "15": {
+      "crossYearTaskCount": 0,
+      "suspiciousTaskCount": 0,
+      "suspiciousTaskIds": [],
+      "confirmed": false
+    },
+    "16": {
+      "crossYearTaskCount": 0,
+      "suspiciousTaskCount": 0,
+      "suspiciousTaskIds": [],
+      "confirmed": false
+    },
+    "17": {
+      "crossYearTaskCount": 0,
+      "suspiciousTaskCount": 0,
+      "suspiciousTaskIds": [],
+      "confirmed": false
+    },
+    "18": {
+      "crossYearTaskCount": 0,
+      "suspiciousTaskCount": 0,
+      "suspiciousTaskIds": [],
+      "confirmed": false
+    },
+    "19": {
+      "crossYearTaskCount": 0,
+      "suspiciousTaskCount": 0,
+      "suspiciousTaskIds": [],
+      "confirmed": false
+    },
+    "20": {
+      "crossYearTaskCount": 0,
+      "suspiciousTaskCount": 0,
+      "suspiciousTaskIds": [],
+      "confirmed": false
+    },
+    "21": {
+      "crossYearTaskCount": 0,
+      "suspiciousTaskCount": 0,
+      "suspiciousTaskIds": [],
+      "confirmed": false
+    },
+    "22": {
+      "crossYearTaskCount": 0,
+      "suspiciousTaskCount": 0,
+      "suspiciousTaskIds": [],
+      "confirmed": false
+    },
+    "23": {
+      "crossYearTaskCount": 0,
+      "suspiciousTaskCount": 0,
+      "suspiciousTaskIds": [],
+      "confirmed": false
+    },
+    "24": {
+      "crossYearTaskCount": 0,
+      "suspiciousTaskCount": 0,
+      "suspiciousTaskIds": [],
+      "confirmed": false
+    },
+    "25": {
+      "crossYearTaskCount": 0,
+      "suspiciousTaskCount": 0,
+      "suspiciousTaskIds": [],
+      "confirmed": false
+    },
+    "26": {
+      "crossYearTaskCount": 0,
+      "suspiciousTaskCount": 0,
+      "suspiciousTaskIds": [],
+      "confirmed": false
+    },
+    "27": {
+      "crossYearTaskCount": 0,
+      "suspiciousTaskCount": 0,
+      "suspiciousTaskIds": [],
+      "confirmed": false
+    },
+    "28": {
+      "crossYearTaskCount": 0,
+      "suspiciousTaskCount": 0,
+      "suspiciousTaskIds": [],
+      "confirmed": false
+    },
+    "29": {
+      "crossYearTaskCount": 0,
+      "suspiciousTaskCount": 0,
+      "suspiciousTaskIds": [],
+      "confirmed": false
+    },
+    "30": {
+      "crossYearTaskCount": 0,
+      "suspiciousTaskCount": 0,
+      "suspiciousTaskIds": [],
+      "confirmed": false
+    },
+    "31": {
+      "crossYearTaskCount": 0,
+      "suspiciousTaskCount": 0,
+      "suspiciousTaskIds": [],
+      "confirmed": false
+    },
+    "32": {
+      "crossYearTaskCount": 0,
+      "suspiciousTaskCount": 0,
+      "suspiciousTaskIds": [],
+      "confirmed": false
+    },
+    "33": {
+      "crossYearTaskCount": 0,
+      "suspiciousTaskCount": 0,
+      "suspiciousTaskIds": [],
+      "confirmed": false
+    },
+    "34": {
+      "crossYearTaskCount": 0,
+      "suspiciousTaskCount": 0,
+      "suspiciousTaskIds": [],
+      "confirmed": false
+    },
+    "35": {
+      "crossYearTaskCount": 0,
+      "suspiciousTaskCount": 0,
+      "suspiciousTaskIds": [],
+      "confirmed": false
+    },
+    "36": {
+      "crossYearTaskCount": 0,
+      "suspiciousTaskCount": 0,
+      "suspiciousTaskIds": [],
+      "confirmed": false
+    },
+    "37": {
+      "crossYearTaskCount": 0,
+      "suspiciousTaskCount": 0,
+      "suspiciousTaskIds": [],
+      "confirmed": false
+    }
+  },
+  "rules": {
+    "A": "cross-cohort TeachingTask (different cohortYear in same task)",
+    "B": "high-similarity class name + different cohort",
+    "C": "ImportBatch-level cross-cohort summary",
+    "D": "TeachingTask.semesterId vs ClassGroup.semesterId mismatch (HIGH)",
+    "E": "cross-cohort TeachingTask already scheduled (ScheduleSlot impact)",
+    "F": "known target class专项检查 (2024级钢铁智能冶金技术1班（高本贯通）)"
+  },
+  "unmodifiedScope": {
+    "prismaSchema": "not modified",
+    "prismaDevDb": "not modified",
+    "dbPushOrMigrate": "not run",
+    "apiRouteBusinessLogic": "not modified",
+    "serverGuard": "not modified",
+    "frontend": "not modified",
+    "seedAuth": "not modified",
+    "roleMapping": "not modified",
+    "requirePermission": "not modified",
+    "permissionKeys": "not added",
+    "importLogic": "not modified",
+    "solverLogic": "not modified",
+    "parserLogic": "not modified",
+    "businessData": "not modified"
+  }
+}
