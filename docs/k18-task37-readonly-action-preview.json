@@ -1,0 +1,167 @@
+{
+  "generatedAt": "2026-06-03T04:13:45.097Z",
+  "phase": "K18-D2",
+  "mode": "read-only",
+  "summary": {
+    "taskId": 37,
+    "courseName": "习近平新时代中国特色社会主义思想概论",
+    "teacherName": "房忠敏",
+    "importBatchId": 1,
+    "importBatchStatus": "confirmed",
+    "dbChangesMade": false,
+    "suggestedNextStage": "K18-E-TASK37-DATA-REPAIR-EXECUTE"
+  },
+  "currentState": {
+    "teachingTaskId": 37,
+    "courseName": "习近平新时代中国特色社会主义思想概论",
+    "teacherName": "房忠敏",
+    "importBatchId": 1,
+    "importBatchStatus": "confirmed",
+    "classGroups": [
+      {
+        "id": 3,
+        "name": "2025级钢铁智能冶金技术1班（高本贯通）",
+        "cohortYear": 2025,
+        "studentCount": 30,
+        "ttcId": 92
+      },
+      {
+        "id": 17,
+        "name": "2025级森林草原防火技术1班",
+        "cohortYear": 2025,
+        "studentCount": 31,
+        "ttcId": 93
+      },
+      {
+        "id": 35,
+        "name": "2024级森林草原防火技术1班",
+        "cohortYear": 2024,
+        "studentCount": 37,
+        "ttcId": 94
+      }
+    ],
+    "scheduleSlot": {
+      "id": 43,
+      "dayOfWeek": 1,
+      "slotIndex": 5,
+      "roomId": 18,
+      "roomName": "1号楼虚拟仿真实训室",
+      "capacity": 100
+    },
+    "currentClassGroupIds": [
+      3,
+      17,
+      35
+    ],
+    "currentStudentCount": 98,
+    "currentCohortYears": [
+      2024,
+      2025
+    ],
+    "currentIsCrossCohort": true
+  },
+  "candidateState": {
+    "candidateClassGroupIds": [
+      3,
+      17
+    ],
+    "candidateStudentCount": 61,
+    "candidateCohortYears": [
+      2025
+    ],
+    "candidateIsCrossCohort": false,
+    "preservedObjects": {
+      "teachingTaskId": 37,
+      "scheduleSlotId": 43,
+      "classGroupIdsStillExisting": [
+        3,
+        17,
+        35
+      ],
+      "importBatchId": 1
+    },
+    "candidateDisplay": {
+      "classGroups": [
+        "2025级钢铁智能冶金技术1班（高本贯通）",
+        "2025级森林草原防火技术1班"
+      ],
+      "description": "只显示 2025级钢铁智能冶金技术1班（高本贯通）和 2025级森林草原防火技术1班"
+    },
+    "candidateSolverInput": {
+      "expectedStudentCount": 61
+    },
+    "candidateExportImpact": {
+      "description": "不再包含 2024级森林草原防火技术1班"
+    },
+    "candidateAdjustmentImpact": {
+      "description": "slot 43 保持原 task 与时间位置",
+      "slotId": 43,
+      "dayOfWeek": 1,
+      "slotIndex": 5
+    }
+  },
+  "consistencyChecks": [
+    {
+      "check": "task37_exists",
+      "pass": true,
+      "detail": "Task 37 found: 习近平新时代中国特色社会主义思想概论"
+    },
+    {
+      "check": "course_is_xi Jinping",
+      "pass": true,
+      "detail": "Course: 习近平新时代中国特色社会主义思想概论"
+    },
+    {
+      "check": "teacher_is_fangZhongMin",
+      "pass": true,
+      "detail": "Teacher: 房忠敏"
+    },
+    {
+      "check": "current_links_include_ttc_92_93_94",
+      "pass": true,
+      "detail": "TTC IDs: 92, 93, 94"
+    },
+    {
+      "check": "current_classgroup_ids_include_3_17_35",
+      "pass": true,
+      "detail": "CG IDs: [3, 17, 35]"
+    },
+    {
+      "check": "scheduleSlot_43_exists",
+      "pass": true,
+      "detail": "Slot 43 found"
+    },
+    {
+      "check": "scheduleSlot_43_belongs_to_task37",
+      "pass": true,
+      "detail": "Slot 43 belongs to task 37"
+    },
+    {
+      "check": "task37_only_remaining_cross_cohort",
+      "pass": true,
+      "detail": "Cross-cohort tasks: 1 (ids: 37)"
+    },
+    {
+      "check": "k18c_decision_is_likely_error",
+      "pass": true,
+      "detail": "K18-C decision: LIKELY_ERROR"
+    },
+    {
+      "check": "d1_json_consistent_with_db",
+      "pass": true,
+      "detail": "D1 CG IDs: [3, 17, 35], DB CG IDs: [3, 17, 35]"
+    }
+  ],
+  "expectedImpact": {
+    "display": "修复后只显示 2 个班级，studentCount=61",
+    "adjustment": "Slot 43 保持原位，调课功能不受影响",
+    "export": "Excel 导出不再包含 2024级森林草原防火技术1班",
+    "solverInput": "以 61 人计算容量约束",
+    "capacity": "Room capacity 100 >= 61 students: true"
+  },
+  "openQuestions": [
+    "是否需要为 2024级森林草原防火技术1班 创建独立 TeachingTask？(K18-C 建议: 否，除非人工确认)",
+    "ClassGroup 35 的学生是否需要在其他课程中重新安排？"
+  ],
+  "suggestedNextStage": "K18-E-TASK37-DATA-REPAIR-EXECUTE"
+}
