@@ -99,6 +99,26 @@ interface HistoricalCase {
 
 // ─── Helpers ──────────────────────────────────────────────────────────
 
+/** K19-FIX-A-BUILD-CORRECTION: safe Record field getter for parsed JSON records */
+function getNestedString(record: Record<string, unknown>, outerKey: string, innerKey: string): string {
+  const outer = record[outerKey]
+  if (typeof outer === 'object' && outer !== null && !Array.isArray(outer)) {
+    const inner = (outer as Record<string, unknown>)[innerKey]
+    return typeof inner === 'string' ? inner : ''
+  }
+  return ''
+}
+
+function getNumberField(record: Record<string, unknown>, key: string): number {
+  const value = record[key]
+  return typeof value === 'number' ? value : 0
+}
+
+function getStringField(record: Record<string, unknown>, key: string): string | null {
+  const value = record[key]
+  return typeof value === 'string' ? value : null
+}
+
 function extractCohortYear(name: string): number | null {
   const m = name.match(/^(\d{4})级/)
   return m ? parseInt(m[1], 10) : null
@@ -214,14 +234,14 @@ function loadSourceArtifacts(): ParsedRecord[] {
       const r = data[i]
       records.push({
         index: i,
-        className: r.class_info?.class_name ?? '',
-        teacher: r.teacher ?? null,
-        course: r.course ?? null,
-        room: r.room ?? null,
-        remark: r.remark ?? null,
-        weekType: r.week_type ?? 'ALL',
-        startWeek: r.week_start ?? 1,
-        endWeek: r.week_end ?? 16,
+        className: getNestedString(r, 'class_info', 'class_name'),
+        teacher: getStringField(r, 'teacher'),
+        course: getStringField(r, 'course'),
+        room: getStringField(r, 'room'),
+        remark: getStringField(r, 'remark'),
+        weekType: getStringField(r, 'week_type') ?? 'ALL',
+        startWeek: getNumberField(r, 'week_start') || 1,
+        endWeek: getNumberField(r, 'week_end') || 16,
         sourceFile: f,
       })
     }

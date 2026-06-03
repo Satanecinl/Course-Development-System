@@ -282,8 +282,8 @@ export function parseRemarkKeywords(remark: string | null): string[] {
  *   3. 仅有 1 个 exact 命中时直接采用
  *   4. 没有 exact 时，fallback 到 .includes() / subsequence 弱匹配
  *      - 弱匹配命中 0 → 静默
- *      - 弱匹配命中 1 → 采用并 emit COHORT_MISMATCH_REJECTED（warning 强度高，
- *        因为是 weak fallback）
+ *      - 弱匹配命中 1 → **采用**，emit COHORT_WEAK_MATCH_KEPT（warning 强度高，
+ *        表示通过了 cohort filter 但仅为弱匹配）
  *      - 弱匹配命中 ≥2 → 标记 AMBIGUOUS_CLASSGROUP_MATCH，**不自动 link**
  *   5. remark 的隐式简称（无显式 2024级）始终在 cohort 过滤下做 fallback，
  *      多于 1 命中时 ambiguous，不自动 link
@@ -337,12 +337,12 @@ export async function findMergedClassNames(
 
     if (includesMatches.length === 1) {
       // K19-FIX-A: 单个 weak 匹配通过 cohort filter 到达，cohort 已严格 equal。
-      // 但因为是 weak（不是 exact），升级为 warning 以便审计
+      // weak 不如 exact 可靠，但 cohort 一致且无歧义，保留 link 并记录 warning 以便审计。
       seen.add(includesMatches[0])
       results.push(includesMatches[0])
       if (warnings) {
         warnings.push(
-          `COHORT_MISMATCH_REJECTED (weak-match, kept): keyword "${kw}" weak-matched 1 candidate "${includesMatches[0]}" after cohort filter`,
+          `COHORT_WEAK_MATCH_KEPT (weak-match, kept): keyword "${kw}" weak-matched 1 candidate "${includesMatches[0]}" after cohort filter`,
         )
       }
       continue
@@ -380,7 +380,7 @@ export async function findMergedClassNames(
         results.push(subseqMatches[0])
         if (warnings) {
           warnings.push(
-            `COHORT_MISMATCH_REJECTED (subseq-match, kept): keyword "${kw}" subseq-matched 1 candidate "${subseqMatches[0]}" after cohort filter`,
+            `COHORT_WEAK_MATCH_KEPT (subseq-match, kept): keyword "${kw}" subseq-matched 1 candidate "${subseqMatches[0]}" after cohort filter`,
           )
         }
       } else if (subseqMatches.length > 1) {

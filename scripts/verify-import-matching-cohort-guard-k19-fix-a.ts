@@ -274,14 +274,14 @@ async function main() {
       'LEGAL_PUBLIC_CROSS_COHORT: course="高等数学" links 2 cohorts',
       'LIKELY_ERROR_CROSS_COHORT: course="机械制图" links 2 cohorts',
       'AMBIGUOUS_CLASSGROUP_MATCH: keyword "钢铁" matches 3 classes',
-      'COHORT_MISMATCH_REJECTED (weak-match, kept): keyword "高本贯通" weak-matched',
+      'COHORT_WEAK_MATCH_KEPT (weak-match, kept): keyword "高本贯通" weak-matched',
       'CLASS_STUDENT_COUNT_CONFLICT: foo',
     ]
     const summary = classifyCrossCohortWarnings(warnings)
     assertEq('11a: LEGAL_PUBLIC_CROSS_COHORT count', summary.LEGAL_PUBLIC_CROSS_COHORT, 1)
     assertEq('11b: LIKELY_ERROR_CROSS_COHORT count', summary.LIKELY_ERROR_CROSS_COHORT, 1)
     assertEq('11c: AMBIGUOUS_CLASSGROUP_MATCH count', summary.AMBIGUOUS_CLASSGROUP_MATCH, 1)
-    assertEq('11d: COHORT_MISMATCH_REJECTED count', summary.COHORT_MISMATCH_REJECTED, 1)
+    assertEq('11d: COHORT_WEAK_MATCH_KEPT count', summary.COHORT_WEAK_MATCH_KEPT, 1)
     assertEq('11e: total = 4 (only cross-cohort warnings)', summary.total, 4)
   }
 
