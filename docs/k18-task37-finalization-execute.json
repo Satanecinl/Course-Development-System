@@ -1,0 +1,200 @@
+{
+  "mode": "apply",
+  "applied": true,
+  "backupPath": "C:\\Users\\Satanecinl\\Desktop\\Course Development System\\my-app\\prisma\\dev.db.backup-before-k18-task37-finalization-20260603054609",
+  "targetAssociation": {
+    "teachingTaskId": 37,
+    "teachingTaskClassId": 94,
+    "classGroupId": 35,
+    "action": "DELETED"
+  },
+  "keptAssociations": [
+    {
+      "teachingTaskClassId": 92,
+      "teachingTaskId": 37,
+      "classGroupId": 3
+    },
+    {
+      "teachingTaskClassId": 93,
+      "teachingTaskId": 37,
+      "classGroupId": 17
+    }
+  ],
+  "safetyChecks": [
+    {
+      "name": "task37_exists",
+      "status": "PASS",
+      "detail": "TeachingTask 37 found"
+    },
+    {
+      "name": "course_is_xi_jinping",
+      "status": "PASS",
+      "detail": "Course: 习近平新时代中国特色社会主义思想概论"
+    },
+    {
+      "name": "teacher_is_fang_zhong_min",
+      "status": "PASS",
+      "detail": "Teacher: 房忠敏"
+    },
+    {
+      "name": "import_batch_1_confirmed",
+      "status": "PASS",
+      "detail": "ImportBatch 1 status=confirmed"
+    },
+    {
+      "name": "ttc_94_exists",
+      "status": "PASS",
+      "detail": "TTC 94 exists (task=37, cg=35)"
+    },
+    {
+      "name": "ttc_94_belongs_to_task37_and_cg35",
+      "status": "PASS",
+      "detail": "TTC94: task=37, cg=35"
+    },
+    {
+      "name": "ttc_92_belongs_to_task37_and_cg3",
+      "status": "PASS",
+      "detail": "TTC92: task=37, cg=3"
+    },
+    {
+      "name": "ttc_93_belongs_to_task37_and_cg17",
+      "status": "PASS",
+      "detail": "TTC93: task=37, cg=17"
+    },
+    {
+      "name": "current_classgroups_include_3_17_35",
+      "status": "PASS",
+      "detail": "Current CGs: [3, 17, 35]"
+    },
+    {
+      "name": "target_keeps_3_and_17",
+      "status": "PASS",
+      "detail": "Target keeps [3, 17] — present in current: true"
+    },
+    {
+      "name": "target_leaves_at_least_one_classgroup",
+      "status": "PASS",
+      "detail": "Target leaves [3, 17] (2 groups)"
+    },
+    {
+      "name": "slot_43_exists",
+      "status": "PASS",
+      "detail": "ScheduleSlot 43 exists (task=37)"
+    },
+    {
+      "name": "slot_43_belongs_to_task37",
+      "status": "PASS",
+      "detail": "Slot 43 belongs to task 37"
+    },
+    {
+      "name": "classgroup_35_exists",
+      "status": "PASS",
+      "detail": "ClassGroup 35 (2024级森林草原防火技术1班) exists"
+    },
+    {
+      "name": "mutation_plan_only_ttc_94",
+      "status": "PASS",
+      "detail": "Mutation plan: delete TTC id=94 only"
+    },
+    {
+      "name": "no_teaching_task_mutation",
+      "status": "PASS",
+      "detail": "No TeachingTask mutation planned"
+    },
+    {
+      "name": "no_classgroup_mutation",
+      "status": "PASS",
+      "detail": "No ClassGroup mutation planned"
+    },
+    {
+      "name": "no_schedule_slot_mutation",
+      "status": "PASS",
+      "detail": "No ScheduleSlot mutation planned"
+    },
+    {
+      "name": "no_import_batch_mutation",
+      "status": "PASS",
+      "detail": "No ImportBatch mutation planned"
+    },
+    {
+      "name": "no_non_target_ttc_mutation",
+      "status": "PASS",
+      "detail": "No mutation on TTC [92, 93]"
+    }
+  ],
+  "beforeSnapshot": {
+    "currentClassGroupIds": [
+      3,
+      17,
+      35
+    ],
+    "currentTtcIds": [
+      92,
+      93,
+      94
+    ],
+    "studentCount": 98,
+    "isCrossCohort": true
+  },
+  "afterSnapshot": {
+    "candidateClassGroupIds": [
+      3,
+      17
+    ],
+    "candidateTtcIds": [
+      92,
+      93
+    ],
+    "studentCount": 61,
+    "isCrossCohort": false
+  },
+  "postApplyValidation": [
+    {
+      "name": "task37_still_exists",
+      "status": "PASS",
+      "detail": "OK"
+    },
+    {
+      "name": "ttc94_deleted",
+      "status": "PASS",
+      "detail": "TTC 94 removed"
+    },
+    {
+      "name": "ttc92_preserved",
+      "status": "PASS",
+      "detail": "task=37, cg=3"
+    },
+    {
+      "name": "ttc93_preserved",
+      "status": "PASS",
+      "detail": "task=37, cg=17"
+    },
+    {
+      "name": "task37_classgroups",
+      "status": "PASS",
+      "detail": "[3, 17]"
+    },
+    {
+      "name": "classgroup_35_preserved",
+      "status": "PASS",
+      "detail": "ClassGroup 35 (2024级森林草原防火技术1班) still exists"
+    },
+    {
+      "name": "slot_43_preserved",
+      "status": "PASS",
+      "detail": "task=37"
+    },
+    {
+      "name": "import_batch_1_preserved",
+      "status": "PASS",
+      "detail": "status=confirmed"
+    },
+    {
+      "name": "task37_not_cross_cohort",
+      "status": "PASS",
+      "detail": "Cohort years: [2025]"
+    }
+  ],
+  "warnings": [],
+  "generatedAt": "2026-06-03T05:46:09.410Z"
+}
