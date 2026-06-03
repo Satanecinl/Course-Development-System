@@ -1,0 +1,686 @@
+{
+  "generatedAt": "2026-06-03T02:40:47.796Z",
+  "phase": "K18",
+  "mode": "read-only",
+  "summary": {
+    "REPAIR_CANDIDATES": 4,
+    "EXCLUDED_TASKS": 1,
+    "REQUIRES_NEW_TEACHING_TASK": 4,
+    "REQUIRES_STUDENT_COUNT_RECALCULATION": 4,
+    "REQUIRES_MANUAL_REVIEW": 1,
+    "BLOCKING": 0
+  },
+  "repairCandidates": [
+    {
+      "teachingTaskId": 168,
+      "courseId": 2,
+      "courseName": "机械制图",
+      "teacherId": 23,
+      "teacherName": "赵春超",
+      "semesterId": 1,
+      "importBatchId": 1,
+      "importBatchStatus": "confirmed",
+      "weekType": "ODD",
+      "startWeek": 1,
+      "endWeek": 16,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "allClassGroups": [
+        {
+          "classGroupId": 3,
+          "name": "2025级钢铁智能冶金技术1班（高本贯通）",
+          "semesterId": 1,
+          "studentCount": 30,
+          "cohortYear": 2025,
+          "track": "高本贯通",
+          "shouldKeep": true,
+          "reason": "Same cohort (2025) as primary task — keep"
+        },
+        {
+          "classGroupId": 18,
+          "name": "2025级钢铁智能冶金技术（现场工程师）",
+          "semesterId": 1,
+          "studentCount": 4,
+          "cohortYear": 2025,
+          "track": "现场工程师",
+          "shouldKeep": true,
+          "reason": "Same cohort (2025) as primary task — keep"
+        },
+        {
+          "classGroupId": 19,
+          "name": "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+          "semesterId": 1,
+          "studentCount": 4,
+          "cohortYear": 2025,
+          "track": "现场工程师",
+          "shouldKeep": true,
+          "reason": "Same cohort (2025) as primary task — keep"
+        },
+        {
+          "classGroupId": 22,
+          "name": "2024级钢铁智能冶金技术1班（高本贯通）",
+          "semesterId": 1,
+          "studentCount": 30,
+          "cohortYear": 2024,
+          "track": "高本贯通",
+          "shouldKeep": false,
+          "reason": "Cross-cohort (2024) — incorrect link from parser auto-merge, remove"
+        }
+      ],
+      "teachingTaskClassLinks": [
+        {
+          "id": 346,
+          "teachingTaskId": 168,
+          "classGroupId": 3
+        },
+        {
+          "id": 347,
+          "teachingTaskId": 168,
+          "classGroupId": 18
+        },
+        {
+          "id": 348,
+          "teachingTaskId": 168,
+          "classGroupId": 19
+        },
+        {
+          "id": 349,
+          "teachingTaskId": 168,
+          "classGroupId": 22
+        }
+      ],
+      "scheduleSlots": [
+        {
+          "id": 218,
+          "dayOfWeek": 6,
+          "slotIndex": 2,
+          "roomId": null,
+          "semesterId": 1
+        }
+      ],
+      "scheduleSlotCount": 1,
+      "currentStudentCountBasis": 68,
+      "proposedClassGroupIdsAfterRepair": [
+        3,
+        18,
+        19
+      ],
+      "proposedStudentCountAfterRepair": 38,
+      "expectedDisplayAfterRepair": "Task 168 displays only 2025-cohort classes; CG 22 removed from合班 list",
+      "expectedExportAfterRepair": "Excel export for task 168 shows only 2025-cohort classes",
+      "expectedSolverInputAfterRepair": "Solver input treats task 168 as 2025-cohort only; CG 22 not included in student count",
+      "repairAction": {
+        "planType": "REMOVE_TEACHING_TASK_CLASS_LINK",
+        "teachingTaskId": 168,
+        "removeClassGroupIds": [
+          22
+        ],
+        "keepClassGroupIds": [
+          3,
+          18,
+          19
+        ],
+        "affectedTeachingTaskClassLinks": [
+          {
+            "teachingTaskId": 168,
+            "classGroupId": 22,
+            "ttcId": 349
+          }
+        ],
+        "affectedScheduleSlotIds": [
+          218
+        ],
+        "requiresNewTeachingTaskForRemovedClassGroup": true,
+        "requiresManualSchedulingForNewTask": true,
+        "requiresStudentCountRecalculation": true,
+        "dryRunSqlPreview": [
+          "-- Preview: delete TTC link for task 168 + CG 22",
+          "DELETE FROM TeachingTaskClass WHERE teachingTaskId = 168 AND classGroupId = 22;",
+          "-- Affected TTC id: 349"
+        ],
+        "rollbackSqlPreview": [
+          "-- Rollback: re-insert TTC link",
+          "INSERT INTO TeachingTaskClass (teachingTaskId, classGroupId) VALUES (168, 22);"
+        ],
+        "safetyChecks": [
+          "Task 168 has 3 classGroups remaining after removal — not orphaned",
+          "ScheduleSlot ids [218] are NOT deleted — preserved",
+          "ClassGroup 22 has other standalone tasks (198-208) — not orphaned",
+          "No ScheduleAdjustment references affected TTC links — safe to delete",
+          "CG 22 has no standalone task for course \"机械制图\" (id=2) — manual review needed to decide if new task required"
+        ]
+      }
+    },
+    {
+      "teachingTaskId": 174,
+      "courseId": 2,
+      "courseName": "机械制图",
+      "teacherId": 31,
+      "teacherName": "张红梅",
+      "semesterId": 1,
+      "importBatchId": 1,
+      "importBatchStatus": "confirmed",
+      "weekType": "ODD",
+      "startWeek": 1,
+      "endWeek": 16,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "allClassGroups": [
+        {
+          "classGroupId": 3,
+          "name": "2025级钢铁智能冶金技术1班（高本贯通）",
+          "semesterId": 1,
+          "studentCount": 30,
+          "cohortYear": 2025,
+          "track": "高本贯通",
+          "shouldKeep": true,
+          "reason": "Same cohort (2025) as primary task — keep"
+        },
+        {
+          "classGroupId": 18,
+          "name": "2025级钢铁智能冶金技术（现场工程师）",
+          "semesterId": 1,
+          "studentCount": 4,
+          "cohortYear": 2025,
+          "track": "现场工程师",
+          "shouldKeep": true,
+          "reason": "Same cohort (2025) as primary task — keep"
+        },
+        {
+          "classGroupId": 19,
+          "name": "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+          "semesterId": 1,
+          "studentCount": 4,
+          "cohortYear": 2025,
+          "track": "现场工程师",
+          "shouldKeep": true,
+          "reason": "Same cohort (2025) as primary task — keep"
+        },
+        {
+          "classGroupId": 22,
+          "name": "2024级钢铁智能冶金技术1班（高本贯通）",
+          "semesterId": 1,
+          "studentCount": 30,
+          "cohortYear": 2024,
+          "track": "高本贯通",
+          "shouldKeep": false,
+          "reason": "Cross-cohort (2024) — incorrect link from parser auto-merge, remove"
+        }
+      ],
+      "teachingTaskClassLinks": [
+        {
+          "id": 358,
+          "teachingTaskId": 174,
+          "classGroupId": 3
+        },
+        {
+          "id": 359,
+          "teachingTaskId": 174,
+          "classGroupId": 18
+        },
+        {
+          "id": 360,
+          "teachingTaskId": 174,
+          "classGroupId": 19
+        },
+        {
+          "id": 361,
+          "teachingTaskId": 174,
+          "classGroupId": 22
+        }
+      ],
+      "scheduleSlots": [
+        {
+          "id": 226,
+          "dayOfWeek": 6,
+          "slotIndex": 2,
+          "roomId": null,
+          "semesterId": 1
+        }
+      ],
+      "scheduleSlotCount": 1,
+      "currentStudentCountBasis": 68,
+      "proposedClassGroupIdsAfterRepair": [
+        3,
+        18,
+        19
+      ],
+      "proposedStudentCountAfterRepair": 38,
+      "expectedDisplayAfterRepair": "Task 174 displays only 2025-cohort classes; CG 22 removed from合班 list",
+      "expectedExportAfterRepair": "Excel export for task 174 shows only 2025-cohort classes",
+      "expectedSolverInputAfterRepair": "Solver input treats task 174 as 2025-cohort only; CG 22 not included in student count",
+      "repairAction": {
+        "planType": "REMOVE_TEACHING_TASK_CLASS_LINK",
+        "teachingTaskId": 174,
+        "removeClassGroupIds": [
+          22
+        ],
+        "keepClassGroupIds": [
+          3,
+          18,
+          19
+        ],
+        "affectedTeachingTaskClassLinks": [
+          {
+            "teachingTaskId": 174,
+            "classGroupId": 22,
+            "ttcId": 361
+          }
+        ],
+        "affectedScheduleSlotIds": [
+          226
+        ],
+        "requiresNewTeachingTaskForRemovedClassGroup": true,
+        "requiresManualSchedulingForNewTask": true,
+        "requiresStudentCountRecalculation": true,
+        "dryRunSqlPreview": [
+          "-- Preview: delete TTC link for task 174 + CG 22",
+          "DELETE FROM TeachingTaskClass WHERE teachingTaskId = 174 AND classGroupId = 22;",
+          "-- Affected TTC id: 361"
+        ],
+        "rollbackSqlPreview": [
+          "-- Rollback: re-insert TTC link",
+          "INSERT INTO TeachingTaskClass (teachingTaskId, classGroupId) VALUES (174, 22);"
+        ],
+        "safetyChecks": [
+          "Task 174 has 3 classGroups remaining after removal — not orphaned",
+          "ScheduleSlot ids [226] are NOT deleted — preserved",
+          "ClassGroup 22 has other standalone tasks (198-208) — not orphaned",
+          "No ScheduleAdjustment references affected TTC links — safe to delete",
+          "CG 22 has no standalone task for course \"机械制图\" (id=2) — manual review needed to decide if new task required"
+        ]
+      }
+    },
+    {
+      "teachingTaskId": 176,
+      "courseId": 19,
+      "courseName": "电子技术",
+      "teacherId": 28,
+      "teacherName": "许进",
+      "semesterId": 1,
+      "importBatchId": 1,
+      "importBatchStatus": "confirmed",
+      "weekType": "ODD",
+      "startWeek": 1,
+      "endWeek": 16,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "allClassGroups": [
+        {
+          "classGroupId": 3,
+          "name": "2025级钢铁智能冶金技术1班（高本贯通）",
+          "semesterId": 1,
+          "studentCount": 30,
+          "cohortYear": 2025,
+          "track": "高本贯通",
+          "shouldKeep": true,
+          "reason": "Same cohort (2025) as primary task — keep"
+        },
+        {
+          "classGroupId": 18,
+          "name": "2025级钢铁智能冶金技术（现场工程师）",
+          "semesterId": 1,
+          "studentCount": 4,
+          "cohortYear": 2025,
+          "track": "现场工程师",
+          "shouldKeep": true,
+          "reason": "Same cohort (2025) as primary task — keep"
+        },
+        {
+          "classGroupId": 19,
+          "name": "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+          "semesterId": 1,
+          "studentCount": 4,
+          "cohortYear": 2025,
+          "track": "现场工程师",
+          "shouldKeep": true,
+          "reason": "Same cohort (2025) as primary task — keep"
+        },
+        {
+          "classGroupId": 22,
+          "name": "2024级钢铁智能冶金技术1班（高本贯通）",
+          "semesterId": 1,
+          "studentCount": 30,
+          "cohortYear": 2024,
+          "track": "高本贯通",
+          "shouldKeep": false,
+          "reason": "Cross-cohort (2024) — incorrect link from parser auto-merge, remove"
+        }
+      ],
+      "teachingTaskClassLinks": [
+        {
+          "id": 363,
+          "teachingTaskId": 176,
+          "classGroupId": 3
+        },
+        {
+          "id": 364,
+          "teachingTaskId": 176,
+          "classGroupId": 18
+        },
+        {
+          "id": 365,
+          "teachingTaskId": 176,
+          "classGroupId": 19
+        },
+        {
+          "id": 366,
+          "teachingTaskId": 176,
+          "classGroupId": 22
+        }
+      ],
+      "scheduleSlots": [
+        {
+          "id": 228,
+          "dayOfWeek": 6,
+          "slotIndex": 4,
+          "roomId": null,
+          "semesterId": 1
+        }
+      ],
+      "scheduleSlotCount": 1,
+      "currentStudentCountBasis": 68,
+      "proposedClassGroupIdsAfterRepair": [
+        3,
+        18,
+        19
+      ],
+      "proposedStudentCountAfterRepair": 38,
+      "expectedDisplayAfterRepair": "Task 176 displays only 2025-cohort classes; CG 22 removed from合班 list",
+      "expectedExportAfterRepair": "Excel export for task 176 shows only 2025-cohort classes",
+      "expectedSolverInputAfterRepair": "Solver input treats task 176 as 2025-cohort only; CG 22 not included in student count",
+      "repairAction": {
+        "planType": "REMOVE_TEACHING_TASK_CLASS_LINK",
+        "teachingTaskId": 176,
+        "removeClassGroupIds": [
+          22
+        ],
+        "keepClassGroupIds": [
+          3,
+          18,
+          19
+        ],
+        "affectedTeachingTaskClassLinks": [
+          {
+            "teachingTaskId": 176,
+            "classGroupId": 22,
+            "ttcId": 366
+          }
+        ],
+        "affectedScheduleSlotIds": [
+          228
+        ],
+        "requiresNewTeachingTaskForRemovedClassGroup": true,
+        "requiresManualSchedulingForNewTask": true,
+        "requiresStudentCountRecalculation": true,
+        "dryRunSqlPreview": [
+          "-- Preview: delete TTC link for task 176 + CG 22",
+          "DELETE FROM TeachingTaskClass WHERE teachingTaskId = 176 AND classGroupId = 22;",
+          "-- Affected TTC id: 366"
+        ],
+        "rollbackSqlPreview": [
+          "-- Rollback: re-insert TTC link",
+          "INSERT INTO TeachingTaskClass (teachingTaskId, classGroupId) VALUES (176, 22);"
+        ],
+        "safetyChecks": [
+          "Task 176 has 3 classGroups remaining after removal — not orphaned",
+          "ScheduleSlot ids [228] are NOT deleted — preserved",
+          "ClassGroup 22 has other standalone tasks (198-208) — not orphaned",
+          "No ScheduleAdjustment references affected TTC links — safe to delete",
+          "CG 22 has no standalone task for course \"电子技术\" (id=19) — manual review needed to decide if new task required"
+        ]
+      }
+    },
+    {
+      "teachingTaskId": 181,
+      "courseId": 23,
+      "courseName": "传感器与检测技术",
+      "teacherId": 30,
+      "teacherName": "张旭",
+      "semesterId": 1,
+      "importBatchId": 1,
+      "importBatchStatus": "confirmed",
+      "weekType": "ODD",
+      "startWeek": 1,
+      "endWeek": 16,
+      "remark": "2024级钢铁智能冶金技术1班（高本贯通）",
+      "allClassGroups": [
+        {
+          "classGroupId": 3,
+          "name": "2025级钢铁智能冶金技术1班（高本贯通）",
+          "semesterId": 1,
+          "studentCount": 30,
+          "cohortYear": 2025,
+          "track": "高本贯通",
+          "shouldKeep": true,
+          "reason": "Same cohort (2025) as primary task — keep"
+        },
+        {
+          "classGroupId": 18,
+          "name": "2025级钢铁智能冶金技术（现场工程师）",
+          "semesterId": 1,
+          "studentCount": 4,
+          "cohortYear": 2025,
+          "track": "现场工程师",
+          "shouldKeep": true,
+          "reason": "Same cohort (2025) as primary task — keep"
+        },
+        {
+          "classGroupId": 19,
+          "name": "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+          "semesterId": 1,
+          "studentCount": 4,
+          "cohortYear": 2025,
+          "track": "现场工程师",
+          "shouldKeep": true,
+          "reason": "Same cohort (2025) as primary task — keep"
+        },
+        {
+          "classGroupId": 22,
+          "name": "2024级钢铁智能冶金技术1班（高本贯通）",
+          "semesterId": 1,
+          "studentCount": 30,
+          "cohortYear": 2024,
+          "track": "高本贯通",
+          "shouldKeep": false,
+          "reason": "Cross-cohort (2024) — incorrect link from parser auto-merge, remove"
+        }
+      ],
+      "teachingTaskClassLinks": [
+        {
+          "id": 374,
+          "teachingTaskId": 181,
+          "classGroupId": 3
+        },
+        {
+          "id": 375,
+          "teachingTaskId": 181,
+          "classGroupId": 18
+        },
+        {
+          "id": 376,
+          "teachingTaskId": 181,
+          "classGroupId": 19
+        },
+        {
+          "id": 377,
+          "teachingTaskId": 181,
+          "classGroupId": 22
+        }
+      ],
+      "scheduleSlots": [
+        {
+          "id": 233,
+          "dayOfWeek": 7,
+          "slotIndex": 4,
+          "roomId": null,
+          "semesterId": 1
+        }
+      ],
+      "scheduleSlotCount": 1,
+      "currentStudentCountBasis": 68,
+      "proposedClassGroupIdsAfterRepair": [
+        3,
+        18,
+        19
+      ],
+      "proposedStudentCountAfterRepair": 38,
+      "expectedDisplayAfterRepair": "Task 181 displays only 2025-cohort classes; CG 22 removed from合班 list",
+      "expectedExportAfterRepair": "Excel export for task 181 shows only 2025-cohort classes",
+      "expectedSolverInputAfterRepair": "Solver input treats task 181 as 2025-cohort only; CG 22 not included in student count",
+      "repairAction": {
+        "planType": "REMOVE_TEACHING_TASK_CLASS_LINK",
+        "teachingTaskId": 181,
+        "removeClassGroupIds": [
+          22
+        ],
+        "keepClassGroupIds": [
+          3,
+          18,
+          19
+        ],
+        "affectedTeachingTaskClassLinks": [
+          {
+            "teachingTaskId": 181,
+            "classGroupId": 22,
+            "ttcId": 377
+          }
+        ],
+        "affectedScheduleSlotIds": [
+          233
+        ],
+        "requiresNewTeachingTaskForRemovedClassGroup": true,
+        "requiresManualSchedulingForNewTask": true,
+        "requiresStudentCountRecalculation": true,
+        "dryRunSqlPreview": [
+          "-- Preview: delete TTC link for task 181 + CG 22",
+          "DELETE FROM TeachingTaskClass WHERE teachingTaskId = 181 AND classGroupId = 22;",
+          "-- Affected TTC id: 377"
+        ],
+        "rollbackSqlPreview": [
+          "-- Rollback: re-insert TTC link",
+          "INSERT INTO TeachingTaskClass (teachingTaskId, classGroupId) VALUES (181, 22);"
+        ],
+        "safetyChecks": [
+          "Task 181 has 3 classGroups remaining after removal — not orphaned",
+          "ScheduleSlot ids [233] are NOT deleted — preserved",
+          "ClassGroup 22 has other standalone tasks (198-208) — not orphaned",
+          "No ScheduleAdjustment references affected TTC links — safe to delete",
+          "CG 22 has no standalone task for course \"传感器与检测技术\" (id=23) — manual review needed to decide if new task required"
+        ]
+      }
+    }
+  ],
+  "excludedTasks": [
+    {
+      "teachingTaskId": 37,
+      "courseName": "习近平新时代中国特色社会主义思想概论",
+      "teacherName": "房忠敏",
+      "decision": "NEEDS_SOURCE_REVIEW",
+      "reason": "Public/ideology course (习近平新时代中国特色社会主义思想概论) — cross-cohort merge may be legitimate. Requires manual verification against original .docx before any repair action.",
+      "nextStep": "Human reviews original .docx to determine if 2024级森林草原防火技术1班 and 2025级森林草原防火技术1班 should attend this course together. If confirmed legitimate → ACCEPTED_CROSS_COHORT. If not → separate repair plan."
+    }
+  ],
+  "targetClassGroupId": 22,
+  "backupPlan": {
+    "description": "Copy prisma/dev.db before repair to allow rollback",
+    "command": "copy prisma\\dev.db prisma\\dev.db.backup-before-k18-cross-cohort-repair-YYYYMMDDHHMMSS",
+    "alternativeUnix": "cp prisma/dev.db prisma/dev.db.backup-before-k18-cross-cohort-repair-$(date +%Y%m%d%H%M%S)",
+    "required": true
+  },
+  "dryRunPlan": {
+    "description": "Run repair script with --dry-run flag to preview changes without writing to DB",
+    "command": "npx.cmd tsx scripts/repair-cross-cohort-data-k18-b.ts --dry-run",
+    "expectedOutput": [
+      "List of TTC links to be deleted",
+      "List of TTC links to be preserved",
+      "Affected ScheduleSlot ids (not modified)",
+      "Whether new TeachingTask creation is needed",
+      "Student count recalculation details",
+      "Safety check results"
+    ],
+    "required": true
+  },
+  "applyPlan": {
+    "description": "Execute repair after dry-run passes",
+    "command": "npx.cmd tsx scripts/repair-cross-cohort-data-k18-b.ts --apply",
+    "prerequisites": [
+      "Dry-run must pass all safety checks",
+      "DB backup must be created",
+      "Human must confirm no active drag/drop/solver on affected tasks"
+    ],
+    "operations": [
+      "Delete TTC links: (168,22), (174,22), (176,22), (181,22)",
+      "Verify remaining classGroups per task are non-empty",
+      "Verify ScheduleSlots are preserved",
+      "Update remark field if needed (remove 2024级 reference)",
+      "No new TeachingTask creation for CG 22 in this phase (manual review first)"
+    ],
+    "required": true
+  },
+  "rollbackPlan": {
+    "description": "Restore DB from backup if repair causes issues",
+    "primaryMethod": "Restore prisma/dev.db from backup file",
+    "command": "copy prisma\\dev.db.backup-before-k18-cross-cohort-repair-YYYYMMDDHHMMSS prisma\\dev.db",
+    "alternativeMethod": "Re-insert deleted TTC links via inverse SQL",
+    "inverseOperations": [
+      "INSERT INTO TeachingTaskClass (teachingTaskId, classGroupId) VALUES (168, 22);",
+      "INSERT INTO TeachingTaskClass (teachingTaskId, classGroupId) VALUES (174, 22);",
+      "INSERT INTO TeachingTaskClass (teachingTaskId, classGroupId) VALUES (176, 22);",
+      "INSERT INTO TeachingTaskClass (teachingTaskId, classGroupId) VALUES (181, 22);"
+    ],
+    "recommendedMethod": "DB backup restore (primary) — simpler and more reliable",
+    "required": true
+  },
+  "postFixValidationPlan": {
+    "description": "Run validation scripts after repair to confirm correctness",
+    "commands": [
+      {
+        "cmd": "npx.cmd tsx scripts/audit-data-quality-classgroup-matching-k17-fix-a.ts",
+        "expect": "No HIGH cross-cohort findings for tasks 168/174/176/181"
+      },
+      {
+        "cmd": "npx.cmd tsx scripts/review-cross-cohort-classgroup-decisions-k17-fix-b.ts",
+        "expect": "Tasks 168/174/176/181 no longer LIKELY_ERROR"
+      },
+      {
+        "cmd": "npx.cmd tsx scripts/plan-cross-cohort-data-repair-k18.ts",
+        "expect": "0 repair candidates remaining"
+      },
+      {
+        "cmd": "npx.cmd tsx scripts/audit-schedule-mutation-server-guards.ts",
+        "expect": "No new findings"
+      },
+      {
+        "cmd": "npx.cmd tsx scripts/audit-teaching-task-mutation-semantic-guards.ts",
+        "expect": "No new findings"
+      },
+      {
+        "cmd": "npx.cmd tsx scripts/verify-schedule-mutation-client-preflight-fix.ts",
+        "expect": "All checks pass"
+      },
+      {
+        "cmd": "npm.cmd run build",
+        "expect": "Build succeeds"
+      },
+      {
+        "cmd": "npm.cmd run test:auth-foundation",
+        "expect": "53 passed / 1 failed (pre-existing)"
+      }
+    ],
+    "postRepairChecks": [
+      "Tasks 168/174/176/181 no longer contain ClassGroup 22",
+      "ClassGroup 22 not orphaned (still has tasks 198-208)",
+      "ScheduleSlots 218/226/228/233 preserved",
+      "No TeachingTask deleted",
+      "No ImportBatch modified",
+      "Task 37 unchanged"
+    ]
+  },
+  "safetyChecks": [
+    "Remove only TTC links — never delete TeachingTask or ScheduleSlot",
+    "Verify each task has at least 1 classGroup remaining after removal",
+    "Verify ClassGroup 22 has other tasks — not orphaned",
+    "No ScheduleAdjustment references affected TTC links",
+    "Backup DB before any write operation",
+    "Dry-run must pass before apply",
+    "Freeze drag/drop/solver/export on affected tasks during repair"
+  ]
+}
