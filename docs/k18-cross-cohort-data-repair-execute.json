@@ -1,0 +1,722 @@
+{
+  "mode": "apply",
+  "applied": true,
+  "backupPath": "C:\\Users\\Satanecinl\\Desktop\\Course Development System\\my-app\\prisma\\dev.db.backup-before-k18-cross-cohort-repair-20260603110020",
+  "targetLinks": [
+    {
+      "teachingTaskId": 168,
+      "classGroupId": 22,
+      "teachingTaskClassId": 349,
+      "keepClassGroupIds": [
+        3,
+        18,
+        19
+      ],
+      "expectedSlotIds": [
+        218
+      ]
+    },
+    {
+      "teachingTaskId": 174,
+      "classGroupId": 22,
+      "teachingTaskClassId": 361,
+      "keepClassGroupIds": [
+        3,
+        18,
+        19
+      ],
+      "expectedSlotIds": [
+        226
+      ]
+    },
+    {
+      "teachingTaskId": 176,
+      "classGroupId": 22,
+      "teachingTaskClassId": 366,
+      "keepClassGroupIds": [
+        3,
+        18,
+        19
+      ],
+      "expectedSlotIds": [
+        228
+      ]
+    },
+    {
+      "teachingTaskId": 181,
+      "classGroupId": 22,
+      "teachingTaskClassId": 377,
+      "keepClassGroupIds": [
+        3,
+        18,
+        19
+      ],
+      "expectedSlotIds": [
+        233
+      ]
+    }
+  ],
+  "deletedLinks": [
+    {
+      "teachingTaskId": 168,
+      "classGroupId": 22,
+      "ttcId": 349
+    },
+    {
+      "teachingTaskId": 174,
+      "classGroupId": 22,
+      "ttcId": 361
+    },
+    {
+      "teachingTaskId": 176,
+      "classGroupId": 22,
+      "ttcId": 366
+    },
+    {
+      "teachingTaskId": 181,
+      "classGroupId": 22,
+      "ttcId": 377
+    }
+  ],
+  "safetyChecks": [
+    {
+      "name": "Prisma connection",
+      "pass": true,
+      "detail": "Connected"
+    },
+    {
+      "name": "Task 168 exists",
+      "pass": true,
+      "detail": "Found: 2024级钢铁智能冶金技术1班（高本贯通）"
+    },
+    {
+      "name": "Task 174 exists",
+      "pass": true,
+      "detail": "Found: 2024级钢铁智能冶金技术1班（高本贯通）"
+    },
+    {
+      "name": "Task 176 exists",
+      "pass": true,
+      "detail": "Found: 2024级钢铁智能冶金技术1班（高本贯通）"
+    },
+    {
+      "name": "Task 181 exists",
+      "pass": true,
+      "detail": "Found: 2024级钢铁智能冶金技术1班（高本贯通）"
+    },
+    {
+      "name": "TTC 349 exists (task=168, cg=22)",
+      "pass": true,
+      "detail": "Found: task=168, cg=22"
+    },
+    {
+      "name": "TTC 361 exists (task=174, cg=22)",
+      "pass": true,
+      "detail": "Found: task=174, cg=22"
+    },
+    {
+      "name": "TTC 366 exists (task=176, cg=22)",
+      "pass": true,
+      "detail": "Found: task=176, cg=22"
+    },
+    {
+      "name": "TTC 377 exists (task=181, cg=22)",
+      "pass": true,
+      "detail": "Found: task=181, cg=22"
+    },
+    {
+      "name": "Task 168 has CG 22",
+      "pass": true,
+      "detail": "TTC id=349"
+    },
+    {
+      "name": "Task 174 has CG 22",
+      "pass": true,
+      "detail": "TTC id=361"
+    },
+    {
+      "name": "Task 176 has CG 22",
+      "pass": true,
+      "detail": "TTC id=366"
+    },
+    {
+      "name": "Task 181 has CG 22",
+      "pass": true,
+      "detail": "TTC id=377"
+    },
+    {
+      "name": "Task 168 has CG 3",
+      "pass": true,
+      "detail": "TTC id=346"
+    },
+    {
+      "name": "Task 168 has CG 18",
+      "pass": true,
+      "detail": "TTC id=347"
+    },
+    {
+      "name": "Task 168 has CG 19",
+      "pass": true,
+      "detail": "TTC id=348"
+    },
+    {
+      "name": "Task 174 has CG 3",
+      "pass": true,
+      "detail": "TTC id=358"
+    },
+    {
+      "name": "Task 174 has CG 18",
+      "pass": true,
+      "detail": "TTC id=359"
+    },
+    {
+      "name": "Task 174 has CG 19",
+      "pass": true,
+      "detail": "TTC id=360"
+    },
+    {
+      "name": "Task 176 has CG 3",
+      "pass": true,
+      "detail": "TTC id=363"
+    },
+    {
+      "name": "Task 176 has CG 18",
+      "pass": true,
+      "detail": "TTC id=364"
+    },
+    {
+      "name": "Task 176 has CG 19",
+      "pass": true,
+      "detail": "TTC id=365"
+    },
+    {
+      "name": "Task 181 has CG 3",
+      "pass": true,
+      "detail": "TTC id=374"
+    },
+    {
+      "name": "Task 181 has CG 18",
+      "pass": true,
+      "detail": "TTC id=375"
+    },
+    {
+      "name": "Task 181 has CG 19",
+      "pass": true,
+      "detail": "TTC id=376"
+    },
+    {
+      "name": "Task 168 retains CGs after removal",
+      "pass": true,
+      "detail": "3 classGroups remaining"
+    },
+    {
+      "name": "Task 174 retains CGs after removal",
+      "pass": true,
+      "detail": "3 classGroups remaining"
+    },
+    {
+      "name": "Task 176 retains CGs after removal",
+      "pass": true,
+      "detail": "3 classGroups remaining"
+    },
+    {
+      "name": "Task 181 retains CGs after removal",
+      "pass": true,
+      "detail": "3 classGroups remaining"
+    },
+    {
+      "name": "Slot 218 exists and belongs to task 168",
+      "pass": true,
+      "detail": "Found: task=168, day=6, idx=2"
+    },
+    {
+      "name": "Slot 226 exists and belongs to task 174",
+      "pass": true,
+      "detail": "Found: task=174, day=6, idx=2"
+    },
+    {
+      "name": "Slot 228 exists and belongs to task 176",
+      "pass": true,
+      "detail": "Found: task=176, day=6, idx=4"
+    },
+    {
+      "name": "Slot 233 exists and belongs to task 181",
+      "pass": true,
+      "detail": "Found: task=181, day=7, idx=4"
+    },
+    {
+      "name": "Task 37 excluded from mutation plan",
+      "pass": true,
+      "detail": "OK: task 37 excluded"
+    },
+    {
+      "name": "Only 4 target TTC links in plan",
+      "pass": true,
+      "detail": "4 target links"
+    },
+    {
+      "name": "ImportBatch not in mutation plan",
+      "pass": true,
+      "detail": "Plan only targets TTC links, no ImportBatch changes"
+    }
+  ],
+  "beforeSnapshot": [
+    {
+      "taskId": 168,
+      "courseName": "机械制图",
+      "teacherName": "赵春超",
+      "classGroups": [
+        {
+          "ttcId": 346,
+          "classGroupId": 3,
+          "name": "2025级钢铁智能冶金技术1班（高本贯通）",
+          "studentCount": 30
+        },
+        {
+          "ttcId": 347,
+          "classGroupId": 18,
+          "name": "2025级钢铁智能冶金技术（现场工程师）",
+          "studentCount": 4
+        },
+        {
+          "ttcId": 348,
+          "classGroupId": 19,
+          "name": "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+          "studentCount": 4
+        },
+        {
+          "ttcId": 349,
+          "classGroupId": 22,
+          "name": "2024级钢铁智能冶金技术1班（高本贯通）",
+          "studentCount": 30
+        }
+      ],
+      "scheduleSlots": [
+        {
+          "id": 218,
+          "dayOfWeek": 6,
+          "slotIndex": 2,
+          "roomId": null
+        }
+      ],
+      "totalStudentCount": 68
+    },
+    {
+      "taskId": 174,
+      "courseName": "机械制图",
+      "teacherName": "张红梅",
+      "classGroups": [
+        {
+          "ttcId": 358,
+          "classGroupId": 3,
+          "name": "2025级钢铁智能冶金技术1班（高本贯通）",
+          "studentCount": 30
+        },
+        {
+          "ttcId": 359,
+          "classGroupId": 18,
+          "name": "2025级钢铁智能冶金技术（现场工程师）",
+          "studentCount": 4
+        },
+        {
+          "ttcId": 360,
+          "classGroupId": 19,
+          "name": "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+          "studentCount": 4
+        },
+        {
+          "ttcId": 361,
+          "classGroupId": 22,
+          "name": "2024级钢铁智能冶金技术1班（高本贯通）",
+          "studentCount": 30
+        }
+      ],
+      "scheduleSlots": [
+        {
+          "id": 226,
+          "dayOfWeek": 6,
+          "slotIndex": 2,
+          "roomId": null
+        }
+      ],
+      "totalStudentCount": 68
+    },
+    {
+      "taskId": 176,
+      "courseName": "电子技术",
+      "teacherName": "许进",
+      "classGroups": [
+        {
+          "ttcId": 363,
+          "classGroupId": 3,
+          "name": "2025级钢铁智能冶金技术1班（高本贯通）",
+          "studentCount": 30
+        },
+        {
+          "ttcId": 364,
+          "classGroupId": 18,
+          "name": "2025级钢铁智能冶金技术（现场工程师）",
+          "studentCount": 4
+        },
+        {
+          "ttcId": 365,
+          "classGroupId": 19,
+          "name": "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+          "studentCount": 4
+        },
+        {
+          "ttcId": 366,
+          "classGroupId": 22,
+          "name": "2024级钢铁智能冶金技术1班（高本贯通）",
+          "studentCount": 30
+        }
+      ],
+      "scheduleSlots": [
+        {
+          "id": 228,
+          "dayOfWeek": 6,
+          "slotIndex": 4,
+          "roomId": null
+        }
+      ],
+      "totalStudentCount": 68
+    },
+    {
+      "taskId": 181,
+      "courseName": "传感器与检测技术",
+      "teacherName": "张旭",
+      "classGroups": [
+        {
+          "ttcId": 374,
+          "classGroupId": 3,
+          "name": "2025级钢铁智能冶金技术1班（高本贯通）",
+          "studentCount": 30
+        },
+        {
+          "ttcId": 375,
+          "classGroupId": 18,
+          "name": "2025级钢铁智能冶金技术（现场工程师）",
+          "studentCount": 4
+        },
+        {
+          "ttcId": 376,
+          "classGroupId": 19,
+          "name": "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+          "studentCount": 4
+        },
+        {
+          "ttcId": 377,
+          "classGroupId": 22,
+          "name": "2024级钢铁智能冶金技术1班（高本贯通）",
+          "studentCount": 30
+        }
+      ],
+      "scheduleSlots": [
+        {
+          "id": 233,
+          "dayOfWeek": 7,
+          "slotIndex": 4,
+          "roomId": null
+        }
+      ],
+      "totalStudentCount": 68
+    }
+  ],
+  "afterSnapshot": [
+    {
+      "taskId": 168,
+      "courseName": "机械制图",
+      "teacherName": "赵春超",
+      "classGroups": [
+        {
+          "ttcId": 346,
+          "classGroupId": 3,
+          "name": "2025级钢铁智能冶金技术1班（高本贯通）",
+          "studentCount": 30
+        },
+        {
+          "ttcId": 347,
+          "classGroupId": 18,
+          "name": "2025级钢铁智能冶金技术（现场工程师）",
+          "studentCount": 4
+        },
+        {
+          "ttcId": 348,
+          "classGroupId": 19,
+          "name": "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+          "studentCount": 4
+        }
+      ],
+      "scheduleSlots": [
+        {
+          "id": 218,
+          "dayOfWeek": 6,
+          "slotIndex": 2,
+          "roomId": null
+        }
+      ],
+      "totalStudentCount": 38
+    },
+    {
+      "taskId": 174,
+      "courseName": "机械制图",
+      "teacherName": "张红梅",
+      "classGroups": [
+        {
+          "ttcId": 358,
+          "classGroupId": 3,
+          "name": "2025级钢铁智能冶金技术1班（高本贯通）",
+          "studentCount": 30
+        },
+        {
+          "ttcId": 359,
+          "classGroupId": 18,
+          "name": "2025级钢铁智能冶金技术（现场工程师）",
+          "studentCount": 4
+        },
+        {
+          "ttcId": 360,
+          "classGroupId": 19,
+          "name": "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+          "studentCount": 4
+        }
+      ],
+      "scheduleSlots": [
+        {
+          "id": 226,
+          "dayOfWeek": 6,
+          "slotIndex": 2,
+          "roomId": null
+        }
+      ],
+      "totalStudentCount": 38
+    },
+    {
+      "taskId": 176,
+      "courseName": "电子技术",
+      "teacherName": "许进",
+      "classGroups": [
+        {
+          "ttcId": 363,
+          "classGroupId": 3,
+          "name": "2025级钢铁智能冶金技术1班（高本贯通）",
+          "studentCount": 30
+        },
+        {
+          "ttcId": 364,
+          "classGroupId": 18,
+          "name": "2025级钢铁智能冶金技术（现场工程师）",
+          "studentCount": 4
+        },
+        {
+          "ttcId": 365,
+          "classGroupId": 19,
+          "name": "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+          "studentCount": 4
+        }
+      ],
+      "scheduleSlots": [
+        {
+          "id": 228,
+          "dayOfWeek": 6,
+          "slotIndex": 4,
+          "roomId": null
+        }
+      ],
+      "totalStudentCount": 38
+    },
+    {
+      "taskId": 181,
+      "courseName": "传感器与检测技术",
+      "teacherName": "张旭",
+      "classGroups": [
+        {
+          "ttcId": 374,
+          "classGroupId": 3,
+          "name": "2025级钢铁智能冶金技术1班（高本贯通）",
+          "studentCount": 30
+        },
+        {
+          "ttcId": 375,
+          "classGroupId": 18,
+          "name": "2025级钢铁智能冶金技术（现场工程师）",
+          "studentCount": 4
+        },
+        {
+          "ttcId": 376,
+          "classGroupId": 19,
+          "name": "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
+          "studentCount": 4
+        }
+      ],
+      "scheduleSlots": [
+        {
+          "id": 233,
+          "dayOfWeek": 7,
+          "slotIndex": 4,
+          "roomId": null
+        }
+      ],
+      "totalStudentCount": 38
+    }
+  ],
+  "postApplyValidation": [
+    {
+      "name": "Task 168 no longer has CG 22",
+      "pass": true,
+      "detail": "OK: CG 22 removed"
+    },
+    {
+      "name": "Task 174 no longer has CG 22",
+      "pass": true,
+      "detail": "OK: CG 22 removed"
+    },
+    {
+      "name": "Task 176 no longer has CG 22",
+      "pass": true,
+      "detail": "OK: CG 22 removed"
+    },
+    {
+      "name": "Task 181 no longer has CG 22",
+      "pass": true,
+      "detail": "OK: CG 22 removed"
+    },
+    {
+      "name": "Task 168 still has CG 3",
+      "pass": true,
+      "detail": "TTC id=346"
+    },
+    {
+      "name": "Task 168 still has CG 18",
+      "pass": true,
+      "detail": "TTC id=347"
+    },
+    {
+      "name": "Task 168 still has CG 19",
+      "pass": true,
+      "detail": "TTC id=348"
+    },
+    {
+      "name": "Task 174 still has CG 3",
+      "pass": true,
+      "detail": "TTC id=358"
+    },
+    {
+      "name": "Task 174 still has CG 18",
+      "pass": true,
+      "detail": "TTC id=359"
+    },
+    {
+      "name": "Task 174 still has CG 19",
+      "pass": true,
+      "detail": "TTC id=360"
+    },
+    {
+      "name": "Task 176 still has CG 3",
+      "pass": true,
+      "detail": "TTC id=363"
+    },
+    {
+      "name": "Task 176 still has CG 18",
+      "pass": true,
+      "detail": "TTC id=364"
+    },
+    {
+      "name": "Task 176 still has CG 19",
+      "pass": true,
+      "detail": "TTC id=365"
+    },
+    {
+      "name": "Task 181 still has CG 3",
+      "pass": true,
+      "detail": "TTC id=374"
+    },
+    {
+      "name": "Task 181 still has CG 18",
+      "pass": true,
+      "detail": "TTC id=375"
+    },
+    {
+      "name": "Task 181 still has CG 19",
+      "pass": true,
+      "detail": "TTC id=376"
+    },
+    {
+      "name": "Slot 218 still exists",
+      "pass": true,
+      "detail": "task=168, day=6, idx=2"
+    },
+    {
+      "name": "Slot 226 still exists",
+      "pass": true,
+      "detail": "task=174, day=6, idx=2"
+    },
+    {
+      "name": "Slot 228 still exists",
+      "pass": true,
+      "detail": "task=176, day=6, idx=4"
+    },
+    {
+      "name": "Slot 233 still exists",
+      "pass": true,
+      "detail": "task=181, day=7, idx=4"
+    },
+    {
+      "name": "TTC 349 deleted",
+      "pass": true,
+      "detail": "OK: deleted"
+    },
+    {
+      "name": "TTC 361 deleted",
+      "pass": true,
+      "detail": "OK: deleted"
+    },
+    {
+      "name": "TTC 366 deleted",
+      "pass": true,
+      "detail": "OK: deleted"
+    },
+    {
+      "name": "TTC 377 deleted",
+      "pass": true,
+      "detail": "OK: deleted"
+    },
+    {
+      "name": "ClassGroup 22 still exists",
+      "pass": true,
+      "detail": "\"2024级钢铁智能冶金技术1班（高本贯通）\""
+    },
+    {
+      "name": "Task 168 still exists",
+      "pass": true,
+      "detail": "OK"
+    },
+    {
+      "name": "Task 174 still exists",
+      "pass": true,
+      "detail": "OK"
+    },
+    {
+      "name": "Task 176 still exists",
+      "pass": true,
+      "detail": "OK"
+    },
+    {
+      "name": "Task 181 still exists",
+      "pass": true,
+      "detail": "OK"
+    },
+    {
+      "name": "ImportBatch #1 unchanged",
+      "pass": true,
+      "detail": "status=confirmed"
+    },
+    {
+      "name": "Task 37 TTC links unchanged",
+      "pass": true,
+      "detail": "3 links (expected 3)"
+    }
+  ],
+  "warnings": [],
+  "generatedAt": "2026-06-03T03:00:20.387Z"
+}
