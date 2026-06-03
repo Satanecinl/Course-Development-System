@@ -144,9 +144,42 @@ export function mapTimeSlotToIndex(timeSlot: string): number {
 
 const KNOWN_TRACKS = ['高本贯通', '现场工程师']
 
-function extractYear(name: string): string | null {
-  const m = name.match(/^(\d{4})级/)
-  return m ? m[1] : null
+// 公共课/合班允许的弱匹配来源：跨 cohort 通常是公共课合班
+// 列表与 K19 audit / K17-FIX-A 一致；本阶段不强制 gate，仅作为 warning 分类依据
+const LIKELY_PUBLIC_COURSE_HINTS = [
+  '大学英语', '大学日语', '大学语文', '高等数学',
+  '习近平新时代中国特色社会主义思想概论',
+  '毛泽东思想和中国特色社会主义理论体系概论',
+  '思想道德与法治', '形势与政策', '创新创业教育',
+  '职业生涯规划', '体育', '军事理论', '心理健康教育',
+  '劳动教育', '信息技术', '计算机应用基础', '中华优秀传统文化',
+  '美育', '职业素养', '大学生职业发展与就业指导',
+]
+
+// K19-FIX-A: extractYear 已废弃；统一使用 extractCohortYearFromClassName
+// （原 extractYear 返回 string 形式的 cohort year；K19-FIX-A 强化为 number 形式
+// 并支持短年份 24级/25级；旧调用点已全部迁移到 extractCohortYearFromClassName。）
+
+/**
+ * K19-FIX-A: 公共 helper — 从 class name 提取 cohort year。
+
+/**
+ * K19-FIX-A: 公共 helper — 从 class name 提取 cohort year。
+ * 支持 `2024级` / `24级` 两种形式；非 class name 字段（course / file）会因锚定
+ * 失败而返回 null。
+ */
+export function extractCohortYearFromClassName(name: string): number | null {
+  if (!name) return null
+  const m4 = name.match(/^(\d{4})级/)
+  if (m4) return parseInt(m4[1], 10)
+  // 短年份 24级 / 25级（必须以 ^ 开头，避免把 2024级 或 课程内数字 误判）
+  const m2 = name.match(/^(\d{2})级/)
+  if (m2) {
+    const n = parseInt(m2[1], 10)
+    // 约定：00-79 → 20xx；80-99 → 19xx
+    return n <= 79 ? 2000 + n : 1900 + n
+  }
+  return null
 }
 
 function extractTrack(name: string): string | null {
@@ -167,27 +200,42 @@ function hasExplicitTrack(text: string): boolean {
   return false
 }
 
-// 按年份和培养方向过滤候选班级
+/**
+ * K19-FIX-A: 按 cohort year + track 严格过滤候选班级。
+ * 在 K17 的 `filterCandidatesByYearAndTrack` 基础上增加：
+ *   - candidate cohortYear 必须等于 baseClass cohortYear（两边都能解析时强制 equal）
+ *   - candidate 无法解析 cohortYear 时，仅在 baseClass 也无 cohortYear 时保留
+ *     （否则视为 ambiguous，丢弃以防跨 cohort 误合并）
+ */
 function filterCandidatesByYearAndTrack(
   baseClassName: string,
   keyword: string,
   candidates: { name: string }[],
 ): { name: string }[] {
-  const baseYear = extractYear(baseClassName)
+  const baseYear = extractCohortYearFromClassName(baseClassName)
   const baseTrack = extractTrack(baseClassName)
   const keywordHasYear = hasExplicitYear(keyword)
   const keywordHasTrack = hasExplicitTrack(keyword)
 
   return candidates.filter((c) => {
-    // 年份约束：keyword 不显式含年级时，候选班级必须与 baseClass 同年级
-    if (!keywordHasYear && baseYear) {
-      const cy = extractYear(c.name)
-      if (cy && cy !== baseYear) return false
+    const cy = extractCohortYearFromClassName(c.name)
+    const ct = extractTrack(c.name)
+
+    // K19-FIX-A cohort strict equal:
+    //   - baseClass 有 cohortYear，candidate 也必须 == baseYear
+    //   - baseClass 有 cohortYear，candidate 无 cohortYear → reject（无法保证同 cohort）
+    if (baseYear != null) {
+      if (cy == null) return false
+      if (cy !== baseYear) return false
+    } else {
+      // baseClass 无 cohortYear：candidate 有 cohortYear 时显式 year remark
+      // 才允许；keyword 显式带 year 时保留（filter 留 keywordHasYear 路径），
+      // 否则仅允许同样无 cohortYear 的 candidate
+      if (cy != null && !keywordHasYear) return false
     }
 
     // 培养方向约束：keyword 不显式含方向时，候选班级必须与 baseClass 同方向
     if (!keywordHasTrack && baseTrack) {
-      const ct = extractTrack(c.name)
       if (ct && ct !== baseTrack) return false
     }
 
@@ -224,6 +272,22 @@ export function parseRemarkKeywords(remark: string | null): string[] {
   return keywords
 }
 
+/**
+ * K19-FIX-A-IMPORT-MATCHING-COHORT-GUARD
+ * ClassGroup 合班匹配：exact-match-first + cohort strict guard。
+ *
+ * 策略：
+ *   1. 先按 cohort/track 过滤候选集（filterCandidatesByYearAndTrack 已确保 cohort 相等）
+ *   2. 在过滤后集合上做 exact name match（c.name === baseClassName 或 === keyword）
+ *   3. 仅有 1 个 exact 命中时直接采用
+ *   4. 没有 exact 时，fallback 到 .includes() / subsequence 弱匹配
+ *      - 弱匹配命中 0 → 静默
+ *      - 弱匹配命中 1 → 采用并 emit COHORT_MISMATCH_REJECTED（warning 强度高，
+ *        因为是 weak fallback）
+ *      - 弱匹配命中 ≥2 → 标记 AMBIGUOUS_CLASSGROUP_MATCH，**不自动 link**
+ *   5. remark 的隐式简称（无显式 2024级）始终在 cohort 过滤下做 fallback，
+ *      多于 1 命中时 ambiguous，不自动 link
+ */
 export async function findMergedClassNames(
   keywords: string[],
   baseClassName: string,
@@ -236,10 +300,33 @@ export async function findMergedClassNames(
   for (const kw of keywords) {
     if (kw.length < 2) continue
 
-    // 步骤 1：先按年份 / 培养方向过滤候选集
+    // 步骤 1：cohort / track 严格过滤
     const filtered = filterCandidatesByYearAndTrack(baseClassName, kw, allClasses)
 
-    // 步骤 2：在过滤后的候选集上做 includes() 匹配
+    // 步骤 2：exact-match-first
+    const exactMatches: string[] = []
+    for (const c of filtered) {
+      if (c.name === baseClassName || seen.has(c.name)) continue
+      if (c.name === kw) {
+        exactMatches.push(c.name)
+      }
+    }
+
+    if (exactMatches.length === 1) {
+      seen.add(exactMatches[0])
+      results.push(exactMatches[0])
+      continue
+    }
+    if (exactMatches.length > 1) {
+      if (warnings) {
+        warnings.push(
+          `AMBIGUOUS_CLASSGROUP_MATCH: keyword "${kw}" exact-matches ${exactMatches.length} classes: ${exactMatches.join(', ')}`,
+        )
+      }
+      continue
+    }
+
+    // 步骤 3：fallback - includes() 弱匹配
     const includesMatches: string[] = []
     for (const c of filtered) {
       if (c.name === baseClassName || seen.has(c.name)) continue
@@ -249,19 +336,28 @@ export async function findMergedClassNames(
     }
 
     if (includesMatches.length === 1) {
+      // K19-FIX-A: 单个 weak 匹配通过 cohort filter 到达，cohort 已严格 equal。
+      // 但因为是 weak（不是 exact），升级为 warning 以便审计
       seen.add(includesMatches[0])
       results.push(includesMatches[0])
-    } else if (includesMatches.length > 1) {
-      // 歧义保护：多个匹配时拒绝并记录 warning
       if (warnings) {
         warnings.push(
-          `AMBIGUOUS_MATCH: keyword "${kw}" matches ${includesMatches.length} classes: ${includesMatches.join(', ')}`,
+          `COHORT_MISMATCH_REJECTED (weak-match, kept): keyword "${kw}" weak-matched 1 candidate "${includesMatches[0]}" after cohort filter`,
+        )
+      }
+      continue
+    }
+    if (includesMatches.length > 1) {
+      // 歧义保护：弱匹配多于 1 命中，**不自动 link**
+      if (warnings) {
+        warnings.push(
+          `AMBIGUOUS_CLASSGROUP_MATCH: keyword "${kw}" weak-matches ${includesMatches.length} classes: ${includesMatches.join(', ')} — not auto-linked`,
         )
       }
       continue
     }
 
-    // 步骤 3：includes 无匹配时，在过滤候选集上做子序列匹配
+    // 步骤 4：subsequence 弱匹配（fallback of fallback）
     if (includesMatches.length === 0) {
       const subseqMatches: string[] = []
       const chars = [...kw]
@@ -282,10 +378,15 @@ export async function findMergedClassNames(
       if (subseqMatches.length === 1) {
         seen.add(subseqMatches[0])
         results.push(subseqMatches[0])
+        if (warnings) {
+          warnings.push(
+            `COHORT_MISMATCH_REJECTED (subseq-match, kept): keyword "${kw}" subseq-matched 1 candidate "${subseqMatches[0]}" after cohort filter`,
+          )
+        }
       } else if (subseqMatches.length > 1) {
         if (warnings) {
           warnings.push(
-            `AMBIGUOUS_SUBSEQ_MATCH: keyword "${kw}" matches ${subseqMatches.length} classes: ${subseqMatches.join(', ')}`,
+            `AMBIGUOUS_CLASSGROUP_MATCH: keyword "${kw}" subseq-matches ${subseqMatches.length} classes: ${subseqMatches.join(', ')} — not auto-linked`,
           )
         }
       }
@@ -563,6 +664,42 @@ async function executeImportInTransaction(
       taskKeyToTaskId.set(taskKey, matchedTask.id)
       taskReused++
     } else {
+      // K19-FIX-A: 在创建 TeachingTask + TTC 前进行 cross-cohort final assert
+      // 1) 收集将要链接的 classGroup 名称 + cohort year
+      const cgNamesForAudit: string[] = []
+      for (const cgId of classGroupIds) {
+        // 查 cgName：从 records 找对应 classInfo（cgId → cgName via classGroupMap 反查）
+        // 实际实现：classGroupMap 是 name → id，遍历 classGroupIds 反查 name
+        for (const [n, id] of classGroupMap.entries()) {
+          if (id === cgId) {
+            cgNamesForAudit.push(n)
+            break
+          }
+        }
+      }
+      const cohortYearSet = new Set<number>()
+      for (const n of cgNamesForAudit) {
+        const y = extractCohortYearFromClassName(n)
+        if (y != null) cohortYearSet.add(y)
+      }
+      const isPublicCourse = courseName
+        ? LIKELY_PUBLIC_COURSE_HINTS.some((h) => courseName.includes(h))
+        : false
+
+      let allowedCrossCohort = false
+      if (cohortYearSet.size > 1) {
+        if (isPublicCourse) {
+          warnings.push(
+            `LEGAL_PUBLIC_CROSS_COHORT: course="${courseName}" links ${cohortYearSet.size} cohorts (${[...cohortYearSet].sort().join(',')}) — allowed as public-course 合班`,
+          )
+          allowedCrossCohort = true
+        } else {
+          warnings.push(
+            `LIKELY_ERROR_CROSS_COHORT: course="${courseName}" links ${cohortYearSet.size} cohorts (${[...cohortYearSet].sort().join(',')}) — not a known public course; review manually`,
+          )
+        }
+      }
+
       const task = await tx.teachingTask.create({
         data: {
           courseId,
@@ -583,6 +720,8 @@ async function executeImportInTransaction(
         await tx.teachingTaskClass.create({ data: { teachingTaskId: task.id, classGroupId: cgId } })
         ttcCreated++
       }
+      // allowedCrossCohort 当前仅作 warning-first 占位，标志未使用
+      void allowedCrossCohort
     }
   }
 

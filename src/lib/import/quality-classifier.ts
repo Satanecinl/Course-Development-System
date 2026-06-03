@@ -3,6 +3,58 @@ import { computeImportParseQuality } from './parse-utils'
 
 export type ImportIssueClassification = 'LIKELY_BUSINESS_EMPTY' | 'LIKELY_PARSE_BUG' | 'NEED_MANUAL_REVIEW'
 
+/**
+ * K19-FIX-A: Cross-cohort / matching warning categories emitted by the importer.
+ * These are surfaced as `warnings` strings (backward-compatible) but the importer
+ * can also pass them through `classifyImportWarnings` to get a structured
+ * cross-cohort audit summary without changing the existing response shape.
+ */
+export type CrossCohortWarningKind =
+  | 'LEGAL_PUBLIC_CROSS_COHORT'
+  | 'LIKELY_ERROR_CROSS_COHORT'
+  | 'AMBIGUOUS_CLASSGROUP_MATCH'
+  | 'COHORT_MISMATCH_REJECTED'
+
+export interface CrossCohortWarningSummary {
+  LEGAL_PUBLIC_CROSS_COHORT: number
+  LIKELY_ERROR_CROSS_COHORT: number
+  AMBIGUOUS_CLASSGROUP_MATCH: number
+  COHORT_MISMATCH_REJECTED: number
+  total: number
+}
+
+const CROSS_COHORT_PREFIX_BY_KIND: Record<CrossCohortWarningKind, string> = {
+  LEGAL_PUBLIC_CROSS_COHORT: 'LEGAL_PUBLIC_CROSS_COHORT',
+  LIKELY_ERROR_CROSS_COHORT: 'LIKELY_ERROR_CROSS_COHORT',
+  AMBIGUOUS_CLASSGROUP_MATCH: 'AMBIGUOUS_CLASSGROUP_MATCH',
+  COHORT_MISMATCH_REJECTED: 'COHORT_MISMATCH_REJECTED',
+}
+
+/**
+ * K19-FIX-A: 将 importer 产生的 warnings 字符串数组分类为 cross-cohort 类别。
+ * 不修改 ImportClassificationResult / warnings 数组本身，仅作为附加审计。
+ * 与 K19 audit / K17-FIX-A 协同：本阶段不强制 gate，仅作为 warning 分类。
+ */
+export function classifyCrossCohortWarnings(warnings: readonly string[]): CrossCohortWarningSummary {
+  const summary: CrossCohortWarningSummary = {
+    LEGAL_PUBLIC_CROSS_COHORT: 0,
+    LIKELY_ERROR_CROSS_COHORT: 0,
+    AMBIGUOUS_CLASSGROUP_MATCH: 0,
+    COHORT_MISMATCH_REJECTED: 0,
+    total: 0,
+  }
+  for (const w of warnings) {
+    for (const [kind, prefix] of Object.entries(CROSS_COHORT_PREFIX_BY_KIND) as [CrossCohortWarningKind, string][]) {
+      if (w.includes(prefix)) {
+        summary[kind]++
+        summary.total++
+        break
+      }
+    }
+  }
+  return summary
+}
+
 export interface ClassifiedIssue {
   recordIndex: number
   record: ImportScheduleRecord
