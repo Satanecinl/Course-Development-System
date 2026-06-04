@@ -80,6 +80,31 @@ export interface MergedClassSample {
   classNames: string[]
 }
 
+// ── K20-FIX-B: per-link source evidence types ──────────────────────
+
+/** How a class name was attached to a task during remark-keyword matching. */
+export type MatchKind = 'BASE' | 'EXACT' | 'WEAK' | 'SUBSEQ'
+
+/** Result of per-link matching: each class name with the keyword + match kind. */
+export interface ClassNameEvidence {
+  name: string
+  /** The keyword that produced this match (null for BASE = the record's own class_name). */
+  keyword: string | null
+  matchKind: MatchKind
+}
+
+/** Source-evidence fields written to TeachingTaskClass per link. */
+export interface SourceEvidenceFields {
+  importBatchId: number
+  sourceRowIndex: number | null
+  sourceKeyword: string | null
+  sourceClassName: string | null
+  sourceRemark: string | null
+  sourceArtifactFilename: string | null
+  matchStrategy: string
+  matchConfidence: string
+}
+
 export interface ImportPlan {
   batchId: number
   strategy: ImportStrategy
@@ -279,6 +304,75 @@ export function parseRemarkKeywords(remark: string | null): string[] {
   return keywords
 }
 
+/** K20-FIX-B: extract basename from a path or filename (handles Windows + POSIX separators). */
+export function extractBasename(p: string | null | undefined): string | null {
+  if (!p) return null
+  const parts = p.split(/[\\/]/).filter(Boolean)
+  return parts.length > 0 ? parts[parts.length - 1] : p
+}
+
+/** K20-FIX-B: map a (MatchKind, cross-cohort approval status) tuple to matchStrategy + matchConfidence. */
+export function deriveMatchAttributes(
+  matchKind: MatchKind,
+  crossCohortApproved: boolean,
+): { matchStrategy: string; matchConfidence: string } {
+  if (matchKind === 'BASE') {
+    return { matchStrategy: 'EXACT_CLASS_NAME', matchConfidence: 'HIGH' }
+  }
+  if (matchKind === 'EXACT') {
+    return { matchStrategy: 'EXACT_CLASS_NAME', matchConfidence: 'HIGH' }
+  }
+  if (matchKind === 'WEAK') {
+    if (crossCohortApproved) {
+      return { matchStrategy: 'MANUAL_CROSS_COHORT_APPROVAL', matchConfidence: 'MEDIUM' }
+    }
+    return { matchStrategy: 'SAME_COHORT_WEAK_MATCH', matchConfidence: 'LOW' }
+  }
+  if (matchKind === 'SUBSEQ') {
+    if (crossCohortApproved) {
+      return { matchStrategy: 'MANUAL_CROSS_COHORT_APPROVAL', matchConfidence: 'MEDIUM' }
+    }
+    return { matchStrategy: 'SAME_COHORT_WEAK_MATCH', matchConfidence: 'LOW' }
+  }
+  return { matchStrategy: 'UNKNOWN', matchConfidence: 'UNKNOWN' }
+}
+
+/** K20-FIX-B: compute the source-evidence block for a single TeachingTaskClass create. */
+export function buildTeachingTaskClassEvidence(
+  importBatchId: number,
+  recordIndex: number | null,
+  baseRecord: ImportScheduleRecord | undefined,
+  evidence: ClassNameEvidence | undefined,
+  cgName: string,
+  batchFilename: string | null,
+  crossCohortApproved: boolean,
+): SourceEvidenceFields {
+  const artifact = extractBasename(batchFilename)
+  if (!evidence) {
+    return {
+      importBatchId,
+      sourceRowIndex: recordIndex,
+      sourceKeyword: null,
+      sourceClassName: cgName,
+      sourceRemark: baseRecord?.remark ?? null,
+      sourceArtifactFilename: artifact,
+      matchStrategy: 'UNKNOWN',
+      matchConfidence: 'UNKNOWN',
+    }
+  }
+  const { matchStrategy, matchConfidence } = deriveMatchAttributes(evidence.matchKind, crossCohortApproved)
+  return {
+    importBatchId,
+    sourceRowIndex: recordIndex,
+    sourceKeyword: evidence.keyword,
+    sourceClassName: cgName,
+    sourceRemark: baseRecord?.remark ?? null,
+    sourceArtifactFilename: artifact,
+    matchStrategy,
+    matchConfidence,
+  }
+}
+
 /**
  * K19-FIX-A-IMPORT-MATCHING-COHORT-GUARD
  * ClassGroup 合班匹配：exact-match-first + cohort strict guard。
@@ -403,6 +497,123 @@ export async function findMergedClassNames(
   return results
 }
 
+/**
+ * K20-FIX-B: Same matching logic as findMergedClassNames, but returns evidence
+ * for each matched class (the keyword that produced the match + match kind).
+ * The base class name is NOT included in the result — callers add it with
+ * `matchKind: 'BASE'` separately.
+ *
+ * This duplicates the matching logic intentionally: we want to keep
+ * findMergedClassNames's string-array contract intact for existing callers
+ * (K19-FIX-A tests, prepareRecords event aggregation) while adding a parallel
+ * evidence-returning variant for K20-FIX-B per-link writes.
+ */
+export async function findMergedClassNamesWithEvidence(
+  keywords: string[],
+  baseClassName: string,
+  allClasses: { name: string }[],
+  warnings?: string[],
+): Promise<ClassNameEvidence[]> {
+  const results: ClassNameEvidence[] = []
+  const seen = new Set<string>()
+
+  for (const kw of keywords) {
+    if (kw.length < 2) continue
+
+    // 步骤 1：cohort / track 严格过滤
+    const filtered = filterCandidatesByYearAndTrack(baseClassName, kw, allClasses)
+
+    // 步骤 2：exact-match-first
+    const exactMatches: string[] = []
+    for (const c of filtered) {
+      if (c.name === baseClassName || seen.has(c.name)) continue
+      if (c.name === kw) {
+        exactMatches.push(c.name)
+      }
+    }
+
+    if (exactMatches.length === 1) {
+      seen.add(exactMatches[0])
+      results.push({ name: exactMatches[0], keyword: kw, matchKind: 'EXACT' })
+      continue
+    }
+    if (exactMatches.length > 1) {
+      if (warnings) {
+        warnings.push(
+          `AMBIGUOUS_CLASSGROUP_MATCH: keyword "${kw}" exact-matches ${exactMatches.length} classes: ${exactMatches.join(', ')}`,
+        )
+      }
+      continue
+    }
+
+    // 步骤 3：fallback - includes() 弱匹配
+    const includesMatches: string[] = []
+    for (const c of filtered) {
+      if (c.name === baseClassName || seen.has(c.name)) continue
+      if (c.name.includes(kw)) {
+        includesMatches.push(c.name)
+      }
+    }
+
+    if (includesMatches.length === 1) {
+      // K19-FIX-A: weak match passes cohort filter → kept with warning
+      seen.add(includesMatches[0])
+      results.push({ name: includesMatches[0], keyword: kw, matchKind: 'WEAK' })
+      if (warnings) {
+        warnings.push(
+          `COHORT_WEAK_MATCH_KEPT (weak-match, kept): keyword "${kw}" weak-matched 1 candidate "${includesMatches[0]}" after cohort filter`,
+        )
+      }
+      continue
+    }
+    if (includesMatches.length > 1) {
+      if (warnings) {
+        warnings.push(
+          `AMBIGUOUS_CLASSGROUP_MATCH: keyword "${kw}" weak-matches ${includesMatches.length} classes: ${includesMatches.join(', ')} — not auto-linked`,
+        )
+      }
+      continue
+    }
+
+    // 步骤 4：subsequence 弱匹配（fallback of fallback）
+    if (includesMatches.length === 0) {
+      const subseqMatches: string[] = []
+      const chars = [...kw]
+      for (const c of filtered) {
+        if (c.name === baseClassName || seen.has(c.name)) continue
+        let pos = 0
+        let matched = true
+        for (const ch of chars) {
+          pos = c.name.indexOf(ch, pos)
+          if (pos === -1) { matched = false; break }
+          pos++
+        }
+        if (matched) {
+          subseqMatches.push(c.name)
+        }
+      }
+
+      if (subseqMatches.length === 1) {
+        seen.add(subseqMatches[0])
+        results.push({ name: subseqMatches[0], keyword: kw, matchKind: 'SUBSEQ' })
+        if (warnings) {
+          warnings.push(
+            `COHORT_WEAK_MATCH_KEPT (subseq-match, kept): keyword "${kw}" subseq-matched 1 candidate "${subseqMatches[0]}" after cohort filter`,
+          )
+        }
+      } else if (subseqMatches.length > 1) {
+        if (warnings) {
+          warnings.push(
+            `AMBIGUOUS_CLASSGROUP_MATCH: keyword "${kw}" subseq-matches ${subseqMatches.length} classes: ${subseqMatches.join(', ')} — not auto-linked`,
+          )
+        }
+      }
+    }
+  }
+
+  return results
+}
+
 // ── 辅助：构建 eventKey ──
 
 export function buildEventKey(r: ImportScheduleRecord): string {
@@ -436,7 +647,11 @@ interface PreparedData {
   courseNames: Set<string>
   roomNames: Set<string>
   eventKeyToClassNames: Map<string, Set<string>>
+  /** K20-FIX-B: per-link evidence for each event's matched class names. */
+  eventKeyToClassNameEvidence: Map<string, ClassNameEvidence[]>
   taskKeyToClassNames: Map<string, Set<string>>
+  /** K20-FIX-B: per-link evidence for each task's matched class names. */
+  taskKeyToClassNameEvidence: Map<string, ClassNameEvidence[]>
   taskKeyToRecord: Map<string, ImportScheduleRecord>
   taskKeys: string[]
   slotKeyToRecord: Map<string, ImportScheduleRecord>
@@ -444,6 +659,8 @@ interface PreparedData {
   missingTeacherCount: number
   missingRoomCount: number
   mergeWarnings: string[]
+  /** K20-FIX-B: ImportBatch.filename (basename) for per-link artifact evidence. */
+  batchFilename: string
 }
 
 async function prepareRecords(batchId: number, targetSemesterId?: number): Promise<PreparedData> {
@@ -482,18 +699,38 @@ async function prepareRecords(batchId: number, targetSemesterId?: number): Promi
 
   // 事件聚合
   const eventKeyToClassNames = new Map<string, Set<string>>()
+  // K20-FIX-B: per-link evidence map — populated alongside eventKeyToClassNames
+  const eventKeyToClassNameEvidence = new Map<string, ClassNameEvidence[]>()
   const mergeWarnings: string[] = []
   for (const r of records) {
     const ek = buildEventKey(r)
+    const baseName = r.class_info?.class_name ?? ''
     let set = eventKeyToClassNames.get(ek)
     if (!set) { set = new Set(); eventKeyToClassNames.set(ek, set) }
-    set.add(r.class_info?.class_name ?? '')
+    set.add(baseName)
+    // K20-FIX-B: initialize evidence array with BASE entry
+    let evList = eventKeyToClassNameEvidence.get(ek)
+    if (!evList) { evList = []; eventKeyToClassNameEvidence.set(ek, evList) }
+    if (!evList.some((e) => e.name === baseName)) {
+      evList.push({ name: baseName, keyword: null, matchKind: 'BASE' })
+    }
     if (r.remark) {
       const keywords = parseRemarkKeywords(r.remark)
       if (keywords.length > 0) {
         const allClasses = [...classNames].map((n) => ({ name: n }))
-        const merged = await findMergedClassNames(keywords, r.class_info?.class_name ?? '', allClasses, mergeWarnings)
-        for (const m of merged) set.add(m)
+        // K20-FIX-B: use evidence-returning variant to capture per-link keyword + match kind
+        const mergedEvidence = await findMergedClassNamesWithEvidence(
+          keywords,
+          baseName,
+          allClasses,
+          mergeWarnings,
+        )
+        for (const me of mergedEvidence) {
+          set.add(me.name)
+          if (!evList.some((e) => e.name === me.name)) {
+            evList.push(me)
+          }
+        }
       }
     }
   }
@@ -502,17 +739,21 @@ async function prepareRecords(batchId: number, targetSemesterId?: number): Promi
   const taskKeySet = new Set<string>()
   const taskKeys: string[] = []
   const taskKeyToClassNames = new Map<string, Set<string>>()
+  // K20-FIX-B: per-link evidence for each task
+  const taskKeyToClassNameEvidence = new Map<string, ClassNameEvidence[]>()
   const taskKeyToRecord = new Map<string, ImportScheduleRecord>()
 
   for (const r of records) {
     const ek = buildEventKey(r)
     const classGroupSet = eventKeyToClassNames.get(ek)
+    const evidenceList = eventKeyToClassNameEvidence.get(ek) ?? []
     const canonicalSet = classGroupSet ? [...classGroupSet].sort().join('|') : (r.class_info?.class_name ?? '')
     const taskKey = [r.course ?? '', r.teacher ?? '**NULL_TEACHER**', r.week_type, r.week_start, r.week_end, canonicalSet].join('|')
     if (!taskKeySet.has(taskKey)) {
       taskKeySet.add(taskKey)
       taskKeys.push(taskKey)
       taskKeyToClassNames.set(taskKey, classGroupSet ?? new Set([r.class_info?.class_name ?? '']))
+      taskKeyToClassNameEvidence.set(taskKey, evidenceList.length > 0 ? [...evidenceList] : [{ name: r.class_info?.class_name ?? '', keyword: null, matchKind: 'BASE' as MatchKind }])
       taskKeyToRecord.set(taskKey, r)
     }
   }
@@ -535,7 +776,7 @@ async function prepareRecords(batchId: number, targetSemesterId?: number): Promi
     }
   }
 
-  return { records, quality, classification, classNames, teacherNames, courseNames, roomNames, eventKeyToClassNames, taskKeyToClassNames, taskKeyToRecord, taskKeys, slotKeyToRecord, slotKeys, missingTeacherCount, missingRoomCount, mergeWarnings }
+  return { records, quality, classification, classNames, teacherNames, courseNames, roomNames, eventKeyToClassNames, eventKeyToClassNameEvidence, taskKeyToClassNames, taskKeyToClassNameEvidence, taskKeyToRecord, taskKeys, slotKeyToRecord, slotKeys, missingTeacherCount, missingRoomCount, mergeWarnings, batchFilename: batch.filename }
 }
 
 // ── 事务内真实写入逻辑 ──
@@ -616,7 +857,7 @@ async function executeImportInTransaction(
   semesterId: number,
   approvalsMap?: Map<string, CrossCohortApproval>,
 ): Promise<ImportExecutionResult> {
-  const { records, classification, classNames, teacherNames, courseNames, roomNames, taskKeyToClassNames, taskKeyToRecord, taskKeys, slotKeyToRecord, slotKeys, missingTeacherCount, missingRoomCount } = prepared
+  const { records, classification, classNames, teacherNames, courseNames, roomNames, taskKeyToClassNames, taskKeyToClassNameEvidence, taskKeyToRecord, taskKeys, slotKeyToRecord, slotKeys, missingTeacherCount, missingRoomCount } = prepared
 
   const warnings: string[] = [...classification.warnings, ...prepared.mergeWarnings]
   let classGroupCreated = 0
@@ -807,9 +1048,45 @@ async function executeImportInTransaction(
       taskKeyToTaskId.set(taskKey, task.id)
       taskCreated++
 
-      // TeachingTaskClass
+      // K20-FIX-B: TeachingTaskClass — write per-link source evidence
+      // - sourceRowIndex: 0-based index of the source record in the parsed JSON
+      // - sourceKeyword: remark keyword that produced this match (null for BASE)
+      // - sourceClassName: class name as it appeared in the source row
+      // - sourceRemark: source record's remark text (may carry the keyword)
+      // - sourceArtifactFilename: basename of ImportBatch.filename
+      // - matchStrategy: BASE/EXACT→EXACT_CLASS_NAME/HIGH; WEAK/SUBSEQ→SAME_COHORT_WEAK_MATCH/LOW (or MANUAL_CROSS_COHORT_APPROVAL/MEDIUM if approved)
+      // - importBatchId: scalar Int, no FK constraint
+      const baseRecord = taskKeyToRecord.get(taskKey)
+      const baseRecordIndex = baseRecord ? records.indexOf(baseRecord) : -1
+      const evidenceList = taskKeyToClassNameEvidence.get(taskKey) ?? []
+      const idToName = new Map<number, string>()
+      for (const [n, id] of classGroupMap.entries()) idToName.set(id, n)
       for (const cgId of classGroupIds) {
-        await tx.teachingTaskClass.create({ data: { teachingTaskId: task.id, classGroupId: cgId } })
+        const cgName = idToName.get(cgId) ?? ''
+        const linkEvidence = evidenceList.find((e) => e.name === cgName)
+        const ev = buildTeachingTaskClassEvidence(
+          batchId,
+          baseRecordIndex >= 0 ? baseRecordIndex : null,
+          baseRecord,
+          linkEvidence,
+          cgName,
+          prepared.batchFilename,
+          crossCohortApproved,
+        )
+        await tx.teachingTaskClass.create({
+          data: {
+            teachingTaskId: task.id,
+            classGroupId: cgId,
+            importBatchId: ev.importBatchId,
+            sourceRowIndex: ev.sourceRowIndex,
+            sourceKeyword: ev.sourceKeyword,
+            sourceClassName: ev.sourceClassName,
+            sourceRemark: ev.sourceRemark,
+            sourceArtifactFilename: ev.sourceArtifactFilename,
+            matchStrategy: ev.matchStrategy,
+            matchConfidence: ev.matchConfidence,
+          },
+        })
         ttcCreated++
       }
     }

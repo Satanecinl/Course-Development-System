@@ -138,11 +138,20 @@ model ScheduleAdjustment {
 }
 
 model TeachingTaskClass {
-  id             Int          @id @default(autoincrement())
-  teachingTaskId Int
-  teachingTask   TeachingTask @relation(fields: [teachingTaskId], references: [id])
-  classGroupId   Int
-  classGroup     ClassGroup   @relation(fields: [classGroupId], references: [id])
+  id                    Int          @id @default(autoincrement())
+  teachingTaskId        Int
+  teachingTask          TeachingTask @relation(fields: [teachingTaskId], references: [id])
+  classGroupId          Int
+  classGroup            ClassGroup   @relation(fields: [classGroupId], references: [id])
+  // ── K20-FIX-B: per-link source evidence (forward-fill only, no historical backfill) ──
+  importBatchId         Int?
+  sourceRowIndex        Int?
+  sourceKeyword         String?
+  sourceClassName       String?
+  sourceRemark          String?
+  sourceArtifactFilename String?
+  matchStrategy         String?
+  matchConfidence       String?
 
   @@unique([teachingTaskId, classGroupId])
 }

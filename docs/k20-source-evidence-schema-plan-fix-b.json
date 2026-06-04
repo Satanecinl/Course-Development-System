@@ -1,0 +1,172 @@
+{
+  "generatedAt": "2026-06-04T15:50:00.000Z",
+  "phase": "K20-FIX-B-SOURCE-EVIDENCE-SCHEMA-PLAN",
+  "mode": "schema-change-plus-importer-write",
+  "predecessor": {
+    "phase": "K20-FIX-A-SOURCE-EVIDENCE-TRACEABILITY-AUDIT",
+    "commit": "db2fd5a",
+    "summary": { "HIGH": 0, "MEDIUM": 1, "LOW": 1, "INFO": 4, "BLOCKING": false },
+    "recommendedOption": "A. TeachingTaskClass minimal source evidence fields"
+  },
+  "summary": {
+    "schemaChanged": true,
+    "backupCreated": true,
+    "migrationNonDestructive": true,
+    "importerUpdated": true,
+    "historicalRowsModified": false,
+    "historicalRowsCount": 446,
+    "newFieldsCount": 8,
+    "verificationScripts": 4,
+    "allVerificationsPass": true
+  },
+  "fields": [
+    { "name": "importBatchId", "type": "Int?", "nullable": true, "default": null, "fkRelation": false, "source": "ImportBatch id (scalar)", "notes": "scalar, no FK constraint, forward-fill only" },
+    { "name": "sourceRowIndex", "type": "Int?", "nullable": true, "default": null, "fkRelation": false, "source": "records.indexOf(baseRecord) — 0-based", "notes": "0-based, null if unknown" },
+    { "name": "sourceKeyword", "type": "String?", "nullable": true, "default": null, "fkRelation": false, "source": "findMergedClassNamesWithEvidence result", "notes": "null for BASE match" },
+    { "name": "sourceClassName", "type": "String?", "nullable": true, "default": null, "fkRelation": false, "source": "Class name as it appeared in source row", "notes": "always recorded" },
+    { "name": "sourceRemark", "type": "String?", "nullable": true, "default": null, "fkRelation": false, "source": "baseRecord.remark", "notes": "null if source record had no remark" },
+    { "name": "sourceArtifactFilename", "type": "String?", "nullable": true, "default": null, "fkRelation": false, "source": "extractBasename(ImportBatch.filename)", "notes": "null if filename is null" },
+    { "name": "matchStrategy", "type": "String?", "nullable": true, "default": null, "fkRelation": false, "source": "deriveMatchAttributes", "notes": "EXACT_CLASS_NAME | SAME_COHORT_WEAK_MATCH | MANUAL_CROSS_COHORT_APPROVAL | UNKNOWN" },
+    { "name": "matchConfidence", "type": "String?", "nullable": true, "default": null, "fkRelation": false, "source": "deriveMatchAttributes", "notes": "HIGH | MEDIUM | LOW | UNKNOWN" }
+  ],
+  "matchStrategyRules": [
+    { "matchKind": "BASE", "crossCohortApproved": false, "matchStrategy": "EXACT_CLASS_NAME", "matchConfidence": "HIGH" },
+    { "matchKind": "BASE", "crossCohortApproved": true, "matchStrategy": "EXACT_CLASS_NAME", "matchConfidence": "HIGH" },
+    { "matchKind": "EXACT", "crossCohortApproved": false, "matchStrategy": "EXACT_CLASS_NAME", "matchConfidence": "HIGH" },
+    { "matchKind": "EXACT", "crossCohortApproved": true, "matchStrategy": "EXACT_CLASS_NAME", "matchConfidence": "HIGH" },
+    { "matchKind": "WEAK", "crossCohortApproved": false, "matchStrategy": "SAME_COHORT_WEAK_MATCH", "matchConfidence": "LOW" },
+    { "matchKind": "WEAK", "crossCohortApproved": true, "matchStrategy": "MANUAL_CROSS_COHORT_APPROVAL", "matchConfidence": "MEDIUM" },
+    { "matchKind": "SUBSEQ", "crossCohortApproved": false, "matchStrategy": "SAME_COHORT_WEAK_MATCH", "matchConfidence": "LOW" },
+    { "matchKind": "SUBSEQ", "crossCohortApproved": true, "matchStrategy": "MANUAL_CROSS_COHORT_APPROVAL", "matchConfidence": "MEDIUM" },
+    { "matchKind": null, "crossCohortApproved": null, "matchStrategy": "UNKNOWN", "matchConfidence": "UNKNOWN", "notes": "defensive fallback if no evidence entry" }
+  ],
+  "migration": {
+    "appliedVia": "npx prisma db push",
+    "rationale": "Project uses db push workflow (consistent with the K19-FIX-B1 cross-cohort approval migration which was also applied via db push).",
+    "backupPath": "prisma/dev.db.backup-before-k20-source-evidence-schema-20260604154215",
+    "migrationSqlPath": "prisma/migrations/20260604154300_add_teaching_task_class_source_evidence/migration.sql",
+    "migrationSqlSnippet": [
+      "ALTER TABLE \"TeachingTaskClass\" ADD COLUMN \"importBatchId\" INTEGER;",
+      "ALTER TABLE \"TeachingTaskClass\" ADD COLUMN \"sourceRowIndex\" INTEGER;",
+      "ALTER TABLE \"TeachingTaskClass\" ADD COLUMN \"sourceKeyword\" TEXT;",
+      "ALTER TABLE \"TeachingTaskClass\" ADD COLUMN \"sourceClassName\" TEXT;",
+      "ALTER TABLE \"TeachingTaskClass\" ADD COLUMN \"sourceRemark\" TEXT;",
+      "ALTER TABLE \"TeachingTaskClass\" ADD COLUMN \"sourceArtifactFilename\" TEXT;",
+      "ALTER TABLE \"TeachingTaskClass\" ADD COLUMN \"matchStrategy\" TEXT;",
+      "ALTER TABLE \"TeachingTaskClass\" ADD COLUMN \"matchConfidence\" TEXT;"
+    ],
+    "nonDestructive": true,
+    "preservesHistoricalRows": true,
+    "preservesUniqueConstraint": true
+  },
+  "importerWriteStrategy": {
+    "type": "create-loop",
+    "evidenceBuilder": "buildTeachingTaskClassEvidence",
+    "evidenceMatchHelper": "findMergedClassNamesWithEvidence",
+    "evidenceMaps": ["eventKeyToClassNameEvidence", "taskKeyToClassNameEvidence"],
+    "rowIndexConvention": "0-based",
+    "rowIndexSource": "records.indexOf(baseRecord)",
+    "unknownFallback": {
+      "matchStrategy": "UNKNOWN",
+      "matchConfidence": "UNKNOWN",
+      "sourceRowIndex": "null",
+      "sourceKeyword": "null"
+    },
+    "transactionSemantics": "unchanged (single-row tx.teachingTaskClass.create, no createMany)"
+  },
+  "noBackfillPolicy": {
+    "applied": false,
+    "historicalRows": 446,
+    "rowsWithAnyNonNullEvidence": 0,
+    "rowsWithAllNullEvidence": 446,
+    "reason": "Forward-fill only per K20-FIX-A Option A. Historical 446 rows kept all-null.",
+    "futureStage": "K20-FIX-C-SOURCE-EVIDENCE-BACKFILL-AUDIT (optional, deferred)"
+  },
+  "verificationResults": {
+    "verifySourceEvidenceSchemaK20FixB": { "pass": 37, "fail": 0, "result": "PASS" },
+    "verifySourceEvidenceImporterK20FixB": { "pass": 41, "fail": 0, "result": "PASS" },
+    "verifySourceEvidenceQueryK20FixB": { "pass": 16, "fail": 0, "result": "PASS" },
+    "auditSourceEvidenceBackfillGapK20FixB": { "pass": 2, "fail": 0, "result": "PASS" },
+    "auditSourceEvidenceTraceabilityK20FixA": { "RuleA": "NONE (was MEDIUM before)", "HIGH": 0, "BLOCKING": "NO" },
+    "auditRemainingRiskRebaseK20": { "HIGH": 0, "MEDIUM": 2, "LOW": 6, "ACCEPTED": 1, "NONE": 1, "BLOCKING": "NO" },
+    "verifyImportApprovalBrowserE2EK19FixC": { "pass": 10, "fail": 0, "result": "PASS" },
+    "verifyImportCrossCohortApprovalUIK19FixB2": { "pass": 16, "fail": 0, "result": "PASS" },
+    "verifyImportCrossCohortApprovalK19FixB1": { "pass": 17, "fail": 0, "result": "PASS" },
+    "verifyImportMatchingCohortGuardK19FixA": { "pass": 31, "fail": 0, "result": "PASS" },
+    "auditImportCrossCohortPersistentFlagK19FixB": { "HIGH": 0, "MEDIUM": 0 },
+    "auditImportMatchingRootCauseK19": { "HIGH": 0 },
+    "validateTask37FinalizationK18E3": { "pass": 18, "fail": 0, "result": "PASS" },
+    "auditDataQualityClassgroupMatchingK17FixA": { "HIGH": 0 },
+    "auditScheduleMutationServerGuards": { "HIGH": 0, "MEDIUM": 0 },
+    "auditTeachingTaskMutationSemanticGuards": { "HIGH": 0, "MEDIUM": 0 },
+    "verifyScheduleMutationClientPreflightFix": { "pass": 23, "fail": 0, "result": "PASS" },
+    "prismaValidate": "PASS",
+    "npmBuild": "PASS",
+    "npmLint": "312 problems baseline (no new errors)",
+    "npmTestAuthFoundation": "53 passed / 1 failed (pre-existing ScheduleAdjustment ACTIVE mismatch, unchanged)"
+  },
+  "remainingRisks": [
+    {
+      "id": "RR-1",
+      "name": "Historical rows all null",
+      "severity": "INFO",
+      "description": "446 historical TeachingTaskClass rows have all 8 new fields = null. Acceptable per no-backfill policy; future K20-FIX-C can backfill if business need arises."
+    },
+    {
+      "id": "RR-2",
+      "name": "Source artifact immutable storage",
+      "severity": "INFO",
+      "description": "ImportBatch.originalFilePath / parsedJsonPath are filesystem path strings. Path drift / cleanup risk persists. K20-FIX-D-SOURCE-ARTIFACT-IMMUTABLE-STORAGE is the recommended next stage for this."
+    },
+    {
+      "id": "RR-3",
+      "name": "Operator identity / timestamp",
+      "severity": "LOW",
+      "description": "TeachingTask.approvedBy / approvedAt still missing. Cross-cohort approvals are anonymous. K20-FIX-B-IMPORT-EVIDENCE-MODEL-DESIGN is the recommended next stage for this."
+    },
+    {
+      "id": "RR-4",
+      "name": "Frontend source evidence display",
+      "severity": "INFO",
+      "description": "UI does not yet expose the new TeachingTaskClass fields. The fields are written so future audit dashboards can surface them via joins. Frontend change is out of scope for this stage."
+    },
+    {
+      "id": "RR-5",
+      "name": "Index performance",
+      "severity": "INFO",
+      "description": "No index on importBatchId, sourceRowIndex, or (sourceArtifactFilename, sourceRowIndex). With 446 rows this is fine. Add index when row count grows or a frequent lookup pattern is observed."
+    },
+    {
+      "id": "RR-6",
+      "name": "Parser source row index",
+      "severity": "INFO",
+      "description": "Python parser not modified. sourceRowIndex is derived in importer via records.indexOf(baseRecord). Future parser-side cleanup may add an explicit sourceRowIndex field per record."
+    }
+  ],
+  "outOfScopeConfirmed": {
+    "frontend": true,
+    "apiRoutes": true,
+    "solver": true,
+    "rbac": true,
+    "seedAuth": true,
+    "roleMapping": true,
+    "requirePermission": true,
+    "scheduleSlotData": true,
+    "teachingTaskData": true,
+    "classGroupData": true,
+    "importBatchHistoricalData": true,
+    "teachingTaskClassHistoricalRows": true,
+    "warningsJsonStructure": true,
+    "crossCohortApprovalGateLogic": true,
+    "k18K19HistoricalRepairScripts": true,
+    "reimportHistoricalFiles": true,
+    "prismaDevDbCommitted": false,
+    "dbBackupCommitted": false
+  },
+  "restoreInstruction": "cp prisma/dev.db.backup-before-k20-source-evidence-schema-20260604154215 prisma/dev.db && npx prisma generate && git restore --source=HEAD~ src/lib/import/importer.ts && rm -f scripts/verify-source-evidence-{schema,importer,query}-k20-fix-b.ts scripts/audit-source-evidence-backfill-gap-k20-fix-b.ts && rm -rf prisma/migrations/20260604154300_add_teaching_task_class_source_evidence",
+  "nextStage": {
+    "name": "K20-FIX-C-SOURCE-EVIDENCE-BACKFILL-AUDIT",
+    "scope": "Audit whether historical TeachingTaskClass rows can be reliably backfilled from the 17 source JSON files in uploads/imports/. Re-run cohort-guard matching; update only 1:1 matches; skip ambiguous/missing.",
+    "alternative": "K20-FIX-B-IMPORT-EVIDENCE-MODEL-DESIGN (add approvedBy/approvedAt to TeachingTask)"
+  }
+}
