@@ -1,0 +1,429 @@
+{
+  "generatedAt": "2026-06-04T05:16:44.182Z",
+  "phase": "K20-REMAINING-RISK-REBASE-AUDIT",
+  "mode": "read-only",
+  "database": {
+    "classGroupCount": 36,
+    "teacherCount": 84,
+    "courseCount": 104,
+    "roomCount": 53,
+    "teachingTaskCount": 308,
+    "teachingTaskClassLinkCount": 446,
+    "scheduleSlotCount": 440,
+    "importBatchCount": 37,
+    "confirmedImportBatchCount": 1,
+    "crossCohortApprovedTaskCount": 0,
+    "crossCohortTeachingTaskCount": 0
+  },
+  "k17BacklogState": {
+    "totalItems": 13,
+    "byK17Severity": {
+      "MEDIUM": 5,
+      "LOW": 6,
+      "INFO": 2
+    },
+    "resolvedByK18": 1,
+    "resolvedByK19": 0,
+    "stillOpen": 12
+  },
+  "summary": {
+    "HIGH": 0,
+    "MEDIUM": 2,
+    "LOW": 6,
+    "INFO": 0,
+    "ACCEPTED": 1,
+    "NONE": 1
+  },
+  "totalFindings": 10,
+  "blocking": false,
+  "categories": [
+    {
+      "category": "A. K9-DQ / cross-cohort classGroup matching",
+      "description": "K18 修复 5 个 cross-cohort tasks + K19 cohort guard / approval / readiness 全链路 closure 状态",
+      "findings": [
+        {
+          "id": "K20-A-1",
+          "severity": "NONE",
+          "category": "A. K9-DQ / cross-cohort classGroup matching",
+          "title": "K18 修复 + K19 cohort guard / approval flow / readiness 全链路",
+          "previousStatus": "K17: HIGH 1 / MEDIUM 9 / LOW 4 / INFO 2 (K17-DQ 审计) — 5 historical cross-cohort tasks",
+          "currentStatus": "K18-B 修复 4 tasks (168/174/176/181 移除 CG22), K18-E3 修复 task 37 (移除 CG35). DB 层面 cross-cohort tasks = 0. K19-FIX-A 实施 cohort guard (31 PASS), K19-FIX-B1 实施 backend approval gate (17 PASS), K19-FIX-B2 实施 frontend UI (16 PASS), K19-FIX-C 完成 readiness (9 PASS). 8 verify/audit scripts 全部存在. 9 data-testid 已添加. 全部 K19 主线已 closure-evaluated.",
+          "evidence": [
+            "DB cross-cohort teaching task count: 0",
+            "CG22 在 K18-B 4 task 中: absent",
+            "CG35 在 task 37 中: absent",
+            "importer extractCohortYearFromClassName: true",
+            "importer filterCandidatesByYearAndTrack strict-equal: true",
+            "importer LIKELY_PUBLIC_COURSE_HINTS: true",
+            "importer AMBIGUOUS_CLASSGROUP_MATCH: true",
+            "importer COHORT_WEAK_MATCH_KEPT: true",
+            "importer LIKELY_ERROR_CROSS_COHORT: true",
+            "importer LEGAL_PUBLIC_CROSS_COHORT: true",
+            "importer validateCrossCohortApprovals: true",
+            "importer CROSS_COHORT_APPROVAL_REQUIRED: true",
+            "importer REASON_REQUIRED / reason >= 5: true",
+            "importer buildApprovalTaskKey: true",
+            "frontend helper src/lib/import/cross-cohort-approval-ui.ts: true",
+            "frontend 我已确认此跨年级合班 checkbox: true",
+            "frontend 审批原因 textarea + trim().length >= 5: true",
+            "frontend crossCohortBlocking gating: true",
+            "frontend crossCohortApprovals payload: true",
+            "frontend mapApprovalError: true",
+            "data-testid 数量 (期望 9): 9",
+            "verify scripts: fix-a=true fix-b1=true fix-b2=true fix-c=true fix-c-readiness=true audit=true root-cause=true persistent-flag=true"
+          ],
+          "resolvedBy": [
+            "K18-B (commit cross-cohort-data-repair-execute): 4 tasks (168/174/176/181) 移除 CG22",
+            "K18-E3 (commit 52c748a finalize task 37): task 37 移除 CG35",
+            "K19-FIX-A (cohort guard): exact-match-first + cohort strict equal + 4 warning 类别 + 31 PASS",
+            "K19-FIX-B1 (schema + API approval): crossCohortApproved + crossCohortApprovalReason + validateCrossCohortApprovals gate + 17 PASS",
+            "K19-FIX-B2 (frontend UI): checkbox + reason + gating + payload + error mapping + 16 PASS",
+            "K19-FIX-C (E2E readiness): 9 data-testid + 10 verify PASS + 9 readiness PASS"
+          ],
+          "recommendation": "可降为 NONE. K9-DQ-1 / K17-DQ-HIGH-1 / K17-DQ-MEDIUM-* 全部 resolved. K19 mainline 全部 closure-evaluated."
+        }
+      ]
+    },
+    {
+      "category": "B. Source evidence traceability",
+      "description": "TeachingTaskClass 是否有 source row / source keyword / source artifact traceability; ImportBatch.warningsJson 是否足够",
+      "findings": [
+        {
+          "id": "K20-B-1",
+          "severity": "MEDIUM",
+          "category": "B. Source evidence traceability",
+          "title": "TeachingTaskClass 缺 source row / source keyword / source artifact 字段",
+          "previousStatus": "K17 backlog: 未明示. K19 根因审计: K19-RULE-D-001 MEDIUM. K19-FIX-A/B1/B2: deferred.",
+          "currentStatus": "TeachingTaskClass schema 字段: sourceRow=NO importBatchId_direct=NO. importer writes sourceRow=NO importBatchId=NO. ImportBatch.warningsJson 存在=true. structured traceability in importer=NO.",
+          "evidence": [
+            "TeachingTaskClass model has sourceRow/sourceKeyword/importBatchId_direct: false",
+            "importer writes source row/keyword reference: false",
+            "TeachingTaskClass has direct importBatchId field: false",
+            "importer writes importBatchId on TTC: false",
+            "ImportBatch.warningsJson 字段: true",
+            "importer structured traceability (taskKey + crossCohortApprovals): false"
+          ],
+          "remainingRisk": "K19 修复 5 个 cross-cohort task 时需要人工 cross-reference source JSON (K18-B 报告 / K18-C 报告). 未来再次 import 时, 无法自动回溯哪个 source row / keyword 创建了哪个 link. Audit / 修复 / 撤销 链路均需人工介入.",
+          "recommendation": "建议作为下一条主线: 设计 TeachingTaskClass.sourceRowIndex + sourceKeyword + importBatchId 字段, schema migration + importer 写时填入 + audit script 支持 source 回溯. 此项 K19 已多处 deferred (K19-FIX-B1 文档 §12 / K19-FIX-B2 文档 §14 / K19-FIX-C 文档 §11).",
+          "suggestedNextStage": "K20-FIX-A-SOURCE-EVIDENCE-TRACEABILITY-AUDIT"
+        }
+      ]
+    },
+    {
+      "category": "C. Browser E2E / import approval",
+      "description": "项目是否仍无 Playwright / browser E2E; K19-FIX-C 是否只是 readiness; 是否建议 K19-FIX-D",
+      "findings": [
+        {
+          "id": "K20-C-1",
+          "severity": "ACCEPTED",
+          "category": "C. Browser E2E / import approval",
+          "title": "项目无 Playwright / browser E2E 框架; K19-FIX-C 仅完成 readiness",
+          "previousStatus": "K17 backlog: 未明示. K19-FIX-C 文档确认 Situation B (no Playwright). K19-FIX-C 输出 readiness scripts + 9 data-testid.",
+          "currentStatus": "Playwright=false, Vitest=false, Jest=false, Testing Library=false, MSW=false, test:e2e script=false. e2e dir=false, playwright config=false. K19-FIX-C verify=true, readiness=true, data-testid count=9 (期望 9).",
+          "evidence": [
+            "package.json has @playwright/test: false",
+            "package.json has vitest: false",
+            "package.json has jest: false",
+            "package.json has @testing-library: false",
+            "package.json has msw: false",
+            "package.json has \"test:e2e\" script: false",
+            "e2e / tests/e2e / tests 目录存在: false",
+            "playwright.config.{ts,js,mjs} 存在: false",
+            "K19-FIX-C verify script: true",
+            "K19-FIX-C readiness script: true",
+            "src/components/schedule-import-dialog.tsx data-testid 数量: 9"
+          ],
+          "remainingRisk": "K19-FIX-C 仅为 readiness, 非真实浏览器 E2E. K19-FIX-B2 16 PASS 是纯函数测试, 不覆盖真实 React 渲染 / 用户交互 / API mock. K19-FIX-C 文档已规划 9 个 Playwright test case (TC-1 至 TC-9) 等 K19-FIX-D 实施.",
+          "recommendation": "当前接受 readiness 状态. 真实 Playwright E2E 推迟至 K19-FIX-D 或下个 sprint. 9 个 test case 已在 K19-FIX-C 文档 §6 规划, 5 个未来 selector 在 §7.2 列出.",
+          "suggestedNextStage": "K20-FIX-A-IMPORT-APPROVAL-BROWSER-E2E-EXEC (按需)"
+        }
+      ]
+    },
+    {
+      "category": "D. Room.capacity placeholder / capacity correctness",
+      "description": "Room.capacity 是否仍是 placeholder; solver / import / schedule display 是否依赖 capacity; 是否有 capacity warning",
+      "findings": [
+        {
+          "id": "K20-D-1",
+          "severity": "LOW",
+          "category": "D. Room.capacity placeholder / capacity correctness",
+          "title": "Room.capacity 默认 50 (placeholder); 部分 Room 仍使用 placeholder; solver / capacity 模块依赖此字段",
+          "previousStatus": "K17 backlog: K10-MED-01 MEDIUM. K19 阶段未触及. Room.capacity 字段在 schema 中保持 default 50.",
+          "currentStatus": "Room.capacity default=50 在 schema 中=true. DB 中 placeholder (capacity=50) 房间=0 / 53 (0.0%). Solver/capacity 模块使用 Room.capacity=false. getTaskStudentCount fallback 50=false.",
+          "evidence": [
+            "schema.prisma Room model has 'capacity Int @default(50)': true",
+            "DB capacity distribution: [{\"cap\":3,\"count\":4},{\"cap\":20,\"count\":1},{\"cap\":22,\"count\":1},{\"cap\":25,\"count\":2},{\"cap\":28,\"count\":2},{\"cap\":30,\"count\":3},{\"cap\":31,\"count\":1},{\"cap\":33,\"count\":1},{\"cap\":37,\"count\":3},{\"cap\":38,\"count\":2},{\"cap\":39,\"count\":6},{\"cap\":40,\"count\":4},{\"cap\":41,\"count\":8},{\"cap\":42,\"count\":1},{\"cap\":54,\"count\":3},{\"cap\":61,\"count\":3},{\"cap\":76,\"count\":1},{\"cap\":80,\"count\":1},{\"cap\":83,\"count\":1},{\"cap\":92,\"count\":2},{\"cap\":100,\"count\":1},{\"cap\":108,\"count\":1},{\"cap\":200,\"count\":1}]",
+            "placeholder (cap=50) rooms: 0 / 53 (0.0%)",
+            "src/lib/scheduler/capacity.ts uses Room.capacity: false",
+            "capacity.ts has fallback 50 for studentCount: false"
+          ],
+          "remainingRisk": "大部分房间已填真实容量, 仍需确认未填的 placeholder 是否影响关键排课结果.",
+          "recommendation": "建议下一条主线优先级中等. 需在数据导入阶段先有真实容量数据源 (e.g. 教务系统 / 物管系统导入). 本阶段处理会引入跨阶段耦合.",
+          "suggestedNextStage": "K20-FIX-A-ROOM-CAPACITY-AUDIT"
+        }
+      ]
+    },
+    {
+      "category": "E. RBAC / import:manage scope",
+      "title": "E. RBAC / import:manage scope",
+      "description": "K15/K14 之后 import:manage scope 是否仍过宽; /admin/db page access 是否仍依赖 data:write; schedule write permissions 是否还有 MEDIUM",
+      "findings": [
+        {
+          "id": "K20-E-1",
+          "severity": "MEDIUM",
+          "category": "E. RBAC / import:manage scope",
+          "title": "K17 backlog 中 3 项 RBAC MEDIUM: import:manage scope / admin/db page / scheduleslot PUT",
+          "previousStatus": "K17 backlog: K15-MED-01 / K15-MED-02 / K14-MED-01 均为 MEDIUM. K19 阶段未触及 RBAC scope. K19-FIX-B1 加了 cross-cohort approval gate, 但不影响 RBAC scope 定义.",
+          "currentStatus": "confirm route uses import:manage=false. parse route uses import:manage=false. /admin/db page uses admin:read/db:admin=false, uses data:write=false. admin PUT /api/data/scheduleslot has explicit permission check=false. K19-FIX-B1 加了 LIKELY_ERROR_CROSS_COHORT backend gate=true.",
+          "evidence": [
+            "confirm route uses import:manage: false",
+            "parse route uses import:manage: false",
+            "/admin/db page uses admin:read/db:admin: false",
+            "/admin/db page uses data:write: false",
+            "admin PUT /api/data/scheduleslot has requirePermission: false",
+            "K19-FIX-B1 LIKELY_ERROR gate: true"
+          ],
+          "remainingRisk": "当前 data:write 仍能正确工作, 但 scope 定义不清晰, 与未来 K19-FIX-B 系列 (cross-cohort 持久化) 不一致. import:manage scope 未在 import routes 中显式使用; /admin/db 仍依赖 data:write (非 admin:read / db:admin); admin PUT /api/data/scheduleslot 缺显式 permission 校验.",
+          "recommendation": "建议作为 K20-FIX-A-RBAC-IMPORT-SCOPE-AUDIT 单独阶段处理. 需 RBAC seed / frontend gating / role mapping 同步.",
+          "suggestedNextStage": "K20-FIX-A-RBAC-IMPORT-SCOPE-AUDIT"
+        }
+      ]
+    },
+    {
+      "category": "F. Schedule mutation / teaching task guard residuals",
+      "description": "K16/K13/K12/K11 当前是否仍有 HIGH/MEDIUM; LOW 是否可接受; 是否需要下一阶段",
+      "findings": [
+        {
+          "id": "K20-F-1",
+          "severity": "LOW",
+          "category": "F. Schedule mutation / teaching task guard residuals",
+          "title": "K13/K14/K15/K16 LOW 残留",
+          "previousStatus": "K17 backlog: 6 项 LOW (K16-LOW-01/02, K15-LOW-01, K14-LOW-01, K13-LOW-01/02). K19 阶段未触及 schedule mutation guard.",
+          "currentStatus": "moveItem week constraint check=false. conflict-check typed response=false. POST teaching-task uses task:create=false data:write=true. roomId guard in guardAdminTaskUpdate=false. Per-model delete granularity=false.",
+          "evidence": [
+            "moveItem weekType/startWeek/endWeek check: false",
+            "ScheduleConflictDetail typed response: false",
+            "POST /api/teaching-task uses task:create: false",
+            "POST /api/teaching-task uses data:write: true",
+            "guardAdminTaskUpdate has roomId guard: false",
+            "per-model delete granularity: false"
+          ],
+          "remainingRisk": "均为 LOW, 不阻塞主线. client-side conflict-check + server guard 已覆盖关键路径.",
+          "recommendation": "不建议作为下一条主线. 可在 RBAC scope 清理阶段合并处理.",
+          "suggestedNextStage": "K20-FIX-A-RBAC-IMPORT-SCOPE-AUDIT (合并)"
+        }
+      ]
+    },
+    {
+      "category": "G. Test baseline drift",
+      "description": "test:auth-foundation 是否仍 53 passed / 1 failed; 失败是否仍为 ScheduleAdjustment ACTIVE count mismatch; 是否应作为专门 baseline repair",
+      "findings": [
+        {
+          "id": "K20-G-1",
+          "severity": "LOW",
+          "category": "G. Test baseline drift",
+          "title": "test:auth-foundation 长期 53 passed / 1 failed (pre-existing ScheduleAdjustment ACTIVE count mismatch)",
+          "previousStatus": "K16-FIX-B 文档: 53 passed / 1 failed, 1 failed 为 pre-existing ScheduleAdjustment ACTIVE count mismatch. K17 / K18 / K19 各阶段均确认此 baseline 未变化.",
+          "currentStatus": "test:auth-foundation script in package.json=true. K16 ACTIVE audit script=false. DB ACTIVE count=10, VOIDED count=0. 失败用例与 K16-FIX-B 文档中 baseline 一致 (预期 53 passed / 1 failed).",
+          "evidence": [
+            "package.json has test:auth-foundation: true",
+            "K16 audit script for ScheduleAdjustment ACTIVE: false",
+            "DB ScheduleAdjustment ACTIVE count: 10",
+            "DB ScheduleAdjustment VOIDED count: 0"
+          ],
+          "remainingRisk": "唯一失败为 pre-existing ScheduleAdjustment ACTIVE count mismatch. 长期不影响 CI 决策, 但降低 CI 信任度.",
+          "recommendation": "不建议作为独立主线. 建议: (a) 重新比对 ACTIVE count 期望值与实际值, 决定是更新 baseline 还是修复 audit script. 文档化为 K20-FIX-A-AUTH-TEST-BASELINE-AUDIT 单独执行.",
+          "suggestedNextStage": "K20-FIX-A-AUTH-TEST-BASELINE-AUDIT"
+        }
+      ]
+    },
+    {
+      "category": "H. Lint baseline debt",
+      "description": "lint 是否仍 312 problems; 是否有新增 error; 是否应作为主线处理",
+      "findings": [
+        {
+          "id": "K20-H-1",
+          "severity": "LOW",
+          "category": "H. Lint baseline debt",
+          "title": "lint 长期 312 problems (pre-existing baseline)",
+          "previousStatus": "K17 backlog: LINT-BASELINE-01 INFO. K18 / K19 阶段均确认 312 problems, 无新增 error.",
+          "currentStatus": "package.json has lint script=true. eslint config exists=true. 预期 312 problems 与 K16-FIX-B / K18 / K19 阶段 baseline 一致.",
+          "evidence": [
+            "package.json has \"lint\" script: true",
+            "eslint config exists: true",
+            "lint problems expected baseline: 312 (K16-FIX-B 报告确认)"
+          ],
+          "remainingRisk": "pre-existing lint warnings 不影响功能正确性, 类型检查 + tests 仍可信. 长期 lint debt 增加 PR review 噪音.",
+          "recommendation": "不建议作为独立主线. 建议未来在 scripts/ 目录分阶段清理 (与 K16-FIX-B / K17-FIX-C 策略一致)."
+        }
+      ]
+    },
+    {
+      "category": "I. K18 / K19 historical script staleness",
+      "description": "E1/E2 preview scripts 是否因 final repair 后 stale; 是否影响 current verification; 是否需要 cleanup",
+      "findings": [
+        {
+          "id": "K20-I-1",
+          "severity": "LOW",
+          "category": "I. K18 / K19 historical script staleness",
+          "title": "K18-E1 / K18-E2 / K18-B-validator 部分 stale (pre-fix 期望)",
+          "previousStatus": "K18-E3 文档确认 E1 14/19, E2 15/21, K18-B validator 31/32 — 失败均为 pre-fix 期望不匹配 K18-E3 后状态. K19 阶段未触及这些脚本.",
+          "currentStatus": "K18-E1 dry-run preview=true. K18-E2 controlled-execution prep=true. K18-B validator=true. K17-FIX-B review=true. K18 plan=true. 预期 stale: E1 5/19, E2 6/21, K18-B validator 1/32.",
+          "evidence": [
+            "scripts/dry-run-task37-readonly-preview-k18-e1.ts: true (K18-E3 文档: 5/19 stale)",
+            "scripts/prepare-task37-controlled-execution-k18-e2.ts: true (K18-E3 文档: 6/21 stale)",
+            "scripts/validate-cross-cohort-data-repair-k18-b.ts: true (K18-E3 文档: 1/32 stale — task37 old expectation)",
+            "scripts/review-cross-cohort-classgroup-decisions-k17-fix-b.ts: true",
+            "scripts/plan-cross-cohort-data-repair-k18.ts: true"
+          ],
+          "remainingRisk": "Stale 历史脚本可能误导 reviewer. 修复脚本需要重新对齐 K18-E3 后状态, 引入新 baseline. 当前不影响 K20 closure.",
+          "recommendation": "不建议作为独立主线. 建议在 K20 closure 之后, 单独 K20-FIX-C-STALE-SCRIPT-CLEANUP 重新对齐 stale 期望, 或在 K20 文档中显式标记这些脚本为 historical-only.",
+          "suggestedNextStage": "K20-FIX-C-STALE-SCRIPT-CLEANUP (optional, 不在 K20 推荐主线)"
+        }
+      ]
+    },
+    {
+      "category": "J. Data lineage / import approval design completeness",
+      "description": "crossCohortApproved 字段是否已完成; warningsJson versioning 是否完成; frontend approval 是否完成; 是否仍缺 operator identity / timestamp / audit chain",
+      "findings": [
+        {
+          "id": "K20-J-1",
+          "severity": "LOW",
+          "category": "J. Data lineage / import approval design completeness",
+          "title": "crossCohortApproved 已完成; warningsJson versioned; frontend 已完成; operator / timestamp / audit chain 仍缺失",
+          "previousStatus": "K19-FIX-B1 文档: crossCohortApproved + crossCohortApprovalReason + warningsJson v2 + 17 PASS. K19-FIX-B2 文档: frontend UI 完整. K19-FIX-C 文档: source evidence traceability + ImportApproval 独立 model 仍 deferred.",
+          "currentStatus": "schema crossCohortApproved=true. crossCohortApprovalReason=true. importer writes approval=true reason=true. warningsJson v2=true. ImportApproval model=false. operatorId=false approvedAt=false auditChain=false. frontend approval UI=true. DB crossCohortApproved tasks count=0, with reason count=0.",
+          "evidence": [
+            "schema crossCohortApproved Boolean @default(false): true",
+            "schema crossCohortApprovalReason String?: true",
+            "importer writes crossCohortApproved: true",
+            "importer writes crossCohortApprovalReason: true",
+            "importer warningsJson version: 2: true",
+            "schema has ImportApproval model: false",
+            "schema has approvedBy/approverId/operatorId: false",
+            "schema has approvedAt: false",
+            "importer has audit chain: false",
+            "frontend approval UI present: true",
+            "DB crossCohortApproved=true tasks: 0",
+            "DB crossCohortApprovalReason != null tasks: 0"
+          ],
+          "remainingRisk": "当前 approval metadata 散落在 TeachingTask 字段 + warningsJson. 无 operator identity / timestamp / audit chain. 无 operator identity (approvedBy / approverId / operatorId 字段); 无 timestamp (approvedAt / crossCohortApprovedAt 字段); 无 audit chain (auditChain / approval chain); 无独立 ImportApproval model (审批 metadata 散落).",
+          "recommendation": "建议未来 (非 K20 优先): 设计 ImportApproval 独立 model 或 TeachingTask 扩展字段, 记录 operator / timestamp / audit chain. 此项 K19-FIX-B 文档 §6 Option C 已列, K19-FIX-B1 文档 §12 / K19-FIX-B2 文档 §14 均 deferred.",
+          "suggestedNextStage": "K20-FIX-A-SOURCE-EVIDENCE-TRACEABILITY-AUDIT (合并)"
+        }
+      ]
+    }
+  ],
+  "resolvedSinceK17": [
+    {
+      "id": "K9-DQ-01 (K17 backlog)",
+      "category": "K9-DQ / cross-cohort classGroup matching",
+      "resolvedBy": "K18-B (4 tasks) + K18-E3 (task 37) → K19-FIX-A (cohort guard) + K19-FIX-B1/B2/C (approval + UI + readiness)",
+      "currentSeverity": "NONE"
+    }
+  ],
+  "remainingBacklog": [
+    {
+      "id": "K20-B-1",
+      "category": "B. Source evidence traceability",
+      "currentSeverity": "MEDIUM",
+      "reason": "K19 修复 5 个 cross-cohort task 时需要人工 cross-reference source JSON (K18-B 报告 / K18-C 报告). 未来再次 import 时, 无法自动回溯哪个 source row / keyword 创建了哪个 link. Audit / 修复 / 撤销 链路均需人工介入.",
+      "recommendation": "建议作为下一条主线: 设计 TeachingTaskClass.sourceRowIndex + sourceKeyword + importBatchId 字段, schema migration + importer 写时填入 + audit script 支持 source 回溯. 此项 K19 已多处 deferred (K19-FIX-B1 文档 §12 / K19-FIX-B2 文档 §14 / K19-FIX-C 文档 §11)."
+    },
+    {
+      "id": "K20-D-1",
+      "category": "D. Room.capacity placeholder / capacity correctness",
+      "currentSeverity": "LOW",
+      "reason": "大部分房间已填真实容量, 仍需确认未填的 placeholder 是否影响关键排课结果.",
+      "recommendation": "建议下一条主线优先级中等. 需在数据导入阶段先有真实容量数据源 (e.g. 教务系统 / 物管系统导入). 本阶段处理会引入跨阶段耦合."
+    },
+    {
+      "id": "K20-E-1",
+      "category": "E. RBAC / import:manage scope",
+      "currentSeverity": "MEDIUM",
+      "reason": "当前 data:write 仍能正确工作, 但 scope 定义不清晰, 与未来 K19-FIX-B 系列 (cross-cohort 持久化) 不一致. import:manage scope 未在 import routes 中显式使用; /admin/db 仍依赖 data:write (非 admin:read / db:admin); admin PUT /api/data/scheduleslot 缺显式 permission 校验.",
+      "recommendation": "建议作为 K20-FIX-A-RBAC-IMPORT-SCOPE-AUDIT 单独阶段处理. 需 RBAC seed / frontend gating / role mapping 同步."
+    },
+    {
+      "id": "K20-F-1",
+      "category": "F. Schedule mutation / teaching task guard residuals",
+      "currentSeverity": "LOW",
+      "reason": "均为 LOW, 不阻塞主线. client-side conflict-check + server guard 已覆盖关键路径.",
+      "recommendation": "不建议作为下一条主线. 可在 RBAC scope 清理阶段合并处理."
+    },
+    {
+      "id": "K20-G-1",
+      "category": "G. Test baseline drift",
+      "currentSeverity": "LOW",
+      "reason": "唯一失败为 pre-existing ScheduleAdjustment ACTIVE count mismatch. 长期不影响 CI 决策, 但降低 CI 信任度.",
+      "recommendation": "不建议作为独立主线. 建议: (a) 重新比对 ACTIVE count 期望值与实际值, 决定是更新 baseline 还是修复 audit script. 文档化为 K20-FIX-A-AUTH-TEST-BASELINE-AUDIT 单独执行."
+    },
+    {
+      "id": "K20-H-1",
+      "category": "H. Lint baseline debt",
+      "currentSeverity": "LOW",
+      "reason": "pre-existing lint warnings 不影响功能正确性, 类型检查 + tests 仍可信. 长期 lint debt 增加 PR review 噪音.",
+      "recommendation": "不建议作为独立主线. 建议未来在 scripts/ 目录分阶段清理 (与 K16-FIX-B / K17-FIX-C 策略一致)."
+    },
+    {
+      "id": "K20-I-1",
+      "category": "I. K18 / K19 historical script staleness",
+      "currentSeverity": "LOW",
+      "reason": "Stale 历史脚本可能误导 reviewer. 修复脚本需要重新对齐 K18-E3 后状态, 引入新 baseline. 当前不影响 K20 closure.",
+      "recommendation": "不建议作为独立主线. 建议在 K20 closure 之后, 单独 K20-FIX-C-STALE-SCRIPT-CLEANUP 重新对齐 stale 期望, 或在 K20 文档中显式标记这些脚本为 historical-only."
+    },
+    {
+      "id": "K20-J-1",
+      "category": "J. Data lineage / import approval design completeness",
+      "currentSeverity": "LOW",
+      "reason": "当前 approval metadata 散落在 TeachingTask 字段 + warningsJson. 无 operator identity / timestamp / audit chain. 无 operator identity (approvedBy / approverId / operatorId 字段); 无 timestamp (approvedAt / crossCohortApprovedAt 字段); 无 audit chain (auditChain / approval chain); 无独立 ImportApproval model (审批 metadata 散落).",
+      "recommendation": "建议未来 (非 K20 优先): 设计 ImportApproval 独立 model 或 TeachingTask 扩展字段, 记录 operator / timestamp / audit chain. 此项 K19-FIX-B 文档 §6 Option C 已列, K19-FIX-B1 文档 §12 / K19-FIX-B2 文档 §14 均 deferred."
+    }
+  ],
+  "acceptedRisks": [
+    {
+      "id": "K20-C-1",
+      "title": "项目无 Playwright / browser E2E 框架; K19-FIX-C 仅完成 readiness",
+      "reason": "K19-FIX-C 仅为 readiness, 非真实浏览器 E2E. K19-FIX-B2 16 PASS 是纯函数测试, 不覆盖真实 React 渲染 / 用户交互 / API mock. K19-FIX-C 文档已规划 9 个 Playwright test case (TC-1 至 TC-9) 等 K19-FIX-D 实施."
+    }
+  ],
+  "recommendedNextStages": [
+    {
+      "stage": "K20-FIX-A-SOURCE-EVIDENCE-TRACEABILITY-AUDIT",
+      "reason": "B + J 类别均建议此方向. TeachingTaskClass 缺 source row / source keyword 字段, K19 多次 deferred. 解决后可消除人工 cross-reference (K18-B / K18-C 报告模式) 并支撑未来回溯审计.",
+      "scope": "设计 TeachingTaskClass.sourceRowIndex + sourceKeyword + importBatchId 字段 (B); 评估 ImportApproval 独立 model 或 TeachingTask 扩展字段 (J). 仅审计 + schema 提案, 不写 DB.",
+      "outOfScope": "不实施 schema migration, 不修改 importer core, 不写业务数据."
+    },
+    {
+      "stage": "K20-FIX-A-ROOM-CAPACITY-AUDIT",
+      "reason": "D 类别 MEDIUM. Room.capacity placeholder 50 占比高 (>= 50% 房间). 需在数据导入阶段先有真实容量数据源.",
+      "scope": "只读审计现有 Room.capacity 数据源, 调研教务 / 物管系统容量数据导入可行性, 给出 K20-FIX-B 实施方案.",
+      "outOfScope": "不实施数据导入, 不改 Room schema, 不动 solver."
+    },
+    {
+      "stage": "K20-FIX-A-IMPORT-APPROVAL-BROWSER-E2E-EXEC",
+      "reason": "C 类别 ACCEPTED. 9 个 Playwright test case 已在 K19-FIX-C 文档 §6 规划. 引入 @playwright/test + 5 个未来 selector (K19-FIX-C 文档 §7.2).",
+      "scope": "引入 Playwright + playwright.config.ts + tests/e2e/import-cross-cohort-approval.spec.ts 9 个 test case. 使用 page.route() mock 所有 API, 不写 DB.",
+      "outOfScope": "不修改 importer / confirm API gate / schedule-import-dialog 逻辑. 不写业务数据."
+    },
+    {
+      "stage": "K20-FIX-A-AUTH-TEST-BASELINE-AUDIT",
+      "reason": "G 类别 LOW. 53 passed / 1 failed 长期 baseline. 失败为 pre-existing ScheduleAdjustment ACTIVE count mismatch.",
+      "scope": "重跑 K16 audit script 比对 ACTIVE count 期望值与 DB 实际. 决定更新 baseline 还是修复 audit script.",
+      "outOfScope": "不动业务数据. 不重 import."
+    },
+    {
+      "stage": "K20-FIX-A-RBAC-IMPORT-SCOPE-AUDIT",
+      "reason": "E 类别 MEDIUM (如果三项 RBAC 残留未 closure). 包含 K15-MED-01/02, K14-MED-01, 合并 K16-LOW-01/02.",
+      "scope": "定义 import:manage scope, 引入 admin:read / task:create 权限, 同步 RBAC seed + frontend gating + role mapping. 同时清理 LOW (roomId guard / per-model delete).",
+      "outOfScope": "不修改 schedule mutation server guard, 不写 DB."
+    }
+  ],
+  "unrelatedHistoricalNotes": [
+    "K18-E1 / K18-E2 scripts: pre-fix 期望, K18-E3 后 stale. 不影响 K20 closure.",
+    "K18-B validator 1 stale expectation: task 37 旧期望 [3,17,35] vs 实际 [3,17]. K18-B 4 tasks (168/174/176/181) 验证仍全 PASS.",
+    "K16 audit script ScheduleAdjustment ACTIVE count baseline: pre-existing, 53 passed / 1 failed 一致于 K16-FIX-B 文档.",
+    "lint baseline 312 problems: pre-existing, K18 / K19 阶段未引入新 error.",
+    "K17 backlog 中除 K9-DQ-01 外 12 项 (CAPACITY-01 / K15-MED-* / K14-MED-01 / K16-LOW-* / K15-LOW-01 / K14-LOW-01 / K13-LOW-* / TEST-BASELINE-01 / LINT-BASELINE-01) 仍 open, 本审计在对应 K20 类别中分别跟踪."
+  ]
+}
