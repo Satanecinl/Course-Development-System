@@ -447,18 +447,20 @@ K19-FIX-B1 应新增 `scripts/verify-import-cross-cohort-approval-k19-fix-b1.ts`
 
 | Script / Command | Result |
 |---|---|
-| `npx.cmd tsx scripts/audit-import-cross-cohort-persistent-flag-k19-fix-b.ts` | 见下方输出 |
-| `npx.cmd tsx scripts/verify-import-matching-cohort-guard-k19-fix-a.ts` | (per K19-FIX-A spec, expect 31/31 PASS) |
-| `npx.cmd tsx scripts/audit-import-matching-root-cause-k19.ts` | (per K19 spec) |
-| `npx.cmd tsx scripts/validate-task37-finalization-k18-e3.ts` | (per K18 spec) |
-| `npx.cmd tsx scripts/audit-data-quality-classgroup-matching-k17-fix-a.ts` | (per K17 spec) |
-| `npx.cmd tsx scripts/audit-remaining-risk-backlog-k17.ts` | (per K17 spec) |
-| `npx.cmd tsx scripts/audit-schedule-mutation-server-guards.ts` | (per K14 spec) |
-| `npx.cmd tsx scripts/audit-teaching-task-mutation-semantic-guards.ts` | (per K16 spec) |
-| `npx.cmd tsx scripts/verify-schedule-mutation-client-preflight-fix.ts` | (per K16 spec) |
-| `npm.cmd run build` | (per K19 spec, expect PASS) |
-| `npm.cmd run lint` | (expect 312 problems, no new errors) |
-| `npm.cmd run test:auth-foundation` | (expect 53 passed / 1 failed pre-existing) |
+| `npx.cmd tsx scripts/audit-import-cross-cohort-persistent-flag-k19-fix-b.ts` | HIGH=0 / MEDIUM=1 / LOW=2 / INFO=3 / NONE=7 (post-alignment) |
+| `npx.cmd tsx scripts/verify-import-cross-cohort-approval-k19-fix-b1.ts` | 17 PASS / 0 FAIL |
+| `npx.cmd tsx scripts/verify-import-matching-cohort-guard-k19-fix-a.ts` | 31 PASS / 0 FAIL |
+| `npx.cmd tsx scripts/audit-import-matching-root-cause-k19.ts` | HIGH=0 |
+| `npx.cmd tsx scripts/validate-task37-finalization-k18-e3.ts` | 18 PASS / 0 FAIL |
+| `npx.cmd tsx scripts/audit-data-quality-classgroup-matching-k17-fix-a.ts` | HIGH=0 |
+| `npx.cmd tsx scripts/audit-remaining-risk-backlog-k17.ts` | No BLOCKING |
+| `npx.cmd tsx scripts/audit-schedule-mutation-server-guards.ts` | HIGH=0 / MEDIUM=0 |
+| `npx.cmd tsx scripts/audit-teaching-task-mutation-semantic-guards.ts` | HIGH=0 / MEDIUM=0 |
+| `npx.cmd tsx scripts/verify-schedule-mutation-client-preflight-fix.ts` | 23 PASS / 0 FAIL |
+| `npx.cmd prisma validate` | ✓ valid |
+| `npm.cmd run build` | ✓ Compiled successfully |
+| `npm.cmd run lint` | 312 problems (baseline) |
+| `npm.cmd run test:auth-foundation` | 53 passed / 1 failed (pre-existing) |
 
 ---
 
@@ -480,3 +482,59 @@ K19-FIX-B-IMPORT-CROSS-COHORT-PERSISTENT-FLAG-AUDIT 按 spec 完整执行:
 - ✅ 不修改任何业务代码 / 不写数据库 / 不改 schema
 
 **本阶段可关闭,推荐进入 K19-FIX-B1-SCHEMA-AND-API-CROSS-COHORT-APPROVAL。**
+
+---
+
+## 18. Audit Alignment Update (K19-FIX-B1-AUDIT-AND-MIGRATION-ALIGNMENT)
+
+**日期**: 2026-06-04
+**提交**: `test(import): align cross cohort approval audit`
+
+### 18.1 Alignment Summary
+
+K19-FIX-B1 (`6bc87bb feat(import): persist cross cohort approval`) 已实现 audit 中设计的全部 backend 方案。audit 脚本已更新为基于实际代码状态动态判断 severity。
+
+### 18.2 Finding Status Changes
+
+| Finding | 原 Severity | 新 Severity | 原因 |
+|---|---|---|---|
+| K19-FIX-B-A-001 | MEDIUM | **NONE** | schema 已有 `crossCohortApproved` + `crossCohortApprovalReason` |
+| K19-FIX-B-B-001 | **HIGH** | **NONE** | confirm route 已有 `crossCohortApprovals` + importer `validateCrossCohortApprovals` |
+| K19-FIX-B-B-002 | MEDIUM | **NONE** | importer 已有 `validateCrossCohortApprovals` gate + `CROSS_COHORT_APPROVAL_REQUIRED` error |
+| K19-FIX-B-B-003 | LOW | **NONE** | `warningsJson` 已用 `{ version: 2, ... }` 结构 |
+| K19-FIX-B-C-001 | MEDIUM | MEDIUM | frontend 未改 (B2 scope) |
+| K19-FIX-B-C-002 | LOW | LOW | frontend 未改 (B2 scope) |
+| K19-FIX-B-C-003 | LOW | LOW | frontend 未改 (B2 scope) |
+| K19-FIX-B-D-001 | INFO | **NONE** | schema 字段已存在 |
+| K19-FIX-B-D-002 | INFO | INFO | 不变 |
+| K19-FIX-B-D-003 | LOW | **NONE** | warningsJson versioned 结构已实现 |
+| K19-FIX-B-E-001 | INFO | **NONE** | B1 已有 17 个 regression test |
+
+**原 HIGH "Confirm API 无 operator approval 参数" 已消除。**
+
+### 18.3 Post-Alignment Summary
+
+```
+HIGH:   0
+MEDIUM: 1 (frontend UI toggle 缺失 — B2 scope)
+LOW:    2 (frontend dialog 二次确认 — B2 scope)
+INFO:   3 (warningsJson 存在 / 无 ImportApproval 模型 / K18 数据干净)
+NONE:   7 (resolved by B1)
+BLOCKING: 0
+```
+
+### 18.4 Audit Script Changes
+
+`scripts/audit-import-cross-cohort-persistent-flag-k19-fix-b.ts` 更新：
+
+- A-001: severity 条件化 — `hasTeachingTaskApproved ? 'NONE' : 'MEDIUM'`
+- B-001: severity 条件化 — `hasForceFlag ? 'NONE' : 'HIGH'` + 新增 importer 检测
+- B-002: severity 条件化 — `hasApprovalGate ? 'NONE' : 'MEDIUM'`
+- B-003: severity 条件化 — `hasVersionedWarningsJson ? 'NONE' : 'LOW'`
+- D-001: severity 条件化 — `hasTeachingTaskApproved ? 'NONE' : 'INFO'`
+- D-003: severity 条件化 — `hasVersionedWarningsJson ? 'NONE' : 'LOW'`
+- E-001: severity 条件化 — `verifyScriptExists && verifyTestCount >= 10 ? 'NONE' : 'INFO'`
+- 新增 importer.ts 检测: `validateCrossCohortApprovals`, `buildApprovalTaskKey`, `CROSS_COHORT_APPROVAL_REQUIRED`, `version: 2`, `crossCohortApproved`
+- 新增 verify script 检测: 存在性 + pass() 调用计数
+- summary 新增 `none` 字段
+- recommendedOption / migrationImpact / suggestedNextStage 条件化

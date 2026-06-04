@@ -214,7 +214,7 @@ B1 之后新 batch 的 `ImportBatch.warningsJson` 结构：
 |---|---|
 | `verify-import-cross-cohort-approval-k19-fix-b1` | 17 PASS / 0 FAIL |
 | `verify-import-matching-cohort-guard-k19-fix-a` | 31 PASS / 0 FAIL |
-| `audit-import-cross-cohort-persistent-flag-k19-fix-b` | HIGH=1 / MEDIUM=3 / LOW=4 / INFO=5 |
+| `audit-import-cross-cohort-persistent-flag-k19-fix-b` | HIGH=0 / MEDIUM=1 / LOW=2 / INFO=3 / NONE=7 (post-alignment) |
 | `audit-import-matching-root-cause-k19` | HIGH=0 |
 | `validate-task37-finalization-k18-e3` | 18 PASS / 0 FAIL |
 | `audit-data-quality-classgroup-matching-k17-fix-a` | HIGH=0 |
@@ -222,6 +222,7 @@ B1 之后新 batch 的 `ImportBatch.warningsJson` 结构：
 | `audit-schedule-mutation-server-guards` | HIGH=0 / MEDIUM=0 |
 | `audit-teaching-task-mutation-semantic-guards` | HIGH=0 / MEDIUM=0 |
 | `verify-schedule-mutation-client-preflight-fix` | 23 PASS / 0 FAIL |
+| `prisma validate` | ✓ valid |
 | `build` | ✓ Compiled successfully |
 | `lint` | 312 problems (baseline) |
 | `test:auth-foundation` | 53 passed / 1 failed (pre-existing) |
@@ -247,3 +248,90 @@ B1 之后新 batch 的 `ImportBatch.warningsJson` 结构：
 - 依赖：B1 已上线的 `crossCohortApprovals` API
 - 不改 backend 逻辑
 - dry-run 返回中需新增 `crossCohortSummary` 和 `suspiciousTasks` 字段（前端消费）
+
+---
+
+## 16. Audit and Migration Alignment (K19-FIX-B1-AUDIT-AND-MIGRATION-ALIGNMENT)
+
+### 16.1 Audit Script Alignment
+
+`scripts/audit-import-cross-cohort-persistent-flag-k19-fix-b.ts` 已更新，使 findings 基于 B1 实际实现状态动态判断：
+
+| Finding | 原 Severity | B1 后 Severity | 原因 |
+|---|---|---|---|
+| K19-FIX-B-A-001 | MEDIUM | NONE | schema 已有 crossCohortApproved + crossCohortApprovalReason |
+| K19-FIX-B-B-001 | **HIGH** | NONE | confirm route 已有 crossCohortApprovals + importer validateCrossCohortApprovals |
+| K19-FIX-B-B-002 | MEDIUM | NONE | importer 已有 validateCrossCohortApprovals gate + CROSS_COHORT_APPROVAL_REQUIRED error |
+| K19-FIX-B-B-003 | LOW | NONE | warningsJson 已用 { version: 2, ... } 结构 |
+| K19-FIX-B-C-001 | MEDIUM | MEDIUM | frontend 未改 (B2 scope) |
+| K19-FIX-B-C-002 | LOW | LOW | frontend 未改 (B2 scope) |
+| K19-FIX-B-C-003 | LOW | LOW | frontend 未改 (B2 scope) |
+| K19-FIX-B-D-001 | INFO | NONE | schema 字段已存在 |
+| K19-FIX-B-D-002 | INFO | INFO | 不变 |
+| K19-FIX-B-D-003 | LOW | NONE | warningsJson versioned 结构已实现 |
+| K19-FIX-B-E-001 | INFO | NONE | B1 已有 17 个 regression test |
+
+**原 HIGH "Confirm API 无 operator approval 参数" 已消除。**
+
+### 16.2 Audit Output (post-alignment)
+
+```
+HIGH:   0
+MEDIUM: 1 (frontend UI toggle 缺失 — B2 scope)
+LOW:    2 (frontend dialog 二次确认 — B2 scope)
+INFO:   3 (warningsJson 存在 / 无 ImportApproval 模型 / K18 数据干净)
+NONE:   7 (resolved by B1)
+BLOCKING: 0
+```
+
+### 16.3 Migration Consistency Review
+
+**schema.prisma 字段：**
+
+```prisma
+crossCohortApproved       Boolean  @default(false)
+crossCohortApprovalReason String?
+```
+
+**migration.sql 内容：**
+
+```sql
+ALTER TABLE "TeachingTask" ADD COLUMN "crossCohortApproved" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "TeachingTask" ADD COLUMN "crossCohortApprovalReason" TEXT;
+```
+
+**一致性判断：** migration.sql 与 schema.prisma 完全一致：
+- `Boolean @default(false)` → `BOOLEAN NOT NULL DEFAULT false` ✓
+- `String?` → `TEXT` (nullable) ✓
+
+**DB schema inspection (只读)：**
+
+```
+7|crossCohortApproved|BOOLEAN|1|false|0
+8|crossCohortApprovalReason|TEXT|0||0
+```
+
+字段已存在于本地 DB，与 schema 和 migration 一致。
+
+### 16.4 db push --accept-data-loss 风险判断
+
+B1 使用 `npx prisma db push --accept-data-loss` 而非 `prisma migrate deploy` 的原因：
+
+1. **非交互环境**：`db push` 在 CI/本地脚本中可非交互运行
+2. **项目此前已使用 db push**：项目历史中 schema 同步一贯使用 `db push` 而非 migration workflow
+3. **本次新增字段为非破坏性**：
+   - `crossCohortApproved Boolean @default(false)` — 新增列，有默认值，不删数据
+   - `crossCohortApprovalReason String?` — 新增 nullable 列，不删数据
+   - `--accept-data-loss` 在本次场景中无实际 destructive change
+4. **backup 已创建**：`prisma/dev.db.backup-before-k19-cross-cohort-approval-<timestamp>`
+5. **未提交 dev.db**：dev.db 在 .gitignore 中，不影响其他环境
+
+**风险判断：低。** 新增 2 个 nullable/default 字段，不删除列、不改类型、不丢数据。
+
+### 16.5 后续环境建议
+
+- **推荐方式**：使用已提交的 `prisma/migrations/20260603000000_add_cross_cohort_approval/migration.sql` 或项目约定的 Prisma 流程
+- **不使用** `prisma migrate reset`（会清空所有数据）
+- **apply 前**：备份 dev.db
+- **migration.sql 可直接执行**：`sqlite3 dev.db < prisma/migrations/20260603000000_add_cross_cohort_approval/migration.sql`
+- **或使用 prisma**：`npx prisma migrate deploy`（读取 migration.sql）
