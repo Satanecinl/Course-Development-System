@@ -1,0 +1,408 @@
+{
+  "generatedAt": "2026-06-04T07:25:34.972Z",
+  "phase": "K20-FIX-A-SOURCE-EVIDENCE-TRACEABILITY-AUDIT",
+  "mode": "read-only",
+  "summary": {
+    "HIGH": 0,
+    "MEDIUM": 1,
+    "LOW": 1,
+    "INFO": 4,
+    "NONE": 0
+  },
+  "totalFindings": 6,
+  "blocking": false,
+  "recommendedOption": "A. TeachingTaskClass minimal source evidence fields",
+  "recommendedNextStage": "K20-FIX-B-SOURCE-EVIDENCE-SCHEMA-PLAN",
+  "currentTraceabilityMap": [
+    {
+      "level": "1. Source artifact (.docx)",
+      "description": "原始排课表 docx 文件",
+      "dataFlow": "用户上传至 /api/admin/import/parse",
+      "evidenceCarrier": "uploads/imports/{timestamp}-{slug}.docx 文件系统",
+      "queryable": false,
+      "retainedLongTerm": true,
+      "gaps": [
+        "无 DB 索引 / 校验和;路径漂移敏感"
+      ]
+    },
+    {
+      "level": "2. Parsed JSON",
+      "description": "Python parser (scripts/parse_schedule.py) 输出",
+      "dataFlow": "python parser → uploads/imports/{timestamp}.json",
+      "evidenceCarrier": "文件系统 JSON",
+      "queryable": false,
+      "retainedLongTerm": true,
+      "gaps": [
+        "record 级别无 source row index 字段; 重新 parse 时若顺序变化, 无法重定位"
+      ]
+    },
+    {
+      "level": "3. ImportBatch",
+      "description": "parse route 创建的 batch 记录",
+      "dataFlow": "POST /api/admin/import/parse → ImportBatch.create({filename, originalFilePath, parsedJsonPath, status: pending})",
+      "evidenceCarrier": "ImportBatch model 字段: filename / originalFilePath / parsedJsonPath / statsJson / qualityJson / warningsJson / status / recordCount / createdTaskCount / createdSlotCount",
+      "queryable": true,
+      "retainedLongTerm": true,
+      "gaps": [
+        "warningsJson 是 batch-level JSON blob, 不含 per-link 字段"
+      ]
+    },
+    {
+      "level": "4. TeachingTask",
+      "description": "导入后生成的教学任务",
+      "dataFlow": "importer.executeImportInTransaction → TeachingTask.create({importBatchId, remark, crossCohortApproved, crossCohortApprovalReason})",
+      "evidenceCarrier": "TeachingTask model: importBatchId / remark / crossCohortApproved / crossCohortApprovalReason",
+      "queryable": true,
+      "retainedLongTerm": true,
+      "gaps": [
+        "approvedBy / approvedAt / operatorId 缺失; remark 字段被用于存合班说明, 不专用于 source evidence"
+      ]
+    },
+    {
+      "level": "5. TeachingTaskClass",
+      "description": "task ↔ classGroup 多对多 link",
+      "dataFlow": "importer.executeImportInTransaction → TeachingTaskClass.create({teachingTaskId, classGroupId})",
+      "evidenceCarrier": "仅 teachingTaskId + classGroupId (无 importBatchId / source row / keyword 字段)",
+      "queryable": true,
+      "retainedLongTerm": true,
+      "gaps": [
+        "无 importBatchId 字段",
+        "无 source row index",
+        "无 source keyword",
+        "无 source className / remark",
+        "无 source artifact filename",
+        "无 match strategy / confidence"
+      ]
+    },
+    {
+      "level": "6. ClassGroup",
+      "description": "班级 (semesterId + name 唯一)",
+      "dataFlow": "importer upsert by (semesterId, name)",
+      "evidenceCarrier": "ClassGroup model 字段: name / studentCount / cohortYear (parse 派生) / track (parse 派生)",
+      "queryable": true,
+      "retainedLongTerm": true,
+      "gaps": [
+        "cohortYear / track 当前无独立 schema 字段, 仅从 name 解析"
+      ]
+    },
+    {
+      "level": "7. warningsJson (batch-level)",
+      "description": "import 阶段 warning / approval 元数据",
+      "dataFlow": "importer 累积 warnings → ImportBatch.warningsJson (v2: { version, generatedAt, warnings: string[], crossCohortApprovals: [] })",
+      "evidenceCarrier": "ImportBatch.warningsJson v2 (string JSON blob)",
+      "queryable": false,
+      "retainedLongTerm": true,
+      "gaps": [
+        "JSON blob, 无 SQL 索引",
+        "不能定位具体 TeachingTaskClass link",
+        "v1 (legacy string[]) 仍存在"
+      ]
+    },
+    {
+      "level": "8. crossCohortApproved (task-level)",
+      "description": "task 是否经过 cross-cohort approval",
+      "dataFlow": "K19-FIX-B1: import 阶段判定 → TeachingTask.crossCohortApproved / crossCohortApprovalReason",
+      "evidenceCarrier": "TeachingTask.crossCohortApproved Boolean + crossCohortApprovalReason String?",
+      "queryable": true,
+      "retainedLongTerm": true,
+      "gaps": [
+        "无 approvedBy / approvedAt / operatorId (K19-FIX-B §6 Option C deferred)"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "id": "FIXA-RuleA-1",
+      "rule": "A. TeachingTaskClass traceability gap",
+      "severity": "MEDIUM",
+      "category": "Per-link source evidence",
+      "title": "TeachingTaskClass schema 缺 source row / keyword / className / remark / artifact 字段",
+      "currentStatus": "TeachingTaskClass model fields: sourceRow=false sourceKeyword=false sourceClassName=false sourceRemark=false sourceArtifact=false importBatchId=false matchStrategy=false matchConfidence=false. importer writes TTC sourceRow=false sourceKeyword=false importBatchId=true (teachingTaskClass.create with extras=false).",
+      "evidence": [
+        "TeachingTaskClass model has sourceRow/sourceRowIndex: false",
+        "TeachingTaskClass model has sourceKeyword: false",
+        "TeachingTaskClass model has sourceClassName: false",
+        "TeachingTaskClass model has sourceRemark: false",
+        "TeachingTaskClass model has sourceArtifactPath/sourceArtifactFilename: false",
+        "TeachingTaskClass model has importBatchId: false",
+        "TeachingTaskClass model has matchStrategy/matchKind: false",
+        "TeachingTaskClass model has matchConfidence: false",
+        "importer writes TeachingTaskClass.sourceRow: false",
+        "importer writes TeachingTaskClass.sourceKeyword: false",
+        "importer writes TeachingTaskClass.importBatchId: true",
+        "Missing fields out of 8 carrier candidates: 8"
+      ],
+      "risk": "K18 / K19 修复 5 个 cross-cohort 错误 task (168/174/176/181/37) 时需要人工反查 17 个 source JSON. 未来若再次 import 出错, TeachingTaskClass link 无法自动回溯是 source row 0 还是 row 5 创建, 是 exact 还是 weak match, 来自哪个 docx 哪个 row. Audit / 修复 / 撤销 链路均需人工介入.",
+      "recommendation": "下一阶段 (K20-FIX-B) 在 TeachingTaskClass 增加最小 source evidence 字段: importBatchId + sourceRowIndex + sourceKeyword + sourceClassName + sourceRemark + sourceArtifactFilename + matchStrategy. importer 写入时填入. 不需要 backfill, 但需要 forward-fill 逻辑保证后续 import 写入.",
+      "suggestedNextStage": "K20-FIX-B-SOURCE-EVIDENCE-SCHEMA-PLAN"
+    },
+    {
+      "id": "FIXA-RuleB-1",
+      "rule": "B. TeachingTask-level evidence",
+      "severity": "LOW",
+      "category": "TeachingTask-level evidence",
+      "title": "TeachingTask-level evidence 现状评估 (importBatchId / remark / crossCohort approval)",
+      "currentStatus": "TeachingTask model: importBatchId=true remark=true crossCohortApproved=true crossCohortApprovalReason=true approvedBy/operatorId=false approvedAt=false. importer writes: importBatchId=true remark=true crossCohortApproved=true crossCohortApprovalReason=true.",
+      "evidence": [
+        "TeachingTask.importBatchId field: true",
+        "TeachingTask.remark field: true",
+        "TeachingTask.crossCohortApproved field: true",
+        "TeachingTask.crossCohortApprovalReason field: true",
+        "TeachingTask.approvedBy/approverId/operatorId field: false",
+        "TeachingTask.approvedAt field: false",
+        "importer writes TeachingTask.importBatchId: true",
+        "importer writes TeachingTask.remark: true",
+        "importer writes TeachingTask.crossCohortApproved: true",
+        "importer writes TeachingTask.crossCohortApprovalReason: true"
+      ],
+      "risk": "TeachingTask-level evidence 仅能解释 task 整体是否经 cross-cohort approval, 但不能解释每个 TeachingTaskClass link. 例如 task 37 有 3 个 link (CG3, CG17, CG35), 仅靠 task-level evidence 不知道 CG35 link 是如何创建的. 当前 task 37 已修复, 但未来若出现类似 case, 仍无法自动定位.",
+      "recommendation": "TeachingTask-level evidence 满足 K19 阶段需求. operator identity / timestamp 推迟至独立阶段 (K20-FIX-B-IMPORT-EVIDENCE-MODEL-DESIGN).",
+      "suggestedNextStage": "K20-FIX-B-IMPORT-EVIDENCE-MODEL-DESIGN (optional)"
+    },
+    {
+      "id": "FIXA-RuleC-1",
+      "rule": "C. ImportBatch.warningsJson",
+      "severity": "INFO",
+      "category": "ImportBatch.warningsJson audit",
+      "title": "ImportBatch.warningsJson 当前 structure 与查询能力",
+      "currentStatus": "ImportBatch.warningsJson field=true. warningsJson v2 (version: 2) 存在=true. crossCohortApprovals array 透传=true. 见 main 中 sample 提取.",
+      "evidence": [
+        "ImportBatch.warningsJson field: true",
+        "Importer writes version: 2 metadata: true",
+        "Importer writes crossCohortApprovals array: true"
+      ],
+      "risk": "warningsJson 是 JSON blob, 无法用 SQL 索引/查询/外键关联. 仅可整批 parse. 长期 audit trail 难以扩展. 不能定位到具体 TeachingTaskClass link 级别 (warnings 是 batch 级别, 不是 link 级别).",
+      "recommendation": "warningsJson 作为 batch-level 概要已够用. 但 per-link evidence 仍需独立 TeachingTaskClass 字段. 不在本阶段解决."
+    },
+    {
+      "id": "FIXA-RuleD-1",
+      "rule": "D. Source artifact retention",
+      "severity": "INFO",
+      "category": "Source artifact retention",
+      "title": "ImportBatch source artifact path retention 与 filesystem drift 风险",
+      "currentStatus": "ImportBatch model: filename=true originalFilePath=true parsedJsonPath=true statsJson=true qualityJson=true. uploads/imports 目录存在=true, JSON 文件数=17. sample JSON records=585, sample record keys=class_info,teacher,course,room,day_of_week,time_slot,period_start,period_end,week_constraints,week_start,week_end,week_type,remark,student_count_raw,student_count, sample remark=n/a.",
+      "evidence": [
+        "ImportBatch.filename: true",
+        "ImportBatch.originalFilePath: true",
+        "ImportBatch.parsedJsonPath: true",
+        "ImportBatch.statsJson: true",
+        "ImportBatch.qualityJson: true",
+        "uploads/imports directory: true",
+        "JSON files in uploads/imports: 17",
+        "Sample JSON record keys: class_info, teacher, course, room, day_of_week, time_slot, period_start, period_end, week_constraints, week_start, week_end, week_type, remark, student_count_raw, student_count",
+        "Sample JSON record count: 585"
+      ],
+      "risk": "originalFilePath / parsedJsonPath 仅存 path 字符串, 实际文件存在性 / 路径漂移 / 备份策略均依赖文件系统管理. 若 uploads/imports/ 目录被清理或路径重命名, batch-level 链接立即失效. 此外, JSON 内部行号 (source row index) 完全未持久化 — 即便 JSON 文件存在, 也无法直接定位到具体 record.parsedJson 数组 index.",
+      "recommendation": "短期 OK. 中期建议: (a) source artifact 持久化至不可变存储 (S3 / 内部 object store), 路径 → hash 映射; (b) parser 在 record 写入时记录 source row index 字段. 建议作为 K20-FIX-B-IMPORT-EVIDENCE-MODEL-DESIGN 或独立 K20-FIX-D-SOURCE-ARTIFACT-IMMUTABLE-STORAGE 阶段.",
+      "suggestedNextStage": "K20-FIX-D-SOURCE-ARTIFACT-IMMUTABLE-STORAGE (deferred)"
+    },
+    {
+      "id": "FIXA-RuleE-1",
+      "rule": "E. K18/K19 historical cases",
+      "severity": "INFO",
+      "category": "Historical case review",
+      "title": "K18-B 4 tasks + K18-E3 task 37 historical case — 当前 evidence 强度评估",
+      "currentStatus": "K18-B 4 tasks (168/174/176/181) — TTC 349/361/366/377 deleted in 2026-06-03. K18-E3 task 37 — TTC 94 deleted. K18-C source review: EXISTS, 17 source JSON scan: true, source row / record index reference: false. 当前 evidence 全部依赖人工 cross-reference 17 个 JSON 文件, 无自动化 source row index 定位.",
+      "evidence": [
+        "K18-B repair report exists: true",
+        "K18-E3 task37 report exists: true",
+        "K18-C source review exists: true",
+        "K18-C references 17 source JSON files: true",
+        "K18-C references source row / parsed row / record index: false",
+        "K19 root-cause audit commit: 0e656a2 (K19-IMPORT-MATCHING-IMPROVEMENT-AUDIT)",
+        "K19 root cause: weak matching + missing source evidence"
+      ],
+      "risk": "K18-B 修复时需要人工对 17 个 source JSON 做交叉验证才能确认 4 个 task 错误 merge 是历史 import 误合并. K18-C 报告人工逐一搜索 17 个 JSON 确认 task 37 在 2024 cohort 无任何 source record. 这种人工诊断模式在 K19-FIX-B / K19-FIX-C 阶段被多次 deferred. 未来若出现类似 case, 仍需重复同样工作.",
+      "recommendation": "若当时 TeachingTaskClass 有 sourceRowIndex + sourceArtifactFilename 字段: (a) K18-B 修复时直接定位 4 个 link 的 source row, 无需 cross-reference 17 个 JSON; (b) K18-C 报告自动列出 task 37 在 17 个 JSON 中是否出现, 而非人工搜索; (c) K19 root-cause audit 可直接定位 \"this link was created from JSON file X row N via remark keyword Y\". 诊断时间估计可从 ~1 天缩短到 ~10 分钟.",
+      "suggestedNextStage": "K20-FIX-B-SOURCE-EVIDENCE-SCHEMA-AND-IMPORTER"
+    },
+    {
+      "id": "FIXA-RuleF-1",
+      "rule": "F. Schema option comparison",
+      "severity": "INFO",
+      "category": "Schema option comparison",
+      "title": "4 个 schema options 评估 (A: 最小字段 / B: 独立 model / C: 仅 warningsJson / D: 不改 schema)",
+      "currentStatus": "已比较 4 个 options (A/B/C/D). 评估维度: 查询能力 / migration 风险 / rollback 复杂度 / forward-fill 兼容性 / audit trail 长期价值. 推荐: Option A (TeachingTaskClass 增最小 source evidence 字段). 详见 report.schemaOptions.",
+      "evidence": [
+        "Options evaluated: 4 (A, B, C, D)",
+        "Option A: TeachingTaskClass minimal source evidence fields — queryable, low migration, recommended",
+        "Option B: TeachingTaskClassSource / ImportEvidence independent model — extensible, heavier, more migration",
+        "Option C: warningsJson enhancement — no schema change, weak queryability",
+        "Option D: docs/audit only — zero migration, zero traceability gain",
+        "Report contains schemaOptions array with full pros/cons for each"
+      ],
+      "risk": "若选 C 或 D, 未来诊断 / 修复 / 撤销 仍需依赖 warningsJson blob 解析 + 人工 cross-reference. 长期 audit trail 价值低. 若选 B, 虽可扩展, 但当前需求未达到独立 model 复杂度. Option A 是平衡点.",
+      "recommendation": "推荐 Option A. 详见 recommendedOption + implementationPlan 字段."
+    }
+  ],
+  "historicalCaseReview": [
+    {
+      "case": "K18-B 4 tasks (168 / 174 / 176 / 181)",
+      "tasks": "168 (机械制图/赵春超), 174 (机械制图/张红梅), 176 (电子技术/许进), 181 (传感器与检测技术/张旭)",
+      "wrongCG": "CG22 (2024级钢铁智能冶金技术1班(高本贯通))",
+      "diagnosisEffort": "K17-FIX-A 报告 (HIGH=1, MEDIUM=9) 发现 4 个 cross-cohort task → K17-FIX-B review decision → K18 plan → K18-B 修复前需人工 cross-reference 17 个 source JSON, 确认 4 个 task 在 parsed JSON 中**只有 2025 cohort** 记录 → 修复 4 个 TTC link.",
+      "improvementWithEvidence": "若 TeachingTaskClass 有 sourceRowIndex + sourceArtifactFilename 字段: 修复脚本直接定位 (4 个 task 各自的第一条 link → 找到 source row → 看到 row class_name = 2025级钢铁智能冶金技术1班(高本贯通) 而非 2024级), 无需 cross-reference 17 JSON. 诊断时间 ~30 分钟."
+    },
+    {
+      "case": "K18-E3 task 37 (习近平思想/房忠敏)",
+      "tasks": "37 (习近平新时代中国特色社会主义思想概论/房忠敏)",
+      "wrongCG": "CG35 (2024级森林草原防火技术1班)",
+      "diagnosisEffort": "K17-FIX-B review 时被标记为 NEEDS_SOURCE_REVIEW → K18-C 报告 (2026-06-03T03:51) 人工搜索 17 个 source JSON 确认 \"无任何 2024 cohort 房忠敏+习近平 记录\" → 判定 LIKELY_ERROR → K18-E3 删除 TTC 94. 此报告本身是手工 cross-reference 产物.",
+      "improvementWithEvidence": "若 TeachingTaskClass 有 sourceRowIndex + sourceKeyword 字段: (a) 修复脚本直接定位 CG35 link → 看到 source row 的 remark = 与森防合班 + class_name = 2025级钢铁智能冶金技术1班(高本贯通); (b) 同一 batch 内所有 task 37 link 共享 sourceKeyword, 自动汇总 \"2024 cohort 房忠敏+习近平 task 37 link = 0\"; (c) K18-C 报告变为 SELECT COUNT(*) FROM TeachingTaskClass WHERE classGroupId IN (2024 cohort) AND teachingTask.teacherId = 房忠敏. 诊断时间 ~10 分钟."
+    },
+    {
+      "case": "未来潜在 case (hypothetical)",
+      "tasks": "假设某 batch import 后出现 cross-cohort false positive",
+      "wrongCG": "未知",
+      "diagnosisEffort": "当前: 人工 cross-reference N 个 source JSON + DB scan. 估计 0.5-2 天.",
+      "improvementWithEvidence": "TeachingTaskClass.sourceRowIndex + sourceArtifactFilename + sourceKeyword → 直接定位 link → 看到具体 row + class_name + match strategy. 估计 5-15 分钟."
+    }
+  ],
+  "schemaOptions": [
+    {
+      "option": "A",
+      "name": "TeachingTaskClass minimal source evidence fields",
+      "description": "在 TeachingTaskClass 表增字段: importBatchId Int? (FK) / sourceRowIndex Int? / sourceKeyword String? / sourceClassName String? / sourceRemark String? / sourceArtifactFilename String? / matchStrategy String? (EXACT / WEAK_INCLUDES / WEAK_SUBSEQ / AMBIGUOUS / DIRECT) / matchConfidence String? (HIGH / MEDIUM / LOW).",
+      "pros": [
+        "直接 SQL 查询: SELECT * FROM TeachingTaskClass WHERE sourceRowIndex = X AND sourceArtifactFilename = Y",
+        "Migration 简单: 仅一表增字段, 不改外键",
+        "importer 写入点 1 处: executeImportInTransaction 的 TeachingTaskClass.create",
+        "forward-fill 即可, 不需 backfill",
+        "可与 K19 warningsJson 协同 (warnings 描述 batch-level, 字段描述 per-link)"
+      ],
+      "cons": [
+        "字段集中在 TeachingTaskClass 表, 表宽度增加 (但 SQLite 无 16KB 行限制问题)",
+        "每条 link 多个 nullable 字段, 部分历史 link (K18 修复前) 字段为 null",
+        "未来若要支持多 keyword / 多源 (跨 batch 合并), 字段不够灵活"
+      ],
+      "estimatedEffort": "0.5-1 天 (含 importer 修改 + verify 脚本)",
+      "queryability": "STRONG",
+      "rollbackRisk": "LOW",
+      "recommended": true,
+      "recommendedReason": "直接满足 K18/K19 historical case 诊断需求. 最小 schema 改动, importer 改动集中. 不阻塞其他主线. 与 K19-FIX-B1 (crossCohortApproved) 字段风格一致. forward-fill 即可, 无需 backfill."
+    },
+    {
+      "option": "B",
+      "name": "TeachingTaskClassSource / ImportEvidence independent model",
+      "description": "新建 TeachingTaskClassSource 表: id / teachingTaskClassId (FK 1:1) / importBatchId (FK) / sourceRowIndex Int / sourceKeyword String / sourceClassName String / sourceRemark String / sourceArtifactFilename String / matchStrategy String / matchConfidence String. 可选 ImportEvidence 通用表 (per-evidence 1:N).",
+      "pros": [
+        "独立表, 不影响 TeachingTaskClass 主表宽度",
+        "可扩展 1:N (一个 link 可对应多个 evidence 来源 — 跨 batch 合并 / 历史合并)",
+        "可独立 archive / GC (老 evidence 单独表)",
+        "importBatch 详情可独立 SELECT"
+      ],
+      "cons": [
+        "Migration 复杂: 新表 + FK + index",
+        "JOIN 查询稍多 (TeachingTaskClass JOIN TeachingTaskClassSource)",
+        "1:1 模式下与 Option A 类似, 1:N 模式与当前业务场景 (1 link 1 source) 不匹配",
+        "importer 改动点增加 (需独立 evidence creation 逻辑)",
+        "与 K19 KISS 风格不匹配 — 字段直接放主表更直观"
+      ],
+      "estimatedEffort": "1-2 天",
+      "queryability": "STRONG",
+      "rollbackRisk": "MEDIUM",
+      "recommended": false,
+      "recommendedReason": "当前业务场景 (1 link 1 source) 1:1 模型不必要. 1:N 模型未来 (跨 batch 合并) 才有价值, 但当前尚未实施跨 batch 合并. 增加 migration 复杂度, 收益与 Option A 相同."
+    },
+    {
+      "option": "C",
+      "name": "warningsJson enhancement only (no schema change)",
+      "description": "不改 schema. 在 warningsJson 中追加新结构: { version: 3, generatedAt, perLinkEvidence: [{ ttClassId?: null, taskKey, classGroupId, sourceRowIndex, sourceKeyword, matchStrategy }] }. 在 importer 写入时填充.",
+      "pros": [
+        "零 migration",
+        "零 schema 改动",
+        "与 K19-FIX-B1 warningsJson v2 模式一致",
+        "可立即验证"
+      ],
+      "cons": [
+        "JSON blob 无法 SQL 查询 / 索引",
+        "ttClassId 是 post-creation 引用, 在 dry-run 阶段无 id (需 2-step: dryRun 返回 tentative id, confirm 时 attach)",
+        "历史 link 无法 attach (perLinkEvidence 仅新 batch 有效)",
+        "parse 复杂 (需多步 JOIN 解析)",
+        "审计查询性能差"
+      ],
+      "estimatedEffort": "0.5 天",
+      "queryability": "WEAK",
+      "rollbackRisk": "LOW",
+      "recommended": false,
+      "recommendedReason": "虽然零 migration, 但 queryability 弱 (无法直接 SELECT TeachingTaskClass by source row). 长期 audit 仍需 parse JSON. 不解决 K18/K19 historical case 诊断的根问题."
+    },
+    {
+      "option": "D",
+      "name": "No schema change, docs/audit only",
+      "description": "保持当前 schema. 完善 docs / audit scripts. 人工诊断仍依赖 17 JSON cross-reference.",
+      "pros": [
+        "零 migration",
+        "零代码改动",
+        "零风险"
+      ],
+      "cons": [
+        "不解决 traceability 根问题",
+        "未来诊断仍需 0.5-2 天",
+        "K18/K19 模式 (deferred) 持续存在"
+      ],
+      "estimatedEffort": "0.5 天 (写文档)",
+      "queryability": "NONE",
+      "rollbackRisk": "LOW",
+      "recommended": false,
+      "recommendedReason": "不解决任何问题. 仅是 K19 deferred 状态延续. 不推荐."
+    }
+  ],
+  "implementationPlan": {
+    "stage": "K20-FIX-B-SOURCE-EVIDENCE-SCHEMA-PLAN",
+    "description": "在 schema.prisma TeachingTaskClass 增 8 个 source evidence 字段 (importBatchId, sourceRowIndex, sourceKeyword, sourceClassName, sourceRemark, sourceArtifactFilename, matchStrategy, matchConfidence). 全部 nullable, 无 default. 编写 migration 文件 (若使用 prisma migrate) 或 db push 同步. 编写 importer 写入逻辑. 编写 verify script 校验写入路径.",
+    "backupRequired": true,
+    "migration": "建议步骤: (1) cp prisma/dev.db prisma/dev.db.backup-before-k20-fix-b-<timestamp>; (2) 修改 prisma/schema.prisma; (3) npx prisma migrate dev --name add-source-evidence-fields (or db push); (4) 验证 schema 同步; (5) 不写 importer, 验证 field nullable 默认 null 不破坏现有 446 TTC rows.",
+    "importerChanges": "executeImportInTransaction 中 TeachingTaskClass.create 调用追加: { teachingTaskId, classGroupId, importBatchId: batchId, sourceRowIndex: r.sourceRowIndex (parser 写入), sourceKeyword: matched keyword 或 null, sourceClassName: r.class_info.class_name, sourceRemark: r.remark 或 null, sourceArtifactFilename: batch.filename, matchStrategy: 'EXACT'/'WEAK_INCLUDES'/'WEAK_SUBSEQ'/'DIRECT', matchConfidence: 'HIGH'/'MEDIUM'/'LOW' }. 需 parser 同步在 record 写入 sourceRowIndex 字段 (新增, 不破坏现有).",
+    "verifyPlan": [
+      "verify-source-evidence-fields-schema.ts — 验证 schema 包含 8 个新字段, 全部 nullable",
+      "verify-source-evidence-importer-write.ts — mock import 1 个 batch, 验证所有新 TTC 的 source evidence 字段正确写入",
+      "verify-source-evidence-query-pattern.ts — SELECT * FROM TeachingTaskClass WHERE sourceRowIndex = X 应能直接定位",
+      "audit-source-evidence-backfill-gap.ts — 统计历史 TTC 中 source evidence 字段为 null 的数量 (期望: 446 - 新 batch TTC)"
+    ],
+    "outOfScope": [
+      "不实施 backfill (历史 TTC 字段为 null 是 acceptable)",
+      "不修改 parser 业务逻辑 (仅在 record 写入 sourceRowIndex 字段)",
+      "不修改 import flow 主路径 (仅在 TeachingTaskClass.create 处加字段)",
+      "不修改 frontend (UI 不展示 source evidence 字段)",
+      "不修改 warningsJson 结构 (与 K19-FIX-B1 v2 兼容)",
+      "不实施 K19-FIX-B §6 Option C (operator identity / timestamp 仍 deferred)"
+    ]
+  },
+  "verificationPlan": [
+    "npm.cmd run build — 验证 TS 编译通过",
+    "npm.cmd run lint — 验证无新增 lint error (允许 312 problems baseline)",
+    "npx prisma validate — 验证 schema 修改后仍 valid (本阶段未改 schema, 仅生成 audit)",
+    "npm.cmd run test:auth-foundation — 53 passed / 1 failed (pre-existing ScheduleAdjustment ACTIVE mismatch)",
+    "npx.cmd tsx scripts/audit-source-evidence-traceability-k20-fix-a.ts — 本阶段 audit script",
+    "npx.cmd tsx scripts/audit-remaining-risk-rebase-k20.ts — 验证 K20 rebase summary 不变 (HIGH=0, MEDIUM=2, LOW=6, ACCEPTED=1, NONE=1, BLOCKING=NO)",
+    "npx.cmd tsx scripts/verify-import-approval-browser-e2e-k19-fix-c.ts — 10 PASS / 0 FAIL",
+    "npx.cmd tsx scripts/verify-import-cross-cohort-approval-ui-k19-fix-b2.ts — 16 PASS / 0 FAIL",
+    "npx.cmd tsx scripts/verify-import-cross-cohort-approval-k19-fix-b1.ts — 17 PASS / 0 FAIL",
+    "npx.cmd tsx scripts/verify-import-matching-cohort-guard-k19-fix-a.ts — 31 PASS / 0 FAIL",
+    "npx.cmd tsx scripts/audit-import-cross-cohort-persistent-flag-k19-fix-b.ts — HIGH=0 / MEDIUM=0",
+    "npx.cmd tsx scripts/audit-import-matching-root-cause-k19.ts — HIGH=0",
+    "npx.cmd tsx scripts/validate-task37-finalization-k18-e3.ts — 18 PASS / 0 FAIL",
+    "npx.cmd tsx scripts/audit-data-quality-classgroup-matching-k17-fix-a.ts — HIGH=0"
+  ],
+  "openQuestions": [
+    "parser (scripts/parse_schedule.py) 是否同步需要写入 sourceRowIndex 字段? 若需要, 属于 parser 改动, 需独立阶段或合并 K20-FIX-B.",
+    "matchStrategy 枚举值是否需要前后端统一? 建议 enum: EXACT, WEAK_INCLUDES, WEAK_SUBSEQ, AMBIGUOUS, DIRECT, REMARK_DERIVED.",
+    "matchConfidence 评估标准: 1 个 exact hit = HIGH; 1 个 weak pass cohort filter = MEDIUM; 1 个 subseq pass = LOW. 需 K20-FIX-B 实施时定义.",
+    "K19 cross-cohort approval 的 taskKey 是否需要冗余至 TeachingTaskClass? 备选: 单独 taskKey 字段. 建议 K20-FIX-B 实施时由 Audit 决定.",
+    "若历史 TTC 行 (446 行) 需要 backfill, 需关联 source JSON 回填 sourceRowIndex. 建议不 backfill, 仅 forward-fill, 历史 TTC 字段为 null 即可 (有 warning 标记: sourceEvidence = null)."
+  ],
+  "closureCriteria": [
+    "新增 source evidence traceability audit 脚本 (本阶段: scripts/audit-source-evidence-traceability-k20-fix-a.ts)",
+    "新增 Markdown audit 文档 (docs/k20-source-evidence-traceability-audit.md)",
+    "新增 JSON audit 报告 (docs/k20-source-evidence-traceability-audit.json)",
+    "明确当前 evidence gap (Rule A-F 6 类发现)",
+    "明确推荐 schema / model 方案 (Option A)",
+    "明确下一阶段实施范围 (K20-FIX-B-SOURCE-EVIDENCE-SCHEMA-PLAN)",
+    "build PASS",
+    "lint 无新增 error (baseline 312 problems 维持)",
+    "test:auth-foundation 无新增失败 (53 passed / 1 failed 维持)",
+    "不修改 DB / schema / migration / API / frontend / importer / parser / solver / RBAC (本阶段)",
+    "工作区 clean"
+  ]
+}
