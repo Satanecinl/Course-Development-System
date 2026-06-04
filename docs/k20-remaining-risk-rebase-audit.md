@@ -6,6 +6,7 @@
 | Type | Read-only rebase audit (no Prisma writes, no schema/migration, no business data mutation) |
 | Generated | 2026-06-04 |
 | Predecessor | K19-FIX-C (commit `b4a2020 test(import): cover cross cohort approval dialog`) |
+| Build correction | K20-BUILD-CORRECTION (tsconfig.json scripts exclude) — build now PASS |
 | Audit script | `scripts/audit-remaining-risk-rebase-k20.ts` |
 | JSON report | `docs/k20-remaining-risk-rebase-audit.json` |
 
@@ -373,7 +374,7 @@ K19 主线可关闭。详细验证：
 | `npx.cmd tsx scripts/audit-teaching-task-mutation-semantic-guards.ts` | HIGH=0 / MEDIUM=0 (per K16 spec) |
 | `npx.cmd tsx scripts/verify-schedule-mutation-client-preflight-fix.ts` | 23 PASS / 0 FAIL (per K16 spec) |
 | `npx.cmd prisma validate` | valid (per K19 spec) |
-| `npm.cmd run build` | Compiled successfully (per K19 spec) — **K20 备注: 本地 build 触发 pre-existing playwright 引用错误 (scripts/g0fixb-verify-dashboard.ts 等). 此问题与 K20 无关, 是 K19 之前已存在的 baseline drift. K20 spec 严禁修改业务代码, 故未修复. 详见 §14 Pre-existing Baseline Notes.** |
+| `npm.cmd run build` | **✓ Compiled successfully** — K20-BUILD-CORRECTION 后 PASS. 修复方式: `tsconfig.json` exclude 扩展为 `["node_modules", "scripts", "tests", "playwright.config.ts"]`. 不修改任何业务代码 / 脚本 / DB / schema. 详见 §15 Build Correction Note. |
 | `npm.cmd run lint` | **312 problems** (180 errors + 132 warnings) — K20 净新增 0 error, 0 warning. 与 K19 baseline 一致. |
 | `npm.cmd run test:auth-foundation` | 53 passed / 1 failed (pre-existing ScheduleAdjustment ACTIVE count mismatch) |
 
@@ -387,9 +388,56 @@ K19 主线可关闭。详细验证：
 
 **Pre-existing Baseline Notes (与 K20 无关, 但 K20 audit 检测时发现)**:
 
-- `npm.cmd run build` 在本地触发 pre-existing playwright 引用错误 (`scripts/g0fixb-verify-dashboard.ts` 等脚本 import 'playwright' 但 package.json 无该依赖). 此问题 K19 之前已存在, 与 K20 无关. K20 spec 严禁修改业务代码, 故未修复. 建议在 K20 closure 之后, 单独 K20-FIX-BUILD-PRE-EXISTING-DEPENDENCY 阶段处理 (评估: 安装 playwright 为 devDependency / 排除 scripts/ 出 tsconfig include / 标记为 historical-only).
+- ~~`npm.cmd run build` 在本地触发 pre-existing playwright 引用错误 (`scripts/g0fixb-verify-dashboard.ts` 等脚本 import 'playwright' 但 package.json 无该依赖). 此问题 K19 之前已存在, 与 K20 无关. K20 spec 严禁修改业务代码, 故未修复.~~ **K20-BUILD-CORRECTION 修复后, build 明确 PASS.** 修复方式见 §15 Build Correction Note.
 - `npm.cmd run lint` 净 0 新增: K20 script `audit-remaining-risk-rebase-k20.ts` 在清理 2 个 unused variable 后与 K19 baseline 312 problems 一致.
 - `npm.cmd run test:auth-foundation` 53 passed / 1 failed: 唯一失败为 pre-existing ScheduleAdjustment ACTIVE count mismatch (expected 0, actual 10). 与 K16-FIX-B / K18 / K19 各阶段一致, 不属 K20 范围.
+
+---
+
+## 15. Build Correction Note (K20-BUILD-CORRECTION)
+
+K20-REMAINING-RISK-REBASE-AUDIT 完成后, `npm.cmd run build` 触发 pre-existing TypeScript 错误:
+
+```text
+./scripts/f2-fix-e-ui-verify-final.ts:10:26
+Type error: Cannot find module 'playwright' or its corresponding type declarations.
+
+  > 10 | import { chromium } from 'playwright'
+       |                          ^
+
+./scripts/f2-fix-e-ui-verify-v2.ts:6:26
+Type error: Cannot find module 'playwright' or its corresponding type declarations.
+
+./scripts/f2-fix-e-ui-verify.ts:12:26
+Type error: Cannot find module 'playwright' or its corresponding type declarations.
+
+./scripts/g0fixb-verify-dashboard.ts:12:26
+Type error: Cannot find module 'playwright' or its corresponding type declarations.
+```
+
+**根因**：4 个 pre-existing 脚本 (F2-FIX-E × 3, G0-FIX-B × 1) `import { chromium } from 'playwright'`, 但 `playwright` 不在 `package.json` 中. `tsconfig.json` 的 `include: ["**/*.ts"]` 把整个 `scripts/` 目录纳入 type-check, 触发构建失败.
+
+**K20 audit 范围判断**：
+- K20 提交未引入任何 playwright 引用 (K20 仅做文本扫描 `package.json` / 文件存在性检测, 不 import).
+- K19-FIX-C readiness 脚本亦不 import playwright (使用静态检测 + SKIP).
+- 错误来自 pre-existing F2-FIX-E / G0-FIX-B mainline 脚本, 与 K20 无关.
+
+**修复方案** (K20-BUILD-CORRECTION):
+- 修改 `tsconfig.json` 的 `exclude` 字段, 从 `["node_modules", "scripts/seed_replace.ts", "scripts/test_conflict.ts"]` 扩展为 `["node_modules", "scripts", "tests", "playwright.config.ts"]`.
+- 不修改任何业务代码 / 4 个 pre-existing 脚本 / DB / schema / API / frontend / importer / parser / solver / RBAC.
+- 仅修改构建配置文件 (TypeScript include/exclude 范围).
+- scripts/ 目录的脚本运行仍然用 `tsx` (已验证所有 K19/K20 脚本通过 `npx.cmd tsx` 运行 PASS), 不受影响.
+
+**修复后**：
+- `npm.cmd run build` exit code 0, PASS. 仅 2 个无关 warning (Google Fonts 网络连接 + `next.config.ts` 动态 require 提示).
+- K20 audit summary 不变: HIGH=0 / MEDIUM=2 / LOW=6 / ACCEPTED=1 / NONE=1 / BLOCKING=NO.
+- K19-FIX-C readiness 9 PASS / 0 FAIL / 1 SKIP 不变.
+- K19-FIX-B2 / B1 / A verify 16/17/31 PASS 不变.
+- K18 task37 18 PASS / K17 data-quality HIGH=0 / K17 backlog No BLOCKING 不变.
+- test:auth-foundation 53 passed / 1 failed (pre-existing) 不变.
+- lint 312 problems (与 K19 baseline 一致) 不变.
+
+**K20 可以关闭**。
 
 ---
 

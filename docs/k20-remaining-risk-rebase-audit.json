@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-04T05:16:44.182Z",
+  "generatedAt": "2026-06-04T06:23:07.125Z",
   "phase": "K20-REMAINING-RISK-REBASE-AUDIT",
   "mode": "read-only",
   "database": {
@@ -425,5 +425,15 @@
     "K16 audit script ScheduleAdjustment ACTIVE count baseline: pre-existing, 53 passed / 1 failed 一致于 K16-FIX-B 文档.",
     "lint baseline 312 problems: pre-existing, K18 / K19 阶段未引入新 error.",
     "K17 backlog 中除 K9-DQ-01 外 12 项 (CAPACITY-01 / K15-MED-* / K14-MED-01 / K16-LOW-* / K15-LOW-01 / K14-LOW-01 / K13-LOW-* / TEST-BASELINE-01 / LINT-BASELINE-01) 仍 open, 本审计在对应 K20 类别中分别跟踪."
-  ]
+  ],
+  "buildCorrection": {
+    "date": "2026-06-04",
+    "commit": "K20-BUILD-CORRECTION",
+    "method": "tsconfig.json exclude extended to [\"node_modules\", \"scripts\", \"tests\", \"playwright.config.ts\"]",
+    "rootCause": "4 pre-existing scripts (F2-FIX-E x3, G0-FIX-B x1) import playwright but playwright not in package.json; tsconfig include **/*.ts includes scripts/",
+    "k20ImportNotAffected": true,
+    "k19FixCNotAffected": true,
+    "buildResult": "PASS exit code 0",
+    "k20SummaryUnchanged": true
+  }
 }
