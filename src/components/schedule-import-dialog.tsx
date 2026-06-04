@@ -472,6 +472,7 @@ export function ScheduleImportDialog({ open, onOpenChange }: ScheduleImportDialo
                     className="bg-amber-600 hover:bg-amber-700"
                     onClick={handleConfirmClick}
                     disabled={dryRunLoading || confirmLoading || !!hasBlocking || crossCohortBlocking}
+                    data-testid="import-confirm-button"
                   >
                     {confirmLoading ? (
                       <>
@@ -523,7 +524,7 @@ export function ScheduleImportDialog({ open, onOpenChange }: ScheduleImportDialo
 
                 {/* K19-FIX-B2: Cross-cohort approval section */}
                 {crossCohortWarnings && hasLikelyErrors && (
-                  <div className="bg-red-50 border border-red-300 rounded-lg p-3 space-y-3">
+                  <div className="bg-red-50 border border-red-300 rounded-lg p-3 space-y-3" data-testid="cross-cohort-warning-panel">
                     <div className="flex items-center gap-2">
                       <ShieldAlert className="w-4 h-4 text-red-600 shrink-0" />
                       <h4 className="text-sm font-medium text-red-800">
@@ -551,6 +552,7 @@ export function ScheduleImportDialog({ open, onOpenChange }: ScheduleImportDialo
                               type="checkbox"
                               className="mt-0.5"
                               checked={checked}
+                              data-testid="cross-cohort-approval-checkbox"
                               onChange={(e) => {
                                 setApprovals((prev) => ({
                                   ...prev,
@@ -572,6 +574,7 @@ export function ScheduleImportDialog({ open, onOpenChange }: ScheduleImportDialo
                                 rows={2}
                                 placeholder="审批原因（必填，不少于 5 个字符）"
                                 value={reason}
+                                data-testid="cross-cohort-approval-reason"
                                 onChange={(e) => {
                                   setApprovals((prev) => ({
                                     ...prev,
@@ -584,7 +587,7 @@ export function ScheduleImportDialog({ open, onOpenChange }: ScheduleImportDialo
                                 }}
                               />
                               <div className="flex items-center justify-between text-[11px]">
-                                <span className={reason.trim().length >= 5 ? 'text-green-600' : 'text-red-500'}>
+                                <span className={reason.trim().length >= 5 ? 'text-green-600' : 'text-red-500'} data-testid="cross-cohort-reason-hint">
                                   {reason.trim().length >= 5 ? '✓ 原因已填写' : `还需要 ${Math.max(0, 5 - reason.trim().length)} 个字符`}
                                 </span>
                                 <span className="text-gray-400">{reason.trim().length} 字符</span>
@@ -595,7 +598,7 @@ export function ScheduleImportDialog({ open, onOpenChange }: ScheduleImportDialo
                       )
                     })}
                     {approvalTouched && !crossCohortApprovalValidation.ready && (
-                      <div className="text-xs text-red-600 flex items-center gap-1.5">
+                      <div className="text-xs text-red-600 flex items-center gap-1.5" data-testid="cross-cohort-approval-message">
                         <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                         {crossCohortApprovalValidation.reasons[0]}
                       </div>
@@ -605,7 +608,7 @@ export function ScheduleImportDialog({ open, onOpenChange }: ScheduleImportDialo
 
                 {/* K19-FIX-B2: LEGAL_PUBLIC info (non-blocking) */}
                 {crossCohortWarnings && crossCohortWarnings.legalPublics.length > 0 && !hasLikelyErrors && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-2.5 space-y-1">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-2.5 space-y-1" data-testid="cross-cohort-legal-public-info">
                     <div className="flex items-center gap-2 text-xs">
                       <Info className="w-3.5 h-3.5 text-blue-500 shrink-0" />
                       <span className="text-blue-800 font-medium">
@@ -617,7 +620,7 @@ export function ScheduleImportDialog({ open, onOpenChange }: ScheduleImportDialo
 
                 {/* K19-FIX-B2: confirm disabled reason */}
                 {crossCohortBlocking && (
-                  <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2 flex items-center gap-1.5">
+                  <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2 flex items-center gap-1.5" data-testid="cross-cohort-blocking-message">
                     <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
                     请完成所有跨年级合班确认后才能导入
                   </div>
@@ -625,7 +628,7 @@ export function ScheduleImportDialog({ open, onOpenChange }: ScheduleImportDialo
 
                 {/* Confirm error */}
                 {confirmError && (
-                  <div className="flex items-start gap-2 p-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700">
+                  <div className="flex items-start gap-2 p-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700" data-testid="import-confirm-error">
                     <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
                     <div className="font-medium">{confirmError}</div>
                   </div>
