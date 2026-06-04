@@ -1,12 +1,12 @@
 {
   "summary": {
     "high": 0,
-    "medium": 1,
-    "low": 2,
+    "medium": 0,
+    "low": 0,
     "info": 3,
-    "none": 7,
+    "none": 10,
     "blocking": 0,
-    "recommendedOption": "Option A: Backend-first persistent approval — B1 已实现"
+    "recommendedOption": "Option A: Backend-first persistent approval — B1+B2 全部完成"
   },
   "findings": [
     {
@@ -97,45 +97,47 @@
     },
     {
       "id": "K19-FIX-B-C-001",
-      "severity": "MEDIUM",
+      "severity": "NONE",
       "category": "FrontendOperatorFlow",
-      "title": "Import dialog 无 cross-cohort 区分展示",
-      "evidence": "src/components/schedule-import-dialog.tsx:\n  - cross-cohort/approval UI 关键字: 不存在\n  - warnings 展示 hook: 有 (result.quality.warnings / dryRunResult.warnings)\n  - approval toggle 关键字: 不存在\n  - 现有 confirm 门: dryRunResult.canImport === true -> 允许 confirm\n  - confirmText 校验: 有 (CONFIRM_IMPORT)",
+      "title": "Import dialog 已实现 cross-cohort 区分展示 + approval UI (B2 resolved)",
+      "evidence": "src/components/schedule-import-dialog.tsx:\n  - LIKELY_ERROR display: ✓ (ShieldAlert + red area + suspiciousTasks list + 高风险说明)\n  - approval checkbox: ✓ (checkbox + state tracking + validation)\n  - reason input: ✓ (textarea + trim().length >= 5 + payload)\n  - confirm gating: ✓ (crossCohortBlocking + hasBlocking + CONFIRM_IMPORT)\n  - payload: ✓ (crossCohortApprovals with taskKey/approved/reason)\n  - error mapping: ✓ (mapApprovalError + 409 approval errors)\n  helper: src/lib/import/cross-cohort-approval-ui.ts: ✓ 存在",
       "files": [
-        "src/components/schedule-import-dialog.tsx"
+        "src/components/schedule-import-dialog.tsx",
+        "src/lib/import/cross-cohort-approval-ui.ts"
       ],
-      "currentBehavior": "warnings 全部混在同一个 list 中，operator 无法一眼区分 LEGAL_PUBLIC_CROSS_COHORT vs LIKELY_ERROR_CROSS_COHORT vs 普通 warning。",
-      "risk": "若 dry-run 阶段产生 LIKELY_ERROR_CROSS_COHORT, operator 可能根本没注意（折叠在 \"查看 N 条警告\" details 中），直接点确认按钮。",
-      "recommendation": "K19-FIX-B2 (前置 B1 schema+API):\n  1) frontend 在 dry-run 后调用 classifyCrossCohortWarnings\n  2) LEGAL_PUBLIC / LIKELY_ERROR 用不同色块 (绿色提示 vs 红色警示) 置顶展示\n  3) LIKELY_ERROR 计数 > 0 → 弹 allow-cross-cohort 确认 dialog, 要求输入 reason\n  4) approval payload 通过 crossCohortApprovals 字段传到 confirm API",
-      "suggestedNextStage": "K19-FIX-B2-FRONTEND-CROSS-COHORT-APPROVAL-UI"
+      "currentBehavior": "B2 已实现: LIKELY_ERROR 红色高风险区域 (ShieldAlert + bg-red-50) 列出 suspicious tasks; 每个 task 有 approval checkbox + reason textarea (>= 5 chars); confirm button 在 approval 未完成时 disabled; crossCohortApprovals payload 透传到 confirm API; backend 409 错误映射为中文提示。",
+      "risk": "无。B2 已实现完整的 cross-cohort approval UI。",
+      "recommendation": "B2 已完成。后续: source evidence traceability / 浏览器 E2E 测试。",
+      "suggestedNextStage": "N/A (K19-FIX-B 可关闭)"
     },
     {
       "id": "K19-FIX-B-C-002",
-      "severity": "LOW",
+      "severity": "NONE",
       "category": "FrontendOperatorFlow",
-      "title": "Dialog 二次确认仅文本 \"CONFIRM_IMPORT\"",
-      "evidence": "confirmText 仅为固定字符串 \"CONFIRM_IMPORT\"。无 reason 输入框。",
+      "title": "Dialog 已有 cross-cohort reason 输入 (B2 resolved)",
+      "evidence": "B2 已实现: textarea \"审批原因（必填，不少于 5 个字符）\" + trim().length >= 5 校验 + 字符计数 + buildCrossCohortApprovalPayload 透传 reason。",
       "files": [
-        "src/components/schedule-import-dialog.tsx"
+        "src/components/schedule-import-dialog.tsx",
+        "src/lib/import/cross-cohort-approval-ui.ts"
       ],
-      "currentBehavior": "operator 只能在 confirmText 输入框敲入 \"CONFIRM_IMPORT\"，无跨 cohort 场景下的 reason 记录。",
-      "risk": "audit trail 不完整。",
-      "recommendation": "K19-FIX-B2 在 LIKELY_ERROR_CROSS_COHORT > 0 时, 要求 reason 文本框 (min 5 chars), 同步进 crossCohortApprovals[].reason。",
-      "suggestedNextStage": "K19-FIX-B2"
+      "currentBehavior": "B2 已实现: LIKELY_ERROR checkbox 勾选后显示 textarea, 必填 >= 5 字符, 透传到 crossCohortApprovals[].reason。",
+      "risk": "无。B2 已实现 reason 输入与校验。",
+      "recommendation": "B2 已完成。",
+      "suggestedNextStage": "N/A"
     },
     {
       "id": "K19-FIX-B-C-003",
-      "severity": "LOW",
+      "severity": "NONE",
       "category": "FrontendOperatorFlow",
-      "title": "无 \"防误点\" 双确认机制",
-      "evidence": "现有 confirm dialog: 一次 \"确认导入\" 按钮点击即触发后端真实写入。",
+      "title": "Confirm button 已有 cross-cohort 防误点 gating (B2 resolved)",
+      "evidence": "B2 已实现: crossCohortBlocking = hasLikelyErrors && !approvalValidation.ready; confirm button disabled={... || crossCohortBlocking}; amber 提示条 \"请完成所有跨年级合班确认后才能导入\"。",
       "files": [
         "src/components/schedule-import-dialog.tsx"
       ],
-      "currentBehavior": "button click → POST confirm with confirmText → 真实写 DB",
-      "risk": "K19-FIX-B2 应在有 LIKELY_ERROR_CROSS_COHORT 时要求输入 type-to-confirm（如输入 batchId 数字）。",
-      "recommendation": "K19-FIX-B2: LIKELY_ERROR > 0 时禁用 confirm button 直到 operator 输入 batchId 验证。",
-      "suggestedNextStage": "K19-FIX-B2"
+      "currentBehavior": "B2 已实现: LIKELY_ERROR > 0 且 approval 未全部完成时 confirm button disabled, 与原有 hasBlocking (quality) 独立组合。",
+      "risk": "无。B2 已实现 confirm button gating。",
+      "recommendation": "B2 已完成。",
+      "suggestedNextStage": "N/A"
     },
     {
       "id": "K19-FIX-B-D-001",
@@ -276,7 +278,7 @@
       "misclickPrevention": "confirm button 在 LIKELY_ERROR > 0 且未全部勾选时 disabled; 若需要更强保护, 需输入 batchId 数字二次确认"
     }
   ],
-  "recommendedOption": "Option A: Backend-first persistent approval — B1 已实现 (schema + API + importer + warningsJson + 17 regression tests)。剩余: K19-FIX-B2 frontend UI。",
+  "recommendedOption": "Option A: Backend-first persistent approval — B1+B2 全部完成 (schema + API + importer + warningsJson + frontend UI + 16+17 regression tests)。K19-FIX-B 主线可关闭。",
   "migrationImpact": "B1 已完成: 1 次 SQLite 迁移 (新增 2 字段, @default(false) 增量秒级)。历史 task 自动 crossCohortApproved=false。ImportBatch.warningsJson 使用 versioned {version: 2, ...} 结构。",
   "regressionTestPlan": [
     "no approval + LIKELY_ERROR_CROSS_COHORT → API 拒绝 (409)",
@@ -287,6 +289,6 @@
     "K18 5 个历史 pattern (机械制图/电子技术/传感器 task 168/174/176/181 + task 37) 在 approval 缺失时仍被阻断",
     "前端 toggle 行为: 未勾选 → button disabled; 已勾选无 reason → button disabled; 全部满足 → 允许 confirm"
   ],
-  "suggestedNextStage": "K19-FIX-B2-FRONTEND-CROSS-COHORT-APPROVAL-UI (B1 已完成，剩余 frontend UI toggle + reason input + 二次确认)",
-  "generatedAt": "2026-06-04T01:18:29.943Z"
+  "suggestedNextStage": "K19-FIX-B 主线可关闭。后续: source evidence traceability / 浏览器 E2E 测试。",
+  "generatedAt": "2026-06-04T02:14:45.939Z"
 }

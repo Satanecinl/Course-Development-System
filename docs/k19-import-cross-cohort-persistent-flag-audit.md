@@ -447,7 +447,7 @@ K19-FIX-B1 应新增 `scripts/verify-import-cross-cohort-approval-k19-fix-b1.ts`
 
 | Script / Command | Result |
 |---|---|
-| `npx.cmd tsx scripts/audit-import-cross-cohort-persistent-flag-k19-fix-b.ts` | HIGH=0 / MEDIUM=1 / LOW=2 / INFO=3 / NONE=7 (post-alignment) |
+| `npx.cmd tsx scripts/audit-import-cross-cohort-persistent-flag-k19-fix-b.ts` | HIGH=0 / MEDIUM=0 / LOW=0 / INFO=3 / NONE=10 (post-B2 alignment) |
 | `npx.cmd tsx scripts/verify-import-cross-cohort-approval-k19-fix-b1.ts` | 17 PASS / 0 FAIL |
 | `npx.cmd tsx scripts/verify-import-matching-cohort-guard-k19-fix-a.ts` | 31 PASS / 0 FAIL |
 | `npx.cmd tsx scripts/audit-import-matching-root-cause-k19.ts` | HIGH=0 |
@@ -538,3 +538,68 @@ BLOCKING: 0
 - 新增 verify script 检测: 存在性 + pass() 调用计数
 - summary 新增 `none` 字段
 - recommendedOption / migrationImpact / suggestedNextStage 条件化
+
+---
+
+## 19. Audit Alignment Update (K19-FIX-B2-AUDIT-ALIGNMENT)
+
+**日期**: 2026-06-04
+**提交**: `test(import): align cross cohort approval UI audit`
+
+### 19.1 Alignment Summary
+
+K19-FIX-B2 (`0a524a9 feat(import): add cross cohort approval UI`) 已实现 audit 中设计的全部 frontend UI 方案。audit 脚本已更新为检测 B2 的 6 项 UI 能力，C-001/C-002/C-003 降为 NONE。
+
+### 19.2 B2 UI Capabilities Detected
+
+| # | 能力 | 检测信号 | B2 实现 |
+|---|---|---|---|
+| 1 | LIKELY_ERROR display | `LIKELY_ERROR_CROSS_COHORT` + `suspiciousTasks` + `ShieldAlert` + `bg-red-50` + 高风险说明 | ✓ 红色高风险区域列出 suspicious tasks |
+| 2 | Approval checkbox | `type="checkbox"` + `我已确认此跨年级合班` + `approvals[task.taskKey]` + `validateApprovalState` | ✓ 每个 suspicious task 有 checkbox + state tracking |
+| 3 | Reason input | `textarea` + `审批原因` + `trim().length >= 5` + `buildCrossCohortApprovalPayload` | ✓ checkbox 勾选后显示 textarea + 字符计数 |
+| 4 | Confirm button gating | `crossCohortBlocking` + `disabled` + `hasBlocking` 组合 | ✓ LIKELY_ERROR 未完成 approval 时 disabled |
+| 5 | Payload | `crossCohortApprovals` + `taskKey/approved/reason` shape | ✓ 透传到 confirm API |
+| 6 | Error mapping | `mapApprovalError` + `CROSS_COHORT_APPROVAL_REQUIRED` + `REASON_REQUIRED` | ✓ 409 错误映射中文提示 |
+
+### 19.3 Finding Status Changes
+
+| Finding | 原 Severity | 新 Severity | 原因 |
+|---|---|---|---|
+| K19-FIX-B-C-001 | MEDIUM | **NONE** | B2 已实现 LIKELY_ERROR display + approval checkbox + reason + gating + payload + error mapping |
+| K19-FIX-B-C-002 | LOW | **NONE** | B2 已实现 reason textarea (>= 5 chars) + payload 透传 |
+| K19-FIX-B-C-003 | LOW | **NONE** | B2 已实现 crossCohortBlocking confirm button gating |
+
+**原 MEDIUM "Import dialog 无 cross-cohort 区分展示" 已消除。**
+
+### 19.4 Post-Alignment Summary
+
+```
+HIGH:   0
+MEDIUM: 0
+LOW:    0
+INFO:   3 (warningsJson 存在 / 无 ImportApproval 模型 / K18 数据干净)
+NONE:   10 (resolved by B1+B2)
+BLOCKING: 0
+```
+
+### 19.5 Audit Script Changes
+
+`scripts/audit-import-cross-cohort-persistent-flag-k19-fix-b.ts` 更新：
+
+- C-001: 从硬编码 `MEDIUM` 改为基于 B2 信号动态判断 — `b2Complete ? 'NONE' : ...`
+- C-002: 从硬编码 `LOW` 改为 `b2ReasonInput ? 'NONE' : 'LOW'`
+- C-003: 从硬编码 `LOW` 改为 `b2ConfirmGating ? 'NONE' : 'LOW'`
+- 新增 B2 检测变量: `b2LikelyErrorDisplay`, `b2ApprovalCheckbox`, `b2ReasonInput`, `b2ConfirmGating`, `b2Payload`, `b2ErrorMapping`, `b2Complete`
+- 新增 helper 文件检测: `src/lib/import/cross-cohort-approval-ui.ts`
+- C-001 evidence 展示全部 6 项 B2 能力 ✓/✗ 状态
+- summary / recommendedOption / suggestedNextStage 条件化感知 B2 完成状态
+
+### 19.6 K19-FIX-B Closure Assessment
+
+| 项目 | 状态 |
+|---|---|
+| B1 backend | ✓ 完成 (schema + API + importer + warningsJson + 17 tests) |
+| B2 frontend | ✓ 完成 (LIKELY_ERROR display + checkbox + reason + gating + payload + error mapping + 16 tests) |
+| Audit alignment | ✓ 完成 (audit 脚本识别 B2 UI，C-findings 降为 NONE) |
+| K19-FIX-B 主线 | **可关闭** |
+| 剩余 | source evidence traceability / 浏览器 E2E 测试 (deferred) |

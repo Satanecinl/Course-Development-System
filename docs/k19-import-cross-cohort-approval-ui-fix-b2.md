@@ -256,8 +256,37 @@ crossCohortApprovals: Array<{
 | Source evidence traceability | **Deferred**。TeachingTaskClass 仍无 source row / keyword |
 | ImportApproval 独立 model | **Deferred**。当前用 TeachingTask 字段 + warningsJson |
 | Frontend E2E 测试 | **Deferred**。B2 验证为纯函数测试 + build，未做浏览器 E2E |
-| K19-FIX-B audit MEDIUM | **已消除**。B2 完成后原 C-001 (MEDIUM) 应降为 NONE |
+| K19-FIX-B audit MEDIUM | **已消除**。B2 完成后原 C-001 (MEDIUM) 已降为 NONE |
 | LEGAL_PUBLIC optional approval | **Accepted**。B2 不强制 LEGAL_PUBLIC approval |
+
+---
+
+## 15. Audit Alignment (K19-FIX-B2-AUDIT-ALIGNMENT)
+
+**日期**: 2026-06-04
+
+K19-FIX-B audit 脚本 (`scripts/audit-import-cross-cohort-persistent-flag-k19-fix-b.ts`) 已更新，识别 B2 已实现的 6 项 frontend UI 能力：
+
+| # | 能力 | Audit 检测结果 |
+|---|---|---|
+| 1 | LIKELY_ERROR display | ✓ ShieldAlert + red area + suspiciousTasks + 高风险说明 |
+| 2 | Approval checkbox | ✓ checkbox + state tracking + validation |
+| 3 | Reason input | ✓ textarea + trim().length >= 5 + payload |
+| 4 | Confirm button gating | ✓ crossCohortBlocking + hasBlocking + CONFIRM_IMPORT |
+| 5 | Payload | ✓ crossCohortApprovals with taskKey/approved/reason |
+| 6 | Error mapping | ✓ mapApprovalError + 409 approval errors |
+
+原 audit findings 变化：
+
+| Finding | 原 Severity | 新 Severity |
+|---|---|---|
+| K19-FIX-B-C-001 | MEDIUM | **NONE** |
+| K19-FIX-B-C-002 | LOW | **NONE** |
+| K19-FIX-B-C-003 | LOW | **NONE** |
+
+Audit post-alignment: HIGH=0 / MEDIUM=0 / LOW=0 / INFO=3 / NONE=10 / BLOCKING=0。
+
+K19-FIX-B 主线可关闭。
 
 ---
 

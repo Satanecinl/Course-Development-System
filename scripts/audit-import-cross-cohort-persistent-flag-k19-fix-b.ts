@@ -14,6 +14,11 @@
  *  原 HIGH/MEDIUM backend findings 在 B1 实现后变为 NONE（resolved by B1）。
  *  Frontend / traceability findings 保留（B2 scope）。
  *
+ * K19-FIX-B2-AUDIT-ALIGNMENT:
+ *  本版本对齐 B2 已实现的 frontend approval UI。
+ *  C-001 (MEDIUM) / C-002 (LOW) / C-003 (LOW) 在 B2 完成后降为 NONE。
+ *  检测: LIKELY_ERROR display / checkbox / reason / gating / payload / error mapping。
+ *
  * 严禁:
  *  - 修改 Prisma schema
  *  - 执行 db push / migrate / seed
@@ -255,58 +260,124 @@ async function main() {
   })
 
   // ────────────────────────────────────────────────────────────────
-  // Rule C: Frontend operator flow audit
+  // Rule C: Frontend operator flow audit (B2 alignment)
   // ────────────────────────────────────────────────────────────────
   const dialogPath = join(workspaceRoot, 'src', 'components', 'schedule-import-dialog.tsx')
   const dialogText = existsSync(dialogPath) ? readFileSync(dialogPath, 'utf-8') : ''
 
-  const dialogHasCrossCohortUI = /crossCohort|跨.*cohort|跨.*年级|approval|批准|审批/i.test(dialogText)
-  const dialogShowsWarnings = /result\.quality\.warnings|planWarnings|dryRunResult\.warnings/.test(dialogText)
-  const dialogHasApprovalToggle = /toggle|批准|allowCross|setApprove|approvalToggle/.test(dialogText)
+  const helperPath = join(workspaceRoot, 'src', 'lib', 'import', 'cross-cohort-approval-ui.ts')
+  const helperText = existsSync(helperPath) ? readFileSync(helperPath, 'utf-8') : ''
+
+  // B2 signal detection
   const dialogHasConfirmText = /CONFIRM_IMPORT/.test(dialogText)
 
+  // 1. LIKELY_ERROR display detection
+  const hasLikelyErrorDisplay = /LIKELY_ERROR_CROSS_COHORT/.test(dialogText) || /LIKELY_ERROR_CROSS_COHORT/.test(helperText)
+  const hasSuspiciousTaskList = /suspiciousTasks/.test(dialogText)
+  const hasHighRiskUI = /ShieldAlert/.test(dialogText) && /bg-red-50|border-red-300/.test(dialogText)
+  const hasHighRiskDescription = /疑似错误跨年级合班|高风险/.test(dialogText)
+  const b2LikelyErrorDisplay = hasLikelyErrorDisplay && hasSuspiciousTaskList && hasHighRiskUI && hasHighRiskDescription
+
+  // 2. Approval checkbox detection
+  const hasApprovalCheckbox = /type="checkbox"/.test(dialogText) && /我已确认此跨年级合班/.test(dialogText)
+  const hasApprovalStateTracking = /approvals\[task\.taskKey\]/.test(dialogText) || /setApprovals/.test(dialogText)
+  const hasApprovalValidation = /validateApprovalState/.test(dialogText) && /crossCohortApprovalValidation/.test(dialogText)
+  const b2ApprovalCheckbox = hasApprovalCheckbox && hasApprovalStateTracking && hasApprovalValidation
+
+  // 3. Reason input detection
+  const hasReasonTextarea = /textarea/.test(dialogText) && /审批原因/.test(dialogText)
+  const hasReasonValidation = /trim\(\)\.length\s*>=?\s*5/.test(dialogText)
+  const hasBuildApprovalPayload = /buildCrossCohortApprovalPayload/.test(dialogText)
+  const b2ReasonInput = hasReasonTextarea && hasReasonValidation && hasBuildApprovalPayload
+
+  // 4. Confirm button gating detection
+  const hasCrossCohortBlocking = /crossCohortBlocking/.test(dialogText)
+  const hasConfirmDisabled = /disabled.*crossCohortBlocking|crossCohortBlocking.*disabled/.test(dialogText.replace(/\s+/g, ' '))
+  const hasBlockingGating = /hasBlocking.*crossCohortBlocking|crossCohortBlocking.*hasBlocking/.test(dialogText) || /\|\|\s*crossCohortBlocking/.test(dialogText)
+  const b2ConfirmGating = hasCrossCohortBlocking && hasConfirmDisabled && hasBlockingGating && dialogHasConfirmText
+
+  // 5. Payload detection
+  const hasPayloadShape = /crossCohortApprovals/.test(dialogText) && /taskKey.*approved.*reason/.test(helperText.replace(/\s+/g, ' '))
+  const b2Payload = hasBuildApprovalPayload && hasPayloadShape
+
+  // 6. Error mapping detection
+  const hasMapApprovalError = /mapApprovalError/.test(dialogText)
+  const hasApprovalRequiredMapping = /CROSS_COHORT_APPROVAL_REQUIRED/.test(helperText)
+  const hasReasonRequiredMapping = /REASON_REQUIRED|reason required/.test(helperText)
+  const b2ErrorMapping = hasMapApprovalError && hasApprovalRequiredMapping && hasReasonRequiredMapping
+
+  // 7. Overall B2 complete
+  const b2Complete = b2LikelyErrorDisplay && b2ApprovalCheckbox && b2ReasonInput && b2ConfirmGating && b2Payload && b2ErrorMapping
+
+  // C-001: LIKELY_ERROR display + approval toggle
   findings.push({
     id: 'K19-FIX-B-C-001',
-    severity: 'MEDIUM',
+    severity: b2Complete ? 'NONE' : (b2LikelyErrorDisplay ? 'LOW' : 'MEDIUM'),
     category: 'FrontendOperatorFlow',
-    title: 'Import dialog 无 cross-cohort 区分展示',
+    title: b2Complete
+      ? 'Import dialog 已实现 cross-cohort 区分展示 + approval UI (B2 resolved)'
+      : b2LikelyErrorDisplay
+        ? 'Import dialog 部分实现 cross-cohort 展示 (B2 partial)'
+        : 'Import dialog 无 cross-cohort 区分展示',
     evidence: `src/components/schedule-import-dialog.tsx:
-  - cross-cohort/approval UI 关键字: ${dialogHasCrossCohortUI ? '存在' : '不存在'}
-  - warnings 展示 hook: ${dialogShowsWarnings ? '有 (result.quality.warnings / dryRunResult.warnings)' : '无'}
-  - approval toggle 关键字: ${dialogHasApprovalToggle ? '存在' : '不存在'}
-  - 现有 confirm 门: dryRunResult.canImport === true -> 允许 confirm
-  - confirmText 校验: ${dialogHasConfirmText ? '有 (CONFIRM_IMPORT)' : '无'}`,
-    files: ['src/components/schedule-import-dialog.tsx'],
-    currentBehavior: 'warnings 全部混在同一个 list 中，operator 无法一眼区分 LEGAL_PUBLIC_CROSS_COHORT vs LIKELY_ERROR_CROSS_COHORT vs 普通 warning。',
-    risk: '若 dry-run 阶段产生 LIKELY_ERROR_CROSS_COHORT, operator 可能根本没注意（折叠在 "查看 N 条警告" details 中），直接点确认按钮。',
-    recommendation: 'K19-FIX-B2 (前置 B1 schema+API):\n  1) frontend 在 dry-run 后调用 classifyCrossCohortWarnings\n  2) LEGAL_PUBLIC / LIKELY_ERROR 用不同色块 (绿色提示 vs 红色警示) 置顶展示\n  3) LIKELY_ERROR 计数 > 0 → 弹 allow-cross-cohort 确认 dialog, 要求输入 reason\n  4) approval payload 通过 crossCohortApprovals 字段传到 confirm API',
-    suggestedNextStage: 'K19-FIX-B2-FRONTEND-CROSS-COHORT-APPROVAL-UI',
+  - LIKELY_ERROR display: ${b2LikelyErrorDisplay ? '✓ (ShieldAlert + red area + suspiciousTasks list + 高风险说明)' : '✗ 缺失'}
+  - approval checkbox: ${b2ApprovalCheckbox ? '✓ (checkbox + state tracking + validation)' : '✗ 缺失'}
+  - reason input: ${b2ReasonInput ? '✓ (textarea + trim().length >= 5 + payload)' : '✗ 缺失'}
+  - confirm gating: ${b2ConfirmGating ? '✓ (crossCohortBlocking + hasBlocking + CONFIRM_IMPORT)' : '✗ 缺失'}
+  - payload: ${b2Payload ? '✓ (crossCohortApprovals with taskKey/approved/reason)' : '✗ 缺失'}
+  - error mapping: ${b2ErrorMapping ? '✓ (mapApprovalError + 409 approval errors)' : '✗ 缺失'}
+  helper: src/lib/import/cross-cohort-approval-ui.ts: ${existsSync(helperPath) ? '✓ 存在' : '不存在'}`,
+    files: ['src/components/schedule-import-dialog.tsx', 'src/lib/import/cross-cohort-approval-ui.ts'],
+    currentBehavior: b2Complete
+      ? 'B2 已实现: LIKELY_ERROR 红色高风险区域 (ShieldAlert + bg-red-50) 列出 suspicious tasks; 每个 task 有 approval checkbox + reason textarea (>= 5 chars); confirm button 在 approval 未完成时 disabled; crossCohortApprovals payload 透传到 confirm API; backend 409 错误映射为中文提示。'
+      : 'warnings 全部混在同一个 list 中，operator 无法一眼区分 LEGAL_PUBLIC_CROSS_COHORT vs LIKELY_ERROR_CROSS_COHORT vs 普通 warning。',
+    risk: b2Complete
+      ? '无。B2 已实现完整的 cross-cohort approval UI。'
+      : '若 dry-run 阶段产生 LIKELY_ERROR_CROSS_COHORT, operator 可能根本没注意（折叠在 "查看 N 条警告" details 中），直接点确认按钮。',
+    recommendation: b2Complete
+      ? 'B2 已完成。后续: source evidence traceability / 浏览器 E2E 测试。'
+      : '补全 B2 UI: LIKELY_ERROR 显示 + checkbox + reason + gating + payload + error mapping。',
+    suggestedNextStage: b2Complete ? 'N/A (K19-FIX-B 可关闭)' : 'K19-FIX-B2-FRONTEND-CROSS-COHORT-APPROVAL-UI',
   })
 
+  // C-002: reason input (resolved by B2)
   findings.push({
     id: 'K19-FIX-B-C-002',
-    severity: 'LOW',
+    severity: b2ReasonInput ? 'NONE' : 'LOW',
     category: 'FrontendOperatorFlow',
-    title: 'Dialog 二次确认仅文本 "CONFIRM_IMPORT"',
-    evidence: 'confirmText 仅为固定字符串 "CONFIRM_IMPORT"。无 reason 输入框。',
-    files: ['src/components/schedule-import-dialog.tsx'],
-    currentBehavior: 'operator 只能在 confirmText 输入框敲入 "CONFIRM_IMPORT"，无跨 cohort 场景下的 reason 记录。',
-    risk: 'audit trail 不完整。',
-    recommendation: 'K19-FIX-B2 在 LIKELY_ERROR_CROSS_COHORT > 0 时, 要求 reason 文本框 (min 5 chars), 同步进 crossCohortApprovals[].reason。',
-    suggestedNextStage: 'K19-FIX-B2',
+    title: b2ReasonInput
+      ? 'Dialog 已有 cross-cohort reason 输入 (B2 resolved)'
+      : 'Dialog 二次确认仅文本 "CONFIRM_IMPORT"',
+    evidence: b2ReasonInput
+      ? `B2 已实现: textarea "审批原因（必填，不少于 5 个字符）" + trim().length >= 5 校验 + 字符计数 + buildCrossCohortApprovalPayload 透传 reason。`
+      : 'confirmText 仅为固定字符串 "CONFIRM_IMPORT"。无 reason 输入框。',
+    files: ['src/components/schedule-import-dialog.tsx', 'src/lib/import/cross-cohort-approval-ui.ts'],
+    currentBehavior: b2ReasonInput
+      ? 'B2 已实现: LIKELY_ERROR checkbox 勾选后显示 textarea, 必填 >= 5 字符, 透传到 crossCohortApprovals[].reason。'
+      : 'operator 只能在 confirmText 输入框敲入 "CONFIRM_IMPORT"，无跨 cohort 场景下的 reason 记录。',
+    risk: b2ReasonInput ? '无。B2 已实现 reason 输入与校验。' : 'audit trail 不完整。',
+    recommendation: b2ReasonInput ? 'B2 已完成。' : 'K19-FIX-B2 在 LIKELY_ERROR_CROSS_COHORT > 0 时, 要求 reason 文本框 (min 5 chars), 同步进 crossCohortApprovals[].reason。',
+    suggestedNextStage: b2ReasonInput ? 'N/A' : 'K19-FIX-B2',
   })
 
+  // C-003: 防误点 confirm gating (resolved by B2)
   findings.push({
     id: 'K19-FIX-B-C-003',
-    severity: 'LOW',
+    severity: b2ConfirmGating ? 'NONE' : 'LOW',
     category: 'FrontendOperatorFlow',
-    title: '无 "防误点" 双确认机制',
-    evidence: '现有 confirm dialog: 一次 "确认导入" 按钮点击即触发后端真实写入。',
+    title: b2ConfirmGating
+      ? 'Confirm button 已有 cross-cohort 防误点 gating (B2 resolved)'
+      : '无 "防误点" 双确认机制',
+    evidence: b2ConfirmGating
+      ? `B2 已实现: crossCohortBlocking = hasLikelyErrors && !approvalValidation.ready; confirm button disabled={... || crossCohortBlocking}; amber 提示条 "请完成所有跨年级合班确认后才能导入"。`
+      : '现有 confirm dialog: 一次 "确认导入" 按钮点击即触发后端真实写入。',
     files: ['src/components/schedule-import-dialog.tsx'],
-    currentBehavior: 'button click → POST confirm with confirmText → 真实写 DB',
-    risk: 'K19-FIX-B2 应在有 LIKELY_ERROR_CROSS_COHORT 时要求输入 type-to-confirm（如输入 batchId 数字）。',
-    recommendation: 'K19-FIX-B2: LIKELY_ERROR > 0 时禁用 confirm button 直到 operator 输入 batchId 验证。',
-    suggestedNextStage: 'K19-FIX-B2',
+    currentBehavior: b2ConfirmGating
+      ? 'B2 已实现: LIKELY_ERROR > 0 且 approval 未全部完成时 confirm button disabled, 与原有 hasBlocking (quality) 独立组合。'
+      : 'button click → POST confirm with confirmText → 真实写 DB',
+    risk: b2ConfirmGating ? '无。B2 已实现 confirm button gating。' : 'K19-FIX-B2 应在有 LIKELY_ERROR_CROSS_COHORT 时禁用 confirm button 直到全部 approval 完成。',
+    recommendation: b2ConfirmGating ? 'B2 已完成。' : 'K19-FIX-B2: LIKELY_ERROR > 0 时禁用 confirm button 直到 operator 完成所有 approval。',
+    suggestedNextStage: b2ConfirmGating ? 'N/A' : 'K19-FIX-B2',
   })
 
   // ────────────────────────────────────────────────────────────────
@@ -532,9 +603,11 @@ async function main() {
     info: findings.filter((f) => f.severity === 'INFO').length,
     none: findings.filter((f) => f.severity === 'NONE').length,
     blocking: 0,
-    recommendedOption: hasForceFlag && hasApprovalGate
-      ? 'Option A: Backend-first persistent approval — B1 已实现'
-      : 'Option A: Backend-first persistent approval',
+    recommendedOption: hasForceFlag && hasApprovalGate && b2Complete
+      ? 'Option A: Backend-first persistent approval — B1+B2 全部完成'
+      : hasForceFlag && hasApprovalGate
+        ? 'Option A: Backend-first persistent approval — B1 已实现'
+        : 'Option A: Backend-first persistent approval',
   }
 
   const report: AuditReport = {
@@ -544,9 +617,11 @@ async function main() {
     apiFlowOptions,
     frontendFlowOptions,
     recommendedOption:
-      hasForceFlag && hasApprovalGate
-        ? 'Option A: Backend-first persistent approval — B1 已实现 (schema + API + importer + warningsJson + 17 regression tests)。剩余: K19-FIX-B2 frontend UI。'
-        : 'Option A: TeachingTask.crossCohortApproved Boolean @default(false) + crossCohortApprovalReason String?; confirm API 新增 crossCohortApprovals 字段; frontend 在 LIKELY_ERROR_CROSS_COHORT > 0 时弹 approval toggle + reason 输入',
+      hasForceFlag && hasApprovalGate && b2Complete
+        ? 'Option A: Backend-first persistent approval — B1+B2 全部完成 (schema + API + importer + warningsJson + frontend UI + 16+17 regression tests)。K19-FIX-B 主线可关闭。'
+        : hasForceFlag && hasApprovalGate
+          ? 'Option A: Backend-first persistent approval — B1 已实现 (schema + API + importer + warningsJson + 17 regression tests)。剩余: K19-FIX-B2 frontend UI。'
+          : 'Option A: TeachingTask.crossCohortApproved Boolean @default(false) + crossCohortApprovalReason String?; confirm API 新增 crossCohortApprovals 字段; frontend 在 LIKELY_ERROR_CROSS_COHORT > 0 时弹 approval toggle + reason 输入',
     migrationImpact:
       hasTeachingTaskApproved
         ? 'B1 已完成: 1 次 SQLite 迁移 (新增 2 字段, @default(false) 增量秒级)。历史 task 自动 crossCohortApproved=false。ImportBatch.warningsJson 使用 versioned {version: 2, ...} 结构。'
@@ -561,9 +636,11 @@ async function main() {
       '前端 toggle 行为: 未勾选 → button disabled; 已勾选无 reason → button disabled; 全部满足 → 允许 confirm',
     ],
     suggestedNextStage:
-      hasForceFlag && hasApprovalGate
-        ? 'K19-FIX-B2-FRONTEND-CROSS-COHORT-APPROVAL-UI (B1 已完成，剩余 frontend UI toggle + reason input + 二次确认)'
-        : 'K19-FIX-B1-SCHEMA-AND-API-CROSS-COHORT-APPROVAL (建议分 B1 backend + B2 frontend 两阶段推进)',
+      hasForceFlag && hasApprovalGate && b2Complete
+        ? 'K19-FIX-B 主线可关闭。后续: source evidence traceability / 浏览器 E2E 测试。'
+        : hasForceFlag && hasApprovalGate
+          ? 'K19-FIX-B2-FRONTEND-CROSS-COHORT-APPROVAL-UI (B1 已完成，剩余 frontend UI toggle + reason input + 二次确认)'
+          : 'K19-FIX-B1-SCHEMA-AND-API-CROSS-COHORT-APPROVAL (建议分 B1 backend + B2 frontend 两阶段推进)',
     generatedAt: new Date().toISOString(),
   }
 
@@ -587,7 +664,7 @@ async function main() {
   console.log(`  MEDIUM: ${summary.medium}`)
   console.log(`  LOW:    ${summary.low}`)
   console.log(`  INFO:   ${summary.info}`)
-  console.log(`  NONE:   ${summary.none} (resolved by B1)`)
+  console.log(`  NONE:   ${summary.none} (resolved by B1${b2Complete ? '+B2' : ''})`)
   console.log(`  BLOCKING: ${summary.blocking}`)
   console.log('')
   console.log(`RECOMMENDED_OPTION: ${summary.recommendedOption}`)
