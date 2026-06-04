@@ -1,11 +1,17 @@
 {
-  "generatedAt": "2026-06-04T15:50:00.000Z",
+  "generatedAt": "2026-06-04T08:34:20.026Z",
   "phase": "K20-FIX-B-SOURCE-EVIDENCE-SCHEMA-PLAN",
   "mode": "schema-change-plus-importer-write",
   "predecessor": {
     "phase": "K20-FIX-A-SOURCE-EVIDENCE-TRACEABILITY-AUDIT",
     "commit": "db2fd5a",
-    "summary": { "HIGH": 0, "MEDIUM": 1, "LOW": 1, "INFO": 4, "BLOCKING": false },
+    "summary": {
+      "HIGH": 0,
+      "MEDIUM": 1,
+      "LOW": 1,
+      "INFO": 4,
+      "BLOCKING": false
+    },
     "recommendedOption": "A. TeachingTaskClass minimal source evidence fields"
   },
   "summary": {
@@ -20,25 +26,135 @@
     "allVerificationsPass": true
   },
   "fields": [
-    { "name": "importBatchId", "type": "Int?", "nullable": true, "default": null, "fkRelation": false, "source": "ImportBatch id (scalar)", "notes": "scalar, no FK constraint, forward-fill only" },
-    { "name": "sourceRowIndex", "type": "Int?", "nullable": true, "default": null, "fkRelation": false, "source": "records.indexOf(baseRecord) — 0-based", "notes": "0-based, null if unknown" },
-    { "name": "sourceKeyword", "type": "String?", "nullable": true, "default": null, "fkRelation": false, "source": "findMergedClassNamesWithEvidence result", "notes": "null for BASE match" },
-    { "name": "sourceClassName", "type": "String?", "nullable": true, "default": null, "fkRelation": false, "source": "Class name as it appeared in source row", "notes": "always recorded" },
-    { "name": "sourceRemark", "type": "String?", "nullable": true, "default": null, "fkRelation": false, "source": "baseRecord.remark", "notes": "null if source record had no remark" },
-    { "name": "sourceArtifactFilename", "type": "String?", "nullable": true, "default": null, "fkRelation": false, "source": "extractBasename(ImportBatch.filename)", "notes": "null if filename is null" },
-    { "name": "matchStrategy", "type": "String?", "nullable": true, "default": null, "fkRelation": false, "source": "deriveMatchAttributes", "notes": "EXACT_CLASS_NAME | SAME_COHORT_WEAK_MATCH | MANUAL_CROSS_COHORT_APPROVAL | UNKNOWN" },
-    { "name": "matchConfidence", "type": "String?", "nullable": true, "default": null, "fkRelation": false, "source": "deriveMatchAttributes", "notes": "HIGH | MEDIUM | LOW | UNKNOWN" }
+    {
+      "name": "importBatchId",
+      "type": "Int?",
+      "nullable": true,
+      "default": null,
+      "fkRelation": false,
+      "source": "ImportBatch id (scalar)",
+      "notes": "scalar, no FK constraint, forward-fill only"
+    },
+    {
+      "name": "sourceRowIndex",
+      "type": "Int?",
+      "nullable": true,
+      "default": null,
+      "fkRelation": false,
+      "source": "records.indexOf(baseRecord) — 0-based",
+      "notes": "0-based, null if unknown"
+    },
+    {
+      "name": "sourceKeyword",
+      "type": "String?",
+      "nullable": true,
+      "default": null,
+      "fkRelation": false,
+      "source": "findMergedClassNamesWithEvidence result",
+      "notes": "null for BASE match"
+    },
+    {
+      "name": "sourceClassName",
+      "type": "String?",
+      "nullable": true,
+      "default": null,
+      "fkRelation": false,
+      "source": "Class name as it appeared in source row",
+      "notes": "always recorded"
+    },
+    {
+      "name": "sourceRemark",
+      "type": "String?",
+      "nullable": true,
+      "default": null,
+      "fkRelation": false,
+      "source": "baseRecord.remark",
+      "notes": "null if source record had no remark"
+    },
+    {
+      "name": "sourceArtifactFilename",
+      "type": "String?",
+      "nullable": true,
+      "default": null,
+      "fkRelation": false,
+      "source": "extractBasename(ImportBatch.filename)",
+      "notes": "null if filename is null"
+    },
+    {
+      "name": "matchStrategy",
+      "type": "String?",
+      "nullable": true,
+      "default": null,
+      "fkRelation": false,
+      "source": "deriveMatchAttributes",
+      "notes": "EXACT_CLASS_NAME | SAME_COHORT_WEAK_MATCH | MANUAL_CROSS_COHORT_APPROVAL | UNKNOWN"
+    },
+    {
+      "name": "matchConfidence",
+      "type": "String?",
+      "nullable": true,
+      "default": null,
+      "fkRelation": false,
+      "source": "deriveMatchAttributes",
+      "notes": "HIGH | MEDIUM | LOW | UNKNOWN"
+    }
   ],
   "matchStrategyRules": [
-    { "matchKind": "BASE", "crossCohortApproved": false, "matchStrategy": "EXACT_CLASS_NAME", "matchConfidence": "HIGH" },
-    { "matchKind": "BASE", "crossCohortApproved": true, "matchStrategy": "EXACT_CLASS_NAME", "matchConfidence": "HIGH" },
-    { "matchKind": "EXACT", "crossCohortApproved": false, "matchStrategy": "EXACT_CLASS_NAME", "matchConfidence": "HIGH" },
-    { "matchKind": "EXACT", "crossCohortApproved": true, "matchStrategy": "EXACT_CLASS_NAME", "matchConfidence": "HIGH" },
-    { "matchKind": "WEAK", "crossCohortApproved": false, "matchStrategy": "SAME_COHORT_WEAK_MATCH", "matchConfidence": "LOW" },
-    { "matchKind": "WEAK", "crossCohortApproved": true, "matchStrategy": "MANUAL_CROSS_COHORT_APPROVAL", "matchConfidence": "MEDIUM" },
-    { "matchKind": "SUBSEQ", "crossCohortApproved": false, "matchStrategy": "SAME_COHORT_WEAK_MATCH", "matchConfidence": "LOW" },
-    { "matchKind": "SUBSEQ", "crossCohortApproved": true, "matchStrategy": "MANUAL_CROSS_COHORT_APPROVAL", "matchConfidence": "MEDIUM" },
-    { "matchKind": null, "crossCohortApproved": null, "matchStrategy": "UNKNOWN", "matchConfidence": "UNKNOWN", "notes": "defensive fallback if no evidence entry" }
+    {
+      "matchKind": "BASE",
+      "crossCohortApproved": false,
+      "matchStrategy": "EXACT_CLASS_NAME",
+      "matchConfidence": "HIGH"
+    },
+    {
+      "matchKind": "BASE",
+      "crossCohortApproved": true,
+      "matchStrategy": "EXACT_CLASS_NAME",
+      "matchConfidence": "HIGH"
+    },
+    {
+      "matchKind": "EXACT",
+      "crossCohortApproved": false,
+      "matchStrategy": "EXACT_CLASS_NAME",
+      "matchConfidence": "HIGH"
+    },
+    {
+      "matchKind": "EXACT",
+      "crossCohortApproved": true,
+      "matchStrategy": "EXACT_CLASS_NAME",
+      "matchConfidence": "HIGH"
+    },
+    {
+      "matchKind": "WEAK",
+      "crossCohortApproved": false,
+      "matchStrategy": "SAME_COHORT_WEAK_MATCH",
+      "matchConfidence": "LOW"
+    },
+    {
+      "matchKind": "WEAK",
+      "crossCohortApproved": true,
+      "matchStrategy": "MANUAL_CROSS_COHORT_APPROVAL",
+      "matchConfidence": "MEDIUM"
+    },
+    {
+      "matchKind": "SUBSEQ",
+      "crossCohortApproved": false,
+      "matchStrategy": "SAME_COHORT_WEAK_MATCH",
+      "matchConfidence": "LOW"
+    },
+    {
+      "matchKind": "SUBSEQ",
+      "crossCohortApproved": true,
+      "matchStrategy": "MANUAL_CROSS_COHORT_APPROVAL",
+      "matchConfidence": "MEDIUM"
+    },
+    {
+      "matchKind": null,
+      "crossCohortApproved": null,
+      "matchStrategy": "UNKNOWN",
+      "matchConfidence": "UNKNOWN",
+      "notes": "defensive fallback if no evidence entry"
+    }
   ],
   "migration": {
     "appliedVia": "npx prisma db push",
@@ -63,7 +179,10 @@
     "type": "create-loop",
     "evidenceBuilder": "buildTeachingTaskClassEvidence",
     "evidenceMatchHelper": "findMergedClassNamesWithEvidence",
-    "evidenceMaps": ["eventKeyToClassNameEvidence", "taskKeyToClassNameEvidence"],
+    "evidenceMaps": [
+      "eventKeyToClassNameEvidence",
+      "taskKeyToClassNameEvidence"
+    ],
     "rowIndexConvention": "0-based",
     "rowIndexSource": "records.indexOf(baseRecord)",
     "unknownFallback": {
@@ -83,23 +202,88 @@
     "futureStage": "K20-FIX-C-SOURCE-EVIDENCE-BACKFILL-AUDIT (optional, deferred)"
   },
   "verificationResults": {
-    "verifySourceEvidenceSchemaK20FixB": { "pass": 37, "fail": 0, "result": "PASS" },
-    "verifySourceEvidenceImporterK20FixB": { "pass": 41, "fail": 0, "result": "PASS" },
-    "verifySourceEvidenceQueryK20FixB": { "pass": 16, "fail": 0, "result": "PASS" },
-    "auditSourceEvidenceBackfillGapK20FixB": { "pass": 2, "fail": 0, "result": "PASS" },
-    "auditSourceEvidenceTraceabilityK20FixA": { "RuleA": "NONE (was MEDIUM before)", "HIGH": 0, "BLOCKING": "NO" },
-    "auditRemainingRiskRebaseK20": { "HIGH": 0, "MEDIUM": 2, "LOW": 6, "ACCEPTED": 1, "NONE": 1, "BLOCKING": "NO" },
-    "verifyImportApprovalBrowserE2EK19FixC": { "pass": 10, "fail": 0, "result": "PASS" },
-    "verifyImportCrossCohortApprovalUIK19FixB2": { "pass": 16, "fail": 0, "result": "PASS" },
-    "verifyImportCrossCohortApprovalK19FixB1": { "pass": 17, "fail": 0, "result": "PASS" },
-    "verifyImportMatchingCohortGuardK19FixA": { "pass": 31, "fail": 0, "result": "PASS" },
-    "auditImportCrossCohortPersistentFlagK19FixB": { "HIGH": 0, "MEDIUM": 0 },
-    "auditImportMatchingRootCauseK19": { "HIGH": 0 },
-    "validateTask37FinalizationK18E3": { "pass": 18, "fail": 0, "result": "PASS" },
-    "auditDataQualityClassgroupMatchingK17FixA": { "HIGH": 0 },
-    "auditScheduleMutationServerGuards": { "HIGH": 0, "MEDIUM": 0 },
-    "auditTeachingTaskMutationSemanticGuards": { "HIGH": 0, "MEDIUM": 0 },
-    "verifyScheduleMutationClientPreflightFix": { "pass": 23, "fail": 0, "result": "PASS" },
+    "verifySourceEvidenceSchemaK20FixB": {
+      "pass": 37,
+      "fail": 0,
+      "result": "PASS"
+    },
+    "verifySourceEvidenceImporterK20FixB": {
+      "pass": 41,
+      "fail": 0,
+      "result": "PASS"
+    },
+    "verifySourceEvidenceQueryK20FixB": {
+      "pass": 16,
+      "fail": 0,
+      "result": "PASS"
+    },
+    "auditSourceEvidenceBackfillGapK20FixB": {
+      "pass": 2,
+      "fail": 0,
+      "result": "PASS"
+    },
+    "auditSourceEvidenceTraceabilityK20FixA": {
+      "RuleA": "NONE (was MEDIUM before)",
+      "HIGH": 0,
+      "BLOCKING": "NO"
+    },
+    "auditRemainingRiskRebaseK20": {
+      "HIGH": 0,
+      "MEDIUM": 1,
+      "LOW": 6,
+      "ACCEPTED": 1,
+      "NONE": 2,
+      "BLOCKING": "NO",
+      "K20-B-1": "NONE (was MEDIUM, aligned via K20-FIX-B-CLEANUP-AND-AUDIT-ALIGNMENT)"
+    },
+    "verifyImportApprovalBrowserE2EK19FixC": {
+      "pass": 10,
+      "fail": 0,
+      "result": "PASS"
+    },
+    "verifyImportCrossCohortApprovalUIK19FixB2": {
+      "pass": 16,
+      "fail": 0,
+      "result": "PASS"
+    },
+    "verifyImportCrossCohortApprovalK19FixB1": {
+      "pass": 17,
+      "fail": 0,
+      "result": "PASS"
+    },
+    "verifyImportMatchingCohortGuardK19FixA": {
+      "pass": 31,
+      "fail": 0,
+      "result": "PASS"
+    },
+    "auditImportCrossCohortPersistentFlagK19FixB": {
+      "HIGH": 0,
+      "MEDIUM": 0
+    },
+    "auditImportMatchingRootCauseK19": {
+      "HIGH": 0
+    },
+    "validateTask37FinalizationK18E3": {
+      "pass": 18,
+      "fail": 0,
+      "result": "PASS"
+    },
+    "auditDataQualityClassgroupMatchingK17FixA": {
+      "HIGH": 0
+    },
+    "auditScheduleMutationServerGuards": {
+      "HIGH": 0,
+      "MEDIUM": 0
+    },
+    "auditTeachingTaskMutationSemanticGuards": {
+      "HIGH": 0,
+      "MEDIUM": 0
+    },
+    "verifyScheduleMutationClientPreflightFix": {
+      "pass": 23,
+      "fail": 0,
+      "result": "PASS"
+    },
     "prismaValidate": "PASS",
     "npmBuild": "PASS",
     "npmLint": "312 problems baseline (no new errors)",

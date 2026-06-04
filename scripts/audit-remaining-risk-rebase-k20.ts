@@ -399,7 +399,9 @@ async function evaluateCategoryB(): Promise<CategoryReport> {
     id: 'K20-B-1',
     severity,
     category: 'B. Source evidence traceability',
-    title: 'TeachingTaskClass 缺 source row / source keyword / source artifact 字段',
+    title: severity === 'NONE'
+      ? 'TeachingTaskClass source evidence 已完成 (K20-FIX-B committed)'
+      : 'TeachingTaskClass 缺 source row / source keyword / source artifact 字段',
     previousStatus: 'K17 backlog: 未明示. K19 根因审计: K19-RULE-D-001 MEDIUM. K19-FIX-A/B1/B2: deferred.',
     currentStatus: `TeachingTaskClass schema 字段: sourceRow=${hasSourceRowOnTTC ? 'YES' : 'NO'} importBatchId_direct=${hasDirectImportBatchOnTTC ? 'YES' : 'NO'}. importer writes sourceRow=${writesSourceRow ? 'YES' : 'NO'} importBatchId=${writesImportBatchId ? 'YES' : 'NO'}. ImportBatch.warningsJson 存在=${hasWarningsJson}. structured traceability in importer=${hasStructuredTraceability ? 'YES' : 'NO'}.`,
     evidence: [
@@ -411,10 +413,17 @@ async function evaluateCategoryB(): Promise<CategoryReport> {
       `importer structured traceability (taskKey + crossCohortApprovals): ${hasStructuredTraceability}`,
     ],
     remainingRisk:
-      'K19 修复 5 个 cross-cohort task 时需要人工 cross-reference source JSON (K18-B 报告 / K18-C 报告). 未来再次 import 时, 无法自动回溯哪个 source row / keyword 创建了哪个 link. Audit / 修复 / 撤销 链路均需人工介入.',
+      severity === 'NONE'
+        ? 'K20-FIX-B 已完成. 残余: historical 446 rows 保持 null (no-backfill policy); source artifact immutable storage / operator identity / frontend display 仍 deferred.'
+        : 'K19 修复 5 个 cross-cohort task 时需要人工 cross-reference source JSON (K18-B 报告 / K18-C 报告). 未来再次 import 时, 无法自动回溯哪个 source row / keyword 创建了哪个 link. Audit / 修复 / 撤销 链路均需人工介入.',
     recommendation:
-      '建议作为下一条主线: 设计 TeachingTaskClass.sourceRowIndex + sourceKeyword + importBatchId 字段, schema migration + importer 写时填入 + audit script 支持 source 回溯. 此项 K19 已多处 deferred (K19-FIX-B1 文档 §12 / K19-FIX-B2 文档 §14 / K19-FIX-C 文档 §11).',
-    suggestedNextStage: 'K20-FIX-A-SOURCE-EVIDENCE-TRACEABILITY-AUDIT',
+      severity === 'NONE'
+        ? 'K20-FIX-B 已完成. 残余: historical null backfill (K20-FIX-C, optional) / source artifact immutable storage (K20-FIX-D) / operator identity (K20-FIX-B-IMPORT-EVIDENCE-MODEL-DESIGN).'
+        : '建议作为下一条主线: 设计 TeachingTaskClass.sourceRowIndex + sourceKeyword + importBatchId 字段, schema migration + importer 写时填入 + audit script 支持 source 回溯. 此项 K19 已多处 deferred (K19-FIX-B1 文档 §12 / K19-FIX-B2 文档 §14 / K19-FIX-C 文档 §11).',
+    suggestedNextStage:
+      severity === 'NONE'
+        ? 'K20-FIX-C-SOURCE-EVIDENCE-BACKFILL-AUDIT (optional) 或 K20-FIX-B-IMPORT-EVIDENCE-MODEL-DESIGN'
+        : 'K20-FIX-A-SOURCE-EVIDENCE-TRACEABILITY-AUDIT',
   })
 
   return {
@@ -1037,12 +1046,11 @@ async function main() {
   // Recommended next stages (priority order)
   const recommendedNextStages: K20Report['recommendedNextStages'] = [
     {
-      stage: 'K20-FIX-A-SOURCE-EVIDENCE-TRACEABILITY-AUDIT',
+      stage: 'K20-FIX-B-SOURCE-EVIDENCE-SCHEMA-PLAN (CLOSED via K20-FIX-B)',
       reason:
-        'B + J 类别均建议此方向. TeachingTaskClass 缺 source row / source keyword 字段, K19 多次 deferred. 解决后可消除人工 cross-reference (K18-B / K18-C 报告模式) 并支撑未来回溯审计.',
-      scope:
-        '设计 TeachingTaskClass.sourceRowIndex + sourceKeyword + importBatchId 字段 (B); 评估 ImportApproval 独立 model 或 TeachingTask 扩展字段 (J). 仅审计 + schema 提案, 不写 DB.',
-      outOfScope: '不实施 schema migration, 不修改 importer core, 不写业务数据.',
+        'B 类别 K20-B-1 已从 MEDIUM 降为 NONE (K20-FIX-B committed b557194). Schema + importer forward-fill 已完成. 残余: historical null backfill (K20-FIX-C, optional) / operator identity (K20-FIX-B-IMPORT-EVIDENCE-MODEL-DESIGN).',
+      scope: '已完成. 不再作为活跃推荐.',
+      outOfScope: 'N/A (已关闭).',
     },
     {
       stage: 'K20-FIX-A-ROOM-CAPACITY-AUDIT',

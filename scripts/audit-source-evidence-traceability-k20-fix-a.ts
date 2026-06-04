@@ -318,7 +318,9 @@ async function evaluateRuleA(): Promise<Finding[]> {
     rule: 'A. TeachingTaskClass traceability gap',
     severity,
     category: 'Per-link source evidence',
-    title: 'TeachingTaskClass schema 缺 source row / keyword / className / remark / artifact 字段',
+    title: allFieldsPresent
+      ? 'TeachingTaskClass schema 已有 source evidence 字段 (K20-FIX-B completed)'
+      : 'TeachingTaskClass schema 缺 source row / keyword / className / remark / artifact 字段',
     currentStatus: `TeachingTaskClass model fields: sourceRow=${hasSourceRow} sourceKeyword=${hasSourceKeyword} sourceClassName=${hasSourceClassName} sourceRemark=${hasSourceRemark} sourceArtifact=${hasSourceArtifact} importBatchId=${hasImportBatchId} matchStrategy=${hasMatchStrategy} matchConfidence=${hasMatchConfidence}. importer writes TTC sourceRow=${writesTtcSourceRow} sourceKeyword=${writesTtcSourceKeyword} importBatchId=${writesTtcImportBatchId} (teachingTaskClass.create with extras=${ttcCreateWithExtras}).`,
     evidence: [
       `TeachingTaskClass model has sourceRow/sourceRowIndex: ${hasSourceRow}`,
@@ -334,10 +336,15 @@ async function evaluateRuleA(): Promise<Finding[]> {
       `importer writes TeachingTaskClass.importBatchId: ${writesTtcImportBatchId}`,
       `Missing fields out of 8 carrier candidates: ${missingCount}`,
     ],
-    risk: 'K18 / K19 修复 5 个 cross-cohort 错误 task (168/174/176/181/37) 时需要人工反查 17 个 source JSON. 未来若再次 import 出错, TeachingTaskClass link 无法自动回溯是 source row 0 还是 row 5 创建, 是 exact 还是 weak match, 来自哪个 docx 哪个 row. Audit / 修复 / 撤销 链路均需人工介入.',
-    recommendation:
-      '下一阶段 (K20-FIX-B) 在 TeachingTaskClass 增加最小 source evidence 字段: importBatchId + sourceRowIndex + sourceKeyword + sourceClassName + sourceRemark + sourceArtifactFilename + matchStrategy. importer 写入时填入. 不需要 backfill, 但需要 forward-fill 逻辑保证后续 import 写入.',
-    suggestedNextStage: 'K20-FIX-B-SOURCE-EVIDENCE-SCHEMA-PLAN',
+    risk: allFieldsPresent
+      ? 'K20-FIX-B 已完成 schema + importer forward-fill. 历史 446 rows 保持 null (no-backfill policy). 残余风险: historical null 无回填; source artifact immutable storage / operator identity / frontend display 仍 deferred.'
+      : 'K18 / K19 修复 5 个 cross-cohort 错误 task (168/174/176/181/37) 时需要人工反查 17 个 source JSON. 未来若再次 import 出错, TeachingTaskClass link 无法自动回溯是 source row 0 还是 row 5 创建, 是 exact 还是 weak match, 来自哪个 docx 哪个 row. Audit / 修复 / 撤销 链路均需人工介入.',
+    recommendation: allFieldsPresent
+      ? 'K20-FIX-B 已完成. 残余: historical null backfill (K20-FIX-C, optional) / source artifact immutable storage (K20-FIX-D) / operator identity (K20-FIX-B-IMPORT-EVIDENCE-MODEL-DESIGN).'
+      : '下一阶段 (K20-FIX-B) 在 TeachingTaskClass 增加最小 source evidence 字段: importBatchId + sourceRowIndex + sourceKeyword + sourceClassName + sourceRemark + sourceArtifactFilename + matchStrategy. importer 写入时填入. 不需要 backfill, 但需要 forward-fill 逻辑保证后续 import 写入.',
+    suggestedNextStage: allFieldsPresent
+      ? 'K20-FIX-C-SOURCE-EVIDENCE-BACKFILL-AUDIT (optional) 或 K20-FIX-B-IMPORT-EVIDENCE-MODEL-DESIGN'
+      : 'K20-FIX-B-SOURCE-EVIDENCE-SCHEMA-PLAN',
   })
 
   return findings
@@ -512,10 +519,10 @@ function evaluateRuleE(): Finding[] {
       `K19 root-cause audit commit: 0e656a2 (K19-IMPORT-MATCHING-IMPROVEMENT-AUDIT)`,
       `K19 root cause: weak matching + missing source evidence`,
     ],
-    risk: 'K18-B 修复时需要人工对 17 个 source JSON 做交叉验证才能确认 4 个 task 错误 merge 是历史 import 误合并. K18-C 报告人工逐一搜索 17 个 JSON 确认 task 37 在 2024 cohort 无任何 source record. 这种人工诊断模式在 K19-FIX-B / K19-FIX-C 阶段被多次 deferred. 未来若出现类似 case, 仍需重复同样工作.',
+    risk: 'K18-B 修复时需要人工对 17 个 source JSON 做交叉验证才能确认 4 个 task 错误 merge 是历史 import 误合并. K18-C 报告人工逐一搜索 17 个 JSON 确认 task 37 在 2024 cohort 无任何 source record. 这种人工诊断模式在 K19-FIX-B / K19-FIX-C 阶段被多次 deferred. K20-FIX-B 已添加 source evidence 字段, 未来类似 case 诊断时间将从 ~1 天缩短到 ~10 分钟 (但历史 446 rows 仍为 null, 诊断时仍需 cross-reference).',
     recommendation:
-      '若当时 TeachingTaskClass 有 sourceRowIndex + sourceArtifactFilename 字段: (a) K18-B 修复时直接定位 4 个 link 的 source row, 无需 cross-reference 17 个 JSON; (b) K18-C 报告自动列出 task 37 在 17 个 JSON 中是否出现, 而非人工搜索; (c) K19 root-cause audit 可直接定位 "this link was created from JSON file X row N via remark keyword Y". 诊断时间估计可从 ~1 天缩短到 ~10 分钟.',
-    suggestedNextStage: 'K20-FIX-B-SOURCE-EVIDENCE-SCHEMA-AND-IMPORTER',
+      'K20-FIX-B 已完成 source evidence 字段 + importer forward-fill. 历史 rows (446) 保持 null (no-backfill policy). 未来新 import 的 link 可直接通过 sourceRowIndex + sourceArtifactFilename 定位. 历史 rows 如需回溯仍需 cross-reference source JSON (K20-FIX-C, optional).',
+    suggestedNextStage: 'K20-FIX-C-SOURCE-EVIDENCE-BACKFILL-AUDIT (optional) 或 K20-FIX-B-IMPORT-EVIDENCE-MODEL-DESIGN',
   })
 
   return findings
@@ -781,35 +788,56 @@ async function main() {
   ]
 
   const recommendedOption = 'A. TeachingTaskClass minimal source evidence fields'
-  const recommendedNextStage = 'K20-FIX-B-SOURCE-EVIDENCE-SCHEMA-PLAN'
+  const ruleAFinding = allFindings.find((f) => f.id === 'FIXA-RuleA-1')
+  const ruleAComplete = ruleAFinding?.severity === 'NONE'
+  const recommendedNextStage = ruleAComplete
+    ? 'K20-FIX-C-SOURCE-EVIDENCE-BACKFILL-AUDIT (optional) 或 K20-FIX-B-IMPORT-EVIDENCE-MODEL-DESIGN'
+    : 'K20-FIX-B-SOURCE-EVIDENCE-SCHEMA-PLAN'
 
-  // ─── Implementation plan (suggested next stage) ───
-  const implementationPlan = {
-    stage: 'K20-FIX-B-SOURCE-EVIDENCE-SCHEMA-PLAN',
-    description:
-      '在 schema.prisma TeachingTaskClass 增 8 个 source evidence 字段 (importBatchId, sourceRowIndex, sourceKeyword, sourceClassName, sourceRemark, sourceArtifactFilename, matchStrategy, matchConfidence). 全部 nullable, 无 default. 编写 migration 文件 (若使用 prisma migrate) 或 db push 同步. 编写 importer 写入逻辑. 编写 verify script 校验写入路径.',
-    backupRequired: true,
-    migration:
-      '建议步骤: (1) cp prisma/dev.db prisma/dev.db.backup-before-k20-fix-b-<timestamp>; (2) 修改 prisma/schema.prisma; (3) npx prisma migrate dev --name add-source-evidence-fields (or db push); (4) 验证 schema 同步; (5) 不写 importer, 验证 field nullable 默认 null 不破坏现有 446 TTC rows.',
-    importerChanges:
-      'executeImportInTransaction 中 TeachingTaskClass.create 调用追加: { teachingTaskId, classGroupId, importBatchId: batchId, sourceRowIndex: r.sourceRowIndex (parser 写入), sourceKeyword: matched keyword 或 null, sourceClassName: r.class_info.class_name, sourceRemark: r.remark 或 null, sourceArtifactFilename: batch.filename, matchStrategy: \'EXACT\'/\'WEAK_INCLUDES\'/\'WEAK_SUBSEQ\'/\'DIRECT\', matchConfidence: \'HIGH\'/\'MEDIUM\'/\'LOW\' }. 需 parser 同步在 record 写入 sourceRowIndex 字段 (新增, 不破坏现有).',
-    verifyPlan: [
-      'verify-source-evidence-fields-schema.ts — 验证 schema 包含 8 个新字段, 全部 nullable',
-      'verify-source-evidence-importer-write.ts — mock import 1 个 batch, 验证所有新 TTC 的 source evidence 字段正确写入',
-      'verify-source-evidence-query-pattern.ts — SELECT * FROM TeachingTaskClass WHERE sourceRowIndex = X 应能直接定位',
-      'audit-source-evidence-backfill-gap.ts — 统计历史 TTC 中 source evidence 字段为 null 的数量 (期望: 446 - 新 batch TTC)',
-    ],
-    outOfScope: [
-      '不实施 backfill (历史 TTC 字段为 null 是 acceptable)',
-      '不修改 parser 业务逻辑 (仅在 record 写入 sourceRowIndex 字段)',
-      '不修改 import flow 主路径 (仅在 TeachingTaskClass.create 处加字段)',
-      '不修改 frontend (UI 不展示 source evidence 字段)',
-      '不修改 warningsJson 结构 (与 K19-FIX-B1 v2 兼容)',
-      '不实施 K19-FIX-B §6 Option C (operator identity / timestamp 仍 deferred)',
-    ],
-  }
+    // ─── Implementation plan (suggested next stage) ───
+  const ruleAResolved = allFindings.find((f) => f.id === 'FIXA-RuleA-1')?.severity === 'NONE'
+  const implementationPlan = ruleAResolved
+    ? {
+        stage: 'K20-FIX-B-SOURCE-EVIDENCE-SCHEMA-PLAN (COMPLETED)',
+        description:
+          'K20-FIX-B already completed: TeachingTaskClass + 8 nullable source evidence fields + importer forward-fill. Historical 446 rows all null (no-backfill policy).',
+        backupRequired: true,
+        migration: 'Done: npx prisma db push + prisma generate. backup: prisma/dev.db.backup-before-k20-source-evidence-schema-20260604154215.',
+        importerChanges: 'Done: executeImportInTransaction TeachingTaskClass.create + 8 fields via buildTeachingTaskClassEvidence.',
+        verifyPlan: [
+          'verify-source-evidence-schema-k20-fix-b.ts — 37 PASS / 0 FAIL',
+          'verify-source-evidence-importer-k20-fix-b.ts — 41 PASS / 0 FAIL',
+          'verify-source-evidence-query-k20-fix-b.ts — 16 PASS / 0 FAIL',
+          'audit-source-evidence-backfill-gap-k20-fix-b.ts — 2 PASS / 0 FAIL',
+        ],
+        outOfScope: [
+          'historical null backfill (K20-FIX-C, optional)',
+          'source artifact immutable storage (K20-FIX-D)',
+          'operator identity / timestamp (K20-FIX-B-IMPORT-EVIDENCE-MODEL-DESIGN)',
+          'frontend source evidence display',
+        ],
+      }
+    : {
+        stage: 'K20-FIX-B-SOURCE-EVIDENCE-SCHEMA-PLAN',
+        description:
+          'Add 8 nullable source evidence fields to TeachingTaskClass. Forward-fill via importer. No historical backfill.',
+        backupRequired: true,
+        migration: 'cp prisma/dev.db backup; npx prisma db push; npx prisma generate.',
+        importerChanges: 'executeImportInTransaction: TeachingTaskClass.create + 8 fields via buildTeachingTaskClassEvidence.',
+        verifyPlan: [
+          'verify-source-evidence-schema-k20-fix-b.ts',
+          'verify-source-evidence-importer-k20-fix-b.ts',
+          'verify-source-evidence-query-k20-fix-b.ts',
+          'audit-source-evidence-backfill-gap-k20-fix-b.ts',
+        ],
+        outOfScope: [
+          'no historical backfill',
+          'no parser business logic change',
+          'no frontend / warningsJson / cross-cohort approval change',
+        ],
+      }
 
-  // ─── Verification plan ───
+// ─── Verification plan ───
   const verificationPlan = [
     'npm.cmd run build — 验证 TS 编译通过',
     'npm.cmd run lint — 验证无新增 lint error (允许 312 problems baseline)',

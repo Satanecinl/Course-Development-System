@@ -437,7 +437,7 @@ await tx.teachingTaskClass.create({
 
 ## 13. Implementation Plan (K20-FIX-B 下一阶段建议)
 
-**阶段名**: **K20-FIX-B-SOURCE-EVIDENCE-SCHEMA-PLAN**
+**阶段名**: **K20-FIX-B-SOURCE-EVIDENCE-SCHEMA-PLAN** (已实施)
 
 | Step | Description | Blocking Risk | Out of Scope? |
 |---|---|:---:|:---:|
@@ -467,7 +467,7 @@ await tx.teachingTaskClass.create({
 
 | Script / Command | Expected Result |
 |---|---|
-| `npx.cmd tsx scripts/audit-source-evidence-traceability-k20-fix-a.ts` | HIGH=0, MEDIUM=1, LOW=1, INFO=4, NONE=0, BLOCKING=NO |
+| `npx.cmd tsx scripts/audit-source-evidence-traceability-k20-fix-a.ts` | HIGH=0, MEDIUM=0, LOW=1, INFO=4, NONE=1, BLOCKING=NO (K20-FIX-B completed, RuleA=NONE) |
 | `npx.cmd tsx scripts/audit-remaining-risk-rebase-k20.ts` | HIGH=0, MEDIUM=2, LOW=6, ACCEPTED=1, NONE=1, BLOCKING=NO (不变) |
 | `npx.cmd tsx scripts/verify-import-approval-browser-e2e-k19-fix-c.ts` | 10 PASS / 0 FAIL |
 | `npx.cmd tsx scripts/verify-import-cross-cohort-approval-ui-k19-fix-b2.ts` | 16 PASS / 0 FAIL |
@@ -511,9 +511,9 @@ await tx.teachingTaskClass.create({
 
 ## 16. Suggested Next Stage
 
-**K20-FIX-B-SOURCE-EVIDENCE-SCHEMA-PLAN**
+**K20-FIX-C-SOURCE-EVIDENCE-BACKFILL-AUDIT (optional) 或 K20-FIX-B-IMPORT-EVIDENCE-MODEL-DESIGN**
 
-**理由**:
+**理由 (K20-FIX-B 已完成)**:
 
 - 当前 B 类别 (Source evidence traceability) 仍 MEDIUM
 - K20-FIX-A 已完成 audit + design, K20-FIX-B 实施 schema
@@ -574,7 +574,7 @@ await tx.teachingTaskClass.create({
 
 | Script / Command | Result |
 |---|---|
-| `npx.cmd tsx scripts/audit-source-evidence-traceability-k20-fix-a.ts` | **PASS** — HIGH=0 / MEDIUM=1 / LOW=1 / INFO=4 / NONE=0 / TOTAL=6 / BLOCKING=NO |
+| `npx.cmd tsx scripts/audit-source-evidence-traceability-k20-fix-a.ts` | **PASS** — HIGH=0 / MEDIUM=0 / LOW=1 / INFO=4 / NONE=1 / TOTAL=6 / BLOCKING=NO |
 | `npx.cmd tsx scripts/audit-remaining-risk-rebase-k20.ts` | **PASS** — HIGH=0 / MEDIUM=2 / LOW=6 / ACCEPTED=1 / NONE=1 / BLOCKING=NO (与 K20 一致) |
 | `npx.cmd tsx scripts/verify-import-approval-browser-e2e-k19-fix-c.ts` | (per K19 spec) 10 PASS / 0 FAIL |
 | `npx.cmd tsx scripts/verify-import-cross-cohort-approval-ui-k19-fix-b2.ts` | (per K19 spec) 16 PASS / 0 FAIL |
@@ -608,11 +608,11 @@ K20-FIX-A-SOURCE-EVIDENCE-TRACEABILITY-AUDIT 按 spec 完整执行:
 - ✅ 新增只读 audit 脚本 (`scripts/audit-source-evidence-traceability-k20-fix-a.ts`)
 - ✅ 新增 Markdown 审计文档 (本文件)
 - ✅ 新增 JSON 报告 (`docs/k20-source-evidence-traceability-audit.json`)
-- ✅ 明确当前 evidence gap: TeachingTaskClass 缺 8 个 source evidence 字段
+- ✅ 明确当前 evidence gap: TeachingTaskClass 缺 8 个 source evidence 字段 (K20-FIX-B 已完成, gap 已关闭)
 - ✅ 明确推荐 schema 方案: **Option A (TeachingTaskClass minimal source evidence fields)**
-- ✅ 明确下一阶段实施范围: K20-FIX-B-SOURCE-EVIDENCE-SCHEMA-PLAN
+- ✅ 明确下一阶段实施范围: K20-FIX-B-SOURCE-EVIDENCE-SCHEMA-PLAN (已实施, commit b557194)
 - ✅ 不修改任何业务代码 / 不写数据库 / 不改 schema
 - ✅ 不修改 API / frontend / importer / solver / parser / RBAC
 - ✅ 工作区状态: 仅新增 3 个 K20-FIX-A 文件
 
-**本阶段可关闭, 推荐进入 K20-FIX-B-SOURCE-EVIDENCE-SCHEMA-PLAN.**
+**K20-FIX-A 可关闭, 推荐进入 K20-FIX-C-SOURCE-EVIDENCE-BACKFILL-AUDIT (optional) 或 K20-FIX-B-IMPORT-EVIDENCE-MODEL-DESIGN. K20-FIX-B 已完成 source evidence schema + importer forward-fill (commit b557194).**

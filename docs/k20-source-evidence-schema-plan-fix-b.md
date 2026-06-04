@@ -505,3 +505,18 @@ K20-FIX-B-SOURCE-EVIDENCE-SCHEMA-PLAN executed as specified:
 **This stage can be closed. Recommended next stage:
 K20-FIX-C-SOURCE-EVIDENCE-BACKFILL-AUDIT (optional, deferred) or
 K20-FIX-B-IMPORT-EVIDENCE-MODEL-DESIGN (operator identity / timestamp).**
+
+
+## 18. Audit Alignment (K20-FIX-B-CLEANUP-AND-AUDIT-ALIGNMENT)
+
+Post-K20-FIX-B audit alignment:
+
+- K20-FIX-A traceability audit: RuleA downgraded from MEDIUM to NONE
+  - All 8 source evidence fields detected in schema
+  - RuleE historical cases updated to reflect K20-FIX-B completion
+  - recommendedNextStage updated to K20-FIX-C or K20-FIX-B-IMPORT-EVIDENCE-MODEL-DESIGN
+- K20 rebase audit: K20-B-1 downgraded from MEDIUM to NONE
+  - Summary: HIGH=0 / MEDIUM=1 / LOW=6 / ACCEPTED=1 / NONE=2 / BLOCKING=NO
+  - K20-B-1 removed from remainingBacklog
+  - recommendedNextStages #1 updated to K20-FIX-B-SOURCE-EVIDENCE-SCHEMA-PLAN (CLOSED)
+- K17/K19 unrelated audit JSON timestamp refreshes restored via git restore

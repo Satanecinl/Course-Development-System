@@ -183,7 +183,7 @@ K19 主线可关闭。详细验证：
   - 8 verify/audit scripts 全部存在
 - **建议**：NONE. K9-DQ-1 / K17-DQ-HIGH-1 / K17-DQ-MEDIUM-* 全部 resolved.
 
-### B. Source evidence traceability — **MEDIUM (OPEN)**
+### B. Source evidence traceability — **NONE (RESOLVED via K20-FIX-B)**
 
 - **Previous Status**：K19-RULE-D-001 MEDIUM. K19-FIX-A / B1 / B2 / C 多次 deferred.
 - **Current Status**：
@@ -191,9 +191,9 @@ K19 主线可关闭。详细验证：
   - importer 不写 source row / keyword reference
   - `ImportBatch.warningsJson` 存在但仅限 import 阶段 warning 列表
   - 无 structured traceability (taskKey + crossCohortApprovals)
-- **Remaining Risk**：K18-B / K18-C 报告需要人工 cross-reference 17 个 source JSON 验证 5 个历史 cross-cohort task。无法自动回溯哪个 source row / keyword 创建了哪个 link。
-- **Recommendation**：建议作为下一条主线 K20-FIX-A-SOURCE-EVIDENCE-TRACEABILITY-AUDIT。
-- **Suggested Next Stage**：**K20-FIX-A-SOURCE-EVIDENCE-TRACEABILITY-AUDIT**（推荐 #1）
+- **Remaining Risk**：K20-FIX-B 已完成 source evidence 字段 + importer forward-fill. 残余: historical 446 rows 保持 null (no-backfill policy). 未来新 import 可直接回溯; 历史 rows 如需诊断仍需 cross-reference source JSON.
+- **Recommendation**：K20-FIX-B 已完成. 残余: historical null backfill (K20-FIX-C, optional) / operator identity (K20-FIX-B-IMPORT-EVIDENCE-MODEL-DESIGN).
+- **Suggested Next Stage**：**K20-FIX-C-SOURCE-EVIDENCE-BACKFILL-AUDIT (optional) 或 K20-FIX-B-IMPORT-EVIDENCE-MODEL-DESIGN**
 
 ### C. Browser E2E / import approval — **ACCEPTED**
 
@@ -293,7 +293,7 @@ K19 主线可关闭。详细验证：
   - DB crossCohortApproved=true tasks count = 0, with reason count = 0（K18 修复后无 cross-cohort, 所以无 approval 记录）
 - **Remaining Risk**：当前 approval metadata 散落在 TeachingTask 字段 + warningsJson. 无 operator identity / timestamp / audit chain. 未来合规审计 / 操作追溯可能需要此 metadata。
 - **Recommendation**：建议未来 (非 K20 优先): 设计 ImportApproval 独立 model 或 TeachingTask 扩展字段.
-- **Suggested Next Stage**：K20-FIX-A-SOURCE-EVIDENCE-TRACEABILITY-AUDIT (合并)
+- **Suggested Next Stage**：K20-FIX-B-IMPORT-EVIDENCE-MODEL-DESIGN (source evidence 已由 K20-FIX-B 完成, 仅 operator identity / timestamp 仍 deferred)
 
 ---
 
@@ -309,7 +309,7 @@ K19 主线可关闭。详细验证：
 
 | Priority | Stage | Reason | Scope | Out of Scope |
 |---:|---|---|---|---|
-| **1** | **K20-FIX-A-SOURCE-EVIDENCE-TRACEABILITY-AUDIT** | B + J 类别均建议此方向. TeachingTaskClass 缺 source row / source keyword 字段, K19 多次 deferred. 解决后可消除人工 cross-reference (K18-B / K18-C 报告模式) 并支撑未来回溯审计. | 设计 TeachingTaskClass.sourceRowIndex + sourceKeyword + importBatchId 字段 (B); 评估 ImportApproval 独立 model 或 TeachingTask 扩展字段 (J). 仅审计 + schema 提案, 不写 DB. | 不实施 schema migration, 不修改 importer core, 不写业务数据. |
+| **1** | **K20-FIX-B-SOURCE-EVIDENCE-SCHEMA-PLAN (CLOSED)** | B 类别已从 MEDIUM 降为 NONE (K20-FIX-B commit b557194). Schema + importer forward-fill 已完成. 残余: historical null backfill (K20-FIX-C, optional) / operator identity (K20-FIX-B-IMPORT-EVIDENCE-MODEL-DESIGN). | 已完成. | N/A (已关闭). |
 | **2** | **K20-FIX-A-ROOM-CAPACITY-AUDIT** | D 类别 LOW (从 K17 MEDIUM 降级, 因 DB placeholder=0%). 仍建议作为独立审计阶段: schema default 50 保留, 新建 Room 不显式指定时仍 fallback. 需在数据导入阶段先有真实容量数据源. | 只读审计现有 Room.capacity 数据源, 调研教务 / 物管系统容量数据导入可行性, 给出 K20-FIX-B 实施方案. | 不实施数据导入, 不改 Room schema, 不动 solver. |
 | **3** | **K20-FIX-A-IMPORT-APPROVAL-BROWSER-E2E-EXEC** | C 类别 ACCEPTED. 9 个 Playwright test case 已在 K19-FIX-C 文档 §6 规划. 引入 @playwright/test + 5 个未来 selector (K19-FIX-C 文档 §7.2). | 引入 Playwright + playwright.config.ts + tests/e2e/import-cross-cohort-approval.spec.ts 9 个 test case. 使用 page.route() mock 所有 API, 不写 DB. | 不修改 importer / confirm API gate / schedule-import-dialog 逻辑. 不写业务数据. |
 | **4** | **K20-FIX-A-AUTH-TEST-BASELINE-AUDIT** | G 类别 LOW. 53 passed / 1 failed 长期 baseline. 失败为 pre-existing ScheduleAdjustment ACTIVE count mismatch. | 重跑 K16 audit script 比对 ACTIVE count 期望值与 DB 实际. 决定更新 baseline 还是修复 audit script. | 不动业务数据. 不重 import. |
@@ -317,7 +317,7 @@ K19 主线可关闭。详细验证：
 
 ### Top Recommended Next Stages
 
-1. **K20-FIX-A-SOURCE-EVIDENCE-TRACEABILITY-AUDIT** — 唯一 MEDIUM 风险，且 K19 多次 deferred, 是当前最值得推进的主线
+1. **K20-FIX-B-SOURCE-EVIDENCE-SCHEMA-PLAN (CLOSED via K20-FIX-B)** — 原 MEDIUM 风险已解决; 残余: historical null (LOW) + operator identity (LOW)
 2. **K20-FIX-A-ROOM-CAPACITY-AUDIT** — LOW 但 schema default 50 仍保留, 长期可优化
 3. **K20-FIX-A-IMPORT-APPROVAL-BROWSER-E2E-EXEC** — 按需, 9 个 test case 已规划
 4. **K20-FIX-A-AUTH-TEST-BASELINE-AUDIT** — 长期 CI 信任度
@@ -360,7 +360,7 @@ K19 主线可关闭。详细验证：
 
 | Script / Command | Result |
 |---|---|
-| `npx.cmd tsx scripts/audit-remaining-risk-rebase-k20.ts` | **PASS** — HIGH=0 / MEDIUM=2 / LOW=6 / ACCEPTED=1 / NONE=1 / TOTAL=10 / BLOCKING=NO |
+| `npx.cmd tsx scripts/audit-remaining-risk-rebase-k20.ts` | **PASS** — HIGH=0 / MEDIUM=1 / LOW=6 / ACCEPTED=1 / NONE=2 / TOTAL=10 / BLOCKING=NO |
 | `npx.cmd tsx scripts/verify-import-approval-browser-e2e-k19-fix-c.ts` | 10 PASS / 0 FAIL / 0 SKIP (per K19 spec) |
 | `npx.cmd tsx scripts/verify-import-cross-cohort-approval-ui-k19-fix-b2.ts` | 16 PASS / 0 FAIL (per K19 spec) |
 | `npx.cmd tsx scripts/verify-import-cross-cohort-approval-k19-fix-b1.ts` | 17 PASS / 0 FAIL (per K19 spec) |
@@ -430,7 +430,7 @@ Type error: Cannot find module 'playwright' or its corresponding type declaratio
 
 **修复后**：
 - `npm.cmd run build` exit code 0, PASS. 仅 2 个无关 warning (Google Fonts 网络连接 + `next.config.ts` 动态 require 提示).
-- K20 audit summary 不变: HIGH=0 / MEDIUM=2 / LOW=6 / ACCEPTED=1 / NONE=1 / BLOCKING=NO.
+- K20 audit summary 不变: HIGH=0 / MEDIUM=1 / LOW=6 / ACCEPTED=1 / NONE=2 / BLOCKING=NO.
 - K19-FIX-C readiness 9 PASS / 0 FAIL / 1 SKIP 不变.
 - K19-FIX-B2 / B1 / A verify 16/17/31 PASS 不变.
 - K18 task37 18 PASS / K17 data-quality HIGH=0 / K17 backlog No BLOCKING 不变.
@@ -478,7 +478,7 @@ K20-REMAINING-RISK-REBASE-AUDIT 按 spec 完整执行：
 - ✅ 明确 K18 可关闭 (data quality mainline closure-evaluated)
 - ✅ 明确 K19 可关闭 (import approval mainline closure-evaluated)
 - ✅ 明确当前 remaining backlog: MEDIUM 1 (B) / LOW 7 / ACCEPTED 1 / NONE 1
-- ✅ 明确 top recommended next stage: **K20-FIX-A-SOURCE-EVIDENCE-TRACEABILITY-AUDIT**
+- ✅ 明确 top recommended next stage: **K20-FIX-B-SOURCE-EVIDENCE-SCHEMA-PLAN (CLOSED)**. Next: K20-FIX-A-ROOM-CAPACITY-AUDIT 或 K20-FIX-B-IMPORT-EVIDENCE-MODEL-DESIGN
 - ✅ 不修改任何业务代码 / 不写数据库 / 不改 schema
 - ✅ 不修改 API / frontend / importer / solver / parser / RBAC
 - ✅ 工作区状态: 仅新增 3 个 K20 文件, 旧 115 个项目文件从 git index 恢复 (用户授权)
