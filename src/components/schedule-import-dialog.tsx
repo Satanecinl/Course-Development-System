@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useMemo } from 'react'
-import { Upload, FileSpreadsheet, Users, BookOpen, GraduationCap, DoorOpen, Loader2, AlertCircle, Copy, Check, Filter, Database, PlayCircle, AlertTriangle } from 'lucide-react'
+import { Upload, FileSpreadsheet, Users, BookOpen, GraduationCap, DoorOpen, Loader2, AlertCircle, Copy, Check, Filter, Database, PlayCircle, AlertTriangle, ShieldAlert, Info } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -20,6 +20,14 @@ import type {
 } from '@/types/import'
 import { DAY_NAME_MAP } from '@/types/schedule'
 import { toast } from 'sonner'
+import {
+  parseCrossCohortWarnings,
+  normalizeWarnings,
+  validateApprovalState,
+  buildCrossCohortApprovalPayload,
+  mapApprovalError,
+  type ApprovalState,
+} from '@/lib/import/cross-cohort-approval-ui'
 
 interface ScheduleImportDialogProps {
   open: boolean
@@ -78,6 +86,10 @@ export function ScheduleImportDialog({ open, onOpenChange }: ScheduleImportDialo
   const [confirmError, setConfirmError] = useState<string | null>(null)
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
 
+  // K19-FIX-B2: cross-cohort approval state
+  const [approvals, setApprovals] = useState<Record<string, ApprovalState>>({})
+  const [approvalTouched, setApprovalTouched] = useState(false)
+
   const reset = () => {
     setFile(null)
     setResult(null)
@@ -96,6 +108,8 @@ export function ScheduleImportDialog({ open, onOpenChange }: ScheduleImportDialo
     setConfirmResult(null)
     setConfirmError(null)
     setConfirmDialogOpen(false)
+    setApprovals({})
+    setApprovalTouched(false)
   }
 
   const handleOpenChange = (nextOpen: boolean) => {
@@ -196,22 +210,36 @@ export function ScheduleImportDialog({ open, onOpenChange }: ScheduleImportDialo
     setConfirmResult(null)
     setConfirmError(null)
 
+    // K19-FIX-B2: build crossCohortApprovals from approval state
+    const crossCohortWarnings = parseCrossCohortWarnings(normalizeWarnings(dryRunResult?.warnings))
+    const crossCohortApprovals = buildCrossCohortApprovalPayload(
+      crossCohortWarnings.suspiciousTasks,
+      approvals,
+    )
+
     try {
+      const body: Record<string, unknown> = {
+        batchId: result.batchId,
+        strategy: 'UPSERT_BY_NATURAL_KEY',
+        dryRun: false,
+        confirmText: 'CONFIRM_IMPORT',
+      }
+      if (crossCohortApprovals.length > 0) {
+        body.crossCohortApprovals = crossCohortApprovals
+      }
+
       const res = await fetch('/api/admin/import/confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          batchId: result.batchId,
-          strategy: 'UPSERT_BY_NATURAL_KEY',
-          dryRun: false,
-          confirmText: 'CONFIRM_IMPORT',
-        }),
+        body: JSON.stringify(body),
       })
 
       const data: ImportConfirmResponse = await res.json()
 
       if (!data.success) {
-        setConfirmError(data.error || '导入失败')
+        // K19-FIX-B2: check for approval-specific 409 errors
+        const approvalError = mapApprovalError(data.error, data.details)
+        setConfirmError(approvalError || data.error || '导入失败')
         return
       }
 
@@ -252,6 +280,20 @@ export function ScheduleImportDialog({ open, onOpenChange }: ScheduleImportDialo
   const previewRecords = filteredRecords.slice(0, 50)
 
   const hasBlocking = result?.success && result.quality.recordsMissingStudentCount > 0 || result?.success && result.quality.recordsMissingCourse > 0 || result?.success && result.quality.duplicateCandidateCount > 0
+
+  // K19-FIX-B2: cross-cohort warnings from dry-run result
+  const crossCohortWarnings = useMemo(() => {
+    if (!dryRunResult?.warnings) return null
+    return parseCrossCohortWarnings(normalizeWarnings(dryRunResult.warnings))
+  }, [dryRunResult])
+
+  const crossCohortApprovalValidation = useMemo(() => {
+    if (!crossCohortWarnings) return { ready: true, reasons: [] }
+    return validateApprovalState(crossCohortWarnings.suspiciousTasks, approvals)
+  }, [crossCohortWarnings, approvals])
+
+  const hasLikelyErrors = crossCohortWarnings ? crossCohortWarnings.suspiciousTasks.length > 0 : false
+  const crossCohortBlocking = hasLikelyErrors && !crossCohortApprovalValidation.ready
 
   return (
     <>
@@ -429,7 +471,7 @@ export function ScheduleImportDialog({ open, onOpenChange }: ScheduleImportDialo
                     size="sm"
                     className="bg-amber-600 hover:bg-amber-700"
                     onClick={handleConfirmClick}
-                    disabled={dryRunLoading || confirmLoading || !!hasBlocking}
+                    disabled={dryRunLoading || confirmLoading || !!hasBlocking || crossCohortBlocking}
                   >
                     {confirmLoading ? (
                       <>
@@ -476,6 +518,108 @@ export function ScheduleImportDialog({ open, onOpenChange }: ScheduleImportDialo
                         </div>
                       </details>
                     )}
+                  </div>
+                )}
+
+                {/* K19-FIX-B2: Cross-cohort approval section */}
+                {crossCohortWarnings && hasLikelyErrors && (
+                  <div className="bg-red-50 border border-red-300 rounded-lg p-3 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <ShieldAlert className="w-4 h-4 text-red-600 shrink-0" />
+                      <h4 className="text-sm font-medium text-red-800">
+                        检测到 {crossCohortWarnings.suspiciousTasks.length} 个疑似错误跨年级合班
+                      </h4>
+                    </div>
+                    <p className="text-xs text-red-700">
+                      该导入包含疑似错误的跨年级 / 跨 cohort 合班记录。后端要求对每个可疑任务显式确认并填写审批原因，未确认前无法正式导入。
+                    </p>
+                    {crossCohortWarnings.suspiciousTasks.map((task) => {
+                      const state = approvals[task.taskKey]
+                      const checked = state?.checked ?? false
+                      const reason = state?.reason ?? ''
+                      return (
+                        <div key={task.taskKey} className="bg-white border border-red-200 rounded p-2.5 space-y-2">
+                          <div className="text-xs text-gray-700">
+                            <span className="font-medium text-gray-900">{task.title}</span>
+                            {task.taskKey && (
+                              <span className="ml-2 text-gray-400 font-mono text-[10px]">({task.taskKey})</span>
+                            )}
+                          </div>
+                          <div className="text-[11px] text-gray-500 break-all">{task.warningText}</div>
+                          <label className="flex items-start gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              className="mt-0.5"
+                              checked={checked}
+                              onChange={(e) => {
+                                setApprovals((prev) => ({
+                                  ...prev,
+                                  [task.taskKey]: {
+                                    ...prev[task.taskKey],
+                                    checked: e.target.checked,
+                                    reason: prev[task.taskKey]?.reason ?? '',
+                                  },
+                                }))
+                                setApprovalTouched(true)
+                              }}
+                            />
+                            <span className="text-xs text-gray-700">我已确认此跨年级合班为合理需求</span>
+                          </label>
+                          {checked && (
+                            <div className="space-y-1">
+                              <textarea
+                                className="w-full text-xs border border-gray-300 rounded px-2 py-1.5 resize-none focus:outline-none focus:ring-1 focus:ring-red-400"
+                                rows={2}
+                                placeholder="审批原因（必填，不少于 5 个字符）"
+                                value={reason}
+                                onChange={(e) => {
+                                  setApprovals((prev) => ({
+                                    ...prev,
+                                    [task.taskKey]: {
+                                      ...prev[task.taskKey],
+                                      checked: true,
+                                      reason: e.target.value,
+                                    },
+                                  }))
+                                }}
+                              />
+                              <div className="flex items-center justify-between text-[11px]">
+                                <span className={reason.trim().length >= 5 ? 'text-green-600' : 'text-red-500'}>
+                                  {reason.trim().length >= 5 ? '✓ 原因已填写' : `还需要 ${Math.max(0, 5 - reason.trim().length)} 个字符`}
+                                </span>
+                                <span className="text-gray-400">{reason.trim().length} 字符</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                    {approvalTouched && !crossCohortApprovalValidation.ready && (
+                      <div className="text-xs text-red-600 flex items-center gap-1.5">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                        {crossCohortApprovalValidation.reasons[0]}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* K19-FIX-B2: LEGAL_PUBLIC info (non-blocking) */}
+                {crossCohortWarnings && crossCohortWarnings.legalPublics.length > 0 && !hasLikelyErrors && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-2.5 space-y-1">
+                    <div className="flex items-center gap-2 text-xs">
+                      <Info className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                      <span className="text-blue-800 font-medium">
+                        {crossCohortWarnings.legalPublics.length} 条公共课跨年级合班（允许，无需审批）
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* K19-FIX-B2: confirm disabled reason */}
+                {crossCohortBlocking && (
+                  <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2 flex items-center gap-1.5">
+                    <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                    请完成所有跨年级合班确认后才能导入
                   </div>
                 )}
 
