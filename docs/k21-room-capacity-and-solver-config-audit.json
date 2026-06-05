@@ -1,0 +1,529 @@
+{
+  "generatedAt": "2026-06-05T06:44:28.462Z",
+  "phase": "K21-FIX-A-ROOM-CAPACITY-AND-SOLVER-CONFIG-AUDIT",
+  "mode": "read-only",
+  "database": {
+    "classGroupCount": 36,
+    "teacherCount": 84,
+    "courseCount": 104,
+    "roomCount": 53,
+    "teachingTaskCount": 308,
+    "teachingTaskClassLinkCount": 446,
+    "scheduleSlotCount": 440,
+    "schedulingRunCount": 77,
+    "schedulingConfigCount": 1
+  },
+  "summary": {
+    "HIGH": 0,
+    "MEDIUM": 4,
+    "LOW": 1,
+    "INFO": 1,
+    "ACCEPTED": 0,
+    "NONE": 1
+  },
+  "totalFindings": 7,
+  "blocking": false,
+  "roomCapacityStats": {
+    "roomCount": 53,
+    "capacityMin": 3,
+    "capacityMax": 200,
+    "capacityAvg": 46,
+    "capacityDistinct": 23,
+    "capacityEq50Count": 0,
+    "capacityEq50Ratio": 0,
+    "capacityNullCount": 0,
+    "capacityLe0Count": 0,
+    "capacityDistribution": [
+      {
+        "cap": 3,
+        "count": 4
+      },
+      {
+        "cap": 20,
+        "count": 1
+      },
+      {
+        "cap": 22,
+        "count": 1
+      },
+      {
+        "cap": 25,
+        "count": 2
+      },
+      {
+        "cap": 28,
+        "count": 2
+      },
+      {
+        "cap": 30,
+        "count": 3
+      },
+      {
+        "cap": 31,
+        "count": 1
+      },
+      {
+        "cap": 33,
+        "count": 1
+      },
+      {
+        "cap": 37,
+        "count": 3
+      },
+      {
+        "cap": 38,
+        "count": 2
+      },
+      {
+        "cap": 39,
+        "count": 6
+      },
+      {
+        "cap": 40,
+        "count": 4
+      },
+      {
+        "cap": 41,
+        "count": 8
+      },
+      {
+        "cap": 42,
+        "count": 1
+      },
+      {
+        "cap": 54,
+        "count": 3
+      },
+      {
+        "cap": 61,
+        "count": 3
+      },
+      {
+        "cap": 76,
+        "count": 1
+      },
+      {
+        "cap": 80,
+        "count": 1
+      },
+      {
+        "cap": 83,
+        "count": 1
+      },
+      {
+        "cap": 92,
+        "count": 2
+      },
+      {
+        "cap": 100,
+        "count": 1
+      },
+      {
+        "cap": 108,
+        "count": 1
+      },
+      {
+        "cap": 200,
+        "count": 1
+      }
+    ],
+    "buildingDistinct": 1,
+    "typeDistinct": 1,
+    "typeDistribution": [
+      {
+        "type": "NORMAL",
+        "count": 53
+      }
+    ],
+    "roomNamePatternSamples": {
+      "numbered (e.g. 1-205)": 40,
+      "实训 (training)": 2,
+      "林校 (lín xiào)": 10,
+      "机房 (computer room)": 1
+    },
+    "slotCount": 440,
+    "slotsUsingNullRoom": 36,
+    "roomAvailabilityCount": 0,
+    "roomAvailabilityFalseCount": 0,
+    "hc4CurrentConflictCount": 0,
+    "hc4SampleConflicts": []
+  },
+  "solverConstraintMap": {
+    "hc1": {
+      "implemented": true,
+      "meaning": "两个任务在同一教室同一时段有重叠周次",
+      "usesConfigWeight": false,
+      "hardcodedPenalty": -1000
+    },
+    "hc2": {
+      "implemented": true,
+      "meaning": "同一教师同一时段有重叠周次",
+      "usesConfigWeight": false,
+      "hardcodedPenalty": -1000
+    },
+    "hc3": {
+      "implemented": true,
+      "meaning": "同一班级同一时段有重叠周次",
+      "usesConfigWeight": false,
+      "hardcodedPenalty": -1000
+    },
+    "hc4": {
+      "implemented": true,
+      "meaning": "学生总数 > Room.capacity 时 hard penalty",
+      "usesConfigWeight": false,
+      "hardcodedPenalty": -1000
+    },
+    "hc5": {
+      "implemented": true,
+      "meaning": "RoomAvailability.available=false 在指定 day/slot",
+      "usesConfigWeight": false,
+      "hardcodedPenalty": -1000
+    },
+    "hc6": {
+      "implemented": false,
+      "meaning": "lockedSlotIds 中的任务不能移动 (由 solver 控制, score 不计 delta)",
+      "usesConfigWeight": false,
+      "hardcodedPenalty": null
+    },
+    "sc1": {
+      "implemented": true,
+      "meaning": "教师或班级跨楼栋连续课时",
+      "usesConfigWeight": false,
+      "hardcodedPenalty": -5
+    },
+    "sc2": {
+      "implemented": true,
+      "meaning": "同一任务同一天多节",
+      "usesConfigWeight": false,
+      "hardcodedPenalty": -10
+    },
+    "sc3": {
+      "implemented": true,
+      "meaning": "slotIndex >= 5 (第 9-10 节 / 第 11-12 节)",
+      "usesConfigWeight": false,
+      "hardcodedPenalty": -1
+    },
+    "sc4": {
+      "implemented": true,
+      "meaning": "同任务同天相邻 slot 跨校区",
+      "usesConfigWeight": false,
+      "hardcodedPenalty": -5
+    },
+    "scMinimumPerturbation": {
+      "implemented": true,
+      "meaning": "从原位置移动的 slot",
+      "usesConfigWeight": false,
+      "hardcodedPenalty": -2
+    },
+    "commonNeedsMissing": [
+      "教师工作日均衡 (teacher day-balance)",
+      "教师半天集中 (teacher half-day clustering)",
+      "班级空洞减少 (class gap reduction)",
+      "教室稳定性 (room stability across weeks)",
+      "实训课匹配实训室 (lab-to-workshop match)",
+      "大班优先大教室 (large-class → large-room)",
+      "同班连续课减少教室切换 (consecutive-class same-room)"
+    ]
+  },
+  "schedulerConfigMap": {
+    "schedulingConfigModelExists": true,
+    "schedulingConfigFields": [
+      "model",
+      "id",
+      "name",
+      "semesterId",
+      "semester",
+      "maxIterations",
+      "lahcWindowSize",
+      "lockedTaskIds",
+      "createdAt",
+      "runs"
+    ],
+    "schedulingConfigDbCount": 1,
+    "configFieldsReadBySolver": [
+      "maxIterations",
+      "lahcWindowSize",
+      "lockedSlotIds (local)"
+    ],
+    "maxIterationsDefault": 10000,
+    "maxIterationsHardCap": 15000,
+    "lahcWindowSizeDefault": 500,
+    "lahcWindowSizeRange": {
+      "min": 50,
+      "max": null
+    },
+    "apiReadConfig": true,
+    "apiWriteConfig": false,
+    "frontendExposesMaxIterations": false,
+    "frontendExposesLahcWindowSize": false,
+    "frontendExposesRandomSeed": true,
+    "frontendExposesLockedSlots": true,
+    "solverVersion": "lahc-hard-first-v3"
+  },
+  "previewApplyRollbackMap": {
+    "schedulingRunModelExists": true,
+    "schedulerRunChangeModelExists": true,
+    "modeValues": [
+      "PREVIEW",
+      "APPLY",
+      "ROLLBACK"
+    ],
+    "statusValues": [
+      "PENDING",
+      "PREVIEW",
+      "APPLYING",
+      "COMPLETED",
+      "FAILED",
+      "ROLLED_BACK"
+    ],
+    "resultSnapshotField": true,
+    "conflictSummaryField": true,
+    "databaseFingerprintField": true,
+    "previewExpiresAtField": true,
+    "rollbackOfRunIdField": true,
+    "appliedAtField": true,
+    "rolledBackAtField": true,
+    "hcBeforeAfterFields": [
+      "hc1Before",
+      "hc1After",
+      "hc2Before",
+      "hc2After",
+      "hc3Before",
+      "hc3After",
+      "hc4Before",
+      "hc4After"
+    ],
+    "previewApiExists": true,
+    "applyApiExists": true,
+    "rollbackApiExists": true,
+    "previewUiExists": true,
+    "applyUiExists": true,
+    "rollbackUiExists": true,
+    "historyUiExists": true,
+    "runRecords": {
+      "total": 77,
+      "byMode": {
+        "APPLY": 23,
+        "PREVIEW": 42,
+        "ROLLBACK": 12
+      },
+      "byStatus": {
+        "COMPLETED": 65,
+        "ROLLED_BACK": 12
+      }
+    },
+    "blockedGateChecks": [
+      "hardScore === 0",
+      "hc1After === 0",
+      "hc2After === 0",
+      "hc3After === 0",
+      "hc4After === 0",
+      "preview not expired",
+      "preview status = COMPLETED (not BLOCKED)",
+      "databaseFingerprint match"
+    ]
+  },
+  "roomTypeAvailabilityMap": {
+    "roomTypeSchema": "String @default(\"NORMAL\")",
+    "roomTypeInSolver": false,
+    "roomTypeInScore": false,
+    "roomTypeInCapacity": false,
+    "roomAvailabilityModelExists": true,
+    "roomAvailabilityDefaultAvailable": true,
+    "roomAvailabilityUsedInScore": true,
+    "eligibilityUsesCapacityOnly": true
+  },
+  "findings": [
+    {
+      "id": "K21-A-1",
+      "rule": "A. Room.capacity data quality",
+      "severity": "INFO",
+      "category": "A. Room.capacity 数据真实性",
+      "title": "Room.capacity 数据: 53 个教室, 全部为真实容量, placeholder (50) 占比 0.0%",
+      "currentStatus": "DB 中 53 个 Room, capacity 范围 [3, 200], 平均 46, 23 个 distinct values. capacity=50 房间 0 个 (0.0%). null=0, <=0=0.",
+      "evidence": [
+        "Room count: 53",
+        "capacity distribution: [{\"cap\":3,\"count\":4},{\"cap\":20,\"count\":1},{\"cap\":22,\"count\":1},{\"cap\":25,\"count\":2},{\"cap\":28,\"count\":2},{\"cap\":30,\"count\":3},{\"cap\":31,\"count\":1},{\"cap\":33,\"count\":1},{\"cap\":37,\"count\":3},{\"cap\":38,\"count\":2},{\"cap\":39,\"count\":6},{\"cap\":40,\"count\":4},{\"cap\":41,\"count\":8},{\"cap\":42,\"count\":1},{\"cap\":54,\"count\":3},{\"cap\":61,\"count\":3},{\"cap\":76,\"count\":1},{\"cap\":80,\"count\":1},{\"cap\":83,\"count\":1},{\"cap\":92,\"count\":2},{\"cap\":100,\"count\":1},{\"cap\":108,\"count\":1},{\"cap\":200,\"count\":1}]",
+        "capacity=50 ratio: 0.00%",
+        "null/<=0 rooms: 0/0",
+        "building distinct: 1",
+        "type distinct: 1 (NORMAL=53)",
+        "schema Room.capacity @default(50) — 新建 Room 不显式指定时 fallback 50",
+        "/admin/rooms/capacity/ 页面已提供 UI 编辑入口 (PATCH /api/admin/rooms/capacity/[id])"
+      ],
+      "risk": "当前 DB 数据已全部为真实容量 (placeholder 占比极低). 风险: schema @default(50) 仍保留, 未来新建 Room 不显式指定会 fallback 到 50, 需要持续人工维护.",
+      "recommendation": "当前数据无需批量修复. 建议: (1) 文档化当前 capacity 数据来源; (2) 未来新增 Room 时强制显式指定 capacity, 避免 schema fallback; (3) 探索教务系统 / 物管系统自动导入 capacity 的可行性.",
+      "suggestedNextStage": "K21-FIX-B-ROOM-CAPACITY-DATA-PLAN (current status: real data already, plan focuses on source-of-truth documentation + future import pathway)"
+    },
+    {
+      "id": "K21-B-1",
+      "rule": "B. Capacity constraint in score.ts",
+      "severity": "NONE",
+      "category": "B. solver capacity constraint",
+      "title": "HC4 容量约束: 已实现 (hard constraint)",
+      "currentStatus": "score.ts 第 162-176 行 + 第 378-383 行 delta. studentInfo.studentCount 来自 getTaskStudentCount(task, ctx), 读 ClassGroup.studentCount, fallback 50. 容量超限时 hardScore -= -1000 (HARD_PENALTY 常量). solver.ts isPlacementHardCompatible 也调用此检查. 当前 DB 中真实 HC4 conflict = 0 个.",
+      "evidence": [
+        "score.ts: HC4_CAPACITY type implemented: true",
+        "score.ts: hardcoded HARD_PENALTY = -1000",
+        "getTaskStudentCount reads ClassGroup.studentCount with FALLBACK_50_PER_CLASS",
+        "current DB HC4 conflicts: 0 (samples: [])",
+        "solver isPlacementHardCompatible uses capacity check: true"
+      ],
+      "risk": "当前 HC4 正常. 风险: (1) 硬编码 penalty 值无法调整 (权重 -1000, 远大于 soft); (2) studentCount fallback 50 可能导致 classGroup.studentCount=null 时使用 placeholder 数据; (3) 无法区分 \"严重超限\" (200人/30座) 与 \"轻微超限\" (51人/50座).",
+      "recommendation": "保持当前实现. 后续可考虑: (1) penalty 改为可配置 weight; (2) 增加 HC4 软约束分级 (超额 < 10% 给 soft penalty, 严重超额给 hard penalty); (3) 当 FALLBACK 触发时增加 warning 而非 silent use.",
+      "suggestedNextStage": "K21-FIX-D-SOLVER-CONFIG-UI (合并)"
+    },
+    {
+      "id": "K21-C-1",
+      "rule": "C. HC / SC coverage",
+      "severity": "MEDIUM",
+      "category": "C. HC/SC 约束覆盖",
+      "title": "硬约束 HC1-HC6 + 软约束 SC1-SC4 + MINIMUM_PERTURBATION 已实现; 7 项常见高校需求未覆盖",
+      "currentStatus": "HC1=true HC2=true HC3=true HC4=true HC5=true HC6=false (但 score 不计 delta, 由 solver 控制). SC1=true SC2=true SC3=true SC4=true MIN_PERT=true. 所有 weight 都是 hardcoded 常量, 不可配置.",
+      "evidence": [
+        "HC1_ROOM_CONFLICT implemented: true",
+        "HC2_TEACHER_CONFLICT implemented: true",
+        "HC3_CLASS_CONFLICT implemented: true",
+        "HC4_CAPACITY implemented: true",
+        "HC5_ROOM_UNAVAILABLE implemented: true",
+        "HC6 (locked, score-delta skipped): false",
+        "SC1_CROSS_BUILDING_BACK_TO_BACK: true, penalty=-5",
+        "SC2_SAME_DAY: true, penalty=-10",
+        "SC3_EXTREME_TIME_SLOT: true, penalty=-1",
+        "SC4_CROSS_CAMPUS: true, penalty=-5",
+        "MINIMUM_PERTURBATION: true, penalty=-2",
+        "all weights hardcoded: HC=false/false/..., SC=false/false/...",
+        "common needs missing: 教师工作日均衡 (teacher day-balance); 教师半天集中 (teacher half-day clustering); 班级空洞减少 (class gap reduction); 教室稳定性 (room stability across weeks); 实训课匹配实训室 (lab-to-workshop match); 大班优先大教室 (large-class → large-room); 同班连续课减少教室切换 (consecutive-class same-room)"
+      ],
+      "risk": "当前约束覆盖核心冲突场景. 风险: (1) 所有 weight hardcoded, 不同高校需求无法调整; (2) 缺少软约束导致排课结果不优 (教师工作日不均衡, 班级空洞多); (3) HC6 score 不计 delta 与 full score 不一致, 可能导致局部最优解.",
+      "recommendation": "短期: 保持当前约束. 中期: 引入 SC5+ 教师工作日均衡 + SC6+ 班级空洞减少. 长期: 所有 weight 改为可配置.",
+      "suggestedNextStage": "K21-FIX-F-SOFT-CONSTRAINTS-EXPANSION"
+    },
+    {
+      "id": "K21-D-1",
+      "rule": "D. Scheduler config model / API / UI",
+      "severity": "MEDIUM",
+      "category": "D. SchedulingConfig model / API / UI",
+      "title": "SchedulingConfig model: 存在; solver: 读取; UI: 不暴露参数",
+      "currentStatus": "DB 中存在 SchedulingConfig model (fields: model, id, name, semesterId, semester, maxIterations, lahcWindowSize, lockedTaskIds, createdAt, runs), DB count = 1. preview.ts 仅读取 configId 作为外键, 不解析 maxIterations / lahcWindowSize / lockedTaskIds. SolverConfig (local type) 从 API request body 接收参数. API 接受 maxIterations / lahcWindowSize / randomSeed / lockedSlotIds, 但 frontend 仅暴露 randomSeed + lockedSlotIds.",
+      "evidence": [
+        "SchedulingConfig model fields: model, id, name, semesterId, semester, maxIterations, lahcWindowSize, lockedTaskIds, createdAt, runs",
+        "SchedulingConfig DB count: 1",
+        "solver reads config fields: maxIterations, lahcWindowSize, lockedSlotIds (local)",
+        "maxIterations default: 10000, hard cap: 15000",
+        "lahcWindowSize default: 500, range: [50, null]",
+        "frontend exposes maxIterations: false",
+        "frontend exposes lahcWindowSize: false",
+        "frontend exposes randomSeed: true",
+        "frontend exposes locked slots: true",
+        "solver version: lahc-hard-first-v3"
+      ],
+      "risk": "config model 存在但 solver 不读取, 失去集中管理优势. 用户无法通过 UI 调整 LAHC 参数, 每次排课都需调 API. 不同学期可能需要不同 config (e.g. 春季学期实验课多需更长 iteration), 当前无法保存/复用.",
+      "recommendation": "下一步实施: (1) solver 从 SchedulingConfig 读取 maxIterations / lahcWindowSize; (2) API 接受 optional configId 参数, 缺省 fallback 到第一个 config; (3) frontend 暴露 maxIterations / lahcWindowSize 输入框; (4) 增加 /api/admin/scheduler/configs CRUD 端点.",
+      "suggestedNextStage": "K21-FIX-D-SOLVER-CONFIG-UI"
+    },
+    {
+      "id": "K21-E-1",
+      "rule": "E. lockedTaskIds vs lockedSlotIds",
+      "severity": "MEDIUM",
+      "category": "E. 锁定任务 vs 锁定槽位",
+      "title": "Schema 字段名 \"lockedTaskIds\" 但 solver 实际用 \"lockedSlotIds\" — 语义不一致",
+      "currentStatus": "SchedulingConfig.lockedTaskIds String @default(\"[]\") 字段存储 task IDs. solver SolverConfig.lockedSlotIds Set<number> 实际使用 slot IDs. preview API 验证 scheduleSlot.findMany. UI 选中的是 slot 级别.",
+      "evidence": [
+        "schema has SchedulingConfig.lockedTaskIds: true",
+        "solver uses SolverConfig.lockedSlotIds: true",
+        "preview API validates slot IDs: true",
+        "no conversion layer found: true",
+        "semantic difference: lockedTaskIds=lock entire task (all its slots); lockedSlotIds=lock individual slot positions"
+      ],
+      "risk": "字段名误导: 维护者可能认为 SchedulingConfig.lockedTaskIds 字段被使用, 实际从未解析. 任务级 vs 槽位级语义差异未文档化.",
+      "recommendation": "下一步: (1) 决策语义: task-level lock (粒度粗, 任务整体不动) 或 slot-level lock (粒度细, 单个 slot 不动); (2) 字段重命名: lockedTaskIds → lockedSlotIds, 或 (3) 在 solver 层面增加 task-level lock 解析: \"if task has any locked slot, all its slots locked\".",
+      "suggestedNextStage": "K21-FIX-D-SOLVER-CONFIG-UI (合并决策)"
+    },
+    {
+      "id": "K21-F-1",
+      "rule": "F. Preview / Apply / Rollback closure",
+      "severity": "LOW",
+      "category": "F. Preview/Apply/Rollback 闭环",
+      "title": "SchedulingRun + SchedulerRunChange 已完整实现. UI=完整, API=完整, 状态机=完整",
+      "currentStatus": "SchedulingRun mode=PREVIEW/APPLY/ROLLBACK, status=PENDING/PREVIEW/APPLYING/COMPLETED/FAILED/ROLLED_BACK, fields: resultSnapshot=true, conflictSummary=true, databaseFingerprint=true, previewExpiresAt=true, rollbackOfRunId=true, appliedAt=true, rolledBackAt=true, hc before/after = 8 fields. SchedulerRunChange model 存在. Preview/Apply/Rollback API 全部存在. UI scheduler-content.tsx + history-content.tsx 完整. 阻� apply 条件: hardScore === 0, hc1After === 0, hc2After === 0, hc3After === 0, hc4After === 0, preview not expired, preview status = COMPLETED (not BLOCKED), databaseFingerprint match.",
+      "evidence": [
+        "SchedulingRun mode values: PREVIEW/APPLY/ROLLBACK",
+        "SchedulingRun status values: PENDING/PREVIEW/APPLYING/COMPLETED/FAILED/ROLLED_BACK",
+        "resultSnapshot/conflictSummary/databaseFingerprint: true/true/true",
+        "previewExpiresAt/rollbackOfRunId/appliedAt/rolledBackAt: true/true/true/true",
+        "hc1-hc4 before/after fields: 8/8",
+        "preview/apply/rollback API: true/true/true",
+        "preview/apply/rollback UI: true/true/true",
+        "history UI: true",
+        "SchedulingRun DB count: 77",
+        "byMode: {\"APPLY\":23,\"PREVIEW\":42,\"ROLLBACK\":12}",
+        "byStatus: {\"COMPLETED\":65,\"ROLLED_BACK\":12}"
+      ],
+      "risk": "当前闭环完整, 阻� apply 的 8 项 gate 全部实现. 风险: (1) UI 中没有进度条/取消按钮, 长时间 run 无法中断; (2) rollback 链不支持多级 (rollbackOfRunId 仅记录上一级); (3) history UI 仅显示, 不支持按 run 重新执行 / 复制 config.",
+      "recommendation": "当前闭环不阻塞主线. 建议下阶段: (1) 增加 apply/rollback 进度条; (2) 支持多级 rollback (rollbackOfRollbackOfRunId); (3) history UI 增加 \"复制为新 run\" 按钮.",
+      "suggestedNextStage": "K21-FIX-E-SCHEDULER-PREVIEW-APPLY-ROLLBACK-AUDIT (polish + extend, not blocking)"
+    },
+    {
+      "id": "K21-G-1",
+      "rule": "G. Room type / RoomAvailability",
+      "severity": "MEDIUM",
+      "category": "G. Room type / RoomAvailability",
+      "title": "Room.type schema 存在 (String @default(\"NORMAL\")) 但 solver 完全不使用; RoomAvailability 仅支持 available boolean",
+      "currentStatus": "Room.type String @default(\"NORMAL\"). solver.isPlacementHardCompatible 仅按 capacity 过滤 eligible rooms, 完全忽略 type. capacity.ts getEligibleRoomsByCapacity 返回的 EligibleRoom 包含 type 字段, 但调用方不 filter. RoomAvailability Boolean 模型存在, 默认 available=true, score.ts HC5 唯一使用点.",
+      "evidence": [
+        "Room.type schema: String @default(\"NORMAL\")",
+        "solver uses room.type: false",
+        "score.ts uses room.type: false",
+        "capacity.ts uses room.type: false",
+        "RoomAvailability model exists: true",
+        "RoomAvailability default available: true",
+        "score.ts uses HC5_ROOM_UNAVAILABLE: true",
+        "eligibility filter uses capacity only: true",
+        "roomAvailability records: 0 (false=0)"
+      ],
+      "risk": "机房/实训室/阶梯教室可被分配到任何课程, 不区分课程对 room type 的需求. 例如 理论课可能占用机房 (浪费), 实训课可能占用普通教室 (无法做实验). 当前 data: 普通课程 vs 实训课无法对齐.",
+      "recommendation": "建议: (1) Course 增加 requiredRoomType 字段; (2) solver 增加 room type 匹配检查; (3) 维护常见 room type 映射 (e.g. 课程名含\"实训\" → 实训室). 短期不阻塞主线.",
+      "suggestedNextStage": "K21-FIX-B-ROOM-TYPE-CONSTRAINT-AUDIT (deferred to K22+)"
+    }
+  ],
+  "recommendedRoadmap": [
+    {
+      "stage": "K21-FIX-B-ROOM-CAPACITY-DATA-PLAN",
+      "reason": "当前 Room.capacity 数据已全部为真实 (placeholder=0%), 风险低. 下一阶段重点: 文档化数据来源 + 调研教务系统导入可行性 + 防止 schema @default(50) 误用.",
+      "scope": "只读 audit room capacity source-of-truth. 设计 admin capacity edit / CSV import 流程. 输出 doc 文档化容量数据来源 + K21-FIX-C 实施路径.",
+      "outOfScope": "不实施数据导入. 不改 Room schema. 不动 solver. 不改 capacity.ts."
+    },
+    {
+      "stage": "K21-FIX-C-ROOM-CAPACITY-IMPLEMENTATION",
+      "reason": "K21-FIX-B plan 完成后, 实施 capacity 数据导入 / 编辑. 注意: 当前数据已真实, 主要工作是\"持续维护\"工具, 不是 \"修复\".",
+      "scope": "实现 admin capacity edit 完善 + CSV import 端点 + 历史数据导入脚本 (dry-run only). 加 schema 校验: 显式指定 capacity.",
+      "outOfScope": "不改 soft constraints. 不改 solver. 不动 historical data."
+    },
+    {
+      "stage": "K21-FIX-D-SOLVER-CONFIG-UI",
+      "reason": "D 类别 MEDIUM. SchedulingConfig model 存在但 solver 不读取, UI 不暴露 LAHC 参数. 用户无法调参优化不同学期排课.",
+      "scope": "实现: (1) solver 从 SchedulingConfig 读取 maxIterations / lahcWindowSize; (2) API 接受 optional configId, 缺省 fallback; (3) frontend 暴露 maxIterations / lahcWindowSize 输入框; (4) /api/admin/scheduler/configs CRUD 端点; (5) SchedulingConfig.lockedTaskIds 字段语义决策 (rename to lockedSlotIds 或 task-level lock 解析).",
+      "outOfScope": "不改 solver algorithm. 不改 score.ts. 不改现有 preview/apply/rollback 流程."
+    },
+    {
+      "stage": "K21-FIX-E-SCHEDULER-PREVIEW-APPLY-ROLLBACK-AUDIT",
+      "reason": "当前闭环完整, 不阻塞主线. polish 工作: 进度条, 多级 rollback, history \"复制为新 run\" 按钮.",
+      "scope": "实施: (1) apply/rollback 进度条; (2) 多级 rollback 链; (3) history UI 增强.",
+      "outOfScope": "不改现有 safety gate. 不改 solver. 不改 importer."
+    },
+    {
+      "stage": "K21-FIX-F-SOFT-CONSTRAINTS-EXPANSION",
+      "reason": "C 类别 LOW/MEDIUM. 当前 SC1-SC4 覆盖基础需求, 缺少教师工作日均衡, 班级空洞减少, 教室稳定性, 实训课匹配, 大班优先大教室.",
+      "scope": "实施: (1) SC5 教师工作日均衡; (2) SC6 班级空洞减少; (3) SC7 教室稳定性; (4) SC8 实训课匹配; (5) SC9 大班优先大教室; (6) 所有 SC weight 改为可配置.",
+      "outOfScope": "不改 HC. 不改 solver 主循环. 不改 preview/apply."
+    },
+    {
+      "stage": "K21-FIX-B-ROOM-TYPE-CONSTRAINT-AUDIT (deferred to K22+)",
+      "reason": "G 类别 MEDIUM. Room.type schema 存在但 solver 不使用. 实训课匹配实训室需求未满足.",
+      "scope": "只读 audit + 设计: (1) Course.requiredRoomType 字段; (2) Room.type enum 扩展; (3) solver room type 匹配. 实施推迟到 K22.",
+      "outOfScope": "K21 不实施, K22 路线."
+    }
+  ],
+  "suggestedNextStage": "K21-FIX-B-ROOM-CAPACITY-DATA-PLAN"
+}
