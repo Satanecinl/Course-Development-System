@@ -1,0 +1,525 @@
+/**
+ * K22-B Score Regression Harness Plan
+ *
+ * Read-only plan script. Designs regression harness for score.ts.
+ * Output:
+ *   - Terminal summary
+ *   - docs/k22-score-regression-harness-plan.json
+ *
+ * Strong constraints:
+ *   - NO Prisma writes.
+ *   - NO score.ts modifications.
+ *   - NO solver modifications.
+ *
+ * The plan covers 5 harnesses (A-E) and an SC1 targeted case.
+ */
+
+import * as fs from 'node:fs'
+import * as path from 'node:path'
+
+const projectRoot = path.resolve(__dirname, '..')
+
+function readFile(relPath: string): string {
+  try {
+    return fs.readFileSync(path.join(projectRoot, relPath), 'utf-8')
+  } catch {
+    return ''
+  }
+}
+
+// ── Plan Construction ──
+
+function buildCurrentScoreTestability() {
+  return {
+    fullScoreEntry: 'calculateScoreWithDetails(ctx, state) -> ScoreWithDetails { hardScore, softScore, details }',
+    deltaScoreEntry: 'calculateDeltaScore(ctx, state, move) -> { deltaHard, deltaSoft }',
+    scoreInterface: {
+      Score: '{ hardScore: number; softScore: number }',
+      ScoreDetail: '{ type, level, penalty, slotId?, relatedSlotId?, message }',
+      ScoreWithDetails: '{ hardScore, softScore, details: ScoreDetail[] }',
+    },
+    stateTypes: {
+      ScheduleState: '{ assignments: Map<slotId, pos>, originalAssignments: Map<slotId, pos> }',
+      Move: '{ slotId, newDay, newSlotIndex, newRoomId }',
+    },
+    canSynthesizeFixture: true,
+    canTestWithoutDB: true,
+    currentLimitations: [
+      'calculateScoreWithDetails / calculateDeltaScore require SchedulingContext (rooms, tasks, slots with relations)',
+      'SchedulingContext built by data-loader.ts (requires DB) — harness must mock or use test DB',
+      'synthetic fixture must mock ctx (rooms, tasks, slots) and state (assignments, originalAssignments)',
+      'solver.ts: buildInitialState(ctx) returns ScheduleState with assignments Map',
+      'score.ts uses ctx.slots, ctx.rooms, ctx.taskById, ctx.roomById, ctx.slotsByTask, hasWeekOverlap',
+      'RandomSeed: SolverConfig.randomSeed controls RNG; fixed seed enables reproducible runs',
+      'Locked slots: SolverConfig.lockedSlotIds (Set<number>) controls movability',
+      'No pure export of data-loader.ts; harness must mock SchedulingContext or use test DB',
+    ],
+  }
+}
+
+function buildHarnesses() {
+  return [
+    {
+      id: 'A',
+      name: 'Full / Delta Consistency',
+      purpose: 'Verify every constraint has matching full score and delta score coverage. Especially SC1 delta coverage.',
+      fixtureType: 'synthetic',
+      fixtureDescription:
+        'Mock SchedulingContext + ScheduleState with controlled room/teacher/class/building assignments. Include cases: (a) SC1 trigger: same teacher, consecutive slots, cross-building; (b) SC1 not triggered: same teacher, consecutive slots, same building; (c) no consecutive: SC1 not applicable.',
+      expectedAssertions: [
+        'For each constraint: full score coverage == delta score coverage (after K22-C SC1 fix)',
+        'SC1: full score has SC1 detail, delta score must have SC1 detail (currently missing — known failure)',
+        'For each pair of (full, delta) evaluations on same state: fullScore(state) + deltaScore(state, move) == fullScore(stateAfterMove)',
+        'Move that introduces SC1 trigger: full score delta == delta score delta (both = -5)',
+        'Move that resolves SC1: full score delta == delta score delta (both = +5)',
+      ],
+      testDataShape: 'Mock 3 slots: slot1, slot2, slot3. Same teacher. slot1-slot2 adjacent same day, slot2-slot3 adjacent same day. Rooms: building=A, building=B.',
+      knownFailures: ['SC1 delta missing (K22-A HIGH risk, K22-C target)'],
+    },
+    {
+      id: 'B',
+      name: 'Hard Invariant',
+      purpose: 'HC1-HC5 hard constraints must not regress; hardScore not overridden by softScore; hard conflict count not accepted as feasible.',
+      fixtureType: 'synthetic',
+      fixtureDescription:
+        'Minimal fixtures for each HC. Example: 2 slots same room same time same week overlap → expect HC1 hardScore += -1000. Asymmetric: one slot in valid room, one in small capacity room → expect HC4.',
+      expectedAssertions: [
+        'HC1 room conflict: hardScore == -1000, softScore == 0',
+        'HC2 teacher conflict: hardScore == -1000, softScore == 0',
+        'HC3 class conflict: hardScore == -1000, softScore == 0',
+        'HC4 capacity overflow: hardScore == -1000, softScore == 0',
+        'HC5 room unavailable: hardScore == -1000, softScore == 0',
+        'hardScore never decreases due to soft score improvement',
+        'solver: hardScore === 0 is required for Apply gate; verify hard conflict count via isPlacementHardCompatible',
+      ],
+      testDataShape: 'Per HC: 2 slots + minimal room/teacher/class config',
+    },
+    {
+      id: 'C',
+      name: 'Default Score Snapshot',
+      purpose:
+        'Default weights (HARD_PENALTY=-1000, SC1=-5, SC2=-10, SC3=-1, SC4=-5, MIN_PERT=-2) under controlled state produce stable score snapshot. Subsequent refactor must maintain default behavior.',
+      fixtureType: 'synthetic',
+      fixtureDescription:
+        'Mock context: 10 rooms (3 buildings, mixed capacity), 20 tasks, 30 slots. Assign known positions. Run calculateScoreWithDetails. Capture hardScore, softScore, and per-constraint breakdown.',
+      expectedAssertions: [
+        'hardScore matches snapshot value (within tolerance 0)',
+        'softScore matches snapshot value (within tolerance 0)',
+        'Per-constraint breakdown: count of HC1/HC2/HC3/HC4/HC5/SC1/SC2/SC3/SC4/MIN_PERT details',
+        'If K22-C SC1 fix changes default softScore, snapshot must be updated (allowed, but documented in PR)',
+      ],
+      testDataShape: 'See fixture description. Snapshot file: docs/snapshots/score-default-2026-06.json',
+      snapshotStability: 'Stable across score.ts changes only if penalties unchanged. After dynamic weights (K22-D), snapshot must be regenerated with test config.',
+    },
+    {
+      id: 'D',
+      name: 'Fixed Seed Solver Regression',
+      purpose:
+        'Fixed seed + fixed config: solver results reproducible. After SC1 fix, allow soft score improvement but hardScore must not worsen.',
+      fixtureType: 'synthetic (recommended) or test DB',
+      fixtureDescription:
+        'Synthetic: 30 slots, 20 tasks, 10 rooms, fixed seed=42, fixed maxIterations=1000. Call solve(ctx, config). Compare across runs.',
+      expectedAssertions: [
+        'hardScore >= 0 (must be feasible)',
+        'softScore >= baselineMin (must not regress)',
+        'iteration count within bounds (e.g. 800-1000)',
+        'metrics: attemptedMoves > 0, acceptedMoves > 0',
+        'Do NOT assert exact schedule (brittle under delta score changes)',
+      ],
+      recommendationRationale:
+        'Score bounds over exact schedule: exact schedule is brittle under delta score changes. LAHC acceptance path depends on delta scores; SC1 delta fix changes acceptance trajectory. Score bounds ensure correctness without brittleness.',
+    },
+    {
+      id: 'E',
+      name: 'K21 Config Regression',
+      purpose:
+        'K21-F/G configId + overrides + resultSnapshot.config + apply/rollback config snapshot reuse must not regress due to score harness changes.',
+      fixtureType: 'existing K21 verify scripts',
+      fixtureDescription:
+        'No new fixture. Re-run existing K21 verify scripts. score.ts changes must not affect K21 config flow.',
+      expectedAssertions: [
+        'verify-solver-config-api-k21-fix-f: 27 PASS / 0 FAIL',
+        'verify-solver-config-preview-k21-fix-f: 16 PASS / 0 FAIL',
+        'verify-solver-config-snapshot-k21-fix-f: 19 PASS / 0 FAIL',
+        'verify-solver-config-ui-k21-fix-g: 22 PASS / 0 FAIL',
+      ],
+      testDataShape: 'None. Run existing scripts as-is.',
+    },
+  ]
+}
+
+function buildSC1TargetedCase() {
+  return {
+    caseName: 'SC1 cross-building consecutive delta',
+    purpose: 'Verify SC1 delta score correctly reflects cross-building back-to-back penalty.',
+    beforeAssignments: {
+      slot1: { dayOfWeek: 1, slotIndex: 1, roomId: 100, roomBuilding: 'A' },
+      slot2: { dayOfWeek: 1, slotIndex: 2, roomId: 200, roomBuilding: 'A' },
+      slot3: { dayOfWeek: 1, slotIndex: 1, roomId: 300, roomBuilding: 'A' },
+    },
+    setup: {
+      rooms: [
+        { id: 100, name: 'A101', building: 'A' },
+        { id: 200, name: 'B201', building: 'B' },
+        { id: 300, name: 'A102', building: 'A' },
+      ],
+      tasks: [
+        { id: 1, teacherId: 10, courseId: 1, weekType: 'ALL', startWeek: 1, endWeek: 16, taskClasses: [{ classGroupId: 1 }] },
+      ],
+      slots: [
+        { id: 1, teachingTaskId: 1, dayOfWeek: 1, slotIndex: 1, roomId: 100, semesterId: 1, weekType: 'ALL' },
+        { id: 2, teachingTaskId: 1, dayOfWeek: 1, slotIndex: 2, roomId: 200, semesterId: 1, weekType: 'ALL' },
+      ],
+    },
+    before: {
+      softScore: 0, // No SC1 (slot1 in A, slot2 in B... wait, building different! SC1 should trigger)
+      // Note: With current code, slot1-slot2 consecutive, different buildings, same teacher → SC1 = -5
+      // But initial state has slot1.room=100(building A), slot2.room=200(building B), same teacher, consecutive.
+      // So initial softScore should be SC1 = -5
+      actualInitialSoftScore: -5,
+    },
+    move: {
+      slotId: 2,
+      newDay: 1,
+      newSlotIndex: 2,
+      newRoomId: 200, // Same room (no change) — keep SC1 triggered
+    },
+    after: {
+      softScore: -5, // No change
+    },
+    // For a meaningful SC1 delta test, use a move that resolves SC1:
+    sc1ResolutionMove: {
+      slotId: 2,
+      newDay: 1,
+      newSlotIndex: 2,
+      newRoomId: 100, // Move slot2 to building A (same as slot1) — should resolve SC1
+    },
+    afterSC1Resolution: {
+      softScore: 0, // SC1 resolved
+    },
+    expectedFullSoftDelta: {
+      move: 0, // No change since room didn't change
+      sc1Resolution: 5, // +5 (resolved -5)
+    },
+    expectedCurrentDeltaBeforeFix: {
+      move: 0,
+      sc1Resolution: 0, // BUG: delta ignores SC1, so it doesn't see the +5
+    },
+    expectedDeltaAfterFix: {
+      move: 0,
+      sc1Resolution: 5, // After K22-C fix, delta correctly reflects +5
+    },
+    whyCapturesK22AHIGH:
+      'Currently delta score returns 0 for sc1Resolution, but full score returns +5. Harness A detects this mismatch. K22-C SC1 fix should make delta return +5.',
+  }
+}
+
+function buildHardInvariantPlan() {
+  return {
+    HC1: {
+      fixture: '2 slots, same room, same time, same week',
+      beforeAssignments: { slot1: { roomId: 100 }, slot2: { roomId: 100 } },
+      expectedHardScore: -1000,
+      expectedSoftScore: 0,
+    },
+    HC2: {
+      fixture: '2 slots, same teacher, same time, different room, same week',
+      beforeAssignments: { slot1: { teacherId: 10, roomId: 100 }, slot2: { teacherId: 10, roomId: 200 } },
+      expectedHardScore: -1000,
+      expectedSoftScore: 0,
+    },
+    HC3: {
+      fixture: '2 slots, same classGroup, same time, different teacher, different room, same week',
+      beforeAssignments: { slot1: { taskClasses: [{ classGroupId: 1 }] }, slot2: { taskClasses: [{ classGroupId: 1 }] } },
+      expectedHardScore: -1000,
+      expectedSoftScore: 0,
+    },
+    HC4: {
+      fixture: '1 slot, studentCount=60, room.capacity=50',
+      beforeAssignments: { slot1: { roomId: 100, roomCapacity: 50 }, studentCount: 60 },
+      expectedHardScore: -1000,
+      expectedSoftScore: 0,
+    },
+    HC5: {
+      fixture: '1 slot, room has RoomAvailability(dayOfWeek, slotIndex, available=false)',
+      beforeAssignments: { slot1: { roomId: 100, dayOfWeek: 1, slotIndex: 1 } },
+      availability: { dayOfWeek: 1, slotIndex: 1, available: false },
+      expectedHardScore: -1000,
+      expectedSoftScore: 0,
+    },
+  }
+}
+
+function buildDefaultSnapshotPlan() {
+  return {
+    fixture: {
+      rooms: 10,
+      tasks: 20,
+      slots: 30,
+      buildings: ['A', 'B', 'C'],
+      seed: 'deterministic (synthetic)',
+    },
+    expectedHardScore: 'snapshot — actual value captured at K22-C implementation',
+    expectedSoftScore: 'snapshot — actual value captured at K22-C implementation',
+    expectedBreakdown: 'Per-constraint count: HC1, HC2, HC3, HC4, HC5, SC1, SC2, SC3, SC4, MIN_PERT',
+    snapshotStability:
+      'Stable if penalties unchanged. After K22-C SC1 fix, soft score breakdown changes (more SC1 details). After K22-D dynamic weights, snapshot regenerated with test config.',
+    defaultBehaviorGuarantee:
+      'Before any K22 change, capture baseline snapshot. K22-C SC1 fix: soft score may improve, hard score unchanged. K22-D dynamic weights: snapshot regenerated.',
+  }
+}
+
+function buildFixedSeedPlan() {
+  return {
+    approach: 'synthetic (recommended) — not real DB',
+    syntheticDataset: '30 slots, 20 tasks, 10 rooms, mixed buildings',
+    seed: 42,
+    maxIterations: 1000,
+    lahcWindowSize: 500,
+    expectedAssertions: [
+      'hardScore >= 0 (must be feasible)',
+      'softScore >= baselineMin',
+      'iteration count within bounds',
+      'metrics.attemptedMoves > 0, metrics.acceptedMoves > 0',
+    ],
+    whyNotExactSchedule:
+      'Exact schedule is brittle under delta score changes. LAHC acceptance path depends on delta scores; SC1 delta fix changes acceptance trajectory. Score bounds ensure correctness without brittleness.',
+    whyNotRealDB:
+      'Real DB has 440+ slots, 53 rooms, 308 tasks. Test would be slow and coupling-heavy. Synthetic is deterministic, fast, focused on solver convergence behavior.',
+  }
+}
+
+function buildK21RegressionPlan() {
+  return {
+    configId: 'K21-F configId loading + resultSnapshot.config (verify by API + preview + snapshot scripts)',
+    overrides: 'K21-G preview body uses overrides (verify by UI verify script)',
+    resultSnapshotConfig: 'K21-F writes resultSnapshot.config sub-object (verify by snapshot verify script)',
+    applyRollback: 'K21-F apply/rollback reuse previewRun.configId + resultSnapshot.config (verify by snapshot verify script)',
+    requiredVerifyScripts: [
+      'verify-solver-config-api-k21-fix-f.ts',
+      'verify-solver-config-preview-k21-fix-f.ts',
+      'verify-solver-config-snapshot-k21-fix-f.ts',
+      'verify-solver-config-ui-k21-fix-g.ts',
+    ],
+    noNewIntegrationCheckNeeded: 'Existing verify scripts cover config flow end-to-end. No new integration needed.',
+  }
+}
+
+function buildDecisions() {
+  return [
+    {
+      id: 'D-1',
+      decision: 'Harness A (Full/Delta) is the safety net for SC1 delta fix.',
+      options: [
+        'No harness, manual review only',
+        'Harness A with SC1 targeted failing case first (red)',
+        'Full regression suite before any fix',
+      ],
+      recommendation: 'Harness A with SC1 targeted failing case first (red)',
+      rationale: 'SC1 delta missing is HIGH risk. Test-first ensures fix is correct and immediately verified. Harness A is the safety net for score.ts changes.',
+      implementationStage: 'K22-C-SCORE-REGRESSION-HARNESS-IMPLEMENTATION',
+    },
+    {
+      id: 'D-2',
+      decision: 'SC1 delta fix must be developed under Harness A protection (test-first).',
+      options: [
+        'Fix SC1 delta first, then add tests',
+        'Add Harness A test for SC1 delta first (red), then implement fix (green)',
+        'Add full regression suite first, then fix SC1',
+      ],
+      recommendation: 'Add Harness A SC1 test first (red), then implement fix (green)',
+      rationale: 'SC1 delta missing is HIGH risk. Test-first ensures fix is correct and immediately verified. Harness A is the safety net for score.ts changes.',
+      implementationStage: 'K22-C-SCORE-REGRESSION-HARNESS-IMPLEMENTATION',
+    },
+    {
+      id: 'D-3',
+      decision: 'Harness D (Fixed Seed Solver) uses score bounds, not exact schedule.',
+      options: [
+        'Assert exact schedule equality with fixed seed',
+        'Assert hardScore >= 0 and softScore >= baseline (score bounds)',
+        'Assert score trajectory matches (acceptance sequence)',
+      ],
+      recommendation: 'Assert score bounds (hardScore >= 0, softScore >= baselineMin)',
+      rationale: 'Exact schedule is brittle under delta score changes. LAHC acceptance path depends on delta scores; SC1 delta fix changes acceptance trajectory. Score bounds ensure correctness without brittleness.',
+      implementationStage: 'K22-C-SCORE-REGRESSION-HARNESS-IMPLEMENTATION',
+    },
+    {
+      id: 'D-4',
+      decision: 'SC1 delta fix implementation should be minimal and isolated.',
+      options: [
+        'Full score.ts refactor with dynamic weights + SC1 delta',
+        'Minimal SC1 delta addition to calculateDeltaScore only',
+        'SC1 delta + SC4 delta consistency refactor (since both use building)',
+      ],
+      recommendation: 'Minimal SC1 delta addition to calculateDeltaScore only',
+      rationale: 'Scope creep risk. SC1 delta fix is targeted HIGH risk. Keep changes minimal, behind Harness A. Dynamic weights and SC4 refactor are separate K22-C+ stages.',
+      implementationStage: 'K22-C-SCORE-REGRESSION-HARNESS-IMPLEMENTATION',
+    },
+    {
+      id: 'D-5',
+      decision: 'Harness C (Default Snapshot) uses synthetic fixture, not real DB run.',
+      options: [
+        'Run solver on real DB with seed=42, capture output',
+        'Synthetic fixture: mock context, call calculateScoreWithDetails directly, no solver',
+      ],
+      recommendation: 'Synthetic fixture, calculateScoreWithDetails only (no solver)',
+      rationale: 'Snapshot is about score function behavior, not solver behavior. Mock context + calculateScoreWithDetails is deterministic, fast, no DB, no randomness. Solver introduces randomness even with fixed seed.',
+      implementationStage: 'K22-C-SCORE-REGRESSION-HARNESS-IMPLEMENTATION',
+    },
+  ]
+}
+
+function buildRisks() {
+  return [
+    {
+      id: 'R-1',
+      severity: 'HIGH',
+      title: 'SC1 delta fix may introduce bugs in delta score calculation',
+      reason: 'SC1 delta requires checking teacher/class dimension + cross-building for both old and new positions, plus interactions with other SCs. Complex logic prone to bugs.',
+      mitigation:
+        'Harness A test-first: write failing test for SC1 introduce/resolve scenarios before implementing fix. Review SC1 full score logic (lines 205-246) carefully and mirror in delta.',
+    },
+    {
+      id: 'R-2',
+      severity: 'MEDIUM',
+      title: 'SC1 delta fix may change solver convergence behavior',
+      reason: 'SC1 delta currently missing means solver ignores cross-building penalty. Adding it changes move acceptance, potentially reducing iterations to feasible solution or changing final schedule.',
+      mitigation:
+        'Harness D (score bounds): assert hardScore >= 0, softScore >= baseline. Do not assert exact schedule. Monitor iteration count and final score quality.',
+    },
+    {
+      id: 'R-3',
+      severity: 'LOW',
+      title: 'Synthetic fixtures may not cover all real-world edge cases',
+      reason: 'Real DB has complex merged classes, multi-teacher tasks, weird building names, null fields, etc. Synthetic fixtures may miss these.',
+      mitigation:
+        'After harness passes, run solver on real dev.db with fixed seed as smoke test. Document known synthetic limitations.',
+    },
+    {
+      id: 'R-4',
+      severity: 'MEDIUM',
+      title: 'Penalty constants still hardcoded — harness may lock in hardcoded values',
+      reason: 'Harness uses current hardcoded penalties (-1000, -5, -10, -1, -5, -2). Future dynamic weights will change these. Harness must be adaptable.',
+      mitigation:
+        'Harness should import penalty constants from score.ts, not duplicate values. If score.ts refactor moves to config-based weights, update harness to load from test config.',
+    },
+    {
+      id: 'R-5',
+      severity: 'INFO',
+      title: 'Missing 7 soft constraints not addressed by harness',
+      reason: 'K22-A identified 7 missing soft constraints. Harness does not cover them yet.',
+      mitigation:
+        'Harness A/C are extensible. Add new constraint cases when implemented in K22-C+. Document as future work in K22-B plan.',
+    },
+  ]
+}
+
+function buildImplementationPlan() {
+  return [
+    '1. K22-C-SCORE-REGRESSION-HARNESS-IMPLEMENTATION: Build harness scripts (A-E) as test files using vitest/Jest. Synthetic fixture builders for SchedulingContext + ScheduleState.',
+    '2. K22-C: Implement Harness A (Full/Delta) with SC1 targeted failing test (red). Run to confirm failure.',
+    '3. K22-C: Implement SC1 delta fix in score.ts (minimal addition to calculateDeltaScore). Run Harness A: test passes (green).',
+    '3b. K22-C: Verify Harness B (Hard Invariant) still passes. No HC regression.',
+    '3c. K22-C: Run Harness C (Default Snapshot). Update snapshot if soft score changes (expected: SC1 case now reflected in delta).',
+    '3d. K22-C: Run Harness D (Fixed Seed Solver). Verify hardScore >= 0, softScore >= baseline. No exact schedule assertion.',
+    '3e. K22-C: Run K21 regression verify scripts (E). All pass.',
+    '4. K22-C: Run full K21/K20/K19 regression chain. All PASS.',
+    '5. K22-C: Update K22-A audit (SC1 delta now covered). Re-run audit: HIGH=1 (weights only).',
+    '6. K22-D: Weight configuration (hardWeights/softWeights) — separate stage with harness protection.',
+    '7. K22-E: Missing soft constraints (7 items) — prioritize and implement under harness protection.',
+  ]
+}
+
+// ── Main ──
+
+function main() {
+  console.log('K22-B Score Regression Harness Plan')
+  console.log('===================================\n')
+
+  // Sanity check: verify score.ts has expected functions
+  const scoreSrc = readFile('src/lib/scheduler/score.ts')
+  const hasFullScore = /export function calculateScoreWithDetails/.test(scoreSrc)
+  const hasDeltaScore = /export function calculateDeltaScore/.test(scoreSrc)
+  const hasInitScore = /export function calculateInitialScore/.test(scoreSrc)
+  const hasHardPenalty = /const HARD_PENALTY\s*=\s*-?\d+/.test(scoreSrc)
+  const hasSC1Full = /SOFT_SC1_CROSS_BUILDING/.test(scoreSrc)
+  // Better detection: look for SC1 specifically in calculateDeltaScore function body
+  const deltaFnMatch = scoreSrc.match(/export function calculateDeltaScore[\s\S]*?\n\}\s*\n/)
+  const deltaFnBody = deltaFnMatch ? deltaFnMatch[0] : ''
+  const sc1DeltaMissing = !/SC1_CROSS_BUILDING/.test(deltaFnBody) || !/SOFT_SC1_CROSS_BUILDING/.test(deltaFnBody)
+
+  if (!hasFullScore || !hasDeltaScore || !hasInitScore || !hasHardPenalty || !hasSC1Full) {
+    console.error('FAIL: score.ts does not have expected functions/constants')
+    process.exit(1)
+  }
+  if (!sc1DeltaMissing) {
+    console.warn('WARN: SC1 delta appears to be present in score.ts. K22-A HIGH risk may have been fixed.')
+  }
+
+  const currentScoreTestability = buildCurrentScoreTestability()
+  const harnesses = buildHarnesses()
+  const sc1TargetedCase = buildSC1TargetedCase()
+  const hardInvariantPlan = buildHardInvariantPlan()
+  const defaultSnapshotPlan = buildDefaultSnapshotPlan()
+  const fixedSeedPlan = buildFixedSeedPlan()
+  const k21RegressionPlan = buildK21RegressionPlan()
+  const decisions = buildDecisions()
+  const risks = buildRisks()
+  const implementationPlan = buildImplementationPlan()
+
+  const report = {
+    generatedAt: new Date().toISOString(),
+    phase: 'K22-B-SCORE-REGRESSION-HARNESS-PLAN',
+    mode: 'read-only plan',
+    summary: {
+      totalDecisions: decisions.length,
+      totalRisks: risks.length,
+      harnessCount: harnesses.length,
+      highRisks: risks.filter(r => r.severity === 'HIGH').length,
+      sc1DeltaMissingConfirmed: sc1DeltaMissing,
+    },
+    currentScoreTestability,
+    harnesses,
+    sc1TargetedCase,
+    hardInvariantPlan,
+    defaultSnapshotPlan,
+    fixedSeedPlan,
+    k21RegressionPlan,
+    decisions,
+    risks,
+    implementationPlan,
+    suggestedNextStage: 'K22-C-SCORE-REGRESSION-HARNESS-IMPLEMENTATION',
+  }
+
+  // Write JSON
+  const outDir = path.join(projectRoot, 'docs')
+  if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true })
+  const outPath = path.join(outDir, 'k22-score-regression-harness-plan.json')
+  fs.writeFileSync(outPath, JSON.stringify(report, null, 2), 'utf8')
+
+  // Terminal output
+  console.log('Summary:')
+  console.log(`DECISIONS: ${decisions.length}`)
+  console.log(`RISKS: ${risks.length} (HIGH=${risks.filter(r => r.severity === 'HIGH').length}, MEDIUM=${risks.filter(r => r.severity === 'MEDIUM').length}, LOW=${risks.filter(r => r.severity === 'LOW').length}, INFO=${risks.filter(r => r.severity === 'INFO').length})`)
+  console.log(`HARNESS_COUNT: ${harnesses.length}`)
+  console.log(`SC1_TARGETED_CASE: ${sc1TargetedCase.caseName}`)
+  console.log('')
+
+  console.log('Decisions:')
+  for (const d of decisions) {
+    console.log(`  ${d.id}: ${d.decision}`)
+  }
+  console.log('')
+
+  console.log('Risks:')
+  for (const r of risks) {
+    console.log(`  ${r.id} [${r.severity}]: ${r.title}`)
+  }
+  console.log('')
+
+  console.log(`Recommended next stage: ${report.suggestedNextStage}`)
+  console.log('')
+  console.log(`Report written: docs/k22-score-regression-harness-plan.json`)
+}
+
+main()
