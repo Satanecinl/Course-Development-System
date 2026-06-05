@@ -1,0 +1,258 @@
+{
+  "generatedAt": "2026-06-05T09:04:50.367Z",
+  "phase": "K21-FIX-F-SOLVER-CONFIG-API-IMPLEMENTATION",
+  "verificationType": "api-static-checks",
+  "total": 27,
+  "pass": 27,
+  "fail": 0,
+  "results": [
+    {
+      "id": "API-LIST-ROUTE-EXISTS",
+      "category": "CRUD API",
+      "title": "GET / POST route file exists at configs/route.ts",
+      "passed": true,
+      "evidence": [
+        "src/app/api/admin/scheduler/configs/route.ts"
+      ]
+    },
+    {
+      "id": "API-ID-ROUTE-EXISTS",
+      "category": "CRUD API",
+      "title": "GET / PUT / DELETE route file exists at configs/[id]/route.ts",
+      "passed": true,
+      "evidence": [
+        "src/app/api/admin/scheduler/configs/[id]/route.ts"
+      ]
+    },
+    {
+      "id": "API-LIST-PERMISSION",
+      "category": "CRUD API",
+      "title": "configs/route.ts uses schedule:adjust",
+      "passed": true,
+      "evidence": [
+        "'schedule:adjust'"
+      ]
+    },
+    {
+      "id": "API-ID-PERMISSION",
+      "category": "CRUD API",
+      "title": "configs/[id]/route.ts uses schedule:adjust",
+      "passed": true,
+      "evidence": [
+        "'schedule:adjust'"
+      ]
+    },
+    {
+      "id": "API-LIST-EXPORTS",
+      "category": "CRUD API",
+      "title": "configs/route.ts exports GET and POST",
+      "passed": true,
+      "evidence": [
+        "GET export: true",
+        "POST export: true"
+      ]
+    },
+    {
+      "id": "API-ID-EXPORTS",
+      "category": "CRUD API",
+      "title": "configs/[id]/route.ts exports GET, PUT, DELETE",
+      "passed": true,
+      "evidence": [
+        "GET export: true",
+        "PUT export: true",
+        "DELETE export: true"
+      ]
+    },
+    {
+      "id": "API-DELETE-CONFIG-IN-USE",
+      "category": "CRUD API",
+      "title": "DELETE checks SchedulingRun.configId references",
+      "passed": true,
+      "evidence": [
+        "DELETE scans SchedulingRun.configId",
+        "Returns 409 CONFIG_IN_USE"
+      ]
+    },
+    {
+      "id": "API-VALIDATION-NAME",
+      "category": "Validation",
+      "title": "name validation (1-100 chars, INVALID_NAME)",
+      "passed": true,
+      "evidence": [
+        "name length 1-100 enforced"
+      ]
+    },
+    {
+      "id": "API-VALIDATION-MAX-ITER",
+      "category": "Validation",
+      "title": "maxIterations validation (100-15000, INVALID_MAX_ITERATIONS)",
+      "passed": true,
+      "evidence": [
+        "maxIterations 100-15000 enforced"
+      ]
+    },
+    {
+      "id": "API-VALIDATION-LAHC",
+      "category": "Validation",
+      "title": "lahcWindowSize validation (50-2000, INVALID_LAHC_WINDOW_SIZE)",
+      "passed": true,
+      "evidence": [
+        "lahcWindowSize 50-2000 enforced"
+      ]
+    },
+    {
+      "id": "API-VALIDATION-SEED",
+      "category": "Validation",
+      "title": "randomSeed validation (0-2^31-1, INVALID_RANDOM_SEED)",
+      "passed": true,
+      "evidence": [
+        "randomSeed range enforced"
+      ]
+    },
+    {
+      "id": "API-VALIDATION-SEMESTER",
+      "category": "Validation",
+      "title": "semesterId existence check (SEMESTER_NOT_FOUND)",
+      "passed": true,
+      "evidence": [
+        "semesterId existence check enforced"
+      ]
+    },
+    {
+      "id": "HELPER-MODULE-EXISTS",
+      "category": "Helper",
+      "title": "src/lib/scheduler/config.ts exists",
+      "passed": true,
+      "evidence": [
+        "src/lib/scheduler/config.ts"
+      ]
+    },
+    {
+      "id": "HELPER-VALIDATE-CONFIG",
+      "category": "Helper",
+      "title": "helper exports validateConfigPayload",
+      "passed": true,
+      "evidence": [
+        "validateConfigPayload exported"
+      ]
+    },
+    {
+      "id": "HELPER-PARSE-LOCKED",
+      "category": "Helper",
+      "title": "helper exports parseLockedSlotIdsJson",
+      "passed": true,
+      "evidence": [
+        "parseLockedSlotIdsJson exported"
+      ]
+    },
+    {
+      "id": "HELPER-SERIALIZE-LOCKED",
+      "category": "Helper",
+      "title": "helper exports serializeLockedSlotIds",
+      "passed": true,
+      "evidence": [
+        "serializeLockedSlotIds exported"
+      ]
+    },
+    {
+      "id": "HELPER-RESOLVE",
+      "category": "Helper",
+      "title": "helper exports resolveConfigForPreview",
+      "passed": true,
+      "evidence": [
+        "resolveConfigForPreview exported"
+      ]
+    },
+    {
+      "id": "HELPER-SNAPSHOT",
+      "category": "Helper",
+      "title": "helper exports serializeConfigForSnapshot",
+      "passed": true,
+      "evidence": [
+        "serializeConfigForSnapshot exported"
+      ]
+    },
+    {
+      "id": "HELPER-NOT-FOUND-ERROR",
+      "category": "Helper",
+      "title": "helper exports SchedulingConfigNotFoundError",
+      "passed": true,
+      "evidence": [
+        "error class exported"
+      ]
+    },
+    {
+      "id": "HELPER-SEMESTER-MISMATCH-ERROR",
+      "category": "Helper",
+      "title": "helper exports SemesterMismatchError",
+      "passed": true,
+      "evidence": [
+        "error class exported"
+      ]
+    },
+    {
+      "id": "NO-NEW-PERMISSION-KEY",
+      "category": "Constraints",
+      "title": "No new permission key introduced (reuses schedule:adjust)",
+      "passed": true,
+      "evidence": [
+        "No new permission key detected"
+      ]
+    },
+    {
+      "id": "ROUTE-PERMISSION-CONSTRAINT",
+      "category": "Constraints",
+      "title": "Both routes call requirePermission only with schedule:adjust",
+      "passed": true,
+      "evidence": [
+        "configs/route.ts permission: schedule:adjust only",
+        "configs/[id]/route.ts permission: schedule:adjust only"
+      ]
+    },
+    {
+      "id": "MIGRATION-FILE-EXISTS",
+      "category": "Schema",
+      "title": "migration.sql exists for add_solver_config_api_fields",
+      "passed": true,
+      "evidence": [
+        "prisma/migrations/20260605000000_add_solver_config_api_fields/migration.sql"
+      ]
+    },
+    {
+      "id": "SCHEMA-FIELD-RANDOM-SEED",
+      "category": "Schema",
+      "title": "SchedulingConfig has randomSeed Int?",
+      "passed": true,
+      "evidence": [
+        "randomSeed Int? present"
+      ]
+    },
+    {
+      "id": "SCHEMA-FIELD-SOLVER-VERSION",
+      "category": "Schema",
+      "title": "SchedulingConfig has solverVersion String?",
+      "passed": true,
+      "evidence": [
+        "solverVersion String? present"
+      ]
+    },
+    {
+      "id": "SCHEMA-FIELD-LOCKED-SLOT-IDS",
+      "category": "Schema",
+      "title": "SchedulingConfig has lockedSlotIds String?",
+      "passed": true,
+      "evidence": [
+        "lockedSlotIds String? present"
+      ]
+    },
+    {
+      "id": "SCHEMA-FIELD-UPDATED-AT",
+      "category": "Schema",
+      "title": "SchedulingConfig has updatedAt DateTime @updatedAt",
+      "passed": true,
+      "evidence": [
+        "updatedAt auto-managed present"
+      ]
+    }
+  ]
+}

@@ -207,6 +207,7 @@ export async function applySchedulerPreview(
   }
 
   // 4. Parse proposed changes from resultSnapshot
+  // K21-FIX-F: extract config sub-object (resolved config snapshot from preview)
   let snapshot: {
     proposedChanges?: PreviewProposedChange[]
     scoreBefore?: { hardScore: number; softScore: number }
@@ -215,6 +216,17 @@ export async function applySchedulerPreview(
     hcAfter?: { hc1: number; hc2: number; hc3: number; hc4: number }
     blockReasons?: string[]
     solverMetrics?: unknown
+    config?: {
+      configId: number | null
+      name: string | null
+      maxIterations: number
+      lahcWindowSize: number
+      randomSeed: number | null
+      lockedSlotIds: number[]
+      solverVersion: string
+      source: 'CONFIG' | 'INLINE' | 'DEFAULT' | 'MIXED'
+      snapshotTakenAt: string
+    }
   }
   try {
     snapshot = JSON.parse(previewRun.resultSnapshot)
@@ -402,11 +414,15 @@ export async function applySchedulerPreview(
         hc3After: postHc.hc3,
         hc4After: postHc.hc4,
         databaseFingerprint: postFingerprint,
+        // K21-FIX-F: carry the preview's resolved config snapshot forward
+        // so apply/rollback chains are reproducible from any one of the runs.
         resultSnapshot: JSON.stringify({
           postScore,
           postHc,
           proposedChangesApplied: proposedChanges.length,
           previewRunId: previewRun.id,
+          // Carry the config snapshot from the preview run
+          ...(snapshot.config ? { config: snapshot.config } : {}),
         }),
         conflictSummary: JSON.stringify({
           HC1: postHc.hc1,

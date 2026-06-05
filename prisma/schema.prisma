@@ -176,9 +176,15 @@ model SchedulingConfig {
   semester       Semester?       @relation(fields: [semesterId], references: [id])
   maxIterations  Int             @default(10000)
   lahcWindowSize Int             @default(500)
-  lockedTaskIds  String          @default("[]")
+  randomSeed     Int? // K21-FIX-F: optional seed for reproducibility; null → server generates per-run
+  solverVersion  String? // K21-FIX-F: solver version string; null → runtime version applied
+  // ── K21-FIX-F: lockedSlotIds is the runtime/UI field, lockedTaskIds is deprecated (legacy task-id bag, not slot-id) ──
+  lockedSlotIds  String? // K21-FIX-F: JSON array of ScheduleSlot.id; null/[] → no locks
+  lockedTaskIds  String          @default("[]") // @deprecated: legacy field, prefer lockedSlotIds
   createdAt      DateTime        @default(now())
-  runs           SchedulingRun[]
+  updatedAt      DateTime        @default(now()) @updatedAt // K21-FIX-F: track config mutations
+
+  runs SchedulingRun[]
 
   @@index([semesterId])
 }

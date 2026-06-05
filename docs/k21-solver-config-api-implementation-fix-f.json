@@ -1,0 +1,212 @@
+{
+  "generatedAt": "2026-06-05T09:05:00.000Z",
+  "phase": "K21-FIX-F-SOLVER-CONFIG-API-IMPLEMENTATION",
+  "mode": "implementation",
+  "type": "solver-config-api-backend-delivery",
+  "predecessor": {
+    "phase": "K21-FIX-E-SOLVER-CONFIG-API-PLAN",
+    "commit": "9dcf617"
+  },
+  "schemaChanges": {
+    "fieldsAdded": [
+      {
+        "fieldName": "randomSeed",
+        "type": "Int?",
+        "nullable": true,
+        "defaultValue": null,
+        "purpose": "Optional per-config seed for reproducibility"
+      },
+      {
+        "fieldName": "solverVersion",
+        "type": "String?",
+        "nullable": true,
+        "defaultValue": null,
+        "purpose": "Solver version tag (e.g. lahc-hard-first-v3)"
+      },
+      {
+        "fieldName": "lockedSlotIds",
+        "type": "String?",
+        "nullable": true,
+        "defaultValue": null,
+        "purpose": "JSON array of ScheduleSlot.id; runtime/UI primary field"
+      },
+      {
+        "fieldName": "updatedAt",
+        "type": "DateTime @default(now()) @updatedAt",
+        "nullable": false,
+        "defaultValue": "now() + auto-update",
+        "purpose": "Prisma standard mutation tracking"
+      }
+    ],
+    "fieldsRetained": [
+      {
+        "fieldName": "lockedTaskIds",
+        "type": "String @default(\\\"[]\\\")",
+        "status": "@deprecated (legacy task-id bag, not slot-id)"
+      }
+    ],
+    "migrationRisk": "low (all 4 fields nullable; updatedAt has default now())",
+    "backfillRequired": false
+  },
+  "migration": {
+    "backupPath": "prisma/dev.db.backup-before-k21-solver-config-api-20260605",
+    "backupTimestamp": "2026-06-05 16:49 local",
+    "migrationFiles": [
+      "prisma/migrations/20260605000000_add_solver_config_api_fields/migration.sql"
+    ],
+    "migrationCommand": "npx prisma db push (additive) + manual SQL file for history",
+    "submittedPrismaDevDb": false,
+    "submittedBackup": false
+  },
+  "apiEndpoints": [
+    {
+      "method": "GET",
+      "path": "/api/admin/scheduler/configs",
+      "permission": "schedule:adjust",
+      "description": "List all SchedulingConfig; supports ?semesterId= filter"
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/scheduler/configs",
+      "permission": "schedule:adjust",
+      "description": "Create new SchedulingConfig; name required, others optional"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/scheduler/configs/[id]",
+      "permission": "schedule:adjust",
+      "description": "Fetch one SchedulingConfig by id"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/admin/scheduler/configs/[id]",
+      "permission": "schedule:adjust",
+      "description": "Partial update; all fields optional"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/admin/scheduler/configs/[id]",
+      "permission": "schedule:adjust",
+      "description": "Delete config; 409 CONFIG_IN_USE if referenced by any SchedulingRun"
+    }
+  ],
+  "previewConfigFlow": {
+    "requestShape": {
+      "legacyTopLevel": [
+        "maxIterations?: number",
+        "lahcWindowSize?: number",
+        "randomSeed?: number",
+        "lockedSlotIds?: number[]"
+      ],
+      "newFields": [
+        "semesterId?: number",
+        "configId?: number",
+        "overrides?: { maxIterations?, lahcWindowSize?, randomSeed?, lockedSlotIds? }"
+      ]
+    },
+    "priorityRule": "overrides.{field} > configId 加载的 config.{field} > legacy top-level > server default",
+    "sourceLabels": ["CONFIG", "INLINE", "DEFAULT", "MIXED"],
+    "errorHandling": {
+      "SCHEDULING_CONFIG_NOT_FOUND": "404",
+      "SEMESTER_MISMATCH": "400",
+      "INVALID_OVERRIDE": "400"
+    },
+    "resultSnapshotConfigShape": {
+      "configId": "number | null",
+      "name": "string | null",
+      "maxIterations": "number",
+      "lahcWindowSize": "number",
+      "randomSeed": "number | null",
+      "lockedSlotIds": "number[]",
+      "solverVersion": "string",
+      "source": "CONFIG | INLINE | DEFAULT | MIXED",
+      "snapshotTakenAt": "string (ISO)"
+    }
+  },
+  "applyRollbackConfigFlow": {
+    "apply": {
+      "inputParams": ["previewRunId", "confirmApply"],
+      "reusesPreviewConfigId": true,
+      "writesResultSnapshotConfig": true,
+      "recomputesConfig": false
+    },
+    "rollback": {
+      "inputParams": ["applyRunId", "confirmRollback"],
+      "reusesApplyConfigId": true,
+      "writesResultSnapshotConfig": true,
+      "recomputesConfig": false
+    },
+    "reproducibility": "Any run (PREVIEW/APPLY/ROLLBACK) has full resolved config in resultSnapshot.config"
+  },
+  "lockedIdsCompatibility": {
+    "selectedOption": "Option 2: 新增 lockedSlotIds, 旧 lockedTaskIds 保留 deprecated",
+    "runtimePrimary": "lockedSlotIds",
+    "taskLevelLockDeferred": "K22",
+    "resolveLogic": "resolveLockedSlotIdsFromConfig: prefer lockedSlotIds, fallback to lockedTaskIds (parse as slot IDs; task-level expansion not in scope)"
+  },
+  "deferredItems": {
+    "hardWeights": "K22+ (K21-FIX-I-SCORE-WEIGHTS-ROADMAP)",
+    "softWeights": "K22+ (K21-FIX-I-SCORE-WEIGHTS-ROADMAP)",
+    "configSnapshotField": "Not implemented; resultSnapshot.config covers the use case",
+    "taskLevelLock": "K22 (K21-FIX-E-LOCKED-SLOT-NAMING-AUDIT)",
+    "frontendUI": "K21-FIX-G-SOLVER-CONFIG-UI"
+  },
+  "verification": {
+    "api": {
+      "script": "scripts/verify-solver-config-api-k21-fix-f.ts",
+      "pass": 27,
+      "fail": 0
+    },
+    "preview": {
+      "script": "scripts/verify-solver-config-preview-k21-fix-f.ts",
+      "pass": 16,
+      "fail": 0
+    },
+    "snapshot": {
+      "script": "scripts/verify-solver-config-snapshot-k21-fix-f.ts",
+      "pass": 19,
+      "fail": 0
+    },
+    "aggregated": {
+      "total": 62,
+      "pass": 62,
+      "fail": 0
+    }
+  },
+  "unmodifiedScope": [
+    "Frontend UI / components",
+    "score.ts weights",
+    "solver algorithm (LAHC)",
+    "importer / parser",
+    "RBAC / permissions (reuses schedule:adjust, no new key)",
+    "requirePermission semantics",
+    "seed-auth",
+    "Historical repair scripts (K18/K19/K20)",
+    "Business data (other than schema auto-additive fields)"
+  ],
+  "remainingRisks": [
+    { "id": "R-1", "severity": "LOW", "title": "Old client reads new resultSnapshot.config as unknown field — ignored, no crash" },
+    { "id": "R-2", "severity": "LOW", "title": "Manual migration SQL may differ from Prisma-generated format" },
+    { "id": "R-3", "severity": "INFO", "title": "Apply reuses preview-time configId; config edits require new preview" },
+    { "id": "R-4", "severity": "INFO", "title": "Task-level lock deferred to K22" },
+    { "id": "R-5", "severity": "INFO", "title": "hard/soft weights deferred to K22" }
+  ],
+  "riskSeverity": { "HIGH": 0, "MEDIUM": 0, "LOW": 2, "INFO": 3 },
+  "implementationSteps": [
+    { "step": 1, "title": "DB backup", "inScope": true, "status": "completed" },
+    { "step": 2, "title": "Schema migration (4 additive fields)", "inScope": true, "status": "completed" },
+    { "step": 3, "title": "Config CRUD API (5 endpoints)", "inScope": true, "status": "completed" },
+    { "step": 4, "title": "Preview API configId + overrides", "inScope": true, "status": "completed" },
+    { "step": 5, "title": "resultSnapshot.config sub-object", "inScope": true, "status": "completed" },
+    { "step": 6, "title": "Apply/rollback reuse config snapshot", "inScope": true, "status": "completed" },
+    { "step": 7, "title": "Verification scripts (api/preview/snapshot)", "inScope": true, "status": "completed" },
+    { "step": 8, "title": "Documentation (MD + JSON)", "inScope": true, "status": "completed" },
+    { "step": 9, "title": "Frontend config picker UI", "inScope": false, "nextStage": "K21-FIX-G" },
+    { "step": 10, "title": "hard/soft weights", "inScope": false, "nextStage": "K22" },
+    { "step": 11, "title": "task-level lock", "inScope": false, "nextStage": "K22" }
+  ],
+  "suggestedNextStage": {
+    "primary": "K21-FIX-G-SOLVER-CONFIG-UI",
+    "alternative": "K22-SCORE-WEIGHTS-ROADMAP"
+  }
+}

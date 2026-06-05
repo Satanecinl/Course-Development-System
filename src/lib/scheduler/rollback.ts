@@ -185,6 +185,29 @@ export async function rollbackSchedulerApply(
     throw new Error('APPLY_RUN_MISSING_SEMESTER_ID: Cannot rollback an apply that has no semesterId.')
   }
 
+  // 3b. K21-FIX-F: read applyRun's resultSnapshot.config (carried from preview)
+  let applyConfigSnapshot: {
+    configId: number | null
+    name: string | null
+    maxIterations: number
+    lahcWindowSize: number
+    randomSeed: number | null
+    lockedSlotIds: number[]
+    solverVersion: string
+    source: 'CONFIG' | 'INLINE' | 'DEFAULT' | 'MIXED'
+    snapshotTakenAt: string
+  } | null = null
+  if (applyRun.resultSnapshot) {
+    try {
+      const parsed = JSON.parse(applyRun.resultSnapshot)
+      if (parsed.config && typeof parsed.config === 'object') {
+        applyConfigSnapshot = parsed.config
+      }
+    } catch {
+      // ignore — fallback to no config snapshot
+    }
+  }
+
   // 4. Check no existing completed rollback for this apply run
   const existingRollback = await prisma.schedulingRun.findFirst({
     where: {
@@ -380,11 +403,13 @@ export async function rollbackSchedulerApply(
         hc3After: postHc.hc3,
         hc4After: postHc.hc4,
         databaseFingerprint: postFingerprint,
+        // K21-FIX-F: carry apply's config snapshot forward (audit / reproducibility)
         resultSnapshot: JSON.stringify({
           postScore,
           postHc,
           changesRestored: applyChanges.length,
           applyRunId: applyRun.id,
+          ...(applyConfigSnapshot ? { config: applyConfigSnapshot } : {}),
         }),
         conflictSummary: JSON.stringify({
           HC1: postHc.hc1,

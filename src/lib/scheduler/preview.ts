@@ -159,6 +159,21 @@ export interface PreviewOptions {
   configId?: number
   /** Explicit semesterId. If not provided, uses active semester. */
   semesterId?: number | null
+  /**
+   * K21-FIX-F: pre-resolved config snapshot to embed in resultSnapshot.config.
+   * Built by the preview route via resolveConfigForPreview().
+   */
+  resolvedConfigSnapshot?: {
+    configId: number | null
+    name: string | null
+    maxIterations: number
+    lahcWindowSize: number
+    randomSeed: number | null
+    lockedSlotIds: number[]
+    solverVersion: string
+    source: 'CONFIG' | 'INLINE' | 'DEFAULT' | 'MIXED'
+    snapshotTakenAt: string
+  }
 }
 
 const SOLVER_VERSION = 'lahc-hard-first-v3'
@@ -244,6 +259,7 @@ export async function createSchedulerPreview(
   const previewExpiresAt = blocked ? null : new Date(Date.now() + PREVIEW_TTL_MS)
 
   // 8. Build result snapshot for SchedulingRun.resultSnapshot
+  // K21-FIX-F: add config sub-object with resolved config (source: CONFIG/INLINE/DEFAULT/MIXED)
   const resultSnapshot = JSON.stringify({
     scoreBefore,
     scoreAfter,
@@ -257,6 +273,17 @@ export async function createSchedulerPreview(
     semesterId: semester.id,
     semesterCode: semester.code,
     semesterName: semester.name,
+    config: options.resolvedConfigSnapshot ?? {
+      configId: null,
+      name: null,
+      maxIterations,
+      lahcWindowSize,
+      randomSeed: usedSeed,
+      lockedSlotIds,
+      solverVersion: SOLVER_VERSION,
+      source: 'DEFAULT',
+      snapshotTakenAt: new Date().toISOString(),
+    },
   })
 
   const conflictSummary = JSON.stringify({
