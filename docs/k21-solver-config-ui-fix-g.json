@@ -1,6 +1,41 @@
 {
   "generatedAt": "2026-06-05T09:30:00.000Z",
   "phase": "K21-FIX-G-SOLVER-CONFIG-UI",
+  "k21GAuditAlignmentPhase": "K21-FIX-G-AUDIT-AND-LINT-ALIGNMENT",
+  "k21GAuditAlignmentSummary": {
+    "auditFindingsBeforeAlignment": {
+      "HIGH": 0,
+      "MEDIUM": 6,
+      "LOW": 0,
+      "INFO": 0,
+      "NONE": 1
+    },
+    "auditFindingsAfterAlignment": {
+      "HIGH": 0,
+      "MEDIUM": 1,
+      "LOW": 2,
+      "INFO": 0,
+      "NONE": 4
+    },
+    "downgradedFindings": [
+      "K21-D-A-1 MEDIUM → LOW (4 of 6 schema fields added by K21-FIX-F)",
+      "K21-D-C-1 MEDIUM → NONE (config CRUD + preview configId + resultSnapshot.config)",
+      "K21-D-D-1 MEDIUM → NONE (UI picker + create/edit/delete + maxIter/lahc + preview + display)",
+      "K21-D-E-1 MEDIUM → LOW (lockedSlotIds field added by K21-FIX-F)",
+      "K21-D-F-1 MEDIUM → NONE (resultSnapshot.config complete)"
+    ],
+    "preservedFindings": [
+      "K21-D-G-1 MEDIUM → MEDIUM (real remaining risk: hard/soft weights, deferred to K22)"
+    ],
+    "lintBaseline": {
+      "K21-FIX-F baseline": { "total": 314, "errors": 180, "warnings": 134 },
+      "K21-FIX-G reported": { "total": 316, "errors": 180, "warnings": 136 },
+      "K21-FIX-G-AUDIT after fix": { "total": 314, "errors": 180, "warnings": 134 },
+      "driftFixed": "+2 warnings from scripts/verify-solver-config-ui-k21-fix-g.ts unused vars (scorePath, schemaUnchanged)",
+      "newErrors": 0
+    },
+    "closeable": true
+  },
   "mode": "frontend-productization",
   "type": "solver-config-ui-delivery",
   "predecessor": {

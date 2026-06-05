@@ -418,3 +418,77 @@ K21-FIX-G-SOLVER-CONFIG-UI 按 spec 完整执行:
 - ✅ test:auth-foundation 仍 53/1 pre-existing
 
 **本阶段可关闭, 推荐进入 K22-SCORE-WEIGHTS-ROADMAP。**
+
+---
+
+## 20. K21-FIX-G-AUDIT-AND-LINT-ALIGNMENT Closeout Section
+
+| Field | Value |
+|---|---|
+| Closeout phase | K21-FIX-G-AUDIT-AND-LINT-ALIGNMENT |
+| Date | 2026-06-05 |
+| Purpose | Resolve the 2 outstanding K21-FIX-G closure blockers: (1) audit alignment with stale MEDIUM=6 findings, (2) lint baseline drift |
+
+### 20.1 K21-FIX-G 实现能力 vs Audit 检测
+
+K21-FIX-G-AUDIT 更新了 K21-FIX-D audit 脚本 (`scripts/audit-solver-config-ui-k21-fix-d.ts`), 添加 `computeK21GAlignment()` 检测 K21-FIX-G 实施后真实状态. 22 个 capability flags 全部 ✅:
+
+| Layer | Capabilities |
+|---|---|
+| Files | configPanel, resolvedConfigDisplay, clientLibrary, errorMapper, types, verifyScript |
+| Frontend (config list) | fetches, has picker, has selectedConfigId, has default option, loading, empty, error |
+| Frontend (CRUD) | create dialog, edit dialog, delete button, POST, PUT, DELETE |
+| Frontend (validation) | client validation, CONFIG_IN_USE |
+| Frontend (preview) | sends configId, sends overrides, avoids legacy, sends lockedSlotIds in overrides |
+| Frontend (display) | resultSnapshot.config display, source label (CONFIG/INLINE/DEFAULT/MIXED), 5 fields |
+| Frontend (errors) | NOT_FOUND, SEMESTER_MISMATCH, FORBIDDEN, validation messages |
+| Frontend (permission) | reuses schedule:adjust, no new permission key |
+| Backend | config CRUD exists, preview accepts configId/overrides, resultSnapshot.config, run detail exposes config |
+| Schema | randomSeed, updatedAt, solverVersion, lockedSlotIds all present |
+
+### 20.2 Audit Findings 降级
+
+原 K21-FIX-D MEDIUM=6 降级为 MEDIUM=1 / LOW=2 / NONE=4:
+
+| Finding | 原 | 新 | 原因 |
+|---|:---:|:---:|---|
+| K21-D-A-1 (schema) | MEDIUM | LOW | K21-FIX-F 加 4/6 字段, 仅剩 hard/soft weights (deferred K22) |
+| K21-D-B-1 (solver usage) | NONE | NONE | unchanged (correctly None) |
+| K21-D-C-1 (API flow) | MEDIUM | NONE | K21-FIX-F: CRUD + preview configId + resultSnapshot.config |
+| K21-D-D-1 (UI exposure) | MEDIUM | NONE | K21-FIX-G: picker + CRUD + maxIter/lahc + preview + display |
+| K21-D-E-1 (locked IDs) | MEDIUM | LOW | K21-FIX-F: lockedSlotIds 字段添加, task-level lock 解析后置 K22 |
+| K21-D-F-1 (snapshot) | MEDIUM | NONE | K21-FIX-F: resultSnapshot.config 含完整字段 |
+| K21-D-G-1 (weights) | MEDIUM | **MEDIUM** | 真实剩余风险, deferred to K22 by design |
+
+### 20.3 Lint Baseline 核对
+
+| 时点 | Total | Errors | Warnings |
+|---|---:|---:|---:|
+| K21-FIX-F baseline | 314 | 180 | 134 |
+| K21-FIX-G 报告 | 316 | 180 | 136 (+2 warnings) |
+| K21-FIX-G-AUDIT after fix | **314** | 180 | **134** |
+
++2 warnings 来自 `scripts/verify-solver-config-ui-k21-fix-g.ts` 的 2 个未使用变量 (`scorePath`, `schemaUnchanged`). K21-FIX-G-AUDIT 已修复. 无新 error. 无 baseline drift.
+
+### 20.4 Real Remaining Risks (3 项)
+
+| Risk | Severity | 详情 | Next Stage |
+|---|:---:|---|---|
+| hard / soft weights 不可配置 | MEDIUM | score.ts 硬编码, 7 项常见软约束未覆盖 | K22 K21-FIX-I-SCORE-WEIGHTS-ROADMAP |
+| task-level lock parser 未实施 | LOW | 需 solver 增 "if task has any locked slot, all its slots locked" | K22 K22-TASK-LEVEL-LOCK |
+| Playwright / browser E2E 缺失 | LOW | verify 静态检查, 真实交互需人工验收 | K22+ 浏览器 E2E |
+
+### 20.5 K21-FIX-G 正式关闭
+
+✅ **是**. K21-FIX-G-AUDIT-AND-LINT-ALIGNMENT 完成后:
+- K21-FIX-G 实现能力全部被 audit 检测到 (22/22)
+- 原 MEDIUM=6 → MEDIUM=1 (G, real K22 risk)
+- Lint baseline drift (K21-FIX-G +2 warnings) 已修复
+- K21-FIX-F 3 verify 仍 0 FAIL
+- K21-FIX-G verify 0 FAIL
+- 不修改 schema / DB / solver algorithm / score weights / RBAC
+- 工作区 clean
+
+### 20.6 Suggested Next Stage
+
+**K22-SCORE-WEIGHTS-ROADMAP** (top recommendation, 唯一真实 MEDIUM 风险).

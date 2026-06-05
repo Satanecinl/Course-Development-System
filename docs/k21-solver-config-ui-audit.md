@@ -626,3 +626,146 @@ K21-FIX-D-SOLVER-CONFIG-UI-AUDIT 按 spec 完整执行：
 - ✅ 工作区状态: 仅新增 3 个 K21-FIX-D 文件
 
 **本阶段可关闭, 推荐进入 K21-FIX-E-SOLVER-CONFIG-API-PLAN (设计阶段) 或 K21-FIX-F-SOLVER-CONFIG-API-IMPLEMENTATION (直接实施)。**
+
+---
+
+## 18. K21-FIX-G Audit Alignment (Post-Implementation Re-Assessment)
+
+| Field | Value |
+|---|---|
+| Phase | K21-FIX-G-AUDIT-AND-LINT-ALIGNMENT |
+| Predecessor | K21-FIX-D-SOLVER-CONFIG-UI-AUDIT (commit `dae8c71`) |
+| Implementation phases | K21-FIX-F-SOLVER-CONFIG-API-IMPLEMENTATION (commit `64971ee`) + K21-FIX-G-SOLVER-CONFIG-UI (commit `0061897`) |
+| Generated | 2026-06-05 |
+| Audit script | `scripts/audit-solver-config-ui-k21-fix-d.ts` (now with `computeK21GAlignment()`) |
+
+### 18.1 Background
+
+K21-FIX-D audit 在 2026-06-05 记录 **MEDIUM=6 / LOW=0 / INFO=0 / NONE=1 / BLOCKING=NO**. K21-FIX-F + K21-FIX-G 实施后, 大量 findings 已被解决. 本节重新评估, 消除 stale findings, 只保留真实剩余风险.
+
+### 18.2 K21-FIX-G 已实现的 UI 能力 (audit 检测项)
+
+| Capability | Detection | Status |
+|---|---|---|
+| Config list fetch | `frontendFetchesConfigList` | ✅ |
+| Config picker | `frontendHasConfigPicker` (ConfigPicker component) | ✅ |
+| Selected configId state | `frontendHasSelectedConfigIdState` | ✅ |
+| Default config option | `frontendHasDefaultConfigOption` | ✅ |
+| Create dialog | `frontendHasCreateDialog` (ConfigFormDialog mode=create) | ✅ |
+| Edit dialog | `frontendHasEditDialog` (ConfigFormDialog mode=edit) | ✅ |
+| Delete button | `frontendHasDeleteButton` (DeleteConfigButton) | ✅ |
+| Client validation | `frontendHasClientValidation` | ✅ |
+| CONFIG_IN_USE handling | `frontendHandlesConfigInUse` | ✅ |
+| Preview sends configId | `frontendPreviewSendsConfigId` | ✅ |
+| Preview sends overrides | `frontendPreviewSendsOverrides` | ✅ |
+| Preview avoids legacy top-level | `frontendPreviewAvoidsLegacyTopLevel` | ✅ |
+| Preview sends lockedSlotIds in overrides | `frontendPreviewSendsLockedSlotIdsInOverrides` | ✅ |
+| Display resultSnapshot.config | `frontendDisplaysResultSnapshotConfig` (ResolvedConfigDisplay) | ✅ |
+| Display source label (CONFIG/INLINE/DEFAULT/MIXED) | `frontendDisplaysSourceLabel` | ✅ |
+| Display maxIterations / lahcWindowSize / randomSeed / lockedSlotIds / solverVersion | 5 separate flags | ✅ |
+| Handle old run without config | `frontendHandlesOldRunWithoutConfig` | ✅ |
+| Handle SCHEDULING_CONFIG_NOT_FOUND | `frontendHandlesSchedulingConfigNotFound` | ✅ |
+| Handle SEMESTER_MISMATCH | `frontendHandlesSemesterMismatch` | ✅ |
+| Handle FORBIDDEN | `frontendHandlesForbidden` | ✅ |
+| Reuse schedule:adjust permission | `frontendReusesScheduleAdjustPermission` | ✅ |
+| No new permission key | `frontendHasNoNewPermissionKey` | ✅ |
+| Backend config CRUD API | `backendConfigCrudApiExists` | ✅ (K21-FIX-F) |
+| Backend preview configId | `backendPreviewAcceptsConfigId` | ✅ (K21-FIX-F) |
+| Backend preview overrides | `backendPreviewAcceptsOverrides` | ✅ (K21-FIX-F) |
+| Backend resultSnapshot.config | `backendResultSnapshotContainsConfig` | ✅ (K21-FIX-F) |
+| Backend run detail exposes config | `backendRunDetailApiExposesConfig` | ✅ (K21-FIX-G type-only) |
+| Schema randomSeed / updatedAt / solverVersion / lockedSlotIds | 4 separate flags | ✅ (K21-FIX-F) |
+
+### 18.3 原 MEDIUM findings 降级映射
+
+| K21-D Finding | 原 Severity | K21-G-AUDIT 决定 | 新 Severity | 原因 |
+|---|---|---|---|---|
+| K21-D-A-1 (schema fields) | MEDIUM | 部分降级 | LOW | 6 missing → 2 missing (K21-FIX-F 加 4/6: randomSeed/updatedAt/solverVersion/lockedSlotIds). 仅剩 hardWeights/softWeights/configSnapshot, configSnapshot 已被 resultSnapshot.config 替代, 实际剩 1 类 (hard/soft weights, deferred to K22) |
+| K21-D-C-1 (API config flow) | MEDIUM | 完整降级 | NONE | K21-FIX-F 实施: config CRUD + preview configId + resultSnapshot.config + apply/rollback 复用 |
+| K21-D-D-1 (Frontend UI exposure) | MEDIUM | 完整降级 | NONE | K21-FIX-G 实施: config picker + create/edit/delete + maxIterations/lahcWindowSize + preview configId+overrides + resultSnapshot.config display |
+| K21-D-E-1 (lockedTaskIds naming) | MEDIUM | 降级 | LOW | K21-FIX-F 加 lockedSlotIds 字段 (Option 2), lockedTaskIds 保留 deprecated. task-level lock 解析后置 K22 |
+| K21-D-F-1 (config snapshot) | MEDIUM | 完整降级 | NONE | K21-FIX-F 实施: resultSnapshot.config 含 maxIterations/lahcWindowSize/randomSeed/lockedSlotIds/solverVersion/source |
+| K21-D-G-1 (hard/soft weight) | MEDIUM | **保留** | MEDIUM | 真实剩余风险: score.ts refactor 风险大, 推迟到 K22. 不是 stale, 是设计性 deferred |
+
+### 18.4 仍保留的真实剩余风险 (3 项)
+
+| Risk | Severity | 详情 | Next Stage |
+|---|:---:|---|---|
+| hard / soft weights 不可配置 | MEDIUM | score.ts 全部硬编码, 7 项常见软约束未覆盖 | K22 K21-FIX-I-SCORE-WEIGHTS-ROADMAP |
+| task-level lock parser 未实现 | LOW | lockedTaskIds/lockedSlotIds 命名一致了, 但 solver 不会 "if task has any locked slot, all its slots locked" | K22 K22-TASK-LEVEL-LOCK |
+| Playwright / browser E2E 缺失 | LOW | verify-solver-config-ui-k21-fix-g 是静态检查, 真实 UI 交互需人工验收 | K22+ 浏览器 E2E |
+
+### 18.5 Lint Baseline 核对
+
+| 时点 | Total | Errors | Warnings | 说明 |
+|---|---:|---:|---:|---|
+| K21-FIX-D baseline (2026-06-05) | 313 | 180 | 133 | 历史 baseline |
+| K21-FIX-F baseline (commit 64971ee) | 314 | 180 | 134 | K21-FIX-F 后, +0 errors / +1 warnings (pre-existing drift) |
+| K21-FIX-G baseline (commit 0061897) | 316 | 180 | 136 | K21-FIX-G 后, +0 errors / +2 warnings |
+| K21-FIX-G-AUDIT after fix | 314 | 180 | 134 | 移除 verify script 中 2 个未使用变量 (scorePath, schemaUnchanged) |
+
+**结论**: K21-FIX-G 报告的 +2 warnings 来自 `scripts/verify-solver-config-ui-k21-fix-g.ts` 的 2 个未使用变量 (`scorePath`, `schemaUnchanged`). K21-FIX-G-AUDIT 阶段已修复, 回到 K21-FIX-F baseline (314 / 180 / 134). 无新 error. 无 baseline drift.
+
+### 18.6 当前真实 lint 数字 (2026-06-05)
+
+```
+✖ 314 problems (180 errors, 134 warnings)
+3 errors and 0 warnings potentially fixable with the `--fix` option.
+```
+
+| Metric | Value | Comparison |
+|---|---:|---|
+| Total | 314 | = K21-FIX-F baseline |
+| Errors | 180 | = K21-FIX-F baseline |
+| Warnings | 134 | = K21-FIX-F baseline |
+| K21-FIX-G new error | 0 | ✅ |
+| K21-FIX-G new warning (before fix) | 2 | ❌ → ✅ fixed in K21-FIX-G-AUDIT |
+
+### 18.7 K21-FIX-G 是否可以正式关闭
+
+✅ **是**. K21-FIX-G-AUDIT-AND-LINT-ALIGNMENT 完成后:
+- K21-FIX-G 实现的能力全部被 audit 检测到 (22/22 capability flags)
+- 原 MEDIUM=6 降级为 MEDIUM=1 / LOW=2 / NONE=4
+- 唯一 MEDIUM (G) 是真实剩余风险, deferred to K22 by design, 不是 stale
+- 3 个 remaining risks (weights, task-level lock, Playwright E2E) 均有明确 next stage
+- Lint baseline drift (K21-FIX-G +2 warnings) 已修复
+- K21-FIX-F 3 verify 仍 0 FAIL
+- K21-FIX-G verify 0 FAIL
+- 不修改 schema / DB / solver algorithm / score weights / RBAC
+- 工作区 clean
+
+### 18.8 后续建议
+
+**Top recommendation**: **K22-SCORE-WEIGHTS-ROADMAP**
+
+理由:
+- K21-FIX-G 全部 LAHC params 已产品化
+- hard/soft weights 是唯一真实 MEDIUM 风险
+- 7 项常见软约束 (教师均衡/班级空洞/教室稳定/实训匹配/大班优先/同班连续课少切换) 待覆盖
+- 实施后, 工科/文科院校可调权重, 排课质量提升
+
+**Alternative priority #2**: **K22-TASK-LEVEL-LOCK** (task-level lock 解析)
+- lockedTaskIds 命名已统一
+- 需 solver 层增加 "if task has any locked slot, all its slots locked"
+- 多 slot 课程用户体验提升
+
+**Alternative priority #3**: **K22-PLAYWRIGHT-E2E** (浏览器 E2E)
+- 真实交互验证 K21-FIX-G UI
+- 需 Playwright 引入 + test 套件建立
+
+### 18.9 Unmodified Scope (本阶段未修改)
+
+- ✅ 未修改 Prisma schema
+- ✅ 未修改 migration files
+- ✅ 未修改 prisma/dev.db
+- ✅ 未运行 db push / migrate / reset / seed
+- ✅ 未改 score.ts weights
+- ✅ 未修改 solver algorithm
+- ✅ 未修改 backend API logic
+- ✅ 未修改 importer / parser
+- ✅ 未修改 RBAC / permissions
+- ✅ 未修改业务数据
+- ✅ 未提交 DB backup
+- ✅ 未做新功能
+
+**K21-FIX-G-AUDIT-AND-LINT-ALIGNMENT 是 K21-FIX-G 的 closeout 阶段, 不引入新功能, 仅 audit alignment + lint drift fix + doc update.**

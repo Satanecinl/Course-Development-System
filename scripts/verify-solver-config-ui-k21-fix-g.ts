@@ -261,9 +261,6 @@ check({
 
 // ── 16. No backend schema / solver / score.ts modification ──────
 //    (only the additive /runs/[id] type-only change is allowed; schema and score.ts must be untouched)
-const schemaPath = 'prisma/schema.prisma'
-const scorePath = 'src/lib/scheduler/score.ts'
-const schemaUnchanged = fileExists(schemaPath) // exists — verifies file present; we don't diff it here, just check helper
 // Check that the new run detail API change is purely additive: config field with type
 const runDetailApiAddOnly =
   /config:\s*RunDetail\['config'\]/.test(runDetailApiSrc) &&
