@@ -1,0 +1,210 @@
+{
+  "generatedAt": "2026-06-05T10:07:11.131Z",
+  "phase": "K21-FIX-G-SOLVER-CONFIG-UI",
+  "verificationType": "ui-static-checks",
+  "total": 22,
+  "pass": 22,
+  "fail": 0,
+  "results": [
+    {
+      "id": "UI-LOADS-CONFIGS",
+      "category": "Config list",
+      "title": "Panel fetches scheduler configs from /api/admin/scheduler/configs",
+      "passed": true,
+      "evidence": [
+        "fetchSchedulingConfigs() in panel + endpoint in client"
+      ]
+    },
+    {
+      "id": "UI-USES-CONFIGS-ENDPOINT",
+      "category": "Config list",
+      "title": "Client library targets /api/admin/scheduler/configs",
+      "passed": true,
+      "evidence": [
+        "GET/POST/PUT/DELETE all hit /api/admin/scheduler/configs"
+      ]
+    },
+    {
+      "id": "UI-CONFIG-PICKER",
+      "category": "Config picker",
+      "title": "ConfigPicker + selectedConfigId state in scheduler-content",
+      "passed": true,
+      "evidence": [
+        "ConfigPicker component + selectedConfigId state present"
+      ]
+    },
+    {
+      "id": "UI-CREATE-CONFIG",
+      "category": "Create / Edit / Delete UX",
+      "title": "Create config UI calls POST /api/admin/scheduler/configs",
+      "passed": true,
+      "evidence": [
+        "createSchedulingConfig + POST in client"
+      ]
+    },
+    {
+      "id": "UI-EDIT-CONFIG",
+      "category": "Create / Edit / Delete UX",
+      "title": "Edit config UI calls PUT /api/admin/scheduler/configs/[id]",
+      "passed": true,
+      "evidence": [
+        "updateSchedulingConfig + PUT in client"
+      ]
+    },
+    {
+      "id": "UI-DELETE-CONFIG",
+      "category": "Create / Edit / Delete UX",
+      "title": "Delete config UI handles CONFIG_IN_USE 409",
+      "passed": true,
+      "evidence": [
+        "DeleteConfigButton + deleteSchedulingConfig + CONFIG_IN_USE handling"
+      ]
+    },
+    {
+      "id": "UI-PREVIEW-CONFIG-ID",
+      "category": "Preview payload",
+      "title": "Preview request includes configId when a config is selected",
+      "passed": true,
+      "evidence": [
+        "body.configId = selectedConfigId"
+      ]
+    },
+    {
+      "id": "UI-PREVIEW-OVERRIDES",
+      "category": "Preview payload",
+      "title": "Preview request uses overrides for maxIterations/lahcWindowSize/randomSeed/lockedSlotIds",
+      "passed": true,
+      "evidence": [
+        "body.overrides built from user inputs"
+      ]
+    },
+    {
+      "id": "UI-PREVIEW-NO-LEGACY",
+      "category": "Preview payload",
+      "title": "Preview UI does not send legacy top-level maxIterations/lahcWindowSize/randomSeed/lockedSlotIds",
+      "passed": true,
+      "evidence": [
+        "No legacy top-level params in scheduler-content preview body"
+      ]
+    },
+    {
+      "id": "UI-DISPLAY-SOURCE",
+      "category": "Result snapshot",
+      "title": "ResolvedConfigDisplay shows config.source (CONFIG/INLINE/DEFAULT/MIXED)",
+      "passed": true,
+      "evidence": [
+        "all 4 source labels present"
+      ]
+    },
+    {
+      "id": "UI-DISPLAY-FIELDS",
+      "category": "Result snapshot",
+      "title": "ResolvedConfigDisplay shows maxIterations / lahcWindowSize / randomSeed / lockedSlotIds / solverVersion",
+      "passed": true,
+      "evidence": [
+        "all 5 required fields present"
+      ]
+    },
+    {
+      "id": "UI-ERROR-NOT-FOUND",
+      "category": "Error handling",
+      "title": "Maps SCHEDULING_CONFIG_NOT_FOUND to a user-friendly message",
+      "passed": true,
+      "evidence": [
+        "friendly message in scheduler-config-errors.ts"
+      ]
+    },
+    {
+      "id": "UI-ERROR-SEM-MISMATCH",
+      "category": "Error handling",
+      "title": "Maps SEMESTER_MISMATCH to a user-friendly message",
+      "passed": true,
+      "evidence": [
+        "friendly message in scheduler-config-errors.ts"
+      ]
+    },
+    {
+      "id": "UI-ERROR-CONFIG-IN-USE",
+      "category": "Error handling",
+      "title": "Maps CONFIG_IN_USE 409 to a user-friendly message",
+      "passed": true,
+      "evidence": [
+        "friendly message + delete button handling"
+      ]
+    },
+    {
+      "id": "UI-NO-CRASH-OLD-RUN",
+      "category": "Backward compatibility",
+      "title": "Old runs without resultSnapshot.config show fallback (no crash)",
+      "passed": true,
+      "evidence": [
+        "fallback placeholder for null config"
+      ]
+    },
+    {
+      "id": "UI-NO-SCHEMA-MOD",
+      "category": "Constraint",
+      "title": "run detail API only adds optional config field; schema/score.ts untouched",
+      "passed": true,
+      "evidence": [
+        "config field is parsed from resultSnapshot (additive)"
+      ]
+    },
+    {
+      "id": "UI-TYPES-FILE",
+      "category": "Types",
+      "title": "src/types/scheduling-config.ts exports all required types",
+      "passed": true,
+      "evidence": [
+        "6 exports present"
+      ]
+    },
+    {
+      "id": "UI-FRIENDLY-ERROR",
+      "category": "Error handling",
+      "title": "src/lib/scheduler-config-errors.ts exports toFriendlyError",
+      "passed": true,
+      "evidence": [
+        "toFriendlyError exported"
+      ]
+    },
+    {
+      "id": "UI-PANEL-EXPORTS",
+      "category": "Components",
+      "title": "scheduler-config-panel.tsx exports ConfigPicker/SolverConfigPanel/ConfigFormDialog/DeleteConfigButton",
+      "passed": true,
+      "evidence": [
+        "all 4 exports present"
+      ]
+    },
+    {
+      "id": "UI-RESOLVED-DISPLAY-EXPORTED",
+      "category": "Components",
+      "title": "resolved-config-display.tsx exports ResolvedConfigDisplay, used in scheduler + history",
+      "passed": true,
+      "evidence": [
+        "exported: true",
+        "used in scheduler-content: true",
+        "used in history-content: true"
+      ]
+    },
+    {
+      "id": "UI-HISTORY-CONFIG-TYPE",
+      "category": "Types",
+      "title": "history-content.tsx RunDetailData type includes optional config",
+      "passed": true,
+      "evidence": [
+        "config?: ResolvedConfigSnapshot | null"
+      ]
+    },
+    {
+      "id": "UI-BACKEND-HELPER-UNCHANGED",
+      "category": "Constraint",
+      "title": "src/lib/scheduler/config.ts (server helper) still has K21-FIX-F exports",
+      "passed": true,
+      "evidence": [
+        "K21-FIX-F helper module still intact"
+      ]
+    }
+  ]
+}

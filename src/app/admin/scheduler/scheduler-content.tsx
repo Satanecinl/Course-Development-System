@@ -36,6 +36,10 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
+import { SolverConfigPanel } from '@/components/scheduler-config-panel'
+import { ResolvedConfigDisplay } from '@/components/resolved-config-display'
+import { toFriendlyError } from '@/lib/scheduler-config-errors'
+import type { ResolvedConfigSnapshot } from '@/types/scheduling-config'
 
 // ── Types ──
 
@@ -93,6 +97,8 @@ interface PreviewResponse {
   semesterId?: number
   semesterCode?: string
   semesterName?: string
+  // K21-FIX-F: resolved config sub-object written into resultSnapshot.config
+  config?: ResolvedConfigSnapshot
   error?: string
 }
 
@@ -176,6 +182,20 @@ export default function SchedulerContent() {
   const [randomSeedInput, setRandomSeedInput] = useState('')
   const [seedCopied, setSeedCopied] = useState(false)
   const [seedError, setSeedError] = useState<string | null>(null)
+
+  // K21-FIX-G: config selection (K21-FIX-F backend configId + overrides)
+  const [selectedConfigId, setSelectedConfigId] = useState<number | null>(null)
+  const [resolvedConfigForOverride, setResolvedConfigForOverride] = useState<{
+    configId: number | null
+    maxIterations: number
+    lahcWindowSize: number
+    randomSeed: number | null
+    lockedSlotIds: number[]
+    solverVersion: string | null
+  } | null>(null)
+  // User-edited fields that should be sent as overrides
+  const [maxIterationsInput, setMaxIterationsInput] = useState('')
+  const [lahcWindowSizeInput, setLahcWindowSizeInput] = useState('')
 
   // Lockable slots
   const [lockableSlots, setLockableSlots] = useState<LockableSlot[]>([])
@@ -297,12 +317,49 @@ export default function SchedulerContent() {
     setSeedCopied(false)
 
     try {
-      const body: Record<string, unknown> = {}
+      // K21-FIX-G: build payload using the new shape (configId + overrides).
+      // Legacy top-level params (maxIterations/lahcWindowSize/randomSeed/lockedSlotIds)
+      // are intentionally no longer sent — they are derived from the selected
+      // config or from overrides. This eliminates the override-vs-legacy ambiguity
+      // flagged in K21-FIX-D.
+      const overrides: Record<string, unknown> = {}
+      const maxIterInput = maxIterationsInput.trim()
+      if (maxIterInput !== '') {
+        const mi = Number(maxIterInput)
+        if (!Number.isInteger(mi) || mi < 100 || mi > 15000) {
+          setState('error')
+          const msg = '最大迭代次数必须是 100-15000 之间的整数'
+          setErrorMsg(msg)
+          toast.error(`覆写参数错误: ${msg}`)
+          return
+        }
+        overrides.maxIterations = mi
+      }
+      const lahcInput = lahcWindowSizeInput.trim()
+      if (lahcInput !== '') {
+        const lw = Number(lahcInput)
+        if (!Number.isInteger(lw) || lw < 50 || lw > 2000) {
+          setState('error')
+          const msg = 'LAHC 窗口大小必须是 50-2000 之间的整数'
+          setErrorMsg(msg)
+          toast.error(`覆写参数错误: ${msg}`)
+          return
+        }
+        overrides.lahcWindowSize = lw
+      }
       if (seedValidation.seed != null) {
-        body.randomSeed = seedValidation.seed
+        overrides.randomSeed = seedValidation.seed
       }
       if (selectedSlotIds.size > 0) {
-        body.lockedSlotIds = Array.from(selectedSlotIds)
+        overrides.lockedSlotIds = Array.from(selectedSlotIds)
+      }
+
+      const body: Record<string, unknown> = {}
+      if (selectedConfigId != null) {
+        body.configId = selectedConfigId
+      }
+      if (Object.keys(overrides).length > 0) {
+        body.overrides = overrides
       }
 
       const res = await fetch('/api/admin/scheduler/preview', {
@@ -316,7 +373,13 @@ export default function SchedulerContent() {
       if (!data.success) {
         setState('error')
         setErrorMsg(data.error || 'Preview failed')
-        toast.error(`Preview failed: ${data.error || 'Unknown error'}`)
+        // K21-FIX-G: surface specific known errors as friendly toasts.
+        const fe = toFriendlyError({ success: false, error: data.error, message: data.error })
+        if (fe.code === 'SCHEDULING_CONFIG_NOT_FOUND' || fe.code === 'SEMESTER_MISMATCH') {
+          toast.error(fe.userMessage)
+        } else {
+          toast.error(`Preview failed: ${data.error || 'Unknown error'}`)
+        }
         return
       }
 
@@ -443,6 +506,8 @@ export default function SchedulerContent() {
     setSeedCopied(false)
     setSelectedSlotIds(new Set())
     setLockSearchQuery('')
+    // K21-FIX-G: keep config selection; do not clear override inputs — they are
+    // user-chosen starting points for the next preview.
   }
 
   const copySeed = (seed: number) => {
@@ -517,6 +582,57 @@ export default function SchedulerContent() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* K21-FIX-G: Solver Config Panel (configId + overrides) */}
+      <SolverConfigPanel
+        semesterId={null}
+        selectedConfigId={selectedConfigId}
+        onSelectedConfigChange={setSelectedConfigId}
+        onResolvedConfigChange={setResolvedConfigForOverride}
+      />
+
+      {/* K21-FIX-G: Solver iteration params (overrides.maxIterations / overrides.lahcWindowSize) */}
+      <div className="bg-white rounded-lg border border-gray-200 p-4 mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              最大迭代次数 <span className="text-gray-400 font-normal">(overrides.maxIterations, 100-15000)</span>
+            </label>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={maxIterationsInput}
+              onChange={(e) => setMaxIterationsInput(e.target.value)}
+              placeholder={
+                resolvedConfigForOverride
+                  ? `使用已选配置: ${resolvedConfigForOverride.maxIterations}`
+                  : '留空则使用默认 10000'
+              }
+              className="w-full sm:w-72 text-sm border border-gray-300 rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              LAHC 窗口大小 <span className="text-gray-400 font-normal">(overrides.lahcWindowSize, 50-2000)</span>
+            </label>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={lahcWindowSizeInput}
+              onChange={(e) => setLahcWindowSizeInput(e.target.value)}
+              placeholder={
+                resolvedConfigForOverride
+                  ? `使用已选配置: ${resolvedConfigForOverride.lahcWindowSize}`
+                  : '留空则使用默认 500'
+              }
+              className="w-full sm:w-72 text-sm border border-gray-300 rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+        <p className="text-xs text-gray-500 mt-2">
+          这些值仅作为本次覆写 (overrides) 发送给后端 — 不会修改任何已保存的配置。
+        </p>
       </div>
 
       {/* Locked Slots Section */}
@@ -860,6 +976,11 @@ export default function SchedulerContent() {
               <span className="text-gray-500">Fingerprint:</span>
               <span className="font-mono text-xs">{previewData.databaseFingerprint}</span>
             </div>
+          </div>
+
+          {/* K21-FIX-G: Resolved Config Snapshot */}
+          <div className="px-4 pb-4">
+            <ResolvedConfigDisplay config={previewData.config ?? null} />
           </div>
 
           {/* Score Cards */}

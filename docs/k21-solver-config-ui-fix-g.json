@@ -1,0 +1,173 @@
+{
+  "generatedAt": "2026-06-05T09:30:00.000Z",
+  "phase": "K21-FIX-G-SOLVER-CONFIG-UI",
+  "mode": "frontend-productization",
+  "type": "solver-config-ui-delivery",
+  "predecessor": {
+    "phase": "K21-FIX-F-SOLVER-CONFIG-API-IMPLEMENTATION",
+    "commit": "64971ee"
+  },
+  "modifiedFiles": {
+    "frontendNew": [
+      "src/types/scheduling-config.ts",
+      "src/lib/scheduler-config-client.ts",
+      "src/lib/scheduler-config-errors.ts",
+      "src/components/scheduler-config-panel.tsx",
+      "src/components/resolved-config-display.tsx"
+    ],
+    "frontendModified": [
+      "src/app/admin/scheduler/scheduler-content.tsx",
+      "src/app/admin/scheduler/history/history-content.tsx"
+    ],
+    "backendTypeOnly": [
+      "src/app/api/admin/scheduler/runs/[id]/route.ts"
+    ],
+    "verifyAndDocs": [
+      "scripts/verify-solver-config-ui-k21-fix-g.ts",
+      "docs/k21-solver-config-ui-fix-g.md",
+      "docs/k21-solver-config-ui-fix-g.json",
+      "docs/k21-solver-config-ui-verification-fix-g.json (auto-generated)"
+    ]
+  },
+  "configListLoading": {
+    "endpoint": "GET /api/admin/scheduler/configs",
+    "trigger": "useEffect on SolverConfigPanel mount",
+    "loading": "loading flag, dropdown disabled + Loader2 spinner",
+    "error": "red banner, non-blocking",
+    "empty": "暂无已保存配置 — 仍可使用默认参数运行 Preview",
+    "forbidden": "silent (no crash, default preview still works)"
+  },
+  "configPicker": {
+    "defaultOption": "使用默认配置（不加载已保存配置）",
+    "configIdNullBehavior": "preview body has no configId; server default applied",
+    "selectionSideEffects": "selectedConfigId state + onResolvedConfigChange callback"
+  },
+  "createEditDelete": {
+    "create": {
+      "trigger": "SolverConfigPanel 新建 button",
+      "clientValidation": "name 1-100, maxIter 100-15000, lahc 50-2000, seed 0-2^31-1",
+      "endpoint": "POST /api/admin/scheduler/configs"
+    },
+    "edit": {
+      "trigger": "SolverConfigPanel 编辑 button (only when config selected)",
+      "endpoint": "PUT /api/admin/scheduler/configs/[id]"
+    },
+    "delete": {
+      "trigger": "SolverConfigPanel delete button (only when config selected)",
+      "confirm": "Dialog",
+      "endpoint": "DELETE /api/admin/scheduler/configs/[id]",
+      "configInUse": "409 → toast with referenced runIds (first 5)"
+    }
+  },
+  "previewPayload": {
+    "shape": {
+      "configId?": "number",
+      "overrides?": {
+        "maxIterations?": "number",
+        "lahcWindowSize?": "number",
+        "randomSeed?": "number | null",
+        "lockedSlotIds?": "number[]"
+      }
+    },
+    "priority": "overrides > configId > legacy > server default",
+    "noLegacyTopLevel": true,
+    "note": "legacy top-level maxIterations/lahcWindowSize/randomSeed/lockedSlotIds are no longer sent by the new UI. Backend (K21-FIX-F) still accepts them for backward compatibility."
+  },
+  "resultSnapshotConfigDisplay": {
+    "previewPanel": "ResolvedConfigDisplay shown after Preview results",
+    "historyDetail": "ResolvedConfigDisplay shown in RunDetail",
+    "fields": ["source", "name", "maxIterations", "lahcWindowSize", "randomSeed", "lockedSlotIds", "solverVersion", "snapshotTakenAt"],
+    "sourceLabels": {
+      "CONFIG": "CONFIG · 来自已保存配置",
+      "INLINE": "INLINE · 来自本次覆写",
+      "DEFAULT": "DEFAULT · 使用默认参数",
+      "MIXED": "MIXED · 配置 + 覆写混合"
+    },
+    "oldRunFallback": "旧运行无配置快照（K21-FIX-F 之前的运行）"
+  },
+  "errorHandling": {
+    "helper": "src/lib/scheduler-config-errors.ts → toFriendlyError()",
+    "messages": {
+      "SCHEDULING_CONFIG_NOT_FOUND": "配置不存在或已删除，请重新选择",
+      "SEMESTER_MISMATCH": "配置所属学期与当前学期不一致",
+      "CONFIG_IN_USE": "该配置已被历史排课运行引用，不能删除",
+      "INVALID_NAME": "配置名称不合法（应为 1-100 字符）",
+      "INVALID_MAX_ITERATIONS": "最大迭代次数必须在 100-15000 之间",
+      "INVALID_LAHC_WINDOW_SIZE": "LAHC 窗口大小必须在 50-2000 之间",
+      "INVALID_RANDOM_SEED": "随机种子必须是 0-2147483647 之间的整数",
+      "INVALID_SOLVER_VERSION": "Solver 版本号不合法（最多 50 字符）",
+      "INVALID_LOCKED_SLOT_IDS": "锁定的课表槽位 ID 不合法",
+      "SEMESTER_NOT_FOUND": "指定的学期不存在",
+      "NO_ACTIVE_SEMESTER": "当前没有活跃的学期，请先设置一个",
+      "FORBIDDEN": "当前账号没有权限执行该操作",
+      "UNAUTHENTICATED": "请先登录"
+    }
+  },
+  "permissionGating": {
+    "reuses": "schedule:adjust",
+    "noNewKey": true,
+    "noRoleMappingChange": true,
+    "createEditDeleteRequires": "schedule:adjust + not readOnly",
+    "previewRequires": "schedule:adjust (existing)",
+    "forbiddenBehavior": "config list loads silently fail; user can still type params manually"
+  },
+  "backwardCompatibility": {
+    "oldPreviewBodyStillWorks": "Server accepts legacy top-level fields; new UI does not send them",
+    "oldResultSnapshotStillReadable": "ResolvedConfigDisplay shows fallback for null config",
+    "oldRunReadable": "Yes — K21-FIX-F writes config in apply/rollback as well, but older runs without config are still loadable",
+    "applyRollbackUnchanged": "K21-FIX-G does not change apply/rollback UI"
+  },
+  "verification": {
+    "ui": {
+      "script": "scripts/verify-solver-config-ui-k21-fix-g.ts",
+      "pass": 22,
+      "fail": 0
+    },
+    "fixFApi": { "pass": 27, "fail": 0 },
+    "fixFPreview": { "pass": 16, "fail": 0 },
+    "fixFSnapshot": { "pass": 19, "fail": 0 },
+    "aggregated": { "total": 84, "pass": 84, "fail": 0 }
+  },
+  "unmodifiedScope": [
+    "Prisma schema",
+    "prisma/migrations/**",
+    "prisma/dev.db",
+    "DB backup",
+    "score.ts weights",
+    "LAHC solver algorithm",
+    "importer",
+    "parser",
+    "RBAC / permissions",
+    "requirePermission semantics",
+    "seed-auth",
+    "historical repair scripts (K18/K19/K20)",
+    "Business data (other than optional type-only additive changes to /runs/[id] response)"
+  ],
+  "remainingRisks": [
+    { "id": "R-1", "severity": "LOW", "title": "randomSeed input + overrides.randomSeed are conceptually redundant" },
+    { "id": "R-2", "severity": "LOW", "title": "config list 403 is silent; user may be confused" },
+    { "id": "R-3", "severity": "INFO", "title": "Playwright / browser E2E not covered" },
+    { "id": "R-4", "severity": "INFO", "title": "Backend type-only change requires rebuild deploy" },
+    { "id": "R-5", "severity": "INFO", "title": "hard/soft weights deferred to K22" },
+    { "id": "R-6", "severity": "INFO", "title": "task-level lock deferred to K22" }
+  ],
+  "riskSeverity": { "HIGH": 0, "MEDIUM": 0, "LOW": 2, "INFO": 4 },
+  "implementationSteps": [
+    { "step": 1, "title": "Frontend types file", "inScope": true, "status": "completed" },
+    { "step": 2, "title": "Client fetch helpers", "inScope": true, "status": "completed" },
+    { "step": 3, "title": "Error mapping module", "inScope": true, "status": "completed" },
+    { "step": 4, "title": "Config panel component (picker / form / delete)", "inScope": true, "status": "completed" },
+    { "step": 5, "title": "Resolved config display component", "inScope": true, "status": "completed" },
+    { "step": 6, "title": "Wire scheduler-content with config panel + overrides", "inScope": true, "status": "completed" },
+    { "step": 7, "title": "Wire history-content with ResolvedConfigDisplay", "inScope": true, "status": "completed" },
+    { "step": 8, "title": "Type-only backend change (run detail API)", "inScope": true, "status": "completed" },
+    { "step": 9, "title": "Verify script + docs", "inScope": true, "status": "completed" },
+    { "step": 10, "title": "Weigths (deferred to K22)", "inScope": false, "nextStage": "K22" },
+    { "step": 11, "title": "Task-level lock (deferred to K22)", "inScope": false, "nextStage": "K22" }
+  ],
+  "suggestedNextStage": {
+    "primary": "K22-SCORE-WEIGHTS-ROADMAP",
+    "alternative1": "K22-TASK-LEVEL-LOCK",
+    "alternative2": "K22-CONFIG-INHERIT-UX"
+  }
+}

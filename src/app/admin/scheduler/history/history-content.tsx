@@ -27,6 +27,8 @@ import {
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { ResolvedConfigDisplay } from '@/components/resolved-config-display'
+import type { ResolvedConfigSnapshot } from '@/types/scheduling-config'
 import Link from 'next/link'
 
 // ── Types ──
@@ -90,6 +92,8 @@ interface RunDetailData {
     errorMessage: string | null
     lockedSlotIds: number[]
     lockedSlotCount: number
+    // K21-FIX-G: optional resolved config snapshot (K21-FIX-F resultSnapshot.config)
+    config?: ResolvedConfigSnapshot | null
     semesterId?: number | null
     semesterCode?: string | null
     semesterName?: string | null
@@ -546,6 +550,9 @@ function RunDetailView({ data }: { data: RunDetailData }) {
           </div>
         </div>
       )}
+
+      {/* K21-FIX-G: Resolved Config Snapshot */}
+      <ResolvedConfigDisplay config={run.config ?? null} />
 
       {/* Score Comparison */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

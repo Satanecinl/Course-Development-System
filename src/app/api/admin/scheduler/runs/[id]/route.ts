@@ -42,6 +42,20 @@ interface RunDetail {
   lockedSlotIds: number[]
   lockedSlotCount: number
 
+  // K21-FIX-G: optional resolved config snapshot (K21-FIX-F resultSnapshot.config).
+  // Null for runs created before K21-FIX-F.
+  config: {
+    configId: number | null
+    name: string | null
+    maxIterations: number
+    lahcWindowSize: number
+    randomSeed: number | null
+    lockedSlotIds: number[]
+    solverVersion: string
+    source: 'CONFIG' | 'INLINE' | 'DEFAULT' | 'MIXED'
+    snapshotTakenAt: string
+  } | null
+
   semesterId: number | null
   semesterCode: string | null
   semesterName: string | null
@@ -114,16 +128,34 @@ export async function GET(
       )
     }
 
-    // Parse lockedSlotIds from resultSnapshot
+    // Parse lockedSlotIds + resolved config (K21-FIX-G additive) from resultSnapshot
     let lockedSlotIds: number[] = []
     let lockedSlotCount = 0
+    let config: RunDetail['config'] = null
     if (run.resultSnapshot) {
       try {
         const snapshot = JSON.parse(run.resultSnapshot)
         lockedSlotIds = snapshot.lockedSlotIds ?? []
         lockedSlotCount = snapshot.lockedSlotCount ?? lockedSlotIds.length
+        if (snapshot.config && typeof snapshot.config === 'object') {
+          // K21-FIX-F: resultSnapshot.config — pass through if shape looks right
+          const c = snapshot.config
+          if (typeof c.maxIterations === 'number' && typeof c.lahcWindowSize === 'number') {
+            config = {
+              configId: c.configId ?? null,
+              name: c.name ?? null,
+              maxIterations: c.maxIterations,
+              lahcWindowSize: c.lahcWindowSize,
+              randomSeed: c.randomSeed ?? null,
+              lockedSlotIds: Array.isArray(c.lockedSlotIds) ? c.lockedSlotIds : [],
+              solverVersion: c.solverVersion ?? '',
+              source: c.source ?? 'DEFAULT',
+              snapshotTakenAt: c.snapshotTakenAt ?? new Date().toISOString(),
+            }
+          }
+        }
       } catch {
-        // Ignore parse errors
+        // Ignore parse errors — old resultSnapshot shapes
       }
     }
 
@@ -160,6 +192,7 @@ export async function GET(
       errorMessage: run.errorMessage,
       lockedSlotIds,
       lockedSlotCount,
+      config,
       semesterId: run.semesterId,
       semesterCode: run.semester?.code ?? null,
       semesterName: run.semester?.name ?? null,
