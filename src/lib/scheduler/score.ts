@@ -194,6 +194,65 @@ function computeTeacherDayBalancePenalty(counts: Map<number, number>): number {
   return SC5_PENALTY_PER_EXCESS * (diff - SC5_THRESHOLD)
 }
 
+// ── SC8: 班级空洞减少 (K22-F6) ──
+
+const SC8_CLASS_GAP_PENALTY_PER_EMPTY_PERIOD = -2
+
+/**
+ * 根据升序 period 集合计算 SC8 penalty。
+ * 纯函数，可直接用于 full 和 delta 路径。
+ * 算法 (K22-F5 Candidate A):
+ *   - 若 period 数量 < 2: penalty = 0
+ *   - 对相邻 period 对: gap = next - prev - 1
+ *   - 若 gap > 0: penalty += -2 * gap
+ */
+function computeClassGapPenalty(periods: Iterable<number>): number {
+  const sorted = [...new Set(periods)].sort((a, b) => a - b)
+  if (sorted.length < 2) return 0
+  let penalty = 0
+  for (let i = 1; i < sorted.length; i++) {
+    const gap = sorted[i] - sorted[i - 1] - 1
+    if (gap > 0) penalty += SC8_CLASS_GAP_PENALTY_PER_EMPTY_PERIOD * gap
+  }
+  return penalty
+}
+
+/**
+ * 计算 (classGroupId, day) 在 SC8 域内的 period 集合。
+ * - 只统计 room != 0 的 slot
+ * - 只统计 dayOfWeek in [1..5] 的 slot (weekend 由 SC7 负责)
+ * - 对每个 slot 的 taskClasses 展开: 合班任务对每个参与 classGroup 各自计入一次
+ * - excludeSlotId 排除 moved slot (delta 路径使用)
+ * - override 若 overrideDay === day 则加入 overrideIdx (delta 路径模拟旧/新位置)
+ */
+function buildClassDayPeriods(
+  classGroupId: number,
+  day: number,
+  ctx: SchedulingContext,
+  state: ScheduleState,
+  excludeSlotId: number,
+  overrideDay: number,
+  overrideIdx: number,
+): Set<number> {
+  const periods = new Set<number>()
+  for (const slot of ctx.slots) {
+    if (slot.id === excludeSlotId) continue
+    const pos = getPos(slot, state)
+    if (pos.room === 0) continue
+    if (pos.day !== day) continue
+    if (pos.day < 1 || pos.day > 5) continue
+    const includes = slot.teachingTask.taskClasses.some(
+      (tc) => tc.classGroupId === classGroupId,
+    )
+    if (!includes) continue
+    periods.add(pos.idx)
+  }
+  if (overrideDay === day && overrideDay >= 1 && overrideDay <= 5) {
+    periods.add(overrideIdx)
+  }
+  return periods
+}
+
 /**
  * 全量计算分数，返回带详情的结果
  */
@@ -481,6 +540,36 @@ export function calculateScoreWithDetails(
     }
   }
 
+  // ── SC8: 班级空洞减少 (K22-F6) ──
+  // 聚合 (classGroupId, day) 的 occupied period 集合，对每个 size>=2 的 key 计算 period gap。
+  // 合班任务对每个参与 classGroup 各自计入一次 (与 HC3 nested loop 模式一致)。
+  // Skip rules: room=0, weekend [6,7] (SC7 负责), taskClasses 空。
+  const classDayPeriods = new Map<string, Set<number>>()
+  for (const p of positions) {
+    if (p.room === 0) continue
+    if (p.day < 1 || p.day > 5) continue
+    const taskClasses = p.slot.teachingTask.taskClasses ?? []
+    if (taskClasses.length === 0) continue
+    for (const tc of taskClasses) {
+      const key = `${tc.classGroupId}-${p.day}`
+      let set = classDayPeriods.get(key)
+      if (!set) { set = new Set<number>(); classDayPeriods.set(key, set) }
+      set.add(p.idx)
+    }
+  }
+  for (const [key, periodSet] of classDayPeriods) {
+    const penalty = computeClassGapPenalty(periodSet)
+    if (penalty !== 0) {
+      softScore += penalty
+      const [cgIdStr, dayStr] = key.split('-')
+      const periodCount = periodSet.size
+      details.push({
+        type: 'SC8_CLASS_GAP', level: 'SOFT', penalty,
+        message: `classGroup ${cgIdStr} day ${dayStr}: ${periodCount} periods, penalty ${penalty}`,
+      })
+    }
+  }
+
   return { hardScore, softScore, details }
 }
 
@@ -717,6 +806,41 @@ export function calculateDeltaScore(
     const afterCounts = buildTeacherDailyCounts(sc5TeacherId, ctx.slots, state, slot.id)
     afterCounts.set(move.newDay, (afterCounts.get(move.newDay) ?? 0) + 1) // new 位置加入
     deltaSoft += computeTeacherDayBalancePenalty(afterCounts) - computeTeacherDayBalancePenalty(beforeCounts)
+  }
+
+  // SC8 delta: 班级空洞减少 (K22-F6)
+  // Affected keys: 对 moved slot 关联的每个 classGroupId，
+  //   - (cgId, oldDay) 如果 oldDay in [1..5]
+  //   - (cgId, newDay) 如果 newDay in [1..5]
+  // 对每个 affected key 分别计算 before / after penalty。
+  // 局部计算: 不重算所有 classGroup-day，仅重算 (≤ 2 * taskClasses.length) 个 key。
+  // MIN_PERT 由 harness 端用 3rd-position originalAssignments 隔离 (与 K22-F3/F4 一致)。
+  const classGroupIds = task.taskClasses.map((tc) => tc.classGroupId)
+  if (classGroupIds.length > 0) {
+    // Dedupe affected keys (old day may equal new day → one key)
+    const affectedKeys = new Set<string>()
+    if (old.dayOfWeek >= 1 && old.dayOfWeek <= 5) {
+      for (const cgId of classGroupIds) affectedKeys.add(`${cgId}-${old.dayOfWeek}`)
+    }
+    if (move.newDay >= 1 && move.newDay <= 5) {
+      for (const cgId of classGroupIds) affectedKeys.add(`${cgId}-${move.newDay}`)
+    }
+    for (const key of affectedKeys) {
+      const dashIdx = key.lastIndexOf('-')
+      const cgId = Number(key.slice(0, dashIdx))
+      const day = Number(key.slice(dashIdx + 1))
+      // Before: include moved slot at OLD position (only if oldDay equals this key's day)
+      const beforePeriods = buildClassDayPeriods(
+        cgId, day, ctx, state, slot.id, old.dayOfWeek, old.slotIndex,
+      )
+      const beforePenalty = computeClassGapPenalty(beforePeriods)
+      // After: include moved slot at NEW position (only if newDay equals this key's day)
+      const afterPeriods = buildClassDayPeriods(
+        cgId, day, ctx, state, slot.id, move.newDay, move.newSlotIndex,
+      )
+      const afterPenalty = computeClassGapPenalty(afterPeriods)
+      deltaSoft += afterPenalty - beforePenalty
+    }
   }
 
   return { deltaHard, deltaSoft }
