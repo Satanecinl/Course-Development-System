@@ -1,0 +1,662 @@
+{
+  "generatedAt": "2026-06-06T07:23:39.686Z",
+  "phase": "K22-E-SOFT-CONSTRAINTS-ROADMAP-AUDIT",
+  "mode": "read-only audit",
+  "summary": {
+    "totalFindings": 6,
+    "severity": {
+      "HIGH": 0,
+      "MEDIUM": 3,
+      "LOW": 1,
+      "INFO": 2,
+      "NONE": 0
+    },
+    "blocking": false,
+    "priorityCounts": {
+      "P0": 3,
+      "P1": 4,
+      "P2": 3
+    }
+  },
+  "currentSoftConstraints": [
+    {
+      "id": "SC1",
+      "name": "跨楼栋连续课 (cross-building back-to-back)",
+      "category": "teacher / class / building",
+      "coveredNow": true,
+      "requiredData": [
+        "Room.building (or inferBuilding)",
+        "TeachingTask.teacherId",
+        "TeachingTaskClass.classGroupId",
+        "ScheduleSlot.dayOfWeek/slotIndex/roomId"
+      ],
+      "dataAvailableNow": true,
+      "schemaChangeNeeded": false,
+      "implementationComplexity": "MEDIUM",
+      "regressionRisk": "LOW",
+      "priority": "P0",
+      "recommendedStage": "DONE (K22-D)",
+      "rationale": "Already implemented in full + delta. K22-A HIGH risk resolved in K22-D.",
+      "notes": "K22-C A.2 case is regression guard."
+    },
+    {
+      "id": "SC2",
+      "name": "同天多节 (same-day multi-session)",
+      "category": "task distribution",
+      "coveredNow": true,
+      "requiredData": [
+        "TeachingTask.id",
+        "ScheduleSlot.dayOfWeek"
+      ],
+      "dataAvailableNow": true,
+      "schemaChangeNeeded": false,
+      "implementationComplexity": "LOW",
+      "regressionRisk": "LOW",
+      "priority": "P0",
+      "recommendedStage": "DONE",
+      "rationale": "Already implemented. penalty = -10 per extra slot on same day.",
+      "notes": ""
+    },
+    {
+      "id": "SC3",
+      "name": "极端时间 (extreme time slot)",
+      "category": "time preference",
+      "coveredNow": true,
+      "requiredData": [
+        "ScheduleSlot.slotIndex"
+      ],
+      "dataAvailableNow": true,
+      "schemaChangeNeeded": false,
+      "implementationComplexity": "LOW",
+      "regressionRisk": "LOW",
+      "priority": "P0",
+      "recommendedStage": "DONE",
+      "rationale": "Already implemented. penalty = -1 for slotIndex >= 5 (evening).",
+      "notes": ""
+    },
+    {
+      "id": "SC4",
+      "name": "跨校区通勤 (cross-campus commute)",
+      "category": "task distribution",
+      "coveredNow": true,
+      "requiredData": [
+        "Room.building",
+        "TeachingTask.id",
+        "ScheduleSlot"
+      ],
+      "dataAvailableNow": true,
+      "schemaChangeNeeded": false,
+      "implementationComplexity": "LOW",
+      "regressionRisk": "LOW",
+      "priority": "P0",
+      "recommendedStage": "DONE",
+      "rationale": "Already implemented. penalty = -5 per cross-campus consecutive slot pair.",
+      "notes": "LOW: SC1 vs SC4 building inference inconsistency still present."
+    },
+    {
+      "id": "MIN_PERT",
+      "name": "最小扰动惩罚 (minimum perturbation)",
+      "category": "solver stability",
+      "coveredNow": true,
+      "requiredData": [
+        "ScheduleState.originalAssignments",
+        "ScheduleSlot"
+      ],
+      "dataAvailableNow": true,
+      "schemaChangeNeeded": false,
+      "implementationComplexity": "LOW",
+      "regressionRisk": "LOW",
+      "priority": "P0",
+      "recommendedStage": "DONE",
+      "rationale": "Already implemented. penalty = -2 per moved slot.",
+      "notes": ""
+    }
+  ],
+  "missingSoftConstraints": [
+    {
+      "id": "NEW-SC-01",
+      "name": "教师工作日均衡 (teacher weekday balance)",
+      "category": "teacher distribution",
+      "coveredNow": false,
+      "requiredData": [
+        "Teacher.id",
+        "ScheduleSlot.dayOfWeek via TeachingTask.teacherId"
+      ],
+      "dataAvailableNow": true,
+      "schemaChangeNeeded": false,
+      "implementationComplexity": "LOW",
+      "regressionRisk": "LOW",
+      "priority": "P0",
+      "recommendedStage": "K22-F",
+      "rationale": "Aggregates per-teacher slot counts by dayOfWeek; penalize over-concentration on a single day (e.g. teacher has 4 slots on Monday and 0 on Wednesday). All data already in ScheduleSlot + TeachingTask. Pure O(n) computation. Can be implemented in score.ts calculateScoreWithDetails + calculateDeltaScore. Reusable by K22-C harness. Does not change hardScore.",
+      "notes": "Concrete formula: per teacher, compute variance of per-day slot count. Penalty = -k * variance (small k, e.g. -1 per std deviation). No new fields needed. Should also be K22-C harness-regression-tested."
+    },
+    {
+      "id": "NEW-SC-02",
+      "name": "班级空洞减少 (class gap reduction)",
+      "category": "class distribution",
+      "coveredNow": false,
+      "requiredData": [
+        "ClassGroup.id",
+        "ScheduleSlot via TeachingTaskClass.classGroupId",
+        "dayOfWeek/slotIndex"
+      ],
+      "dataAvailableNow": true,
+      "schemaChangeNeeded": false,
+      "implementationComplexity": "LOW",
+      "regressionRisk": "LOW",
+      "priority": "P0",
+      "recommendedStage": "K22-F",
+      "rationale": "Per class, count \"gaps\" in their week schedule: a day where the class has slots at idx 1 and 3 but not 2 is a 1-slot gap. Penalize each gap (small penalty, e.g. -2). All data available via existing ScheduleSlot + TeachingTaskClass. No schema change. O(n) per class. Reusable K22-C harness.",
+      "notes": "Variant: \"half-day consistency\" — penalize classes whose slots spread across >2 distinct (day, morning/afternoon) blocks per day. Spec recommendation: combine with K22-F."
+    },
+    {
+      "id": "NEW-SC-03",
+      "name": "教室稳定性 (room stability)",
+      "category": "room distribution",
+      "coveredNow": false,
+      "requiredData": [
+        "TeachingTask.id",
+        "ScheduleSlot.roomId"
+      ],
+      "dataAvailableNow": true,
+      "schemaChangeNeeded": false,
+      "implementationComplexity": "LOW",
+      "regressionRisk": "LOW",
+      "priority": "P0",
+      "recommendedStage": "K22-F",
+      "rationale": "Per teachingTask, count distinct roomId across slots. Penalize per extra room (e.g. -3 per extra room). Reuses ScheduleSlot only. No schema change. O(n) per task. Reusable K22-C harness.",
+      "notes": "Spec says \"体验优化\" but commonly requested by 教务处 (academic affairs). Low risk: only affects softScore, no hardScore change."
+    },
+    {
+      "id": "NEW-SC-04",
+      "name": "实训课 / 机房课匹配 room type (lab/computer room matching)",
+      "category": "room type matching",
+      "coveredNow": false,
+      "requiredData": [
+        "Course.name (regex for 实训/实验/机房/上机)",
+        "Room.type (currently defaults to NORMAL)"
+      ],
+      "dataAvailableNow": false,
+      "schemaChangeNeeded": true,
+      "implementationComplexity": "HIGH",
+      "regressionRisk": "MEDIUM",
+      "priority": "P1",
+      "recommendedStage": "K22-G",
+      "rationale": "Course has no structured type field. Room.type exists in schema but is unused (admin form does not expose it). Implementation requires: (1) extend Course model with `type` (Theory/Practice/Lab) OR Room model with `type` values, (2) backfill from existing Course.name regex (实训|实验|机房|上机), (3) update admin UI, (4) implement matching score. High complexity, medium regression risk (backfill can introduce noise). Spec recommends audit before implementation.",
+      "notes": "Pre-implementation audit: K22-G-SOFT-CONSTRAINT-LAB-MATCHING-AUDIT (data quality assessment, sample check on 123 courses). Only after audit confirms clean data should implementation proceed."
+    },
+    {
+      "id": "NEW-SC-05",
+      "name": "大班优先大教室 (large class priority for big room)",
+      "category": "capacity utilization",
+      "coveredNow": false,
+      "requiredData": [
+        "ClassGroup.studentCount",
+        "Room.capacity"
+      ],
+      "dataAvailableNow": true,
+      "schemaChangeNeeded": false,
+      "implementationComplexity": "MEDIUM",
+      "regressionRisk": "LOW",
+      "priority": "P1",
+      "recommendedStage": "K22-G",
+      "rationale": "For each slot, if studentCount > 0.7 * room.capacity (over-allocated), penalize (-2 per slot). If studentCount < 0.4 * room.capacity (under-allocated), lighter penalty (-1). Pure score logic, no schema. Reuses getTaskStudentCount + Room.capacity. MEDIUM complexity: requires careful definition of \"over/under\" thresholds.",
+      "notes": "Edge: studentCount may be null (fallback 50). Spec recommends wide range test with K22-C harness."
+    },
+    {
+      "id": "NEW-SC-06",
+      "name": "同班连续课少切换 (same-class consecutive switch reduction)",
+      "category": "class distribution",
+      "coveredNow": false,
+      "requiredData": [
+        "ClassGroup.id",
+        "ScheduleSlot via TeachingTaskClass",
+        "ScheduleSlot.roomId"
+      ],
+      "dataAvailableNow": true,
+      "schemaChangeNeeded": false,
+      "implementationComplexity": "MEDIUM",
+      "regressionRisk": "LOW",
+      "priority": "P1",
+      "recommendedStage": "K22-G",
+      "rationale": "Per class, for two consecutive slots on the same day (idx diff = 1), penalize room/teacher switch (-3 per switch). Similar to SC1 but class-centric. Reuses existing data. No schema. Some overlap with SC1/SC4; should be careful to avoid double-counting.",
+      "notes": "Should coordinate with SC1 (teacher/class cross-building) and SC4 (task cross-campus). Spec recommends implementation after SC1/SC4 fix to avoid regression."
+    },
+    {
+      "id": "NEW-SC-07",
+      "name": "教师半天集中 (teacher half-day concentration)",
+      "category": "teacher distribution",
+      "coveredNow": false,
+      "requiredData": [
+        "Teacher.id",
+        "ScheduleSlot.dayOfWeek/slotIndex via TeachingTask.teacherId"
+      ],
+      "dataAvailableNow": true,
+      "schemaChangeNeeded": false,
+      "implementationComplexity": "LOW",
+      "regressionRisk": "LOW",
+      "priority": "P1",
+      "recommendedStage": "K22-G",
+      "rationale": "Per teacher, if their slots are spread across both AM (idx 1-2) and PM (idx 3-4) and evening (idx 5-6), penalize. Bonus: cluster all teacher slots into 1-2 contiguous half-days per day (-5 reward via negative penalty). Reuses ScheduleSlot. No schema.",
+      "notes": "Variant: maximize teacher idle half-days. Could conflict with NEW-SC-01 (weekday balance) if not careful. Spec recommends K22-G to keep both stable."
+    },
+    {
+      "id": "NEW-SC-08",
+      "name": "教师午休 / 晚课偏好 (teacher lunch / evening preference)",
+      "category": "teacher preference",
+      "coveredNow": false,
+      "requiredData": [
+        "Teacher preference table (NOT YET MODELED)"
+      ],
+      "dataAvailableNow": false,
+      "schemaChangeNeeded": true,
+      "implementationComplexity": "HIGH",
+      "regressionRisk": "HIGH",
+      "priority": "P2",
+      "recommendedStage": "K22-H",
+      "rationale": "Requires TeacherPreference model (teacherId, dayOfWeek, slotIndex, preferenceWeight) — schema migration. High regression risk: changing teacher schedules based on unverified preference data can cause unexpected moves. Spec recommends schema-planning audit first, then data quality check, then implementation.",
+      "notes": "K22-H-SOFT-CONSTRAINT-TEACHER-PREFERENCE-PLAN: plan schema, design weight format, plan data import flow. No implementation until K22-I (weights roadmap) supports dynamic preference weights."
+    },
+    {
+      "id": "NEW-SC-09",
+      "name": "周一早课 / 周五晚课偏好 (Monday morning / Friday evening preference)",
+      "category": "campus-wide preference",
+      "coveredNow": false,
+      "requiredData": [
+        "campus-wide preference config (NOT MODELED)"
+      ],
+      "dataAvailableNow": false,
+      "schemaChangeNeeded": true,
+      "implementationComplexity": "MEDIUM",
+      "regressionRisk": "MEDIUM",
+      "priority": "P2",
+      "recommendedStage": "K22-H",
+      "rationale": "Requires global preference config (e.g. SchedulingConfig.preferences JSON). Different colleges have different cultures. High coupling with K22-SCORE-WEIGHTS-ROADMAP. Spec recommends deferring until weights are configurable.",
+      "notes": "P2: defer until K22-SCORE-WEIGHTS-ROADMAP completes."
+    },
+    {
+      "id": "NEW-SC-10",
+      "name": "行政班固定教室偏好 (class home room preference)",
+      "category": "class distribution",
+      "coveredNow": false,
+      "requiredData": [
+        "ClassGroup.homeRoom (NOT MODELED)"
+      ],
+      "dataAvailableNow": false,
+      "schemaChangeNeeded": true,
+      "implementationComplexity": "MEDIUM",
+      "regressionRisk": "MEDIUM",
+      "priority": "P2",
+      "recommendedStage": "K22-H",
+      "rationale": "Requires ClassGroup.homeRoomId field (FK to Room). Schema migration + admin UI. Penalties: distance from home room (-3 per off-home). Medium complexity. Spec recommends schema planning first to avoid wasted work.",
+      "notes": "Some 教务处 request this. Defer to K22-H schema planning."
+    }
+  ],
+  "dataReadinessMatrix": [
+    {
+      "constraintId": "NEW-SC-01",
+      "constraintName": "教师工作日均衡 (teacher weekday balance)",
+      "requiredFields": [
+        "Teacher.id",
+        "ScheduleSlot.dayOfWeek via TeachingTask.teacherId"
+      ],
+      "fieldsAvailable": [
+        "Teacher.id",
+        "ScheduleSlot.dayOfWeek via TeachingTask.teacherId"
+      ],
+      "fieldsMissing": [],
+      "readyForImpl": true,
+      "notes": "Concrete formula: per teacher, compute variance of per-day slot count. Penalty = -k * variance (small k, e.g. -1 per std deviation). No new fields needed. Should also be K22-C harness-regression-tested."
+    },
+    {
+      "constraintId": "NEW-SC-02",
+      "constraintName": "班级空洞减少 (class gap reduction)",
+      "requiredFields": [
+        "ClassGroup.id",
+        "ScheduleSlot via TeachingTaskClass.classGroupId",
+        "dayOfWeek/slotIndex"
+      ],
+      "fieldsAvailable": [
+        "ClassGroup.id",
+        "ScheduleSlot via TeachingTaskClass.classGroupId",
+        "dayOfWeek/slotIndex"
+      ],
+      "fieldsMissing": [],
+      "readyForImpl": true,
+      "notes": "Variant: \"half-day consistency\" — penalize classes whose slots spread across >2 distinct (day, morning/afternoon) blocks per day. Spec recommendation: combine with K22-F."
+    },
+    {
+      "constraintId": "NEW-SC-03",
+      "constraintName": "教室稳定性 (room stability)",
+      "requiredFields": [
+        "TeachingTask.id",
+        "ScheduleSlot.roomId"
+      ],
+      "fieldsAvailable": [
+        "TeachingTask.id",
+        "ScheduleSlot.roomId"
+      ],
+      "fieldsMissing": [],
+      "readyForImpl": true,
+      "notes": "Spec says \"体验优化\" but commonly requested by 教务处 (academic affairs). Low risk: only affects softScore, no hardScore change."
+    },
+    {
+      "constraintId": "NEW-SC-04",
+      "constraintName": "实训课 / 机房课匹配 room type (lab/computer room matching)",
+      "requiredFields": [
+        "Course.name (regex for 实训/实验/机房/上机)",
+        "Room.type (currently defaults to NORMAL)"
+      ],
+      "fieldsAvailable": [
+        "Course.name (regex for 实训/实验/机房/上机)",
+        "Room.type (currently defaults to NORMAL)"
+      ],
+      "fieldsMissing": [],
+      "readyForImpl": false,
+      "notes": "Pre-implementation audit: K22-G-SOFT-CONSTRAINT-LAB-MATCHING-AUDIT (data quality assessment, sample check on 123 courses). Only after audit confirms clean data should implementation proceed."
+    },
+    {
+      "constraintId": "NEW-SC-05",
+      "constraintName": "大班优先大教室 (large class priority for big room)",
+      "requiredFields": [
+        "ClassGroup.studentCount",
+        "Room.capacity"
+      ],
+      "fieldsAvailable": [
+        "ClassGroup.studentCount",
+        "Room.capacity"
+      ],
+      "fieldsMissing": [],
+      "readyForImpl": true,
+      "notes": "Edge: studentCount may be null (fallback 50). Spec recommends wide range test with K22-C harness."
+    },
+    {
+      "constraintId": "NEW-SC-06",
+      "constraintName": "同班连续课少切换 (same-class consecutive switch reduction)",
+      "requiredFields": [
+        "ClassGroup.id",
+        "ScheduleSlot via TeachingTaskClass",
+        "ScheduleSlot.roomId"
+      ],
+      "fieldsAvailable": [
+        "ClassGroup.id",
+        "ScheduleSlot via TeachingTaskClass",
+        "ScheduleSlot.roomId"
+      ],
+      "fieldsMissing": [],
+      "readyForImpl": true,
+      "notes": "Should coordinate with SC1 (teacher/class cross-building) and SC4 (task cross-campus). Spec recommends implementation after SC1/SC4 fix to avoid regression."
+    },
+    {
+      "constraintId": "NEW-SC-07",
+      "constraintName": "教师半天集中 (teacher half-day concentration)",
+      "requiredFields": [
+        "Teacher.id",
+        "ScheduleSlot.dayOfWeek/slotIndex via TeachingTask.teacherId"
+      ],
+      "fieldsAvailable": [
+        "Teacher.id",
+        "ScheduleSlot.dayOfWeek/slotIndex via TeachingTask.teacherId"
+      ],
+      "fieldsMissing": [],
+      "readyForImpl": true,
+      "notes": "Variant: maximize teacher idle half-days. Could conflict with NEW-SC-01 (weekday balance) if not careful. Spec recommends K22-G to keep both stable."
+    },
+    {
+      "constraintId": "NEW-SC-08",
+      "constraintName": "教师午休 / 晚课偏好 (teacher lunch / evening preference)",
+      "requiredFields": [
+        "Teacher preference table (NOT YET MODELED)"
+      ],
+      "fieldsAvailable": [],
+      "fieldsMissing": [
+        "Teacher preference table (NOT YET MODELED)"
+      ],
+      "readyForImpl": false,
+      "notes": "K22-H-SOFT-CONSTRAINT-TEACHER-PREFERENCE-PLAN: plan schema, design weight format, plan data import flow. No implementation until K22-I (weights roadmap) supports dynamic preference weights."
+    },
+    {
+      "constraintId": "NEW-SC-09",
+      "constraintName": "周一早课 / 周五晚课偏好 (Monday morning / Friday evening preference)",
+      "requiredFields": [
+        "campus-wide preference config (NOT MODELED)"
+      ],
+      "fieldsAvailable": [],
+      "fieldsMissing": [
+        "campus-wide preference config (NOT MODELED)"
+      ],
+      "readyForImpl": false,
+      "notes": "P2: defer until K22-SCORE-WEIGHTS-ROADMAP completes."
+    },
+    {
+      "constraintId": "NEW-SC-10",
+      "constraintName": "行政班固定教室偏好 (class home room preference)",
+      "requiredFields": [
+        "ClassGroup.homeRoom (NOT MODELED)"
+      ],
+      "fieldsAvailable": [],
+      "fieldsMissing": [
+        "ClassGroup.homeRoom (NOT MODELED)"
+      ],
+      "readyForImpl": false,
+      "notes": "Some 教务处 request this. Defer to K22-H schema planning."
+    }
+  ],
+  "schemaDependencyMatrix": [
+    {
+      "constraintId": "NEW-SC-04",
+      "constraintName": "实训课 / 机房课匹配 room type (lab/computer room matching)",
+      "requiredSchemaChange": "Add Course.type enum (Theory/Practice/Lab) OR Room.type non-default values; update admin UI form; backfill from existing Course.name regex",
+      "severity": "MEDIUM",
+      "estimatedMigrationCost": "MEDIUM",
+      "notes": "Pre-implementation audit: K22-G-SOFT-CONSTRAINT-LAB-MATCHING-AUDIT (data quality assessment, sample check on 123 courses). Only after audit confirms clean data should implementation proceed."
+    },
+    {
+      "constraintId": "NEW-SC-08",
+      "constraintName": "教师午休 / 晚课偏好 (teacher lunch / evening preference)",
+      "requiredSchemaChange": "Add TeacherPreference model (teacherId, dayOfWeek, slotIndex, weight); admin UI; import flow",
+      "severity": "MEDIUM",
+      "estimatedMigrationCost": "HIGH",
+      "notes": "K22-H-SOFT-CONSTRAINT-TEACHER-PREFERENCE-PLAN: plan schema, design weight format, plan data import flow. No implementation until K22-I (weights roadmap) supports dynamic preference weights."
+    },
+    {
+      "constraintId": "NEW-SC-09",
+      "constraintName": "周一早课 / 周五晚课偏好 (Monday morning / Friday evening preference)",
+      "requiredSchemaChange": "Add SchedulingConfig.preferences JSON column (Monday morning, Friday evening, etc.)",
+      "severity": "MEDIUM",
+      "estimatedMigrationCost": "LOW",
+      "notes": "P2: defer until K22-SCORE-WEIGHTS-ROADMAP completes."
+    },
+    {
+      "constraintId": "NEW-SC-10",
+      "constraintName": "行政班固定教室偏好 (class home room preference)",
+      "requiredSchemaChange": "Add ClassGroup.homeRoomId Int? (FK to Room); update admin UI form",
+      "severity": "MEDIUM",
+      "estimatedMigrationCost": "LOW",
+      "notes": "Some 教务处 request this. Defer to K22-H schema planning."
+    }
+  ],
+  "priorityRoadmap": [
+    {
+      "stage": "K22-F-SOFT-CONSTRAINT-IMPLEMENTATION-1",
+      "scope": "Implement 3 P0 soft constraints: NEW-SC-01 (teacher weekday balance), NEW-SC-02 (class gap reduction), NEW-SC-03 (room stability). All use existing data (no schema change). Extend score.ts with SC5/SC6/SC7. Add 3 cases to K22-C regression harness. Update K22-C verify summary.",
+      "excludes": "P1/P2 constraints. Schema changes. Solver algorithm changes. UI weight editor.",
+      "rationale": "P0 constraints have data available, LOW complexity, LOW risk. Highest impact-to-cost ratio. Each is independently testable. K22-C regression harness already in place for SC delta testing."
+    },
+    {
+      "stage": "K22-G-SOFT-CONSTRAINT-IMPLEMENTATION-2",
+      "scope": "Implement 4 P1 soft constraints: NEW-SC-04 (lab matching, after K22-G audit), NEW-SC-05 (large class priority), NEW-SC-06 (same-class consecutive switch reduction), NEW-SC-07 (teacher half-day concentration). NEW-SC-04 requires pre-implementation data audit (K22-G-SOFT-CONSTRAINT-LAB-MATCHING-AUDIT). The other 3 use existing data.",
+      "excludes": "Schema migrations. Teacher preference (K22-H).",
+      "rationale": "P1 constraints deliver more value but require more care. NEW-SC-04 needs data audit first because Room.type / Course.type are currently unstructured."
+    },
+    {
+      "stage": "K22-H-SOFT-CONSTRAINT-SCHEMA-PLAN",
+      "scope": "Plan schema migrations for 3 P2 soft constraints: NEW-SC-08 (teacher preference), NEW-SC-09 (campus-wide preference), NEW-SC-10 (class home room). Output: migration plan, data backfill strategy, admin UI changes, weight config plan. NO implementation, just planning.",
+      "excludes": "Implementation. HardWeights/SoftWeights (K22-SCORE-WEIGHTS-ROADMAP).",
+      "rationale": "P2 constraints need schema + admin UI work. Spec recommends planning first, then implementing in K22-I+."
+    },
+    {
+      "stage": "K22-I-SOFT-WEIGHTS-PRESETS-ROADMAP",
+      "scope": "Design dynamic hardWeights/softWeights per SchedulingConfig. Plan presets (default 排课偏好, 工科偏好, 文科偏好, 临考期偏好). Coordinate with K22-SCORE-WEIGHTS-ROADMAP. NO UI implementation, just API/schema plan.",
+      "excludes": "UI weight editor. Soft constraint implementation.",
+      "rationale": "Once 5+ soft constraints are implemented, weights configuration becomes the next natural step. Defer until K22-F/G soft constraints are mature."
+    }
+  ],
+  "findings": [
+    {
+      "id": "K22-E-A-1",
+      "severity": "MEDIUM",
+      "category": "A. P0 soft constraints ready for implementation",
+      "title": "3 P0 soft constraints (NEW-SC-01/02/03) have data and are LOW complexity",
+      "currentStatus": "教师工作日均衡 (NEW-SC-01), 班级空洞减少 (NEW-SC-02), 教室稳定性 (NEW-SC-03) — all 3 have data available, no schema change, LOW implementation complexity, LOW regression risk. Should be the next implementation stage (K22-F).",
+      "evidence": [
+        "NEW-SC-01 教师工作日均衡 (teacher weekday balance): dataAvailable=true, schema=false, complexity=LOW, risk=LOW",
+        "NEW-SC-02 班级空洞减少 (class gap reduction): dataAvailable=true, schema=false, complexity=LOW, risk=LOW",
+        "NEW-SC-03 教室稳定性 (room stability): dataAvailable=true, schema=false, complexity=LOW, risk=LOW"
+      ],
+      "risk": "不实现 P0 constraints 会持续影响排课质量。教师过载同一天 (NEW-SC-01 缺失) 直接影响教师体验。班级空洞 (NEW-SC-02 缺失) 让学生一天中穿插空闲，影响上课节奏。教室不稳定 (NEW-SC-03 缺失) 增加师生找教室成本。",
+      "recommendation": "K22-F-SOFT-CONSTRAINT-IMPLEMENTATION-1 实施 3 个 P0 constraints，复用 K22-C regression harness 做回归。",
+      "suggestedNextStage": "K22-F-SOFT-CONSTRAINT-IMPLEMENTATION-1"
+    },
+    {
+      "id": "K22-E-B-1",
+      "severity": "MEDIUM",
+      "category": "B. P1 lab matching requires data quality audit",
+      "title": "NEW-SC-04 实训课匹配需要先做数据质量审计",
+      "currentStatus": "Course 模型没有结构化 type 字段（只有 name 自由文本）。Room.type 字段在 schema 中但 admin form 不暴露，当前所有 room 都是 NORMAL。Python parser 内部有 实训/实验/机房 正则检测（scripts/parse_cell.py），但未持久化到 Course.type 字段。实施前需先 audit 123 个 Course 数据，确认正则识别准确率。",
+      "evidence": [
+        "prisma/schema.prisma Course model: 无 type 字段",
+        "prisma/schema.prisma Room.type: 默认 \"NORMAL\"，admin form 不暴露",
+        "src/lib/admin-db/config.ts getFormFields(\"room\"): 返回 [name, building, capacity]，无 type",
+        "scripts/parse_cell.py: 检测 实训/实验/机房/上机 正则但只用于房间匹配，不写入 Course.type"
+      ],
+      "risk": "不先 audit 直接实施会引入大量 noise：基于不准确的 type 分类会让 solver 错误地把 普通课 推到 实训室 (capacity 浪费) 或把 实训课 推到 普通教室 (硬件不支持)。",
+      "recommendation": "K22-G-SOFT-CONSTRAINT-LAB-MATCHING-AUDIT：先用 Python 正则对 123 个 Course.name 做分类统计，输出 (theory/practice/lab) 分布和样本，由 教务处 确认准确率后再实施。",
+      "suggestedNextStage": "K22-G-SOFT-CONSTRAINT-LAB-MATCHING-AUDIT"
+    },
+    {
+      "id": "K22-E-C-1",
+      "severity": "INFO",
+      "category": "C. P2 constraints need schema planning",
+      "title": "3 P2 soft constraints (NEW-SC-08/09/10) require schema migration",
+      "currentStatus": "教师偏好 (NEW-SC-08), 校园级偏好 (NEW-SC-09), 班级固定教室 (NEW-SC-10) — 都需要 schema 扩展。spec 推荐 K22-H 先做 schema planning，K22-I+ 再实施。",
+      "evidence": [
+        "NEW-SC-08 教师午休 / 晚课偏好 (teacher lunch / evening preference): schemaChange=true, complexity=HIGH",
+        "NEW-SC-09 周一早课 / 周五晚课偏好 (Monday morning / Friday evening preference): schemaChange=true, complexity=MEDIUM",
+        "NEW-SC-10 行政班固定教室偏好 (class home room preference): schemaChange=true, complexity=MEDIUM"
+      ],
+      "risk": "不先做 schema planning 直接实施会导致 migration 反复，影响其他模块。",
+      "recommendation": "K22-H-SOFT-CONSTRAINT-SCHEMA-PLAN：规划 3 个 schema 扩展，输出 migration plan, data backfill strategy, admin UI changes。",
+      "suggestedNextStage": "K22-H-SOFT-CONSTRAINT-SCHEMA-PLAN"
+    },
+    {
+      "id": "K22-E-D-1",
+      "severity": "LOW",
+      "category": "D. Building inference inconsistency (carried over)",
+      "title": "SC1 uses getBuilding() fallback, SC4 only uses Room.building — inconsistency remains LOW",
+      "currentStatus": "K22-A 记录的 LOW finding (K22-A-E-3) 仍未解决。SC1 通过 getBuilding() 优先用 room.building 否则 inferBuilding(room.name)，SC4 仅检查 room.building 字段。两者对 \"building\" 的判断逻辑不一致。本阶段 (K22-E) 不修该 LOW，因为其不影响正确性 (SC4 触发时 SC1 也必触发，反之不然)。",
+      "evidence": [
+        "score.ts SC1 block: getBuilding(pRoom) + getBuilding(qRoom)",
+        "score.ts SC4 block: pRoom.building / qRoom.building (no fallback)"
+      ],
+      "risk": "若 Room.building 为 null 但 room.name 包含楼栋信息，SC1 触发 SC4 不触发。语义不同：SC4 是同 task 跨校区，SC1 是教师/班级跨楼栋。",
+      "recommendation": "未来可统一 getBuilding() helper 提取。当前不构成 bug，defer 到 soft constraint 重构时一起处理。"
+    },
+    {
+      "id": "K22-E-E-1",
+      "severity": "INFO",
+      "category": "E. Room.type field underutilized",
+      "title": "Room.type 字段在 schema 但 admin UI 不暴露",
+      "currentStatus": "Room model 有 type 字段 (默认 NORMAL)，但 admin form (src/lib/admin-db/config.ts) 不暴露该字段。当前 53 个 Room 全部 NORMAL。Room.type 仅在 src/lib/rooms/capacity.ts:113 被读取但不参与逻辑。",
+      "evidence": [
+        "prisma/schema.prisma Room.type: String @default(\"NORMAL\")",
+        "src/lib/admin-db/config.ts getFormFields(\"room\"): [name, building, capacity] — 不含 type",
+        "src/lib/rooms/capacity.ts:113: type: room.type (passes through to EligibleRoom but no logic uses it)"
+      ],
+      "risk": "K22-G 实施 NEW-SC-04 前必须先暴露 Room.type，否则无法分类。",
+      "recommendation": "K22-G-SOFT-CONSTRAINT-LAB-MATCHING-AUDIT 阶段同时审计 Room.type 字段，准备 admin form 扩展。",
+      "suggestedNextStage": "K22-G-SOFT-CONSTRAINT-LAB-MATCHING-AUDIT"
+    },
+    {
+      "id": "K22-E-F-1",
+      "severity": "MEDIUM",
+      "category": "F. Penalty constants hardcoded (carried over)",
+      "title": "Penalty constants 仍硬编码 — K22-SCORE-WEIGHTS-ROADMAP 范围",
+      "currentStatus": "K22-A-C-1 MEDIUM finding 仍未解决。所有 penalty (HC=-1000, SC1=-5, SC2=-10, SC3=-1, SC4=-5, MIN_PERT=-2) 硬编码在 score.ts 顶部。本阶段 (K22-E) 不解决该 MEDIUM，归属 K22-SCORE-WEIGHTS-ROADMAP (K22-weights-roadmap)。",
+      "evidence": [
+        "src/lib/scheduler/score.ts:16-21: HARD_PENALTY, SOFT_SC1-SC4, SOFT_MINIMUM_PERTURBATION",
+        "prisma/schema.prisma SchedulingConfig: 无 hardWeights/softWeights 字段"
+      ],
+      "risk": "不实现 dynamic weights 会限制 K22-F/G 实施的 soft constraints 调优。",
+      "recommendation": "K22-SCORE-WEIGHTS-ROADMAP (不在 K22-E 范围): score.ts refactor 接收 dynamic weights。"
+    }
+  ],
+  "dbSummary": {
+    "roomTypeDistribution": {
+      "NORMAL": 53
+    },
+    "courseNameSample": [
+      {
+        "id": 1,
+        "name": "心理健康教育"
+      },
+      {
+        "id": 2,
+        "name": "机械制图"
+      },
+      {
+        "id": 3,
+        "name": "金属材料与热处理"
+      },
+      {
+        "id": 4,
+        "name": "电工电子技术"
+      },
+      {
+        "id": 5,
+        "name": "液压与气压传动"
+      },
+      {
+        "id": 6,
+        "name": "无机化学"
+      },
+      {
+        "id": 7,
+        "name": "体育"
+      },
+      {
+        "id": 8,
+        "name": "创新创业教育"
+      },
+      {
+        "id": 9,
+        "name": "形势与政策"
+      },
+      {
+        "id": 10,
+        "name": "习近平新时代中国特色社会主义思想概论"
+      }
+    ],
+    "classGroupCount": 36,
+    "teacherCount": 84,
+    "roomCount": 53,
+    "courseCount": 104,
+    "scheduleSlotCount": 440,
+    "teachingTaskCount": 308,
+    "notes": "Read-only inspection at 2026-06-06T07:23:39.674Z."
+  },
+  "recommendedNextStage": "K22-F-SOFT-CONSTRAINT-IMPLEMENTATION-1",
+  "reasonsForRecommendation": [
+    "3 P0 soft constraints (NEW-SC-01/02/03) have data available now",
+    "No schema change required for P0",
+    "LOW implementation complexity and LOW regression risk for P0",
+    "Reusable K22-C regression harness (Harness A pattern)",
+    "Does not change hardScore; does not affect solver feasibility"
+  ],
+  "notes": [
+    "K22-E is a read-only audit. No Prisma writes, no score.ts changes, no schema changes.",
+    "K22-A HIGH risk (SC1 delta missing) was resolved in K22-D; K22-E focuses on the 7 missing soft constraints identified in K22-A-E-4.",
+    "Room.type is a schema field but the admin form does not expose it; current 53 rooms are all NORMAL. This blocks NEW-SC-04 (lab matching) until K22-G audit."
+  ]
+}
