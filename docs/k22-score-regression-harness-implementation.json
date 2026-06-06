@@ -1,0 +1,229 @@
+{
+  "generatedAt": "2026-06-06T06:24:13.550Z",
+  "phase": "K22-C-SCORE-REGRESSION-HARNESS-IMPLEMENTATION",
+  "mode": "read-only, db-free, synthetic-fixture score regression harness",
+  "summary": {
+    "total": 17,
+    "pass": 16,
+    "knownFail": 1,
+    "fail": 0,
+    "info": 0,
+    "blocking": "NO"
+  },
+  "sc1KnownFailure": {
+    "caseName": "SC1 cross-building consecutive delta",
+    "harness": "A2",
+    "title": "SC1 delta missing — K22-A HIGH risk, K22-D target",
+    "currentDeltaSoft": -2,
+    "expectedFullSoftDelta": 3,
+    "currentFullSoftDelta": 3,
+    "sc1Contribution": 5,
+    "minPertContribution": -2,
+    "deltaMatchesFull": false,
+    "willBeFixedIn": "K22-D"
+  },
+  "results": [
+    {
+      "id": "A1",
+      "harness": "A",
+      "title": "SC2 same-day: full vs delta consistency (move to different day)",
+      "status": "PASS",
+      "detail": "before={hard:0,soft:-10}, after={hard:0,soft:-2}, fullΔ=(0,8), delta=(0,8)",
+      "evidence": [
+        "SC2_SAME_DAY count before=1 after=0",
+        "hard match: true, soft match: true"
+      ]
+    },
+    {
+      "id": "A2",
+      "harness": "A",
+      "title": "SC1 cross-building consecutive delta (KNOWN FAILURE — K22-D target)",
+      "status": "KNOWN_FAIL",
+      "detail": "SC1 delta missing: fullΔsoft=3 (SC1 +5 cleared, MIN_PERT -2 introduced → +3 net), delta.soft=-2 (BUG: returns -2 from MIN_PERT only, missing SC1 +5). SC1 details before=1, after=0. Known failure: K22-D will fix SC1 delta so delta.soft becomes +3.",
+      "evidence": [
+        "before.hard=0, before.soft=-5",
+        "after.hard=0, after.soft=-2",
+        "fullSoftDelta=3, delta.deltaSoft=-2",
+        "expected fullSoftDelta=+3 (SC1 +5 cleared, MIN_PERT -2 added)",
+        "expected current deltaSoft=-2 (MIN_PERT only, SC1 missing — BUG)",
+        "expected after K22-D fix deltaSoft=+3 (matches full)",
+        "SC1 details: before=1, after=0"
+      ]
+    },
+    {
+      "id": "A3",
+      "harness": "A",
+      "title": "MIN_PERT introduction: full vs delta consistency (move away from original adds perturbation)",
+      "status": "PASS",
+      "detail": "before={hard:0,soft:0}, after={hard:0,soft:-2}, fullΔ=(0,-2), delta=(0,-2)",
+      "evidence": [
+        "MINIMUM_PERTURBATION before=0 after=1",
+        "hard match: true, soft match: true"
+      ]
+    },
+    {
+      "id": "A3b",
+      "harness": "A",
+      "title": "HC1 room conflict introduction: full vs delta hard consistency (move creates HC1)",
+      "status": "PASS",
+      "detail": "before={hard:0,soft:0}, after={hard:-1000,soft:-2}, fullΔ=(-1000,-2), delta=(-1000,-2)",
+      "evidence": [
+        "HC1_ROOM_CONFLICT before=0 after=1",
+        "hard match: true, soft match: true, deltaHard=-1000: true"
+      ]
+    },
+    {
+      "id": "A4",
+      "harness": "A",
+      "title": "MIN_PERT consistency: full vs delta (move back to original removes perturbation)",
+      "status": "PASS",
+      "detail": "before={hard:0,soft:-2}, after={hard:0,soft:0}, fullΔ=(0,2), delta=(0,2)",
+      "evidence": [
+        "MINIMUM_PERTURBATION before=1 after=0",
+        "hard match: true, soft match: true"
+      ]
+    },
+    {
+      "id": "B1-HC1",
+      "harness": "B",
+      "title": "HC1 room conflict: hardScore=-1000, softScore=0, HC1 detail present",
+      "status": "PASS",
+      "detail": "hardScore=-1000, softScore=0, HC1 count=1",
+      "evidence": [
+        "hardScore == -1000 ✓",
+        "softScore == 0 ✓",
+        "HC1_ROOM_CONFLICT detail present ✓"
+      ]
+    },
+    {
+      "id": "B1-HC2",
+      "harness": "B",
+      "title": "HC2 teacher conflict: hardScore=-1000, softScore=0, HC2 detail present",
+      "status": "PASS",
+      "detail": "hardScore=-1000, softScore=0, HC2 count=1",
+      "evidence": [
+        "hardScore == -1000 ✓",
+        "softScore == 0 ✓",
+        "HC2_TEACHER_CONFLICT detail present ✓"
+      ]
+    },
+    {
+      "id": "B1-HC3",
+      "harness": "B",
+      "title": "HC3 class conflict: hardScore=-1000, softScore=0, HC3 detail present",
+      "status": "PASS",
+      "detail": "hardScore=-1000, softScore=0, HC3 count=1",
+      "evidence": [
+        "hardScore == -1000 ✓",
+        "softScore == 0 ✓",
+        "HC3_CLASS_CONFLICT detail present ✓"
+      ]
+    },
+    {
+      "id": "B1-HC4",
+      "harness": "B",
+      "title": "HC4 capacity overflow: hardScore=-1000, softScore=0, HC4 detail present",
+      "status": "PASS",
+      "detail": "hardScore=-1000, softScore=0, HC4 count=1",
+      "evidence": [
+        "hardScore == -1000 ✓",
+        "softScore == 0 ✓",
+        "HC4_CAPACITY detail present ✓"
+      ]
+    },
+    {
+      "id": "B1-HC5",
+      "harness": "B",
+      "title": "HC5 room unavailable: hardScore=-1000, softScore=0, HC5 detail present",
+      "status": "PASS",
+      "detail": "hardScore=-1000, softScore=0, HC5 count=1",
+      "evidence": [
+        "hardScore == -1000 ✓",
+        "softScore == 0 ✓",
+        "HC5_ROOM_UNAVAILABLE detail present ✓"
+      ]
+    },
+    {
+      "id": "B2-SEPARATION",
+      "harness": "B",
+      "title": "Hard/soft separation: HC tagged HARD, SC tagged SOFT, scores independent",
+      "status": "PASS",
+      "detail": "hardScore=-1000 (expect -1000), softScore=-1 (expect -1), HC4 level=HARD=true, SC3 level=SOFT=true",
+      "evidence": [
+        "HC4_CAPACITY level: HARD (expect all HARD)",
+        "SC3_EXTREME_TIME_SLOT level: SOFT (expect all SOFT)",
+        "hardScore isolated from soft: true",
+        "softScore isolated from hard: true"
+      ]
+    },
+    {
+      "id": "C1",
+      "harness": "C",
+      "title": "Default score snapshot matches expected (hard=0, soft=-11, SC2=1, SC3=1)",
+      "status": "PASS",
+      "detail": "hardScore=0 (expect 0), softScore=-11 (expect -11), details=2",
+      "evidence": [
+        "SC2_SAME_DAY count=1 (expect 1)",
+        "SC3_EXTREME_TIME_SLOT count=1 (expect 1)",
+        "Breakdown: {\"SC2_SAME_DAY\":1,\"SC3_EXTREME_TIME_SLOT\":1}"
+      ]
+    },
+    {
+      "id": "C2",
+      "harness": "C",
+      "title": "Perturbation snapshot: MIN_PERT detects slot moved from original position",
+      "status": "PASS",
+      "detail": "perturbed hardScore=0, softScore=-3, MIN_PERT count=1",
+      "evidence": [
+        "MINIMUM_PERTURBATION present in perturbed state: true",
+        "Perturbed breakdown: {\"SC3_EXTREME_TIME_SLOT\":1,\"MINIMUM_PERTURBATION\":1}"
+      ]
+    },
+    {
+      "id": "D1",
+      "harness": "D",
+      "title": "Fixed-seed solver smoke: synthetic solver run on conflict-free fixture",
+      "status": "PASS",
+      "detail": "bestScore={hard:0, soft:0}, iterations=200, usedSeed=42",
+      "evidence": [
+        "hardScore preserved as 0: true",
+        "iterations > 0: true (200)",
+        "usedSeed = 42: true"
+      ]
+    },
+    {
+      "id": "D2",
+      "harness": "D",
+      "title": "Fixed-seed determinism: same seed produces same result",
+      "status": "PASS",
+      "detail": "Run1 iterations=200 softScore=0; Run2 iterations=200 softScore=0",
+      "evidence": [
+        "iterations match: true",
+        "softScore match: true"
+      ]
+    },
+    {
+      "id": "E1",
+      "harness": "E",
+      "title": "K21 verify scripts present (4/4 files exist)",
+      "status": "PASS",
+      "detail": "All 4 K21-FIX-F / K21-FIX-G verify scripts exist in scripts/. Full re-execution handled by the regression-chain command sequence in spec §10.",
+      "evidence": [
+        "scripts/verify-solver-config-ui-k21-fix-g.ts",
+        "scripts/verify-solver-config-api-k21-fix-f.ts",
+        "scripts/verify-solver-config-preview-k21-fix-f.ts",
+        "scripts/verify-solver-config-snapshot-k21-fix-f.ts"
+      ]
+    },
+    {
+      "id": "E2",
+      "harness": "E",
+      "title": "K21 config flow does not import score.ts or solver.ts (independence)",
+      "status": "PASS",
+      "detail": "K21 config helpers/preview/scheduler files do not depend on score.ts or solver.ts. Score harness additions do not affect K21 config flow.",
+      "evidence": [
+        "No score.ts or solver.ts imports in K21 config files"
+      ]
+    }
+  ]
+}

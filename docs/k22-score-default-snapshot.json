@@ -1,0 +1,25 @@
+{
+  "generatedAt": "2026-06-06T06:24:13.552Z",
+  "phase": "K22-C-SCORE-REGRESSION-HARNESS-IMPLEMENTATION",
+  "fixture": {
+    "description": "deterministic synthetic fixture: 3 rooms (A/B/C), 3 tasks, 4 slots; perturbed state for MIN_PERT",
+    "rooms": 3,
+    "tasks": 3,
+    "slots": 4,
+    "buildings": [
+      "A",
+      "B",
+      "C"
+    ]
+  },
+  "snapshot": {
+    "hardScore": 0,
+    "softScore": -11,
+    "detailsCount": 2,
+    "constraintBreakdown": {
+      "SC2_SAME_DAY": 1,
+      "SC3_EXTREME_TIME_SLOT": 1
+    }
+  },
+  "stability": "Stable if score.ts penalties unchanged. K22-D dynamic weights would change this; regenerate with test config."
+}
