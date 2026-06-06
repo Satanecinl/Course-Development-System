@@ -53,7 +53,7 @@ type Status = 'PASS' | 'KNOWN_FAIL' | 'FAIL' | 'INFO'
 
 interface CheckResult {
   id: string
-  harness: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I'
+  harness: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I' | 'J'
   title: string
   status: Status
   detail: string
@@ -1302,7 +1302,7 @@ function runHarnessH(): void {
 
   // Helper: build a fixture. Each task has 1 slot. teacherId=null skips SC5.
   // taskSpecs is an array of { day, period, classGroupId, mergedClassGroupIds?, roomId? }.
-  function buildSC8Fixture(taskSpecs: { day: number; period: number; classGroupId: number; mergedClassGroupIds?: number[]; roomId?: number }[]) {
+  function buildSC8Fixture(taskSpecs: { day: number; period: number; classGroupId: number; mergedClassGroupIds?: number[]; roomId?: number; classGroupStudentCounts?: (number | null)[] }[]) {
     const taskInputs: FixtureTaskInput[] = []
     const slotInputs: FixtureSlotInput[] = []
     let id = 0
@@ -1310,7 +1310,10 @@ function runHarnessH(): void {
       id++
       const taskId = id
       const classGroupIds = s.mergedClassGroupIds ?? [s.classGroupId]
-      taskInputs.push({ id: taskId, teacherId: null, classGroupIds })
+      // K22-F11: pass through explicit classGroupStudentCounts if provided.
+      // Default is unset (FALLBACK=50 per class, util 0.50 in cap=100, no SC10 fire).
+      // Merged-class tasks (H8) MUST set classGroupStudentCounts to avoid util 1.0 (50×2 classes × FALLBACK in cap=100).
+      taskInputs.push({ id: taskId, teacherId: null, classGroupIds, classGroupStudentCounts: s.classGroupStudentCounts })
       slotInputs.push({ id: id + 1000, teachingTaskId: taskId, dayOfWeek: s.day, slotIndex: s.period, roomId: s.roomId ?? 100 })
     }
     return { tasks: taskInputs, slots: slotInputs }
@@ -1424,14 +1427,16 @@ function runHarnessH(): void {
       id: 'H8-MULTI-CLASSGROUP-MERGED',
       title: 'SC8 full: merged A(cg{1,2},p1) + B(cg{1},p3) + C(cg{2},p5) → SC8 -8, SC3 -1 also fires (component assertion)',
       taskSpecs: [
-        { day: 1, period: 1, classGroupId: 1, mergedClassGroupIds: [1, 2] },
-        { day: 1, period: 3, classGroupId: 1 },
-        { day: 1, period: 5, classGroupId: 2 },
+        // K22-F11: explicit counts so no SC10 fire.
+        // A merged = 20+20=40 (util 0.40). B/C single = 40 (util 0.40). All in 0.30-0.90 band, no SC10.
+        { day: 1, period: 1, classGroupId: 1, mergedClassGroupIds: [1, 2], classGroupStudentCounts: [20, 20] },
+        { day: 1, period: 3, classGroupId: 1, classGroupStudentCounts: [40] },
+        { day: 1, period: 5, classGroupId: 2, classGroupStudentCounts: [40] },
       ],
       expectedTotalSoft: -9,
       expectedSC8Soft: -8,
       expectedSC8Count: 2,
-      note: '3 separate tasks, teacherId=null, merged A(cg{1,2},p1) + B(cg{1},p3) + C(cg{2},p5). SC2 skip. SC5 skip. SC3 fires on period 5 = -1. SC8: cg1 {1,3} gap=1 → -2; cg2 {1,5} gap=3 → -6. Total SC8 = -8 (2 details). Total = -9, SC8 = -8. Component assertion: SC8 details count = 2, sum = -8.',
+      note: '3 separate tasks, teacherId=null, merged A(cg{1,2},p1) + B(cg{1},p3) + C(cg{2},p5). SC2 skip. SC5 skip. SC3 fires on period 5 = -1. SC8: cg1 {1,3} gap=1 → -2; cg2 {1,5} gap=3 → -6. Total SC8 = -8 (2 details). Total = -9, SC8 = -8. Component assertion: SC8 details count = 2, sum = -8. K22-F11: explicit classGroupStudentCounts keep utilization in 0.30-0.90 band, no SC10 fire.',
     },
   ]
 
@@ -1644,6 +1649,9 @@ function runHarnessI(): void {
       title: 'SC9 full: merged-class task (cg{1,2}) 2 slots in 2 rooms → SC9 -2',
       slots: [{ day: 1, period: 1, roomId: 100 }, { day: 1, period: 2, roomId: 200 }],
       classGroupIds: [1, 2],
+      // K22-F11: explicit classGroupStudentCounts so SC10 doesn't fire on default FALLBACK=50×2=100 in cap=100.
+      // Each class = 20 students; merged total = 40 (util 0.40, no SC10 fire).
+      classGroupStudentCounts: [20, 20],
       expectedTotalSoft: -12,
       expectedSC9Soft: -2,
       expectedSC9Count: 1,
@@ -1652,7 +1660,13 @@ function runHarnessI(): void {
   ]
 
   for (const tc of fullCases) {
-    const taskInputs: FixtureTaskInput[] = [{ id: 1, teacherId: null, classGroupIds: tc.classGroupIds }]
+    const taskInputs: FixtureTaskInput[] = [{
+      id: 1,
+      teacherId: null,
+      classGroupIds: tc.classGroupIds,
+      // K22-F11: pass classGroupStudentCounts if provided, to keep SC10 out of pre-F8 fixtures.
+      classGroupStudentCounts: tc.classGroupStudentCounts,
+    }]
     const slotInputs: FixtureSlotInput[] = tc.slots.map((s, i) => ({ id: 1000 + i + 1, teachingTaskId: 1, dayOfWeek: s.day, slotIndex: s.period, roomId: s.roomId }))
     const allRoomIds = new Set<number>(tc.slots.map(s => s.roomId).filter(r => r !== 0))
     const roomInputs: FixtureRoomInput[] = Array.from(allRoomIds).map(rid => ({ id: rid, name: `R${rid}`, building: 'A', capacity: 100 }))
@@ -1774,7 +1788,374 @@ function runHarnessI(): void {
   }
 }
 
-// ── Main ────────────────────────────────────────────────────────────
+// ── Harness J: SC10 Room Capacity Utilization (K22-F11) ──
+
+function runHarnessJ(): void {
+  console.log('\n─── Harness J: SC10 Room Capacity Utilization (K22-F11) ───')
+
+  // F11 isolation strategy:
+  //   - teacherId=null on all tasks → SC5 skips (no teacher)
+  //   - 1 slot per task (or per-slot SC2 detail counted in component assertion) → SC2 isolated
+  //   - periods <5 (except J4 which needs period 5 to test SC3) → SC3 mostly skipped
+  //   - weekday only for delta → SC7 skips
+  //   - 3rd-position originalAssignments (day=9, slot=1, room=999) → MIN_PERT net 0
+  //   - Component-level assertion: each case asserts BOTH total soft AND SC10 details count + sum
+
+  // Helper: extract SC10 contribution from score details
+  function extractSC10Contribution(details: { type: string; penalty: number }[]): { count: number; total: number } {
+    let count = 0
+    let total = 0
+    for (const d of details) {
+      if (d.type === 'SC10_ROOM_CAPACITY_UTILIZATION') {
+        count++
+        total += d.penalty
+      }
+    }
+    return { count, total }
+  }
+
+  // Fixture: single task with single slot. teacherId=null.
+  interface SC10Fixture {
+    id: number
+    teacherId: number | null
+    classGroupIds: number[]
+    classGroupStudentCounts: (number | null)[]
+    slots: { day: number; period: number; roomId: number; capacity?: number }[]
+    /** K22-F11: extra rooms to register in roomById without creating slots. Used by delta cases. */
+    extraRoomIds?: { roomId: number; capacity?: number }[]
+  }
+
+  function buildSC10Context(specs: SC10Fixture[]): SchedulingContext {
+    const roomById = new Map<number, RoomWithAvailability>()
+    for (const spec of specs) {
+      // Register extra rooms first (no slots).
+      if (spec.extraRoomIds) {
+        for (const er of spec.extraRoomIds) {
+          if (!roomById.has(er.roomId)) {
+            roomById.set(er.roomId, { id: er.roomId, name: `R${er.roomId}`, building: 'A', capacity: er.capacity ?? 100, type: 'NORMAL', availabilities: [] })
+          }
+        }
+      }
+      for (const s of spec.slots) {
+        if (!roomById.has(s.roomId)) {
+          // K22-F11: per-room capacity; default 100.
+          const cap = s.capacity ?? 100
+          roomById.set(s.roomId, { id: s.roomId, name: `R${s.roomId}`, building: 'A', capacity: cap, type: 'NORMAL', availabilities: [] })
+        }
+      }
+    }
+    const tasks: TaskWithRelations[] = specs.map((spec, i) => {
+      const taskId = i + 1
+      return {
+        id: taskId,
+        courseId: taskId,
+        teacherId: spec.teacherId,
+        semesterId: 1,
+        weekType: 'ALL',
+        startWeek: 1,
+        endWeek: 16,
+        remark: null,
+        importBatchId: null,
+        course: { id: taskId, name: `Course-${taskId}`, code: null, credits: null, isPractice: false },
+        teacher: spec.teacherId == null
+          ? null
+          : { id: spec.teacherId, name: `T${spec.teacherId}`, phone: null, email: null },
+        taskClasses: spec.classGroupIds.map((cgId, j) => ({
+          id: cgId * 1000 + j + 1,
+          teachingTaskId: taskId,
+          classGroupId: cgId,
+          classGroup: { id: cgId, name: `G${cgId}`, studentCount: spec.classGroupStudentCounts[j] ?? null, advisorName: null, advisorPhone: null },
+        })),
+      }
+    })
+    const taskById = new Map(tasks.map(t => [t.id, t]))
+    const slotsByTask = new Map<number, SlotWithRelations[]>()
+    for (const t of tasks) slotsByTask.set(t.id, [])
+
+    const slots: { id: number; teachingTaskId: number; dayOfWeek: number; slotIndex: number; roomId: number }[] = []
+    let slotIdCounter = 2000
+    for (let ti = 0; ti < specs.length; ti++) {
+      const spec = specs[ti]
+      for (const s of spec.slots) {
+        slotIdCounter++
+        slots.push({ id: slotIdCounter, teachingTaskId: ti + 1, dayOfWeek: s.day, slotIndex: s.period, roomId: s.roomId })
+      }
+    }
+    const slotObjs: SlotWithRelations[] = slots.map(s => ({
+      id: s.id, teachingTaskId: s.teachingTaskId, roomId: s.roomId, dayOfWeek: s.dayOfWeek,
+      slotIndex: s.slotIndex, semesterId: 1, weekType: 'ALL', room: roomById.get(s.roomId) ?? null,
+      teachingTask: taskById.get(s.teachingTaskId)!,
+    }))
+    for (const slot of slotObjs) slotsByTask.get(slot.teachingTaskId)!.push(slot)
+
+    return {
+      tasks, rooms: Array.from(roomById.values()), slots: slotObjs,
+      taskById, roomById, slotsByTask, slotsByRoom: new Map(), slotsByTeacher: new Map(), slotsByClass: new Map()
+    }
+  }
+
+  function buildStateNormal(slots: { id: number; teachingTaskId: number; dayOfWeek: number; slotIndex: number; roomId: number }[]): ScheduleState {
+    const assignments = new Map<number, { dayOfWeek: number; slotIndex: number; roomId: number }>()
+    for (const s of slots) {
+      assignments.set(s.id, { dayOfWeek: s.dayOfWeek, slotIndex: s.slotIndex, roomId: s.roomId })
+    }
+    return { assignments, originalAssignments: new Map(assignments) }
+  }
+
+  function buildStateIsolated(slots: { id: number; teachingTaskId: number; dayOfWeek: number; slotIndex: number; roomId: number }[]): ScheduleState {
+    const assignments = new Map<number, { dayOfWeek: number; slotIndex: number; roomId: number }>()
+    const originalAssignments = new Map<number, { dayOfWeek: number; slotIndex: number; roomId: number }>()
+    for (const s of slots) {
+      assignments.set(s.id, { dayOfWeek: s.dayOfWeek, slotIndex: s.slotIndex, roomId: s.roomId })
+      originalAssignments.set(s.id, { dayOfWeek: 9, slotIndex: 1, roomId: 999 })
+    }
+    return { assignments, originalAssignments }
+  }
+
+  // Full score cases (8 cases)
+  interface SC10FullCase {
+    id: string
+    title: string
+    specs: SC10Fixture[]
+    expectedTotalSoft: number
+    expectedSC10Soft: number
+    expectedSC10Count: number
+    note: string
+  }
+
+  const fullCases: SC10FullCase[] = [
+    {
+      id: 'J1-CAPACITY-GOOD-FIT',
+      title: 'SC10 full: good fit (50/100=0.50) → SC10 0 (no fire)',
+      specs: [
+        { id: 1, teacherId: null, classGroupIds: [100], classGroupStudentCounts: [50], slots: [{ day: 1, period: 1, roomId: 100 }] },
+      ],
+      expectedTotalSoft: 0,
+      expectedSC10Soft: 0,
+      expectedSC10Count: 0,
+      note: '1 task, 50 students, room 100 cap=100. utilization=0.50 (in 0.30-0.90 band). SC10 0. SC2 skip (1 slot). SC5 skip. SC3 skip. Total=0, SC10=0.',
+    },
+    {
+      id: 'J2-CAPACITY-TIGHT-FIT',
+      title: 'SC10 full: tight fit (95/100=0.95) → SC10 -2',
+      specs: [
+        { id: 1, teacherId: null, classGroupIds: [100], classGroupStudentCounts: [95], slots: [{ day: 1, period: 1, roomId: 100 }] },
+      ],
+      expectedTotalSoft: -2,
+      expectedSC10Soft: -2,
+      expectedSC10Count: 1,
+      note: '1 task, 95 students, room 100 cap=100. utilization=0.95 > 0.90 → tight -2. Total=-2, SC10=-2.',
+    },
+    {
+      id: 'J3-CAPACITY-OVER-CAPACITY',
+      title: 'SC10 full: over-capacity (120/100=1.20) → HC4 fires, SC10 skips',
+      specs: [
+        { id: 1, teacherId: null, classGroupIds: [100], classGroupStudentCounts: [120], slots: [{ day: 1, period: 1, roomId: 100 }] },
+      ],
+      expectedTotalSoft: 0, // SC10 skip; HC4 would fire on hard, but harness checks only soft here
+      expectedSC10Soft: 0,
+      expectedSC10Count: 0,
+      note: '1 task, 120 students, room 100 cap=100. utilization=1.20 > 1.0 → SC10 skip (HC4 owns). SC10 details=0. Component assertion.',
+    },
+    {
+      id: 'J4-CAPACITY-SMALL-CLASS-HUGE-ROOM',
+      title: 'SC10 full: small class in huge room (20/120=0.17, cap>=100) → SC10 -1 waste',
+      specs: [
+        { id: 1, teacherId: null, classGroupIds: [100], classGroupStudentCounts: [20], slots: [{ day: 1, period: 1, roomId: 120 }] },
+      ],
+      expectedTotalSoft: -1,
+      expectedSC10Soft: -1,
+      expectedSC10Count: 1,
+      note: '1 task, 20 students, room 120 cap=120. utilization=0.17 < 0.30 AND cap=120 >= 100 → waste -1. Total=-1, SC10=-1.',
+    },
+    {
+      id: 'J5-CAPACITY-SMALL-CLASS-NORMAL-ROOM',
+      title: 'SC10 full: small class in normal room (24/60=0.40) → SC10 0',
+      specs: [
+        { id: 1, teacherId: null, classGroupIds: [100], classGroupStudentCounts: [24], slots: [{ day: 1, period: 1, roomId: 60, capacity: 60 }] },
+      ],
+      expectedTotalSoft: 0,
+      expectedSC10Soft: 0,
+      expectedSC10Count: 0,
+      note: '1 task, 24 students, room 60 cap=60. utilization=0.40 (in band). cap<100 → waste branch does not apply. Total=0, SC10=0.',
+    },
+    {
+      id: 'J6-CAPACITY-ROOM-ZERO-SKIP',
+      title: 'SC10 full: room=0 skip → SC10 0',
+      specs: [
+        { id: 1, teacherId: null, classGroupIds: [100], classGroupStudentCounts: [50], slots: [{ day: 1, period: 1, roomId: 0 }] },
+      ],
+      expectedTotalSoft: 0,
+      expectedSC10Soft: 0,
+      expectedSC10Count: 0,
+      note: '1 task, room=0 (unscheduled). SC10 skip (room=0). SC10 details=0. Total=0.',
+    },
+    {
+      id: 'J7-CAPACITY-MISSING-STUDENT-COUNT-SKIP',
+      title: 'SC10 full: taskStudentCount=0 (defensive) → SC10 0',
+      specs: [
+        // Empty classGroupIds array → getTaskStudentCount returns 0 (no classes, but code returns FALLBACK 50).
+        // To test the defensive path, we set classGroupStudentCounts to 0 so studentCount=0.
+        { id: 1, teacherId: null, classGroupIds: [100], classGroupStudentCounts: [0], slots: [{ day: 1, period: 1, roomId: 100 }] },
+      ],
+      expectedTotalSoft: 0,
+      expectedSC10Soft: 0,
+      expectedSC10Count: 0,
+      note: '1 task, 0 students, room 100 cap=100. SC10 skip (studentCount<=0). SC10 details=0. Total=0.',
+    },
+    {
+      id: 'J8-CAPACITY-EXACT-0.90-BOUNDARY',
+      title: 'SC10 full: boundary utilization=0.90 → SC10 0 (strict >)',
+      specs: [
+        { id: 1, teacherId: null, classGroupIds: [100], classGroupStudentCounts: [90], slots: [{ day: 1, period: 1, roomId: 100 }] },
+      ],
+      expectedTotalSoft: 0,
+      expectedSC10Soft: 0,
+      expectedSC10Count: 0,
+      note: '1 task, 90 students, room 100 cap=100. utilization=0.90 (NOT > 0.90 strict). SC10 0. Total=0.',
+    },
+  ]
+
+  for (const tc of fullCases) {
+    const ctx = buildSC10Context(tc.specs)
+    const slotInputs = ctx.slots.map(s => ({ id: s.id, teachingTaskId: s.teachingTaskId, dayOfWeek: s.dayOfWeek, slotIndex: s.slotIndex, roomId: s.roomId ?? 0 }))
+    const state = buildStateNormal(slotInputs)
+    const result = calculateScoreWithDetails(ctx, state)
+    const sc10 = extractSC10Contribution(result.details)
+    const totalOK = result.softScore === tc.expectedTotalSoft
+    const sc10OK = sc10.total === tc.expectedSC10Soft && sc10.count === tc.expectedSC10Count
+    const hardOK = result.hardScore === 0 || tc.id === 'J3-CAPACITY-OVER-CAPACITY' // J3 expected HC4 to fire
+    const status: 'PASS' | 'FAIL' = (hardOK && totalOK && sc10OK) ? 'PASS' : 'FAIL'
+    const breakdown = result.details.map(d => `${d.type}=${d.penalty}`).join(', ')
+    record({
+      id: tc.id, harness: 'J', title: tc.title, status,
+      detail: `hard=${result.hardScore}; total soft=${result.softScore} (expect ${tc.expectedTotalSoft}); SC10 count=${sc10.count} (expect ${tc.expectedSC10Count}); SC10 sum=${sc10.total} (expect ${tc.expectedSC10Soft})`,
+      evidence: [tc.note, `Breakdown: ${breakdown || '(none)'}`],
+    })
+  }
+
+  // Delta cases (5 cases)
+  interface SC10DeltaCase {
+    id: string
+    title: string
+    specs: SC10Fixture[]
+    moveSlotIdx: number
+    newDay: number
+    newPeriod: number
+    newRoomId: number
+    expectedDeltaHard: number
+    expectedDeltaSoft: number
+    expectedSC10Delta: number
+    note: string
+  }
+
+  // K22-F11: 1-slot-per-task fixtures for delta cases. This avoids SC2 (no same-day) and SC9 (1 distinct room).
+  // Each case moves the only slot to a different room. SC10 delta is the only soft delta.
+  const deltaCases: SC10DeltaCase[] = [
+    {
+      id: 'J9-DELTA-IMPROVE-TIGHT-TO-GOOD',
+      title: 'SC10 delta: tight 0.95 → good 0.475 → deltaSoft=+2 (SC10 only)',
+      specs: [
+        // 1 task, 1 slot. 95 students in cap=100 (util 0.95, tight) → move to cap=200 (util 0.475, good)
+        { id: 1, teacherId: null, classGroupIds: [100], classGroupStudentCounts: [95], slots: [{ day: 1, period: 1, roomId: 100, capacity: 100 }], extraRoomIds: [{ roomId: 200, capacity: 200 }] },
+      ],
+      moveSlotIdx: 0,
+      newDay: 1,
+      newPeriod: 1,
+      newRoomId: 200, // cap=200, util 0.475, good
+      expectedDeltaHard: 0,
+      expectedDeltaSoft: 2, // -2 (tight, removed) + 0 (good, added) = +2
+      expectedSC10Delta: 2,
+      note: 'Before: util 0.95 → -2 (tight). After: util 0.475 → 0. SC10 delta = +2. SC2: 1 slot, delta=0. SC9: 1 slot, 1 distinct room, delta=0. Total = +2.',
+    },
+    {
+      id: 'J10-DELTA-WORSEN-GOOD-TO-TIGHT',
+      title: 'SC10 delta: good 0.475 → tight 0.95 → deltaSoft=-2 (SC10 only)',
+      specs: [
+        // 1 task, 1 slot. 95 students in cap=200 (util 0.475, good) → move to cap=100 (util 0.95, tight)
+        { id: 1, teacherId: null, classGroupIds: [100], classGroupStudentCounts: [95], slots: [{ day: 1, period: 1, roomId: 200, capacity: 200 }], extraRoomIds: [{ roomId: 100, capacity: 100 }] },
+      ],
+      moveSlotIdx: 0,
+      newDay: 1,
+      newPeriod: 1,
+      newRoomId: 100, // cap=100, util 0.95, tight
+      expectedDeltaHard: 0,
+      expectedDeltaSoft: -2, // 0 (good, removed) + -2 (tight, added) = -2
+      expectedSC10Delta: -2,
+      note: 'Before: util 0.475 → 0. After: util 0.95 → -2. SC10 delta = -2. SC2: 1 slot, delta=0. SC9: 1 slot, 1 distinct room, delta=0. Total = -2.',
+    },
+    {
+      id: 'J11-DELTA-SMALL-HUGE-TO-NORMAL',
+      title: 'SC10 delta: small in huge (20/120=0.17, waste) → small in normal (20/40=0.50, good) → deltaSoft=+1',
+      specs: [
+        { id: 1, teacherId: null, classGroupIds: [100], classGroupStudentCounts: [20], slots: [{ day: 1, period: 1, roomId: 120, capacity: 120 }], extraRoomIds: [{ roomId: 40, capacity: 40 }] },
+      ],
+      moveSlotIdx: 0,
+      newDay: 1,
+      newPeriod: 1,
+      newRoomId: 40, // cap=40, util 0.50, good
+      expectedDeltaHard: 0,
+      expectedDeltaSoft: 1, // -1 (waste, removed) + 0 (good, added) = +1
+      expectedSC10Delta: 1,
+      note: 'Before: util 0.17 cap=120 → -1 (waste). After: util 0.50 cap=40 → 0. SC10 delta = +1. SC2: 1 slot, delta=0. SC9: 1 slot, delta=0. Total = +1.',
+    },
+    {
+      id: 'J12-DELTA-NORMAL-TO-HUGE',
+      title: 'SC10 delta: small in normal (20/40=0.50) → small in huge (20/120=0.17) → deltaSoft=-1',
+      specs: [
+        { id: 1, teacherId: null, classGroupIds: [100], classGroupStudentCounts: [20], slots: [{ day: 1, period: 1, roomId: 40, capacity: 40 }], extraRoomIds: [{ roomId: 120, capacity: 120 }] },
+      ],
+      moveSlotIdx: 0,
+      newDay: 1,
+      newPeriod: 1,
+      newRoomId: 120, // cap=120, util 0.17, waste
+      expectedDeltaHard: 0,
+      expectedDeltaSoft: -1, // 0 (good, removed) + -1 (waste, added) = -1
+      expectedSC10Delta: -1,
+      note: 'Before: util 0.50 cap=40 → 0. After: util 0.17 cap=120 → -1. SC10 delta = -1. SC2: 1 slot, delta=0. SC9: 1 slot, delta=0. Total = -1.',
+    },
+    {
+      id: 'J13-DELTA-OVER-CAPACITY-INTRODUCED',
+      title: 'SC10 delta: introduce over-capacity (HC4 fires, SC10 skips) → deltaHard=-1000, deltaSoft=0',
+      specs: [
+        // 1 task, 1 slot. 50 students in cap=100 (util 0.50, good) → move to cap=40 (util 1.25, over-capacity)
+        { id: 1, teacherId: null, classGroupIds: [100], classGroupStudentCounts: [50], slots: [{ day: 1, period: 1, roomId: 100, capacity: 100 }], extraRoomIds: [{ roomId: 40, capacity: 40 }] },
+      ],
+      moveSlotIdx: 0,
+      newDay: 1,
+      newPeriod: 1,
+      newRoomId: 40, // cap=40, util 1.25, over-capacity
+      expectedDeltaHard: -1000, // HC4 fires
+      expectedDeltaSoft: 0, // SC10 skips; old SC10 was 0 (util 0.50 in band)
+      expectedSC10Delta: 0,
+      note: 'Before: util 0.50 → 0. After: util 1.25 → SC10 skip (HC4 owns). HC4 deltaHard = -1000. SC10 component delta = 0. Total = -1000.',
+    },
+  ]
+
+  for (const dc of deltaCases) {
+    const ctx = buildSC10Context(dc.specs)
+    const slotInputs = ctx.slots.map(s => ({ id: s.id, teachingTaskId: s.teachingTaskId, dayOfWeek: s.dayOfWeek, slotIndex: s.slotIndex, roomId: s.roomId ?? 0 }))
+    const state = buildStateIsolated(slotInputs)
+    const moveSlotId = slotInputs[dc.moveSlotIdx].id
+    const move: Move = { slotId: moveSlotId, newDay: dc.newDay, newSlotIndex: dc.newPeriod, newRoomId: dc.newRoomId }
+    const delta = calculateDeltaScore(ctx, state, move)
+    // Re-evaluate full scores before/after to extract SC10 component delta
+    const stateBefore = { assignments: new Map(slotInputs.map(s => [s.id, { dayOfWeek: s.dayOfWeek, slotIndex: s.slotIndex, roomId: s.roomId }])), originalAssignments: new Map(slotInputs.map(s => [s.id, { dayOfWeek: 9, slotIndex: 1, roomId: 999 }])) }
+    const stateAfter = { assignments: new Map(slotInputs.map(s => [s.id, s.id === moveSlotId ? { dayOfWeek: move.newDay, slotIndex: move.newSlotIndex, roomId: move.newRoomId } : { dayOfWeek: s.dayOfWeek, slotIndex: s.slotIndex, roomId: s.roomId }])), originalAssignments: new Map(slotInputs.map(s => [s.id, { dayOfWeek: 9, slotIndex: 1, roomId: 999 }])) }
+    const sc10Before = extractSC10Contribution(calculateScoreWithDetails(ctx, stateBefore).details)
+    const sc10After = extractSC10Contribution(calculateScoreWithDetails(ctx, stateAfter).details)
+    const sc10DeltaByComponent = sc10After.total - sc10Before.total
+    const totalOK = delta.deltaSoft === dc.expectedDeltaSoft
+    const sc10OK = sc10DeltaByComponent === dc.expectedSC10Delta
+    const hardOK = delta.deltaHard === dc.expectedDeltaHard
+    const status: 'PASS' | 'FAIL' = (hardOK && totalOK && sc10OK) ? 'PASS' : 'FAIL'
+    record({
+      id: dc.id, harness: 'J', title: dc.title, status,
+      detail: `deltaHard=${delta.deltaHard} (expect ${dc.expectedDeltaHard}); deltaSoft=${delta.deltaSoft} (expect ${dc.expectedDeltaSoft}); SC10 component delta=${sc10DeltaByComponent} (expect ${dc.expectedSC10Delta}); SC10 details: before count=${sc10Before.count} sum=${sc10Before.total}, after count=${sc10After.count} sum=${sc10After.total}`,
+      evidence: [dc.note],
+    })
+  }
+}
 
 function main() {
   clearWeekCache()
@@ -1790,6 +2171,7 @@ function main() {
   runHarnessG()
   runHarnessH()
   runHarnessI()
+  runHarnessJ()
 
   // Summary
   const pass = results.filter((r) => r.status === 'PASS').length

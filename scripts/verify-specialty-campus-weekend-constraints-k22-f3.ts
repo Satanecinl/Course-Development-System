@@ -291,22 +291,25 @@ const fullScoreCases: FullScoreCase[] = [
   {
     id: 'MIXED-LINXIAO',
     title: 'MIXED classGroup in Linxiao → hard -1000 (K22-F2A correction)',
-    taskInput: { id: 1, teacherId: 10, courseName: '综合实践', classGroupIds: [1, 2], classGroupNames: ['汽车检测1班', '计算机1班'] },
+    // K22-F11: explicit classGroupStudentCounts= [40, 40] (total 80, util 0.80 in cap=100) so SC10 doesn't fire.
+    // Without these, FALLBACK=50×2=100 yields util 1.0 and fires SC10 tight (-2).
+    taskInput: { id: 1, teacherId: 10, courseName: '综合实践', classGroupIds: [1, 2], classGroupNames: ['汽车检测1班', '计算机1班'], classGroupStudentCounts: [40, 40] },
     room: LX_ROOM,
     dayOfWeek: 1,
     expectedHard: -1000,
     expectedSoft: 0,
-    note: 'MIXED in Linxiao: HC6 -1000 (has non-automotive students).',
+    note: 'MIXED in Linxiao: HC6 -1000 (has non-automotive students). K22-F11: explicit counts prevent SC10 fire.',
   },
   {
     id: 'MIXED-NON_LINXIAO',
     title: 'MIXED classGroup in non-Linxiao → no penalty',
-    taskInput: { id: 1, teacherId: 10, courseName: '综合实践', classGroupIds: [1, 2], classGroupNames: ['汽车检测1班', '计算机1班'] },
+    // K22-F11: explicit classGroupStudentCounts= [40, 40] (total 80, util 0.80 in cap=100) so SC10 doesn't fire.
+    taskInput: { id: 1, teacherId: 10, courseName: '综合实践', classGroupIds: [1, 2], classGroupNames: ['汽车检测1班', '计算机1班'], classGroupStudentCounts: [40, 40] },
     room: NON_LX_ROOM,
     dayOfWeek: 1,
     expectedHard: 0,
     expectedSoft: 0,
-    note: 'MIXED not in Linxiao: no penalty.',
+    note: 'MIXED not in Linxiao: no penalty. K22-F11: explicit counts prevent SC10 fire.',
   },
   {
     id: 'COURSE_NAME_AUTO-BUT-NON_AUTO_CLASS-LINXIAO',
@@ -415,14 +418,15 @@ const deltaCases: DeltaCase[] = [
   {
     id: 'DELTA-MIXED-NON_LINXIAO-TO-LINXIAO',
     title: 'Move MIXED to Linxiao → deltaHard=-1000 (HC6 for MIXED, K22-F2A)',
-    taskInput: { id: 1, teacherId: 10, courseName: '综合实践', classGroupIds: [1, 2], classGroupNames: ['汽车检测1班', '计算机1班'] },
+    // K22-F11: explicit classGroupStudentCounts= [40, 40] (total 80, util 0.80 in cap=100) so SC10 doesn't fire.
+    taskInput: { id: 1, teacherId: 10, courseName: '综合实践', classGroupIds: [1, 2], classGroupNames: ['汽车检测1班', '计算机1班'], classGroupStudentCounts: [40, 40] },
     oldRoom: NON_LX_ROOM,
     oldDay: 1,
     newRoom: LX_ROOM,
     newDay: 1,
     expectedDeltaHard: -1000,
     expectedDeltaSoft: 0,
-    note: 'HC6 introduced for MIXED: -1000. MIN_PERT isolated.',
+    note: 'HC6 introduced for MIXED: -1000. MIN_PERT isolated. K22-F11: explicit counts prevent SC10 fire.',
   },
   {
     id: 'DELTA-WEEKDAY-TO-WEEKEND',

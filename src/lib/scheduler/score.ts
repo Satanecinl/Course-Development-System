@@ -25,6 +25,13 @@ const SC7_WEEKEND_PENALTY = -15
 const SC8_CLASS_GAP_PENALTY_PER_EMPTY_PERIOD = -2
 const SC9_TEACHING_TASK_ROOM_STABILITY_PENALTY_PER_EXTRA_ROOM = -2
 
+// ── SC10 (K22-F11) ──
+const SC10_CAPACITY_TIGHT_FIT_PENALTY = -2
+const SC10_CAPACITY_WASTE_PENALTY = -1
+const SC10_TIGHT_UTILIZATION_THRESHOLD = 0.90
+const SC10_WASTE_UTILIZATION_THRESHOLD = 0.30
+const SC10_WASTE_ROOM_CAPACITY_THRESHOLD = 100
+
 // ── 周次缓存 ──
 const weekSetCache = new Map<number, Set<number>>()
 
@@ -296,6 +303,32 @@ function buildTaskRoomSet(
     rooms.add(overrideRoomId)
   }
   return rooms
+}
+
+/**
+ * Compute SC10 penalty for one (studentCount, roomCapacity) pair.
+ * Pure function: reused by full and delta score paths.
+ *
+ * Skip rules (returns 0):
+ *   - studentCount <= 0 (defensive)
+ *   - roomCapacity <= 0 (room is not usable)
+ *   - utilization > 1.0 (HC4 owns; SC10 must not double-count)
+ *
+ * Otherwise:
+ *   - utilization > 0.90  → -2 (tight; large class squeezed into small room)
+ *   - utilization < 0.30 AND roomCapacity >= 100 → -1 (waste; small class in huge room)
+ *   - else → 0
+ */
+function computeSC10CapacityUtilizationPenalty(studentCount: number, roomCapacity: number): number {
+  if (studentCount <= 0) return 0
+  if (roomCapacity <= 0) return 0
+  const utilization = studentCount / roomCapacity
+  if (utilization > 1.0) return 0 // HC4 owns over-capacity
+  if (utilization > SC10_TIGHT_UTILIZATION_THRESHOLD) return SC10_CAPACITY_TIGHT_FIT_PENALTY
+  if (utilization < SC10_WASTE_UTILIZATION_THRESHOLD && roomCapacity >= SC10_WASTE_ROOM_CAPACITY_THRESHOLD) {
+    return SC10_CAPACITY_WASTE_PENALTY
+  }
+  return 0
 }
 
 /**
@@ -639,6 +672,31 @@ export function calculateScoreWithDetails(
     }
   }
 
+  // ── SC10: 教室容量利用率 (K22-F11) ──
+  // Per-slot evaluation: utilization = studentCount / roomCapacity.
+  // Skip rules: room=0, room missing in roomById, capacity<=0, count<=0, utilization>1.0 (HC4 owns).
+  // Only softScore (never touches hardScore).
+  // Day-independent: no weekend / weekday filter.
+  // No day key, no classGroup key, no teachingTask aggregate — single-slot rule.
+  for (const p of positions) {
+    if (p.room === 0) continue
+    const room = ctx.roomById.get(p.room)
+    if (!room || room.capacity <= 0) continue
+    const studentInfo = getTaskStudentCount(p.slot.teachingTask, ctx)
+    if (studentInfo.studentCount <= 0) continue
+    const penalty = computeSC10CapacityUtilizationPenalty(studentInfo.studentCount, room.capacity)
+    if (penalty !== 0) {
+      const utilization = studentInfo.studentCount / room.capacity
+      const reason = penalty === SC10_CAPACITY_TIGHT_FIT_PENALTY ? 'tight' : 'waste'
+      softScore += penalty
+      details.push({
+        type: 'SC10_ROOM_CAPACITY_UTILIZATION', level: 'SOFT', penalty,
+        slotId: p.slot.id,
+        message: `容量利用率 ${(utilization * 100).toFixed(1)}% (${reason}): 任务 ${p.slot.teachingTask.id} ${studentInfo.studentCount} 人 (${studentInfo.countSource})，教室 ${room.name} 容量 ${room.capacity}`,
+      })
+    }
+  }
+
   return { hardScore, softScore, details }
 }
 
@@ -922,6 +980,31 @@ export function calculateDeltaScore(
   const afterRoomSet = buildTaskRoomSet(sc9TaskId, ctx, state, slot.id, move.newDay, move.newRoomId)
   const afterPenalty = computeTaskRoomStabilityPenalty(afterRoomSet)
   deltaSoft += afterPenalty - beforePenalty
+
+  // SC10 delta: 教室容量利用率 (K22-F11)
+  // Per-slot O(1): re-evaluate SC10 on the moved slot at old and new positions.
+  // Skip rules: room=0 / room missing / capacity<=0 / count<=0 / utilization>1.0 (HC4 owns).
+  // Only deltaSoft (never touches deltaHard).
+  // MIN_PERT 隔离: harness 用 3rd-position originalAssignments (F3/F4/F6/F8 模式).
+  {
+    const studentInfo = getTaskStudentCount(task, ctx)
+    if (studentInfo.studentCount > 0) {
+      // Old position
+      if (old.roomId !== 0) {
+        const oldRoom = ctx.roomById.get(old.roomId)
+        if (oldRoom && oldRoom.capacity > 0) {
+          const beforePenalty = computeSC10CapacityUtilizationPenalty(studentInfo.studentCount, oldRoom.capacity)
+          deltaSoft -= beforePenalty
+        }
+      }
+      // New position
+      const newRoom = ctx.roomById.get(move.newRoomId)
+      if (newRoom && newRoom.capacity > 0) {
+        const afterPenalty = computeSC10CapacityUtilizationPenalty(studentInfo.studentCount, newRoom.capacity)
+        deltaSoft += afterPenalty
+      }
+    }
+  }
 
   return { deltaHard, deltaSoft }
 }

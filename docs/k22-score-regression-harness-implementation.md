@@ -668,7 +668,57 @@ Default fixture has 3 teaching tasks, each with only 1 distinct room. SC9 doesn'
 
 ---
 
-## 19. Closing Note
+## 19. Harness J: SC10 Room Capacity Utilization (K22-F11 / F11A isolated)
+
+Harness J covers SC10 (教室容量利用率): penalizes slots where the room capacity is poorly
+matched to the task student count. Two penalty branches:
+
+- **Tight**: `utilization > 0.90` → -2 (large class squeezed into small room)
+- **Waste**: `utilization < 0.30 AND room.capacity >= 100` → -1 (small class in huge room)
+
+**F11A isolation strategy**:
+
+- `teacherId=null` on all tasks → SC5 skips
+- 1 task 1 slot for delta cases → SC2 (no same-day) and SC9 (1 distinct room) both skip
+- Weekday-only for delta → SC7 doesn't fire
+- 3rd-position `originalAssignments = {dayOfWeek: 9, slotIndex: 1, roomId: 999}` → MIN_PERT net 0
+- Component-level assertion: each case asserts BOTH `total soft / deltaSoft / deltaHard` AND
+  `SC10_ROOM_CAPACITY_UTILIZATION details count + sum`
+- `extraRoomIds` param (delta cases): pre-populates new room in `roomById` so the delta "after"
+  branch can read its capacity
+- Per-room `capacity` field on slots: enables different utilization bands without cross-coupling
+
+**Skip rules** (helper-level): room=0, room missing, capacity<=0, count<=0, utilization>1.0 (HC4 owns).
+
+| ID | Title | Type | Expected | SC10 sum |
+|---|---|---|---:|---:|
+| J1-CAPACITY-GOOD-FIT | util 0.50 in band | full | 0 | 0 |
+| J2-CAPACITY-TIGHT-FIT | util 0.95 tight | full | -2 | -2 |
+| J3-CAPACITY-OVER-CAPACITY | util 1.20 over-cap (HC4) | full | 0 | 0 |
+| J4-CAPACITY-SMALL-CLASS-HUGE-ROOM | util 0.17, cap=120 waste | full | -1 | -1 |
+| J5-CAPACITY-SMALL-CLASS-NORMAL-ROOM | util 0.40, cap=60 in band | full | 0 | 0 |
+| J6-CAPACITY-ROOM-ZERO-SKIP | room=0 skip | full | 0 | 0 |
+| J7-CAPACITY-MISSING-STUDENT-COUNT-SKIP | count=0 skip | full | 0 | 0 |
+| J8-CAPACITY-EXACT-0.90-BOUNDARY | util=0.90 strict > | full | 0 | 0 |
+| J9-DELTA-IMPROVE-TIGHT-TO-GOOD | tight 0.95 → good 0.475 | delta | +2 | +2 |
+| J10-DELTA-WORSEN-GOOD-TO-TIGHT | good 0.475 → tight 0.95 | delta | -2 | -2 |
+| J11-DELTA-SMALL-HUGE-TO-NORMAL | waste 0.17 → good 0.50 | delta | +1 | +1 |
+| J12-DELTA-NORMAL-TO-HUGE | good 0.50 → waste 0.17 | delta | -1 | -1 |
+| J13-DELTA-OVER-CAPACITY-INTRODUCED | over-cap (HC4 fires, SC10 skip) | delta | 0 (deltaHard=-1000) | 0 |
+
+**Pre-F11 fixture updates** (surgical, documented in code comments):
+
+- `H8-MULTI-CLASSGROUP-MERGED`: added `classGroupStudentCounts: [20, 20]` for merged task A, `[40]` for B,
+  `[40]` for C. Keeps SC8 detection (gaps in (1,3) and (1,5)) while keeping utilization in 0.30-0.90 band.
+- `scripts/verify-specialty-campus-weekend-constraints-k22-f3.ts` MIXED cases:
+  `classGroupStudentCounts: [40, 40]` (total 80, util 0.80 in cap=100). Keeps MIXED semantics.
+
+These changes are localized to merged-class fixtures where the FALLBACK=50 × N classes would
+otherwise hit utilization = 1.0 in cap=100 rooms. No semantic change to the original test goals.
+
+---
+
+## 20. Closing Note
 
 K22-C-SCORE-REGRESSION-HARNESS-IMPLEMENTATION 按 spec 完整执行：
 
@@ -685,7 +735,8 @@ K22-C-SCORE-REGRESSION-HARNESS-IMPLEMENTATION 按 spec 完整执行：
 - ✅ 实施 Harness G (SC5 Teacher Day Balance): 9/9 PASS (K22-F4)
 - ✅ 实施 Harness H (SC8 Class Gap Reduction): 12/12 PASS (K22-F6, K22-F6A isolated)
 - ✅ 实施 Harness I (SC9 Classroom Stability): 11/11 PASS (K22-F8, F8A isolated)
-- ✅ K22-C summary: **60 PASS / 0 KNOWN_FAIL / 0 FAIL / 0 INFO** (was 37 before F6)
+- ✅ 实施 Harness J (SC10 Room Capacity Utilization): 13/13 PASS (K22-F11, F11A isolated)
+- ✅ K22-C summary: **73 PASS / 0 KNOWN_FAIL / 0 FAIL / 0 INFO** (was 60/0/0/0 before F11)
 - ✅ 整体 exit code = 0, BLOCKING = NO
 
 **当前状态: Harness A-I 九个维度，60 个 cases。K22-F6A 修正 Harness H isolation 策略; K22-F8A 修正 Harness I isolation 策略。下一步推荐 K22-F9-SCORE-CONSTRAINT-SUMMARY-AUDIT (汇总 HC1-HC6、SC1-SC9、MIN_PERT 的最终状态、harness 覆盖、剩余 roadmap, 不直接实现新约束)。**
