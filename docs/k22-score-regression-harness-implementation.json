@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-06-06T06:51:11.618Z",
+  "generatedAt": "2026-06-06T10:49:46.672Z",
   "phase": "K22-C-SCORE-REGRESSION-HARNESS-IMPLEMENTATION",
   "mode": "read-only, db-free, synthetic-fixture score regression harness",
   "summary": {
-    "total": 17,
-    "pass": 17,
+    "total": 28,
+    "pass": 28,
     "knownFail": 0,
     "fail": 0,
     "info": 0,
@@ -222,6 +222,83 @@
       "evidence": [
         "No score.ts or solver.ts imports in K21 config files"
       ]
+    },
+    {
+      "id": "F1-HC6-NON_AUTO",
+      "harness": "F",
+      "title": "HC6 non-automotive in Linxiao: hard=-1000, soft=0",
+      "status": "PASS",
+      "detail": "hard=-1000, soft=0"
+    },
+    {
+      "id": "F2-HC6-MIXED",
+      "harness": "F",
+      "title": "HC6 mixed classGroup in Linxiao: hard=-1000, soft=0 (K22-F2A)",
+      "status": "PASS",
+      "detail": "hard=-1000, soft=0"
+    },
+    {
+      "id": "F3-HC6-COURSE",
+      "harness": "F",
+      "title": "HC6 courseName has 汽车 but non-auto classGroup in Linxiao: hard=-1000 (K22-F2A)",
+      "status": "PASS",
+      "detail": "hard=-1000, soft=0"
+    },
+    {
+      "id": "F4-HC6-REMARK",
+      "harness": "F",
+      "title": "HC6 remark has 汽车 but non-auto classGroup in Linxiao: hard=-1000 (K22-F2A)",
+      "status": "PASS",
+      "detail": "hard=-1000, soft=0"
+    },
+    {
+      "id": "F5-SC6-NON_LX",
+      "harness": "F",
+      "title": "SC6 automotive-only NOT in Linxiao: soft=-20",
+      "status": "PASS",
+      "detail": "hard=0, soft=-20"
+    },
+    {
+      "id": "F6-SC6-IN_LX",
+      "harness": "F",
+      "title": "SC6 automotive-only IN Linxiao: no penalty",
+      "status": "PASS",
+      "detail": "hard=0, soft=0"
+    },
+    {
+      "id": "F7-SC7-WEEKEND",
+      "harness": "F",
+      "title": "SC7 weekend (day=6): soft=-15",
+      "status": "PASS",
+      "detail": "hard=0, soft=-15"
+    },
+    {
+      "id": "F8-SC7-WEEKDAY",
+      "harness": "F",
+      "title": "SC7 weekday (day=3): no penalty",
+      "status": "PASS",
+      "detail": "hard=0, soft=0"
+    },
+    {
+      "id": "F9-DELTA-HC6",
+      "harness": "F",
+      "title": "DELTA HC6 MIXED to Linxiao: deltaHard=-1000",
+      "status": "PASS",
+      "detail": "deltaHard=-1000, deltaSoft=0"
+    },
+    {
+      "id": "F10-DELTA-SC6",
+      "harness": "F",
+      "title": "DELTA SC6 auto to Linxiao: deltaSoft=+20",
+      "status": "PASS",
+      "detail": "deltaHard=0, deltaSoft=20"
+    },
+    {
+      "id": "F11-DELTA-SC7",
+      "harness": "F",
+      "title": "DELTA SC7 weekday to weekend: deltaSoft=-15",
+      "status": "PASS",
+      "detail": "deltaHard=0, deltaSoft=-15"
     }
   ]
 }

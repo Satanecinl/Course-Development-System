@@ -53,7 +53,7 @@ type Status = 'PASS' | 'KNOWN_FAIL' | 'FAIL' | 'INFO'
 
 interface CheckResult {
   id: string
-  harness: 'A' | 'B' | 'C' | 'D' | 'E'
+  harness: 'A' | 'B' | 'C' | 'D' | 'E' | 'F'
   title: string
   status: Status
   detail: string
@@ -1052,6 +1052,164 @@ function writeSnapshot(snapshot: Snapshot | null): void {
   console.log(`\nSnapshot written: ${snapshotPath}`)
 }
 
+// ── Harness F: Specialty Campus Weekend Constraints (HC6 / SC6 / SC7) ──
+
+function runHarnessF(): void {
+  console.log('\n─── Harness F: Specialty Campus Weekend Constraints (HC6 / SC6 / SC7) ───')
+
+  const LX_ROOM: { id: number; name: string; building: string | null; capacity: number } = { id: 100, name: '林校301', building: null, capacity: 100 }
+  const NON_LX_ROOM: { id: number; name: string; building: string | null; capacity: number } = { id: 200, name: 'A101', building: 'A', capacity: 100 }
+
+  // Helper: build context + state for a single-task single-slot fixture
+  function buildFxCtx(taskInput: { id: number; teacherId: number | null; courseName: string; remark?: string | null; classGroupIds: number[]; classGroupNames: string[] }, room: typeof LX_ROOM, dayOfWeek: number) {
+    return buildContext(
+      [{
+        ...taskInput,
+        classGroupStudentCounts: taskInput.classGroupIds.map(() => 30),
+        remark: taskInput.remark ?? null,
+      }],
+      [LX_ROOM, NON_LX_ROOM],
+      [{ id: 1, teachingTaskId: taskInput.id, dayOfWeek, slotIndex: 1, roomId: room.id }],
+    )
+  }
+
+  // ── F.1 HC6: non-automotive in Linxiao ──
+  {
+    const ctx = buildFxCtx({ id: 1, teacherId: 10, courseName: '高等数学', classGroupIds: [1], classGroupNames: ['计算机1班'] }, LX_ROOM, 1)
+    const state = buildStateFromSlots(ctx)
+    const result = calculateScoreWithDetails(ctx, state)
+    const hardOK = result.hardScore === -1000
+    const softOK = result.softScore === 0
+    const typeOK = result.details.some(d => d.type === 'HC6_NON_AUTOMOTIVE_FORBID_LINXIAO')
+    record({ id: 'F1-HC6-NON_AUTO', harness: 'F', title: 'HC6 non-automotive in Linxiao: hard=-1000, soft=0', status: (hardOK && softOK && typeOK) ? 'PASS' : 'FAIL', detail: `hard=${result.hardScore}, soft=${result.softScore}` })
+  }
+
+  // ── F.2 HC6: mixed in Linxiao (K22-F2A) ──
+  {
+    const ctx = buildFxCtx({ id: 1, teacherId: 10, courseName: '综合实践', classGroupIds: [1, 2], classGroupNames: ['汽车检测1班', '计算机1班'] }, LX_ROOM, 1)
+    const state = buildStateFromSlots(ctx)
+    const result = calculateScoreWithDetails(ctx, state)
+    const hardOK = result.hardScore === -1000
+    const softOK = result.softScore === 0
+    const typeOK = result.details.some(d => d.type === 'HC6_NON_AUTOMOTIVE_FORBID_LINXIAO')
+    record({ id: 'F2-HC6-MIXED', harness: 'F', title: 'HC6 mixed classGroup in Linxiao: hard=-1000, soft=0 (K22-F2A)', status: (hardOK && softOK && typeOK) ? 'PASS' : 'FAIL', detail: `hard=${result.hardScore}, soft=${result.softScore}` })
+  }
+
+  // ── F.3 HC6: courseName has 汽车 but non-auto classGroup in Linxiao (K22-F2A) ──
+  {
+    const ctx = buildFxCtx({ id: 1, teacherId: 10, courseName: '汽车概论', classGroupIds: [1], classGroupNames: ['计算机1班'] }, LX_ROOM, 1)
+    const state = buildStateFromSlots(ctx)
+    const result = calculateScoreWithDetails(ctx, state)
+    const hardOK = result.hardScore === -1000
+    const softOK = result.softScore === 0
+    record({ id: 'F3-HC6-COURSE', harness: 'F', title: 'HC6 courseName has 汽车 but non-auto classGroup in Linxiao: hard=-1000 (K22-F2A)', status: (hardOK && softOK) ? 'PASS' : 'FAIL', detail: `hard=${result.hardScore}, soft=${result.softScore}` })
+  }
+
+  // ── F.4 HC6: remark has 汽车 but non-auto classGroup in Linxiao (K22-F2A) ──
+  {
+    const ctx = buildFxCtx({ id: 1, teacherId: 10, courseName: '综合实践', remark: '汽车专业', classGroupIds: [1], classGroupNames: ['计算机1班'] }, LX_ROOM, 1)
+    const state = buildStateFromSlots(ctx)
+    const result = calculateScoreWithDetails(ctx, state)
+    const hardOK = result.hardScore === -1000
+    const softOK = result.softScore === 0
+    record({ id: 'F4-HC6-REMARK', harness: 'F', title: 'HC6 remark has 汽车 but non-auto classGroup in Linxiao: hard=-1000 (K22-F2A)', status: (hardOK && softOK) ? 'PASS' : 'FAIL', detail: `hard=${result.hardScore}, soft=${result.softScore}` })
+  }
+
+  // ── F.5 SC6: automotive-only NOT in Linxiao ──
+  {
+    const ctx = buildFxCtx({ id: 1, teacherId: 10, courseName: '汽车检测', classGroupIds: [1], classGroupNames: ['汽车检测1班'] }, NON_LX_ROOM, 1)
+    const state = buildStateFromSlots(ctx)
+    const result = calculateScoreWithDetails(ctx, state)
+    const hardOK = result.hardScore === 0
+    const softOK = result.softScore === -20
+    const typeOK = result.details.some(d => d.type === 'SC6_AUTOMOTIVE_PREFERS_LINXIAO')
+    record({ id: 'F5-SC6-NON_LX', harness: 'F', title: 'SC6 automotive-only NOT in Linxiao: soft=-20', status: (hardOK && softOK && typeOK) ? 'PASS' : 'FAIL', detail: `hard=${result.hardScore}, soft=${result.softScore}` })
+  }
+
+  // ── F.6 SC6: automotive-only IN Linxiao ──
+  {
+    const ctx = buildFxCtx({ id: 1, teacherId: 10, courseName: '汽车检测', classGroupIds: [1], classGroupNames: ['汽车检测1班'] }, LX_ROOM, 1)
+    const state = buildStateFromSlots(ctx)
+    const result = calculateScoreWithDetails(ctx, state)
+    const hardOK = result.hardScore === 0
+    const softOK = result.softScore === 0
+    record({ id: 'F6-SC6-IN_LX', harness: 'F', title: 'SC6 automotive-only IN Linxiao: no penalty', status: (hardOK && softOK) ? 'PASS' : 'FAIL', detail: `hard=${result.hardScore}, soft=${result.softScore}` })
+  }
+
+  // ── F.7 SC7: weekend (dayOfWeek=6) ──
+  {
+    const ctx = buildFxCtx({ id: 1, teacherId: 10, courseName: '高等数学', classGroupIds: [1], classGroupNames: ['计算机1班'] }, NON_LX_ROOM, 6)
+    const state = buildStateFromSlots(ctx)
+    const result = calculateScoreWithDetails(ctx, state)
+    const hardOK = result.hardScore === 0
+    const softOK = result.softScore === -15
+    const typeOK = result.details.some(d => d.type === 'SC7_WEEKEND_AVOIDANCE')
+    record({ id: 'F7-SC7-WEEKEND', harness: 'F', title: 'SC7 weekend (day=6): soft=-15', status: (hardOK && softOK && typeOK) ? 'PASS' : 'FAIL', detail: `hard=${result.hardScore}, soft=${result.softScore}` })
+  }
+
+  // ── F.8 SC7: weekday (dayOfWeek=3) ──
+  {
+    const ctx = buildFxCtx({ id: 1, teacherId: 10, courseName: '高等数学', classGroupIds: [1], classGroupNames: ['计算机1班'] }, NON_LX_ROOM, 3)
+    const state = buildStateFromSlots(ctx)
+    const result = calculateScoreWithDetails(ctx, state)
+    const hardOK = result.hardScore === 0
+    const softOK = result.softScore === 0
+    record({ id: 'F8-SC7-WEEKDAY', harness: 'F', title: 'SC7 weekday (day=3): no penalty', status: (hardOK && softOK) ? 'PASS' : 'FAIL', detail: `hard=${result.hardScore}, soft=${result.softScore}` })
+  }
+
+  // ── F.9 DELTA: HC6 mixed to Linxiao ──
+  {
+    const ctx = buildFxCtx({ id: 1, teacherId: 10, courseName: '综合实践', classGroupIds: [1, 2], classGroupNames: ['汽车检测1班', '计算机1班'] }, NON_LX_ROOM, 1)
+    // Set originalAssignments to a 3rd position (day=9, room=999) so MIN_PERT fires at both old and new, netting zero.
+    const assignments = new Map<number, { dayOfWeek: number; slotIndex: number; roomId: number }>()
+    const origAssignments = new Map<number, { dayOfWeek: number; slotIndex: number; roomId: number }>()
+    for (const s of ctx.slots) {
+      assignments.set(s.id, { dayOfWeek: s.dayOfWeek, slotIndex: s.slotIndex, roomId: s.roomId ?? 0 })
+      origAssignments.set(s.id, { dayOfWeek: 9, slotIndex: 1, roomId: 999 })
+    }
+    const state: ScheduleState = { assignments, originalAssignments: origAssignments }
+    const move: Move = { slotId: 1, newDay: 1, newSlotIndex: 1, newRoomId: LX_ROOM.id }
+    const delta = calculateDeltaScore(ctx, state, move)
+    const hardOK = delta.deltaHard === -1000
+    const softOK = delta.deltaSoft === 0
+    record({ id: 'F9-DELTA-HC6', harness: 'F', title: 'DELTA HC6 MIXED to Linxiao: deltaHard=-1000', status: (hardOK && softOK) ? 'PASS' : 'FAIL', detail: `deltaHard=${delta.deltaHard}, deltaSoft=${delta.deltaSoft}` })
+  }
+
+  // ── F.10 DELTA: SC6 auto to Linxiao ──
+  {
+    const ctx = buildFxCtx({ id: 1, teacherId: 10, courseName: '汽车检测', classGroupIds: [1], classGroupNames: ['汽车检测1班'] }, NON_LX_ROOM, 1)
+    const assignments = new Map<number, { dayOfWeek: number; slotIndex: number; roomId: number }>()
+    const origAssignments = new Map<number, { dayOfWeek: number; slotIndex: number; roomId: number }>()
+    for (const s of ctx.slots) {
+      assignments.set(s.id, { dayOfWeek: s.dayOfWeek, slotIndex: s.slotIndex, roomId: s.roomId ?? 0 })
+      origAssignments.set(s.id, { dayOfWeek: 9, slotIndex: 1, roomId: 999 })
+    }
+    const state: ScheduleState = { assignments, originalAssignments: origAssignments }
+    const move: Move = { slotId: 1, newDay: 1, newSlotIndex: 1, newRoomId: LX_ROOM.id }
+    const delta = calculateDeltaScore(ctx, state, move)
+    const hardOK = delta.deltaHard === 0
+    const softOK = delta.deltaSoft === 20
+    record({ id: 'F10-DELTA-SC6', harness: 'F', title: 'DELTA SC6 auto to Linxiao: deltaSoft=+20', status: (hardOK && softOK) ? 'PASS' : 'FAIL', detail: `deltaHard=${delta.deltaHard}, deltaSoft=${delta.deltaSoft}` })
+  }
+
+  // ── F.11 DELTA: SC7 weekday to weekend ──
+  {
+    const ctx = buildFxCtx({ id: 1, teacherId: 10, courseName: '高等数学', classGroupIds: [1], classGroupNames: ['计算机1班'] }, NON_LX_ROOM, 3)
+    const assignments = new Map<number, { dayOfWeek: number; slotIndex: number; roomId: number }>()
+    const origAssignments = new Map<number, { dayOfWeek: number; slotIndex: number; roomId: number }>()
+    for (const s of ctx.slots) {
+      assignments.set(s.id, { dayOfWeek: s.dayOfWeek, slotIndex: s.slotIndex, roomId: s.roomId ?? 0 })
+      origAssignments.set(s.id, { dayOfWeek: 9, slotIndex: 1, roomId: 999 })
+    }
+    const state: ScheduleState = { assignments, originalAssignments: origAssignments }
+    const move: Move = { slotId: 1, newDay: 6, newSlotIndex: 1, newRoomId: NON_LX_ROOM.id }
+    const delta = calculateDeltaScore(ctx, state, move)
+    const hardOK = delta.deltaHard === 0
+    const softOK = delta.deltaSoft === -15
+    record({ id: 'F11-DELTA-SC7', harness: 'F', title: 'DELTA SC7 weekday to weekend: deltaSoft=-15', status: (hardOK && softOK) ? 'PASS' : 'FAIL', detail: `deltaHard=${delta.deltaHard}, deltaSoft=${delta.deltaSoft}` })
+  }
+}
+
 // ── Main ────────────────────────────────────────────────────────────
 
 function main() {
@@ -1064,6 +1222,7 @@ function main() {
   const snapshot = runHarnessC()
   runHarnessD()
   runHarnessE()
+  runHarnessF()
 
   // Summary
   const pass = results.filter((r) => r.status === 'PASS').length

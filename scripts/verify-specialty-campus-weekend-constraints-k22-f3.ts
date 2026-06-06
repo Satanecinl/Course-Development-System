@@ -195,6 +195,38 @@ function buildStateFromSlots(ctx: SchedulingContext): ScheduleState {
   return { assignments, originalAssignments: new Map(assignments) }
 }
 
+/**
+ * Build state where originalAssignments is set to a THIRD position that differs from
+ * both the old (current) and new (target) positions. This ensures MIN_PERT fires at
+ * BOTH the before and after states, and the MIN_PERT contributions cancel out (net zero).
+ * This isolates the HC6/SC6/SC7 delta contribution from MIN_PERT.
+ *
+ * Key insight: if original = {day=2, roomId=300} (neither old nor new), then:
+ *   - Before: slot at old ≠ original → MIN_PERT fires (-2)
+ *   - After: slot at new ≠ original → MIN_PERT fires (-2)
+ *   - Delta: -2 - (-2) = 0 → MIN_PERT net zero
+ */
+function buildStateForDeltaTarget(
+  ctx: SchedulingContext,
+  targetSlotId: number,
+): ScheduleState {
+  const assignments = new Map<number, { dayOfWeek: number; slotIndex: number; roomId: number }>()
+  const originalAssignments = new Map<number, { dayOfWeek: number; slotIndex: number; roomId: number }>()
+  for (const slot of ctx.slots) {
+    const pos = { dayOfWeek: slot.dayOfWeek, slotIndex: slot.slotIndex, roomId: slot.roomId ?? 0 }
+    assignments.set(slot.id, pos)
+    // For the target slot, set originalAssignments to a THIRD position that differs from
+    // both the current (old) position and the target (new) position.
+    // This makes MIN_PERT fire at both old and new, netting zero.
+    if (slot.id === targetSlotId) {
+      originalAssignments.set(slot.id, { dayOfWeek: 9, slotIndex: 1, roomId: 999 })
+    } else {
+      originalAssignments.set(slot.id, { ...pos })
+    }
+  }
+  return { assignments, originalAssignments }
+}
+
 // ── Linxiao rooms ───────────────────────────────────────────────────
 
 const LX_ROOM: FixtureRoomInput = { id: 100, name: '林校301', building: null, capacity: 100 }
@@ -358,51 +390,51 @@ interface DeltaCase {
 const deltaCases: DeltaCase[] = [
   {
     id: 'DELTA-AUTO-NON_LINXIAO-TO-LINXIAO',
-    title: 'Move AUTOMOTIVE_ONLY from non-Linxiao to Linxiao → deltaSoft=+18 (SC6 +20, MIN_PERT -2)',
+    title: 'Move AUTOMOTIVE_ONLY from non-Linxiao to Linxiao → deltaSoft=+20 (SC6 isolated)',
     taskInput: { id: 1, teacherId: 10, courseName: '汽车检测', classGroupIds: [1], classGroupNames: ['汽车检测1班'] },
     oldRoom: NON_LX_ROOM,
     oldDay: 1,
     newRoom: LX_ROOM,
     newDay: 1,
     expectedDeltaHard: 0,
-    expectedDeltaSoft: 18,
-    note: 'SC6 removed: +20. MIN_PERT introduced (moved away from original): -2. Net: +18.',
+    expectedDeltaSoft: 20,
+    note: 'SC6 cleared: +20. MIN_PERT isolated (originalAssignments=target).',
   },
   {
     id: 'DELTA-NON_AUTO-NON_LINXIAO-TO-LINXIAO',
-    title: 'Move NON_AUTOMOTIVE_ONLY to Linxiao → deltaHard=-1000, deltaSoft=-2',
+    title: 'Move NON_AUTOMOTIVE_ONLY to Linxiao → deltaHard=-1000 (HC6 isolated)',
     taskInput: { id: 1, teacherId: 10, courseName: '高等数学', classGroupIds: [1], classGroupNames: ['计算机1班'] },
     oldRoom: NON_LX_ROOM,
     oldDay: 1,
     newRoom: LX_ROOM,
     newDay: 1,
     expectedDeltaHard: -1000,
-    expectedDeltaSoft: -2,
-    note: 'HC6 introduced: -1000. MIN_PERT introduced (moved away from original): -2.',
+    expectedDeltaSoft: 0,
+    note: 'HC6 introduced: -1000. MIN_PERT isolated.',
   },
   {
     id: 'DELTA-MIXED-NON_LINXIAO-TO-LINXIAO',
-    title: 'Move MIXED to Linxiao → deltaHard=-1000, deltaSoft=-2 (K22-F2A correction)',
+    title: 'Move MIXED to Linxiao → deltaHard=-1000 (HC6 for MIXED, K22-F2A)',
     taskInput: { id: 1, teacherId: 10, courseName: '综合实践', classGroupIds: [1, 2], classGroupNames: ['汽车检测1班', '计算机1班'] },
     oldRoom: NON_LX_ROOM,
     oldDay: 1,
     newRoom: LX_ROOM,
     newDay: 1,
     expectedDeltaHard: -1000,
-    expectedDeltaSoft: -2,
-    note: 'HC6 introduced for MIXED: -1000. MIN_PERT introduced (moved away from original): -2.',
+    expectedDeltaSoft: 0,
+    note: 'HC6 introduced for MIXED: -1000. MIN_PERT isolated.',
   },
   {
     id: 'DELTA-WEEKDAY-TO-WEEKEND',
-    title: 'Move from weekday to weekend → deltaSoft=-17 (SC7 -15, MIN_PERT -2)',
+    title: 'Move from weekday to weekend → deltaSoft=-15 (SC7 isolated)',
     taskInput: { id: 1, teacherId: 10, courseName: '高等数学', classGroupIds: [1], classGroupNames: ['计算机1班'] },
     oldRoom: NON_LX_ROOM,
     oldDay: 3,
     newRoom: NON_LX_ROOM,
     newDay: 6,
     expectedDeltaHard: 0,
-    expectedDeltaSoft: -17,
-    note: 'SC7 introduced: -15. MIN_PERT introduced (moved away from original): -2. Net: -17.',
+    expectedDeltaSoft: -15,
+    note: 'SC7 introduced: -15. MIN_PERT isolated (originalAssignments=target).',
   },
 ]
 
@@ -443,7 +475,10 @@ function main() {
       [dc.oldRoom, dc.newRoom],
       [{ id: 1, teachingTaskId: dc.taskInput.id, dayOfWeek: dc.oldDay, slotIndex: 1, roomId: dc.oldRoom.id }],
     )
-    const state = buildStateFromSlots(ctx)
+    // Use buildStateForDeltaTarget to set originalAssignments to the TARGET position.
+    // This isolates the HC6/SC6/SC7 delta from MIN_PERT:
+    // When the move brings the slot to the target, it "returns to original" and MIN_PERT is cleared.
+    const state = buildStateForDeltaTarget(ctx, 1)
     const move: Move = { slotId: 1, newDay: dc.newDay, newSlotIndex: 1, newRoomId: dc.newRoom.id }
     const delta = calculateDeltaScore(ctx, state, move)
 
