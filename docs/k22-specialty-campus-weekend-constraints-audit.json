@@ -1,0 +1,507 @@
+{
+  "generatedAt": "2026-06-06T08:37:12.613Z",
+  "phase": "K22-F2-SPECIALTY-CAMPUS-WEEKEND-CONSTRAINT-AUDIT",
+  "mode": "read-only design audit",
+  "summary": {
+    "totalFindings": 5,
+    "severity": {
+      "HIGH": 0,
+      "MEDIUM": 0,
+      "LOW": 3,
+      "INFO": 1,
+      "NONE": 1
+    },
+    "blocking": false,
+    "automotiveClassGroupsCount": 6,
+    "linxiaoRoomsCount": 10,
+    "weekendSlotsCount": 21,
+    "totalClassGroups": 36,
+    "totalRooms": 53,
+    "totalScheduleSlots": 440
+  },
+  "dataReadiness": {
+    "automotiveClassGroups": {
+      "count": 6,
+      "examples": [
+        "2024级汽车制造与试验技术1班",
+        "2024级汽车制造与试验技术2班",
+        "2024级汽车制造与试验技术五年制",
+        "2025级智能网联汽车技术",
+        "2025级汽车制造与试验技术1班"
+      ],
+      "ambiguous": {
+        "count": 30,
+        "examples": [
+          "2024级冶金现场工程师班、机电现场工程师班",
+          "2024级智能轧钢技术1班",
+          "2024级智能轧钢技术2班"
+        ]
+      }
+    },
+    "automotiveTeachingTasks": {
+      "count": 46,
+      "viaClassGroup": 46,
+      "viaCourseName": 9,
+      "viaRemark": 46,
+      "examples": [
+        "Course: 新能源汽车动力系统构造与测试",
+        "Course: 智能汽车传感器技术",
+        "Course: 智能网联汽车概论",
+        "Task#7 course=体育 classes=[2025级智能轧钢技术1班,2025级智能轧钢技术2班,2025级钢铁智能冶金技术1班（高本贯通）,2025级钢铁智能冶金技术2班,2025级钢铁智能冶金技术3班,2025级机电一体化技术1班,2025级机电一体化技术2班,2025级机电一体化技术3班,2025级机电一体化技术4班,2025级汽车制造与试验技术1班,2025级汽车制造与试验技术2班,2025级智能网联汽车技术,2025级林业技术1班,2025级林业技术2班,2025级森林草原资源保护1班,2025级森林草原资源保护2班,2025级森林草原防火技术1班]",
+        "Task#100 course=大学英语 classes=[2025级汽车制造与试验技术1班,2025级汽车制造与试验技术2班,2025级智能网联汽车技术]",
+        "Task#101 course=智能汽车传感器技术 classes=[2025级汽车制造与试验技术1班]",
+        "Task#102 course=机械制图 classes=[2025级汽车制造与试验技术1班]",
+        "Task#103 course=汽车电器设备原理与制造调试 classes=[2025级汽车制造与试验技术1班]"
+      ]
+    },
+    "linxiaoRooms": {
+      "count": 10,
+      "viaName": 10,
+      "viaBuilding": 0,
+      "examples": [
+        {
+          "id": 21,
+          "name": "林校\n305",
+          "building": null
+        },
+        {
+          "id": 22,
+          "name": "林校\n304",
+          "building": null
+        },
+        {
+          "id": 23,
+          "name": "林校304",
+          "building": null
+        },
+        {
+          "id": 24,
+          "name": "林校305",
+          "building": null
+        },
+        {
+          "id": 25,
+          "name": "林校\n301",
+          "building": null
+        }
+      ],
+      "ambiguous": {
+        "count": 0,
+        "examples": []
+      }
+    },
+    "nonLinxiaoRooms": {
+      "count": 43,
+      "examples": [
+        {
+          "id": 1,
+          "name": "11-321",
+          "building": null
+        },
+        {
+          "id": 2,
+          "name": "11-322",
+          "building": null
+        },
+        {
+          "id": 3,
+          "name": "11-318",
+          "building": null
+        }
+      ]
+    },
+    "weekendSlots": {
+      "count": 21,
+      "weekdaySlots": 419,
+      "dayDistribution": {
+        "1": 95,
+        "2": 70,
+        "3": 82,
+        "4": 94,
+        "5": 78,
+        "6": 11,
+        "7": 10
+      }
+    },
+    "totalClassGroups": 36,
+    "totalCourses": 104,
+    "totalRooms": 53,
+    "totalScheduleSlots": 440,
+    "totalTeachingTasks": 308,
+    "notes": "Read-only inspection at 2026-06-06T08:37:12.605Z."
+  },
+  "automotiveClassification": {
+    "method": "regex-based",
+    "keywords": [
+      "汽车",
+      "车辆",
+      "新能源",
+      "智能网联",
+      "汽修"
+    ],
+    "sources": [
+      "ClassGroup.name",
+      "Course.name",
+      "TeachingTask.remark"
+    ],
+    "defaultRule": "any automotive signal triggers automotive classification"
+  },
+  "linxiaoRoomClassification": {
+    "method": "regex-based",
+    "keywords": [
+      "林校"
+    ],
+    "sources": [
+      "Room.name",
+      "Room.building"
+    ],
+    "defaultRule": "strict keyword 林校 only, no single-character 林"
+  },
+  "weekendDistribution": {
+    "dayOfWeekConvention": "1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat, 7=Sun",
+    "weekdayRange": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "weekendRange": [
+      6,
+      7
+    ]
+  },
+  "constraintDesign": [
+    {
+      "id": "CONSTRAINT_A",
+      "name": "汽车专业学生优先林校教室 (Automotive prefers Linxiao)",
+      "businessDescription": "汽车专业学生优先全放在林校的教室。",
+      "level": "SOFT",
+      "constraintCode": "SC6_AUTOMOTIVE_PREFERS_LINXIAO",
+      "penalty": -20,
+      "skipRules": [
+        "Task without any automotive classification (classGroup, courseName, remark) — non-automotive",
+        "Room that is not Linxiao (cannot be moved to Linxiao by this rule)",
+        "LinXiao room unavailable for the slot (skip per RoomAvailability)",
+        "Task with no classGroup (no specialty signal — skip)"
+      ],
+      "rationale": "“优先” 是 soft 偏好，不是绝对 hard。如果林校教室容量不足，solver 仍应能生成可行课表，因此不能用 hard。但偏好较强，penalty 应较高 (-20)，超过 SC1/SC2/SC4 任何一个。K22-F2 design 阶段建议 SC6。",
+      "dataReady": true,
+      "schemaChangeNeeded": false,
+      "classification": "regex-based: AUTOMOTIVE_KEYWORDS in ClassGroup.name OR Course.name OR TeachingTask.remark"
+    },
+    {
+      "id": "CONSTRAINT_B",
+      "name": "非汽车专业学生不得进林校教室 (Non-automotive forbidden in Linxiao)",
+      "businessDescription": "其他专业学生不得放到林校的教室。",
+      "level": "HARD",
+      "constraintCode": "HC6_NON_AUTOMOTIVE_FORBID_LINXIAO",
+      "penalty": -1000,
+      "skipRules": [
+        "Task classified as automotive (any classification signal) — exempt",
+        "Mixed automotive + non-automotive task (合班) — should be treated as automotive or have manual override",
+        "Task with no classGroup (no signal) — skip to be safe (or treat as non-automotive)",
+        "Room that is not Linxiao — rule does not apply"
+      ],
+      "rationale": "“不得” 是 hard 绝对禁止。与现有 HC1-HC5 同等约束级别 (-1000)。solver 必须保证可行性 — 如果林校教室不足以容纳所有非汽车任务，应 fail 早返回而不是生成违反排课。命名沿用 HC6 (HC6 在 score.ts 中是 skeleton, K22-A-E-2 提到该 skeleton 故意不计分; 此处 HC6_NON_AUTOMOTIVE_FORBID_LINXIAO 与原 HC6 是不同约束 id, 不冲突).但需要先 audit 汽车专业识别准确率, 如准确率不足, 应先做 mapping/audit, 不直接实现.",
+      "dataReady": false,
+      "schemaChangeNeeded": false,
+      "classification": "regex-based: non-automotive (after CONSTRAINT_A check) placed in Linxiao room → hard violation"
+    },
+    {
+      "id": "CONSTRAINT_C",
+      "name": "周末一般不排课 (Weekend avoidance)",
+      "businessDescription": "周末一般不排课。",
+      "level": "SOFT",
+      "constraintCode": "SC7_WEEKEND_AVOIDANCE",
+      "penalty": -15,
+      "skipRules": [
+        "dayOfWeek in [1, 2, 3, 4, 5] (Mon-Fri) — skip",
+        "task with manual weekend exception (would need new field, schema extension deferred to K22-H)",
+        "room that is \"weekend-only\" by design (no current data, future schema)"
+      ],
+      "rationale": "“一般” 是 soft 偏好，不是 hard 禁止。dayOfWeek 6/7 表示周六/周日。当前数据中可能已有周末排课 (audit 后确认), solver 可能生成周末排课 (取决于 slot generation). soft penalty -15 让 solver 尽量避免周末, 但允许 manual override. K22-F2 阶段不修改 RoomAvailability / candidate slots 层.",
+      "dataReady": true,
+      "schemaChangeNeeded": false,
+      "classification": "dayOfWeek-based: dayOfWeek in [6, 7] → soft penalty per slot"
+    }
+  ],
+  "mixedCaseDecisionTable": [
+    {
+      "case": "TeachingTask 同时关联汽车班 + 非汽车班 (合班)",
+      "classification": "MIXED",
+      "recommendation": "Treat as automotive (use score-level: any classGroup automotive → task is automotive for SC6/HC6 purposes). Document via task-level override field in future K22-H schema.",
+      "reason": "合班 is common in 高校. 简单 “automotive only” 会让合班任务无法进 林校. 保守地 treat as automotive 让 solver 倾向把合班放 林校, 与 “汽车优先” 一致."
+    },
+    {
+      "case": "课程名含 “汽车” 但班级不是汽车专业",
+      "classification": "AMBIGUOUS_COURSE",
+      "recommendation": "Use both signals: automotive if (courseName OR classGroup). Any single signal triggers automotive classification.",
+      "reason": "有些课程是 “汽车概论” 公共课, 但非汽车班学生选修. 包含课程名 keyword 仍然 treat as automotive 更安全 (prefer Linxiao) 但要记录 K22-H 阶段考虑更精细规则."
+    },
+    {
+      "case": "班级名含 “汽车” 但课程是公共课 (e.g. 高等数学)",
+      "classification": "AMBIGUOUS_CLASS",
+      "recommendation": "Use classGroup signal: if classGroup automotive AND course NOT automotive, still treat as automotive for Linxiao preference.",
+      "reason": "汽车班学生选 公共课 在 林校 教室仍然合理. SC6 preference 不在意课程内容, 只在意学生是谁."
+    },
+    {
+      "case": "林校 room 识别不明确 (name 中含 “林” 但不是 “林校”)",
+      "classification": "AMBIGUOUS_ROOM",
+      "recommendation": "Use strict keyword “林校” only. Single-character “林” too risky (could match unrelated names). Manual admin review of ambiguous rooms in K22-H admin UI extension.",
+      "reason": "保守策略: 只匹配 “林校” (multi-char). Single “林” 风险高, 留作 K22-H schema extension (Room.campus field)."
+    },
+    {
+      "case": "任务无 classGroup (no classGroupId)",
+      "classification": "UNKNOWN",
+      "recommendation": "Skip automotive rules. Treat as non-automotive for HC6 (conservative: prefer fail than violate hard rule).",
+      "reason": "无 classGroup signal, 无法判断 specialty. K22-F2 阶段假设保守地 treat as non-automotive. K22-H 阶段可加 schema 改进."
+    },
+    {
+      "case": "公共课 teachingTask 关联 multiple classGroups (其中一个是汽车)",
+      "classification": "MIXED",
+      "recommendation": "Use \"any automotive classGroup triggers automotive classification\" rule. Task automotive if any classGroup is automotive.",
+      "reason": "见 case 1. 合班统一规则, simple and safe."
+    },
+    {
+      "case": "TeachingTask 含 remark \"汽车专业\" 但 classGroup 不是汽车",
+      "classification": "AMBIGUOUS_REMARK",
+      "recommendation": "Use remark signal: if remark contains automotive keyword, treat as automotive regardless of classGroup.",
+      "reason": "Remark 是 教务 manual 输入, 通常准确. Trust remark as authoritative for specialty."
+    }
+  ],
+  "fullScoreDesign": {
+    "automotive": {
+      "aggregation": "For each slot (in current assignment), check if (a) task has automotive classification (classGroup keyword OR courseName keyword OR remark keyword), AND (b) room is in Linxiao. If automotive && !linxiao: SC6_AUTOMOTIVE_PREFERS_LINXIAO soft penalty = -20.",
+      "complexity": "O(n) where n = number of slots",
+      "detailsEmitted": "One SC6 detail per slot that violates preference"
+    },
+    "nonAutomotiveForbid": {
+      "aggregation": "For each slot, if (a) task is NOT automotive, AND (b) room IS Linxiao: HC6_NON_AUTOMOTIVE_FORBID_LINXIAO hard penalty = -1000.",
+      "complexity": "O(n)",
+      "detailsEmitted": "One HC6 detail per violation"
+    },
+    "weekend": {
+      "aggregation": "For each slot, if dayOfWeek in [6, 7]: SC7_WEEKEND_AVOIDANCE soft penalty = -15.",
+      "complexity": "O(n)",
+      "detailsEmitted": "One SC7 detail per weekend slot"
+    },
+    "pseudocode": "\n// FULL SCORE (calculateScoreWithDetails)\nconst isAutomotive = (task) => {\n  const allClassNames = task.taskClasses.map(tc => tc.classGroup.name).join(',')\n  if (AUTOMOTIVE_KEYWORDS.some(kw => allClassNames.includes(kw))) return true\n  if (AUTOMOTIVE_KEYWORDS.some(kw => task.course?.name?.includes(kw) ?? false)) return true\n  if (task.remark && AUTOMOTIVE_KEYWORDS.some(kw => task.remark.includes(kw))) return true\n  return false\n}\nconst isLinxiao = (room, ctx) => isLinxiaoRoom(room.name, room.building)\n\nfor (const p of positions) {\n  if (p.room === 0) continue\n  const task = p.slot.teachingTask\n  const room = ctx.roomById.get(p.room)\n  if (!room) continue\n  const auto = isAutomotive(task)\n  const lx = isLinxiao(room, ctx)\n  // SC6: automotive prefers Linxiao\n  if (auto && !lx) {\n    softScore += -20\n    details.push({ type: 'SC6_AUTOMOTIVE_PREFERS_LINXIAO', level: 'SOFT', penalty: -20, ... })\n  }\n  // HC6: non-automotive forbidden in Linxiao\n  if (!auto && lx) {\n    hardScore += -1000\n    details.push({ type: 'HC6_NON_AUTOMOTIVE_FORBID_LINXIAO', level: 'HARD', penalty: -1000, ... })\n  }\n  // SC7: weekend avoidance\n  if (p.day === 6 || p.day === 7) {\n    softScore += -15\n    details.push({ type: 'SC7_WEEKEND_AVOIDANCE', level: 'SOFT', penalty: -15, ... })\n  }\n}\n"
+  },
+  "deltaScoreDesign": {
+    "affectedSlots": "Only the moved slot. Room and day change; all other slots unchanged.",
+    "procedure": "For the moved slot, recompute isAutomotive (static, depends on task) and isLinxiao (depends on new room). Compare before (using old.roomId, old.dayOfWeek) and after (using move.newRoomId, move.newDay). Three contributions: SC6 (if automotive && !lx), HC6 (if !auto && lx), SC7 (if weekend).",
+    "formula": "deltaHard += (after_hardPenalty - before_hardPenalty)  // from HC6 only\ndeltaSoft += (after_softPenalty - before_softPenalty)  // from SC6 + SC7",
+    "complexity": "O(1) per move (single slot)",
+    "hardScoreImpact": "Only HC6 contributes to deltaHard. SC6 + SC7 are soft.",
+    "doesNotIterate": "No need to scan all slots — only the moved slot.",
+    "pseudocode": "\n// DELTA SCORE (calculateDeltaScore)\nconst task = slot.teachingTask\nconst auto = isAutomotive(task)  // static, task.teacherId/taskClasses don't change\n\n// BEFORE: old position\nlet beforeHard = 0, beforeSoft = 0\nif (old.roomId !== 0) {\n  const oldRoom = ctx.roomById.get(old.roomId)\n  if (oldRoom) {\n    const lx = isLinxiaoRoom(oldRoom.name, oldRoom.building)\n    if (!auto && lx) beforeHard += -1000  // HC6\n    if (auto && !lx) beforeSoft += -20     // SC6\n  }\n}\nif (old.dayOfWeek === 6 || old.dayOfWeek === 7) beforeSoft += -15  // SC7\n\n// AFTER: new position\nlet afterHard = 0, afterSoft = 0\nif (move.newRoomId !== 0) {\n  const newRoom = ctx.roomById.get(move.newRoomId)\n  if (newRoom) {\n    const lx = isLinxiaoRoom(newRoom.name, newRoom.building)\n    if (!auto && lx) afterHard += -1000\n    if (auto && !lx) afterSoft += -20\n  }\n}\nif (move.newDay === 6 || move.newDay === 7) afterSoft += -15\n\ndeltaHard += afterHard - beforeHard\ndeltaSoft += afterSoft - beforeSoft\n"
+  },
+  "harnessPlan": [
+    {
+      "id": "SC6-HAPPY",
+      "category": "CONSTRAINT_A",
+      "purpose": "Automotive task in Linxiao room → no penalty",
+      "fixture": "1 task (id=1, course=汽车检测, classes=[汽车检测1班]) in 1 Linxiao room (id=100, name=林校301).",
+      "expectedHardScore": 0,
+      "expectedSoftScoreDelta": 0,
+      "expectedStatus": "PASS",
+      "notes": "Happy path. automotive && lx → no penalty."
+    },
+    {
+      "id": "SC6-VIOLATION",
+      "category": "CONSTRAINT_A",
+      "purpose": "Automotive task in non-Linxiao room → soft penalty",
+      "fixture": "1 task (id=1, course=汽车检测) in 1 non-Linxiao room (id=200, name=A101).",
+      "expectedHardScore": 0,
+      "expectedSoftScoreDelta": -20,
+      "expectedStatus": "PASS",
+      "notes": "automotive && !lx → soft penalty -20. Note: SC6 is soft preference, not hard violation."
+    },
+    {
+      "id": "HC6-VIOLATION",
+      "category": "CONSTRAINT_B",
+      "purpose": "Non-automotive task in Linxiao room → hard penalty",
+      "fixture": "1 task (id=1, course=高等数学, classes=[计算机1班]) in 1 Linxiao room (id=100, name=林校301).",
+      "expectedHardScore": -1000,
+      "expectedSoftScoreDelta": 0,
+      "expectedStatus": "PASS",
+      "notes": "!automotive && lx → hard penalty -1000. Solver would never apply this if HC gate is enforced."
+    },
+    {
+      "id": "HC6-HAPPY",
+      "category": "CONSTRAINT_B",
+      "purpose": "Non-automotive task in non-Linxiao room → no penalty",
+      "fixture": "1 task (id=1, course=高等数学) in 1 non-Linxiao room (id=200, name=A101).",
+      "expectedHardScore": 0,
+      "expectedSoftScoreDelta": 0,
+      "expectedStatus": "PASS",
+      "notes": "Happy path. !automotive && !lx → no penalty."
+    },
+    {
+      "id": "MIXED-AMBIGUOUS",
+      "category": "CONSTRAINT_B",
+      "purpose": "Mixed automotive + non-automotive classGroup in Linxiao → should be automotive (exempt)",
+      "fixture": "1 task (id=1, course=综合实践, classes=[汽车检测1班, 计算机1班]) in 1 Linxiao room.",
+      "expectedHardScore": 0,
+      "expectedSoftScoreDelta": 0,
+      "expectedStatus": "PASS",
+      "notes": "Per mixed-case decision table: \"any automotive classGroup triggers automotive classification\"."
+    },
+    {
+      "id": "SC7-WEEKEND",
+      "category": "CONSTRAINT_C",
+      "purpose": "Weekend slot → soft penalty",
+      "fixture": "1 task in 1 room, dayOfWeek=6 (Saturday).",
+      "expectedHardScore": 0,
+      "expectedSoftScoreDelta": -15,
+      "expectedStatus": "PASS",
+      "notes": "dayOfWeek 6/7 → soft penalty -15."
+    },
+    {
+      "id": "SC7-WEEKDAY",
+      "category": "CONSTRAINT_C",
+      "purpose": "Weekday slot → no weekend penalty",
+      "fixture": "1 task in 1 room, dayOfWeek=3 (Wednesday).",
+      "expectedHardScore": 0,
+      "expectedSoftScoreDelta": 0,
+      "expectedStatus": "PASS",
+      "notes": "dayOfWeek 1-5 → no penalty."
+    },
+    {
+      "id": "DELTA-RESOLVE-AUTOMOTIVE",
+      "category": "DELTA",
+      "purpose": "Move automotive task from non-Linxiao to Linxiao → soft improves",
+      "fixture": "Task automotive in non-Linxiao room. Move to Linxiao room. beforeSoft=-20, afterSoft=0, deltaSoft=+20.",
+      "expectedHardScore": 0,
+      "expectedSoftScoreDelta": 20,
+      "expectedStatus": "PASS",
+      "notes": "Verify delta correctly reflects SC6 resolve."
+    },
+    {
+      "id": "DELTA-INTRODUCE-NON-AUTOMOTIVE",
+      "category": "DELTA",
+      "purpose": "Move non-automotive task to Linxiao → hard violation introduced",
+      "fixture": "Task non-automotive in non-Linxiao room. Move to Linxiao. beforeHard=0, afterHard=-1000, deltaHard=-1000.",
+      "expectedHardScore": -1000,
+      "expectedSoftScoreDelta": 0,
+      "expectedStatus": "PASS",
+      "notes": "Verify delta correctly reflects HC6 introduction. Note: solver would never apply this if hard gate enforced."
+    },
+    {
+      "id": "DELTA-WEEKDAY-TO-WEEKEND",
+      "category": "DELTA",
+      "purpose": "Move slot from weekday to weekend → soft penalty introduced",
+      "fixture": "Task in any room, dayOfWeek=3 → dayOfWeek=6. beforeSoft=0, afterSoft=-15, deltaSoft=-15.",
+      "expectedHardScore": 0,
+      "expectedSoftScoreDelta": -15,
+      "expectedStatus": "PASS",
+      "notes": "Verify delta correctly reflects SC7 introduction."
+    }
+  ],
+  "findings": [
+    {
+      "id": "K22-F2-A-1",
+      "severity": "LOW",
+      "category": "A. Automotive classification feasibility",
+      "title": "汽车专业识别 — regex-based on ClassGroup.name / Course.name / TeachingTask.remark",
+      "currentStatus": "Read-only inspection at 2026-06-06T08:37:12.605Z.",
+      "evidence": [
+        "Total ClassGroups: 36",
+        "Automotive ClassGroups (regex match): 6",
+        "Examples: [\"2024级汽车制造与试验技术1班\",\"2024级汽车制造与试验技术2班\",\"2024级汽车制造与试验技术五年制\",\"2025级智能网联汽车技术\",\"2025级汽车制造与试验技术1班\"]",
+        "Automotive Courses: 9",
+        "Automotive TeachingTasks (via classGroup): 46",
+        "Automotive TeachingTasks (via remark): 46",
+        "Prisma schema: NO Department / major / specialty field. K22-F2 must use regex-based detection."
+      ],
+      "risk": "MEDIUM if data.automotiveClassGroups.count is 0: no automotive classification possible, CONSTRAINT_A/B design relies on this. LOW if at least some classes match.",
+      "recommendation": "regex-based detection is acceptable. Document in K22-F2 audit. K22-H may add Department schema."
+    },
+    {
+      "id": "K22-F2-B-1",
+      "severity": "NONE",
+      "category": "B. Linxiao room classification feasibility",
+      "title": "林校教室识别 — regex-based on Room.name / Room.building",
+      "currentStatus": "Linxiao rooms via name: 10, via building: 0, total: 10",
+      "evidence": [
+        "Total rooms: 53",
+        "Linxiao rooms: 10",
+        "Examples: [{\"id\":21,\"name\":\"林校\\n305\",\"building\":null},{\"id\":22,\"name\":\"林校\\n304\",\"building\":null},{\"id\":23,\"name\":\"林校304\",\"building\":null}]",
+        "Python parser: r'林校\\s*\\d+' regex matches \"林校305\" pattern (scripts/parse_cell.py:9)",
+        "Prisma schema: Room.building is nullable. Room.campus does NOT exist. K22-F2 must use regex on name OR building."
+      ],
+      "risk": "NONE if Linxiao rooms > 0 (data is identifiable). MEDIUM if 0 Linxiao rooms → CONSTRAINT_A/B has no target set.",
+      "recommendation": "regex-based detection using keyword \"林校\" is acceptable. K22-H may add Room.campus field for explicit modeling."
+    },
+    {
+      "id": "K22-F2-C-1",
+      "severity": "INFO",
+      "category": "C. Weekend slot distribution",
+      "title": "周末排课当前分布 — 用于评估 SC7 影响",
+      "currentStatus": "Weekend slots (dayOfWeek 6/7): 21; weekday: 419; day distribution: {\"1\":95,\"2\":70,\"3\":82,\"4\":94,\"5\":78,\"6\":11,\"7\":10}",
+      "evidence": [
+        "Total ScheduleSlots: 440",
+        "Weekday slots: 419",
+        "Weekend slots: 21",
+        "Day distribution: {\"1\":95,\"2\":70,\"3\":82,\"4\":94,\"5\":78,\"6\":11,\"7\":10}"
+      ],
+      "risk": "If weekend slots exist, they will all be penalized after SC7 impl. Solver may try to move them to weekdays but be constrained by HC1-HC5.",
+      "recommendation": "If weekend slots = 0, SC7 is effectively a no-op for current data. If > 0, plan gradual migration (manual slot review + future K22-F2 implementation will naturally resolve)."
+    },
+    {
+      "id": "K22-F2-D-1",
+      "severity": "LOW",
+      "category": "D. Mixed/ambiguous cases",
+      "title": "Mixed/ambiguous case decision table — 7 cases covered",
+      "currentStatus": "7 mixed/ambiguous cases designed: mixed classGroup, ambiguous course, ambiguous class, ambiguous room, no classGroup, multi-classGroup, ambiguous remark. All decisions documented.",
+      "evidence": [
+        "7 cases in mixedCaseDecisionTable",
+        "All decisions documented with reasoning",
+        "Default rule: \"any automotive signal triggers automotive classification\" (simple and safe)",
+        "Default rule: \"strict keyword 林校 only, no single-character 林\" (avoid false matches)"
+      ],
+      "risk": "LOW: decision table provides deterministic rules. Edge cases handled consistently.",
+      "recommendation": "Document decision table in K22-F2 implementation. Re-evaluate when K22-H schema extension adds Department / Room.campus."
+    },
+    {
+      "id": "K22-F2-E-1",
+      "severity": "LOW",
+      "category": "E. Overall data readiness",
+      "title": "3 constraints overall data readiness: READY",
+      "currentStatus": "CONSTRAINT_A (SC6 automotive prefers Linxiao): data ready. CONSTRAINT_B (HC6 non-automotive forbid Linxiao): data ready. CONSTRAINT_C (SC7 weekend avoidance): always data-ready (dayOfWeek field exists).",
+      "evidence": [
+        "CONSTRAINT_A: 6 automotive class groups",
+        "CONSTRAINT_B: 10 Linxiao rooms + 6 automotive class groups",
+        "CONSTRAINT_C: always data-ready"
+      ],
+      "risk": "LOW: all 3 constraints can be implemented with current data.",
+      "recommendation": "K22-F2 = design + data audit only. K22-F3 = implementation. K22-F3 may require: (1) data backfill for ambiguous automotive classGroups, (2) admin UI to mark Room.campus, (3) score.ts implementation."
+    }
+  ],
+  "recommendedNextStage": "K22-F3-SPECIALTY-CAMPUS-WEEKEND-CONSTRAINT-IMPL",
+  "recommendedNextStageScope": {
+    "scope": [
+      "Implement SC6_AUTOMOTIVE_PREFERS_LINXIAO in calculateScoreWithDetails + calculateDeltaScore",
+      "Implement HC6_NON_AUTOMOTIVE_FORBID_LINXIAO in calculateScoreWithDetails + calculateDeltaScore",
+      "Implement SC7_WEEKEND_AVOIDANCE in calculateScoreWithDetails + calculateDeltaScore",
+      "Extend K22-C regression harness with 10 cases (4 CONSTRAINT_A/B/C, 1 MIXED, 3 SC7, 3 DELTA)",
+      "Pre-step (K22-F2A): confirm automotive data accuracy with academic affairs (教务处)"
+    ],
+    "excludes": [
+      "No schema migration (regex-based detection only)",
+      "No Department model re-introduction",
+      "No Room.campus field",
+      "No UI changes",
+      "No admin form changes",
+      "No hardWeights/softWeights (K22-weights-roadmap)"
+    ]
+  },
+  "notes": [
+    "K22-F2 is a read-only design audit.",
+    "No Prisma writes, no score.ts changes, no schema changes.",
+    "The Department model from the initial migration was dropped in the current schema; K22-F2 uses regex-based detection.",
+    "Python parser has r\"林校\\s*\\d+\" regex (scripts/parse_cell.py:9), which can be reused for room classification.",
+    "All 3 constraints are designed to be implementable with current data (no schema changes), but data quality audit is recommended as a pre-step."
+  ]
+}
