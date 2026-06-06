@@ -53,7 +53,7 @@ type Status = 'PASS' | 'KNOWN_FAIL' | 'FAIL' | 'INFO'
 
 interface CheckResult {
   id: string
-  harness: 'A' | 'B' | 'C' | 'D' | 'E' | 'F'
+  harness: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G'
   title: string
   status: Status
   detail: string
@@ -1210,6 +1210,84 @@ function runHarnessF(): void {
   }
 }
 
+// ── Harness G: SC5 Teacher Day Balance (K22-F4) ──
+
+function runHarnessG(): void {
+  console.log('\n─── Harness G: SC5 Teacher Day Balance (K22-F4) ───')
+
+  // Helper: create a single teacher (id=10) with N tasks, each with unique taskId/classGroupId,
+  // all slots in room 100, unique slotIndex per day to avoid HC2 time conflicts.
+  function buildSC5Fixture(days: number[]) {
+    const daySlotCount = new Map<number, number>()
+    const taskInputs = days.map((day, i) => ({ id: i + 1, teacherId: 10, classGroupId: i + 100 }))
+    const slotInputs = days.map((day, i) => {
+      const idx = (daySlotCount.get(day) ?? 0) + 1
+      daySlotCount.set(day, idx)
+      return { id: i + 1, teachingTaskId: i + 1, dayOfWeek: day, slotIndex: idx, roomId: 100 }
+    })
+    const tasks: TaskWithRelations[] = taskInputs.map(t => ({
+      id: t.id, courseId: t.id, teacherId: t.teacherId, semesterId: 1, weekType: 'ALL', startWeek: 1, endWeek: 16,
+      remark: null, importBatchId: null,
+      course: { id: t.id, name: `Course-${t.id}`, code: null, credits: null, isPractice: false },
+      teacher: { id: t.teacherId, name: 'T10', phone: null, email: null },
+      taskClasses: [{ id: t.classGroupId * 1000 + 1, teachingTaskId: t.id, classGroupId: t.classGroupId,
+        classGroup: { id: t.classGroupId, name: `G${t.classGroupId}`, studentCount: 30, advisorName: null, advisorPhone: null } }],
+    }))
+    const room: RoomWithAvailability = { id: 100, name: 'A101', building: 'A', capacity: 100, type: 'NORMAL', availabilities: [] }
+    const taskById = new Map(tasks.map(t => [t.id, t]))
+    const roomById = new Map([[100, room]])
+    const slotsByTask = new Map(tasks.map(t => [t.id, [] as SlotWithRelations[]]))
+    const slotObjs: SlotWithRelations[] = slotInputs.map(s => ({
+      id: s.id, teachingTaskId: s.teachingTaskId, roomId: s.roomId, dayOfWeek: s.dayOfWeek,
+      slotIndex: s.slotIndex, semesterId: 1, weekType: 'ALL', room, teachingTask: taskById.get(s.teachingTaskId)!,
+    }))
+    for (const slot of slotObjs) slotsByTask.get(slot.teachingTaskId)!.push(slot)
+    const ctx: SchedulingContext = { tasks, rooms: [room], slots: slotObjs, taskById, roomById, slotsByTask, slotsByRoom: new Map(), slotsByTeacher: new Map(), slotsByClass: new Map() }
+    const assignments = new Map(slotInputs.map(s => [s.id, { dayOfWeek: s.dayOfWeek, slotIndex: s.slotIndex, roomId: s.roomId }]))
+    const state: ScheduleState = { assignments, originalAssignments: new Map(assignments) }
+    return { ctx, state, slotInputs }
+  }
+
+  // Full score cases
+  const fullCases: { id: string; days: number[]; expectedSoft: number }[] = [
+    { id: 'G1-4_0_0_0_0', days: [1, 1, 1, 1], expectedSoft: -6 },
+    { id: 'G2-3_1_0_0_0', days: [1, 1, 1, 2], expectedSoft: -3 },
+    { id: 'G3-2_2_0_0_0', days: [1, 1, 2, 2], expectedSoft: 0 },
+    { id: 'G4-TOTAL_LT_3', days: [1, 2], expectedSoft: 0 },
+    { id: 'G5-1_1_1_0_0', days: [1, 2, 3], expectedSoft: 0 },
+    { id: 'G6-2_1_0_0_0', days: [1, 1, 2], expectedSoft: 0 },
+  ]
+
+  for (const tc of fullCases) {
+    const { ctx, state } = buildSC5Fixture(tc.days)
+    const result = calculateScoreWithDetails(ctx, state)
+    const softOK = result.softScore === tc.expectedSoft
+    const hardOK = result.hardScore === 0
+    record({ id: tc.id, harness: 'G', title: `SC5 full: ${tc.days.join(',')} → soft=${tc.expectedSoft}`, status: (hardOK && softOK) ? 'PASS' : 'FAIL', detail: `hard=${result.hardScore}, soft=${result.softScore}` })
+  }
+
+  // Delta cases (3rd-position originalAssignments to isolate SC5 delta from MIN_PERT)
+  interface SC5DeltaCase { id: string; days: number[]; moveIdx: number; newDay: number; newIdx: number; expectedDeltaSoft: number }
+  const deltaCases: SC5DeltaCase[] = [
+    { id: 'G7-DELTA-IMPROVE', days: [1, 1, 1, 5], moveIdx: 0, newDay: 2, newIdx: 1, expectedDeltaSoft: 3 },
+    { id: 'G8-DELTA-WORSEN', days: [1, 1, 5], moveIdx: 2, newDay: 1, newIdx: 3, expectedDeltaSoft: -3 },
+    { id: 'G9-DELTA-SKIP', days: [1, 5], moveIdx: 1, newDay: 1, newIdx: 2, expectedDeltaSoft: 0 },
+  ]
+
+  for (const dc of deltaCases) {
+    const { ctx, slotInputs } = buildSC5Fixture(dc.days)
+    // Isolate: originalAssignments = 3rd position (day=9, room=999)
+    const assignments = new Map(slotInputs.map(s => [s.id, { dayOfWeek: s.dayOfWeek, slotIndex: s.slotIndex, roomId: s.roomId }]))
+    const origAssignments = new Map(slotInputs.map(s => [s.id, { dayOfWeek: 9, slotIndex: 1, roomId: 999 }]))
+    const state: ScheduleState = { assignments, originalAssignments: origAssignments }
+    const move: Move = { slotId: dc.moveIdx + 1, newDay: dc.newDay, newSlotIndex: dc.newIdx, newRoomId: 100 }
+    const delta = calculateDeltaScore(ctx, state, move)
+    const softOK = delta.deltaSoft === dc.expectedDeltaSoft
+    const hardOK = delta.deltaHard === 0
+    record({ id: dc.id, harness: 'G', title: `SC5 delta: ${dc.days.join(',')} → softΔ=${dc.expectedDeltaSoft}`, status: (hardOK && softOK) ? 'PASS' : 'FAIL', detail: `deltaHard=${delta.deltaHard}, deltaSoft=${delta.deltaSoft}` })
+  }
+}
+
 // ── Main ────────────────────────────────────────────────────────────
 
 function main() {
@@ -1223,6 +1301,7 @@ function main() {
   runHarnessD()
   runHarnessE()
   runHarnessF()
+  runHarnessG()
 
   // Summary
   const pass = results.filter((r) => r.status === 'PASS').length

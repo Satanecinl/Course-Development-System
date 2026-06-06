@@ -151,6 +151,49 @@ function computeSC6Penalty(cls: SpecialtyClassification, isLx: boolean): number 
   return SC6_AUTOMOTIVE_NON_LINXIAO_PENALTY
 }
 
+// ── SC5: 教师每日课时负载均衡 (K22-F4) ──
+
+const TEACHING_DAYS = [1, 2, 3, 4, 5]
+const SC5_PENALTY_PER_EXCESS = -3
+const SC5_THRESHOLD = 2
+const SC5_MIN_TOTAL = 3
+
+/**
+ * 为教师构建 dailyCounts（5 个教学日初始化为 0）。
+ * 只统计 room != 0 且 dayOfWeek in [1..5] 的 slot。
+ * 适用于 full score（遍历所有 slots）和 delta score（遍历 slots 排除 moved）。
+ */
+function buildTeacherDailyCounts(
+  teacherId: number,
+  slots: SlotWithRelations[],
+  state: ScheduleState,
+  excludeSlotId?: number,
+): Map<number, number> {
+  const counts = new Map<number, number>()
+  for (const d of TEACHING_DAYS) counts.set(d, 0)
+  for (const slot of slots) {
+    if (slot.id === excludeSlotId) continue
+    if (slot.teachingTask.teacherId !== teacherId) continue
+    const pos = getPos(slot, state)
+    if (pos.room === 0) continue
+    if (pos.day < 1 || pos.day > 5) continue // 只统计教学日
+    counts.set(pos.day, (counts.get(pos.day) ?? 0) + 1)
+  }
+  return counts
+}
+
+/** 根据 dailyCounts 计算 SC5 penalty（纯函数，可直接用于 full 和 delta） */
+function computeTeacherDayBalancePenalty(counts: Map<number, number>): number {
+  const loads = TEACHING_DAYS.map(d => counts.get(d) ?? 0)
+  const total = loads.reduce((a, b) => a + b, 0)
+  if (total < SC5_MIN_TOTAL) return 0
+  const maxLoad = Math.max(...loads)
+  const minLoad = Math.min(...loads) // 包含 0 课日
+  const diff = maxLoad - minLoad
+  if (diff <= SC5_THRESHOLD) return 0
+  return SC5_PENALTY_PER_EXCESS * (diff - SC5_THRESHOLD)
+}
+
 /**
  * 全量计算分数，返回带详情的结果
  */
@@ -408,6 +451,36 @@ export function calculateScoreWithDetails(
     }
   }
 
+  // ── SC5: 教师每日课时负载均衡 (K22-F4) ──
+  // 统计每个教师在 5 个教学日（1-5）中的课程数，当日负载差异 > 2 时惩罚
+  const teacherDayCounts = new Map<number, Map<number, number>>()
+  for (const p of positions) {
+    if (p.room === 0) continue
+    const tid = p.slot.teachingTask.teacherId
+    if (tid == null) continue
+    if (p.day < 1 || p.day > 5) continue // 只统计教学日
+    let dayMap = teacherDayCounts.get(tid)
+    if (!dayMap) {
+      dayMap = new Map()
+      for (const d of TEACHING_DAYS) dayMap.set(d, 0)
+      teacherDayCounts.set(tid, dayMap)
+    }
+    dayMap.set(p.day, (dayMap.get(p.day) ?? 0) + 1)
+  }
+  for (const [tid, dayMap] of teacherDayCounts) {
+    const penalty = computeTeacherDayBalancePenalty(dayMap)
+    if (penalty !== 0) {
+      softScore += penalty
+      const loads = TEACHING_DAYS.map(d => dayMap.get(d) ?? 0)
+      const maxLoad = Math.max(...loads)
+      const minLoad = Math.min(...loads)
+      details.push({
+        type: 'SC5_TEACHER_DAY_BALANCE', level: 'SOFT', penalty,
+        message: `教师 ${tid} 负载不均: 最忙日 ${maxLoad} 节，最闲日 ${minLoad} 节`,
+      })
+    }
+  }
+
   return { hardScore, softScore, details }
 }
 
@@ -634,6 +707,17 @@ export function calculateDeltaScore(
   // SC7 delta: 周末一般不排课
   if (old.dayOfWeek >= 6) deltaSoft -= SC7_WEEKEND_PENALTY
   if (move.newDay >= 6) deltaSoft += SC7_WEEKEND_PENALTY
+
+  // SC5 delta: 教师每日课时负载均衡 (K22-F4)
+  // 只计算 affected teacher（moved slot 对应的 teacher）的 before/after penalty
+  const sc5TeacherId = task.teacherId
+  if (sc5TeacherId != null) {
+    const beforeCounts = buildTeacherDailyCounts(sc5TeacherId, ctx.slots, state, slot.id)
+    beforeCounts.set(old.dayOfWeek, (beforeCounts.get(old.dayOfWeek) ?? 0) + 1) // old 位置加入
+    const afterCounts = buildTeacherDailyCounts(sc5TeacherId, ctx.slots, state, slot.id)
+    afterCounts.set(move.newDay, (afterCounts.get(move.newDay) ?? 0) + 1) // new 位置加入
+    deltaSoft += computeTeacherDayBalancePenalty(afterCounts) - computeTeacherDayBalancePenalty(beforeCounts)
+  }
 
   return { deltaHard, deltaSoft }
 }

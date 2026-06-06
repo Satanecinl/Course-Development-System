@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-06-06T10:49:46.672Z",
+  "generatedAt": "2026-06-06T11:14:54.213Z",
   "phase": "K22-C-SCORE-REGRESSION-HARNESS-IMPLEMENTATION",
   "mode": "read-only, db-free, synthetic-fixture score regression harness",
   "summary": {
-    "total": 28,
-    "pass": 28,
+    "total": 37,
+    "pass": 37,
     "knownFail": 0,
     "fail": 0,
     "info": 0,
@@ -299,6 +299,69 @@
       "title": "DELTA SC7 weekday to weekend: deltaSoft=-15",
       "status": "PASS",
       "detail": "deltaHard=0, deltaSoft=-15"
+    },
+    {
+      "id": "G1-4_0_0_0_0",
+      "harness": "G",
+      "title": "SC5 full: 1,1,1,1 → soft=-6",
+      "status": "PASS",
+      "detail": "hard=0, soft=-6"
+    },
+    {
+      "id": "G2-3_1_0_0_0",
+      "harness": "G",
+      "title": "SC5 full: 1,1,1,2 → soft=-3",
+      "status": "PASS",
+      "detail": "hard=0, soft=-3"
+    },
+    {
+      "id": "G3-2_2_0_0_0",
+      "harness": "G",
+      "title": "SC5 full: 1,1,2,2 → soft=0",
+      "status": "PASS",
+      "detail": "hard=0, soft=0"
+    },
+    {
+      "id": "G4-TOTAL_LT_3",
+      "harness": "G",
+      "title": "SC5 full: 1,2 → soft=0",
+      "status": "PASS",
+      "detail": "hard=0, soft=0"
+    },
+    {
+      "id": "G5-1_1_1_0_0",
+      "harness": "G",
+      "title": "SC5 full: 1,2,3 → soft=0",
+      "status": "PASS",
+      "detail": "hard=0, soft=0"
+    },
+    {
+      "id": "G6-2_1_0_0_0",
+      "harness": "G",
+      "title": "SC5 full: 1,1,2 → soft=0",
+      "status": "PASS",
+      "detail": "hard=0, soft=0"
+    },
+    {
+      "id": "G7-DELTA-IMPROVE",
+      "harness": "G",
+      "title": "SC5 delta: 1,1,1,5 → softΔ=3",
+      "status": "PASS",
+      "detail": "deltaHard=0, deltaSoft=3"
+    },
+    {
+      "id": "G8-DELTA-WORSEN",
+      "harness": "G",
+      "title": "SC5 delta: 1,1,5 → softΔ=-3",
+      "status": "PASS",
+      "detail": "deltaHard=0, deltaSoft=-3"
+    },
+    {
+      "id": "G9-DELTA-SKIP",
+      "harness": "G",
+      "title": "SC5 delta: 1,5 → softΔ=0",
+      "status": "PASS",
+      "detail": "deltaHard=0, deltaSoft=0"
     }
   ]
 }
