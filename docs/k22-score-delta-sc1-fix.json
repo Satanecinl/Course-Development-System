@@ -1,0 +1,117 @@
+{
+  "generatedAt": "2026-06-06T06:51:10.730Z",
+  "phase": "K22-D-SCORE-DELTA-SC1-FIX",
+  "mode": "read-only, db-free, static + dynamic wrapper verification",
+  "summary": {
+    "total": 6,
+    "pass": 6,
+    "fail": 0,
+    "info": 0,
+    "blocking": "NO"
+  },
+  "sc1DeltaFixSummary": {
+    "whatWasFixed": "K22-D added SC1 delta logic to calculateDeltaScore in score.ts. Logic mirrors full score SC1 detection (getBuilding + inferBuilding fallback, same teacher OR shared class, same day + |idx diff|=1, different building).",
+    "beforeK22D": "calculateDeltaScore returned 0 for SC1 contribution; full score returned -5 per SC1 trigger. LAHC solver accepted moves that increased cross-building penalty because delta could not see SC1.",
+    "afterK22D": "calculateDeltaScore correctly returns ±5 per affected pair (afterPenalty - beforePenalty). K22-C A.2 case moved from KNOWN_FAIL to PASS. K22-A HIGH risk eliminated.",
+    "k22CA2Result": {
+      "caseName": "SC1 cross-building consecutive delta",
+      "fixture": "2 tasks (same teacher, same class, different teachingTaskIds), 2 rooms (A/B), 2 slots at day1/slot1, day1/slot2",
+      "move": "slot2 to building A (resolve SC1)",
+      "beforeSoft": -5,
+      "afterSoft": -2,
+      "fullSoftDelta": 3,
+      "deltaSoftBeforeK22D": -2,
+      "deltaSoftAfterK22D": 3,
+      "status": "PASS"
+    }
+  },
+  "results": [
+    {
+      "id": "D1",
+      "title": "calculateDeltaScore body contains SC1 delta logic (mirror full score)",
+      "status": "PASS",
+      "detail": "SC1 delta logic present: SOFT_SC1_CROSS_BUILDING constant, same teacher check, shared class check, getBuilding/inferBuilding, day + |idx diff|=1, deltaSoft accumulation.",
+      "evidence": [
+        "SOFT_SC1_CROSS_BUILDING used: true",
+        "SC1 comment present: true",
+        "Same teacher check: true",
+        "Shared class check: true",
+        "getBuilding/inferBuilding used: true",
+        "Day + |idx diff|=1 check: true",
+        "deltaSoft += SOFT_SC1_CROSS_BUILDING present: true"
+      ]
+    },
+    {
+      "id": "D2",
+      "title": "full score SC1 detection logic still present and unchanged",
+      "status": "PASS",
+      "detail": "calculateScoreWithDetails still has SC1 detection: SC1_CROSS_BUILDING_BACK_TO_BACK constant, softScore += SOFT_SC1_CROSS_BUILDING, getBuilding on both rooms, sameTeacher + sharedClass check, q.slot.id <= p.slot.id dedup guard.",
+      "evidence": [
+        "SC1_CROSS_BUILDING_BACK_TO_BACK: true",
+        "softScore += SOFT_SC1_CROSS_BUILDING: true",
+        "getBuilding on both rooms: true",
+        "sameTeacher: true",
+        "sharedClass: true",
+        "q.slot.id <= p.slot.id dedup: true"
+      ]
+    },
+    {
+      "id": "D3",
+      "title": "K22-C verify script: A.2 SC1 = PASS, KNOWN_FAIL = 0, FAIL = 0, BLOCKING = NO",
+      "status": "PASS",
+      "detail": "K22-C verify all green. PASS=17, KNOWN_FAIL=0, FAIL=0, BLOCKING=NO. A.2 SC1 case is now PASS.",
+      "evidence": [
+        "A.2 line says PASS: true",
+        "A.2 no longer KNOWN_FAIL: true",
+        "Overall PASS count: 17",
+        "Overall KNOWN_FAIL count: 0",
+        "Overall FAIL count: 0",
+        "Overall BLOCKING: NO"
+      ]
+    },
+    {
+      "id": "D4",
+      "title": "K22-A audit: SC1 delta = true, SC1 full = true, HIGH = 0, BLOCKING = NO",
+      "status": "PASS",
+      "detail": "K22-A audit all green. HIGH=0, BLOCKING=NO, SC1 fullScore=true, SC1 deltaScore=true.",
+      "evidence": [
+        "exitCode: 0",
+        "HIGH count: 0",
+        "BLOCKING: NO",
+        "SC1 fullScoreCoverage: true",
+        "SC1 deltaScoreCoverage: true"
+      ]
+    },
+    {
+      "id": "D5",
+      "title": "penalty constants hardcoded; no hardWeights/softWeights injected",
+      "status": "PASS",
+      "detail": "All 6 penalty constants still hardcoded at -1000 / -5 / -10 / -1 / -5 / -2. No hardWeights/softWeights fields referenced in score.ts.",
+      "evidence": [
+        "HARD_PENALTY=-1000: true",
+        "SOFT_SC1_CROSS_BUILDING=-5: true",
+        "SOFT_SC2_SAME_DAY=-10: true",
+        "SOFT_SC3_EXTREME_TIME=-1: true",
+        "SOFT_SC4_CROSS_CAMPUS=-5: true",
+        "SOFT_MINIMUM_PERTURBATION=-2: true",
+        "No hardWeights in score.ts: true",
+        "No softWeights in score.ts: true"
+      ]
+    },
+    {
+      "id": "D6",
+      "title": "no out-of-scope file modifications (schema/DB/solver/frontend/API/importer/parser/RBAC)",
+      "status": "PASS",
+      "detail": "score.ts imports limited to scheduler-local + conflict + capacity. No frontend, API, importer, parser, or RBAC imports. No Prisma writes.",
+      "evidence": [
+        "Imports: [\"./types\",\"@/lib/conflict\",\"./capacity\"]",
+        "Forbidden external imports: []",
+        "No frontend import: true",
+        "No API import: true",
+        "No importer import: true",
+        "No parser import: true",
+        "No RBAC import: true"
+      ]
+    }
+  ]
+}

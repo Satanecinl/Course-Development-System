@@ -160,10 +160,10 @@ function inventorySoftConstraints(): ConstraintInfo[] {
       triggerCondition: '同一教师或共享班级的两个 task，在同一 day、相邻 slotIndex（差 1），且所在 building 不同',
       dataSources: ['Room.building (优先) 或 inferBuilding(Room.name)', 'TeachingTask.teacherId', 'TeachingTaskClass.classGroupId'],
       fullScoreCoverage: true,
-      deltaScoreCoverage: false,
+      deltaScoreCoverage: true,
       configurableNow: false,
-      inventoryRisk: 'HIGH',
-      notes: 'CRITICAL: SC1 在 full score 中检测 "教师+班级" 两个维度，但 delta score 中完全缺失（calculateDeltaScore 没有 SC1 逻辑）。这意味着 delta score 不会对跨楼栋连续课产生任何惩罚，而 full score 会。solver 使用 delta score 决策，可能接受会增加跨楼栋惩罚的 move，因为 delta 里看不到 SC1 惩罚。',
+      inventoryRisk: 'NONE',
+      notes: 'full score 和 delta score 均覆盖。K22-D 在 calculateDeltaScore 中添加了 SC1 逻辑：mirror full score 的 SC1 detection（getBuilding 优先 Room.building 否则 inferBuilding fallback，相同教师 OR 共享班级，同天相邻 slotIndex，building 不同）。delta 实现按 affected pair 的 before/after 触发状态计算 (afterPenalty - beforePenalty)，不做全量重算。K22-C verify 脚本 A.2 case 作为 regression guard 已从 KNOWN_FAIL 转为 PASS。',
     },
     {
       id: 'SC2',
@@ -346,19 +346,19 @@ function buildFindings(
   {
     findings.push({
       id: 'K22-A-E-1',
-      severity: 'HIGH',
-      category: 'E. Immediate risk: SC1 delta missing',
-      title: 'SC1 跨楼栋连续课缺少 delta score，solver 可能做出错误决策',
-      currentStatus: `calculateDeltaScore() 中没有 SC1（跨楼栋连续课）的逻辑。solver 使用 delta score 决策 move，不会考虑跨楼栋惩罚。但 calculateScoreWithDetails() 的 full score 会计算 SC1。后果：solver 可能接受 "delta 看起来更好，但 full score 会增加跨楼栋惩罚" 的 move。不过，solver 在最终验证时使用 full score（best score 追踪），所以最终结果是 full score 最优的，但中间迭代可能走弯路。`,
+      severity: 'NONE',
+      category: 'E. Immediate risk: SC1 delta (RESOLVED in K22-D)',
+      title: 'SC1 跨楼栋连续课 delta score 已修复 (K22-D)',
+      currentStatus: `K22-A 之前记录的 HIGH 风险（calculateDeltaScore 中没有 SC1 逻辑）在 K22-D 已解决。K22-D 在 calculateDeltaScore 中添加了 SC1 逻辑：mirror full score 的 SC1 detection，按 affected pair 的 before/after 触发状态计算 (afterPenalty - beforePenalty)。K22-C verify 脚本的 A.2 case (SC1 cross-building consecutive delta) 从 KNOWN_FAIL 转为 PASS，作为 regression guard 保留。SC1 现在的 full/delta coverage 一致。`,
       evidence: [
-        'score.ts calculateDeltaScore(): 无 SC1_CROSS_BUILDING_BACK_TO_BACK 逻辑',
-        'score.ts calculateScoreWithDetails(): 有 SC1 逻辑 (lines 205-246)',
-        'solver.ts: best score 使用 calculateInitialScore (full score) 追踪',
-        'solver.ts: LAHC 接受决策使用 delta score',
+        'score.ts calculateDeltaScore(): 已添加 SC1 逻辑 (K22-D 增量)',
+        'score.ts calculateScoreWithDetails(): SC1 逻辑未改变 (lines 205-246)',
+        'solver.ts: LAHC 接受决策现在能看到 SC1 跨楼栋惩罚',
+        'K22-C verify A.2: PASS (regression guard 保留)',
+        'K22-A full/delta coverage: SC1 full=true delta=true',
       ],
-      risk: 'HIGH: solver 使用 delta score 做 LAHC 决策，但 delta 不包含 SC1 惩罚。solver 可能接受会增加跨楼栋惩罚的 move，因为 delta 里看不到 SC1。最终 best score 是正确的（full score 追踪），但 solver 的迭代效率降低，可能错过更好的解。这可能导致预览结果中 SC1 惩罚比最优解更高。',
-      recommendation: 'K22-B: (1) 为 SC1 添加 delta score 逻辑；(2) 在 regression harness 中测试 SC1 full vs delta 一致性；(3) 评估 solver 迭代效率影响。',
-      suggestedNextStage: 'K22-B-SCORE-REGRESSION-HARNESS-PLAN',
+      risk: '已解决。K22-A HIGH 风险已消除。LAHC solver 现在使用 delta score 做决策时能正确看到 SC1 跨楼栋惩罚。',
+      recommendation: '无需 action。SC1 delta 已修复。如果未来 score.ts 改动 SC1 全量逻辑，需同步检查 delta 实现 (mirror 约束)，K22-C harness A.2 会立即报警。',
     })
 
     findings.push({
@@ -486,7 +486,7 @@ async function main() {
       scDeltaCoverage: scDelta,
       hcConsistent: hcFull === hcDelta || hardConstraints.filter(c => c.id === 'HC6').length === 1,
       scConsistent: scFull === scDelta,
-      risk: scFull !== scDelta ? 'SC1 full=delta MISMATCH: delta missing SC1' : 'consistent',
+      risk: scFull !== scDelta ? 'SC1 full=delta MISMATCH: delta missing SC1' : 'consistent (SC1 delta added in K22-D)',
     },
     hardSoftSeparation: {
       hardScoreOnly: hardConstraints.map(c => c.id),
@@ -515,7 +515,10 @@ async function main() {
       recommendation: f.recommendation,
       suggestedNextStage: f.suggestedNextStage,
     })),
-    recommendedNextStage: 'K22-B-SCORE-REGRESSION-HARNESS-PLAN',
+    recommendedNextStage: 'K22-SCORE-WEIGHTS-ROADMAP (penalty constants 动态化) 或 K22-B-SOFT-CONSTRAINTS-ROADMAP-AUDIT (7 items missing soft constraints 优先级评估)',
+    // K22-D 已完成 SC1 delta 修复。下一步取决于战略选择：
+    //  - K22-SCORE-WEIGHTS-ROADMAP: penalty 硬编码 → 动态配置
+    //  - K22-B-SOFT-CONSTRAINTS-ROADMAP-AUDIT: 评估 7 项缺失软约束优先级
   }
 
   // Write JSON

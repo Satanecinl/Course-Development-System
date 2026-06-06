@@ -129,7 +129,7 @@ interface Move {
 | Delta | `(0, +8)` |
 | Result | **PASS** — full = delta |
 
-### 5.2 A.2 SC1 cross-building (KNOWN_FAIL)
+### 5.2 A.2 SC1 cross-building (PASS — was KNOWN_FAIL pre-K22-D)
 
 | Field | Value |
 |---|---|
@@ -138,11 +138,15 @@ interface Move {
 | Move | slot2 roomId=100 (move to building A) |
 | After | `{hard:0, soft:-2}` (SC1 cleared → 0; MIN_PERT introduced → -2) |
 | Full Δ | `(0, +3)` — SC1 +5 cleared, MIN_PERT -2 added |
-| Current delta | `(0, -2)` — **SC1 missing** (returns 0), MIN_PERT correct |
-| Expected after K22-D | `(0, +3)` — SC1 +5, MIN_PERT -2, net +3 |
-| Result | **KNOWN_FAIL** — full = +3, delta = -2 (mismatch of +5 from SC1) |
+| Delta (K22-C 阶段) | `(0, -2)` — SC1 missing, MIN_PERT correct |
+| Delta (K22-D 后) | `(0, +3)` — SC1 +5, MIN_PERT -2, net +3 ✓ |
+| Result | **PASS (regression guard)** — full = +3, delta = +3 (K22-D 修复后) |
 
-**Why known failure**: 当前 `calculateDeltaScore` 中没有 SC1 逻辑。该 case 是 K22-A HIGH 风险的直接测试，K22-D 修复后 delta 应当匹配 full。
+**K22-C → K22-D 演化**:
+- K22-C 阶段该 case 为 KNOWN_FAIL（K22-A HIGH 风险未解）
+- K22-D 在 `calculateDeltaScore` 中添加 SC1 逻辑，mirror full score SC1 detection
+- K22-D 后该 case 转为 PASS，保留为 regression guard。如果未来 SC1 delta 再次 regress，case 会重新 FAIL
+- 完整 SC1 delta 实现详见 `docs/k22-score-delta-sc1-fix.md`
 
 ### 5.3 A.3 MIN_PERT introduction (PASS)
 
@@ -182,9 +186,10 @@ interface Move {
 
 ### 5.6 A Coverage Summary
 
-- 4 PASS cases (SC2, MIN_PERT intro, HC1 hard, MIN_PERT resolution)
-- 1 KNOWN_FAIL case (SC1 cross-building)
-- No unexpected failures
+- 5 PASS cases (SC2, SC1 cross-building, MIN_PERT intro, HC1 hard, MIN_PERT resolution)
+- 0 KNOWN_FAIL cases (K22-D 修复后 SC1 case 转为 PASS)
+- 0 unexpected failures
+- 全部 5 个 full/delta consistency case 在 K22-D 后 PASS，**regression guard 保留**
 
 ---
 
@@ -299,36 +304,39 @@ D2 实施：同一 seed 重跑，验证迭代次数和 softScore 完全相同。
 
 ---
 
-## 10. SC1 Known Failure
+## 10. SC1 Known Failure (历史 — K22-D 已修复)
 
-### 10.1 Capture Details
+### 10.1 历史 Capture Details (K22-C 阶段)
 
-| Field | Value |
-|---|---|
-| Case | SC1 cross-building consecutive delta |
-| Fixture | 2 tasks (same teacher, same class, different teachingTaskIds), 2 rooms (A/B), 2 slots at day1/slot1, day1/slot2 |
-| Trigger | SC1 cross-building back-to-back (same teacher + consecutive + different building) |
-| Move | slot2 to room A (resolve SC1) |
-| Full soft delta | +3 (SC1 +5 cleared, MIN_PERT -2 added) |
-| Current delta soft | -2 (MIN_PERT only, **SC1 missing**) |
-| Expected after K22-D fix | +3 (SC1 +5, MIN_PERT -2) |
-| Result | **KNOWN_FAIL** |
+| Field | Value (K22-C) | Value (K22-D 后) |
+|---|---|---|
+| Case | SC1 cross-building consecutive delta | 同 |
+| Fixture | 2 tasks (same teacher, same class, different teachingTaskIds), 2 rooms (A/B), 2 slots at day1/slot1, day1/slot2 | 同 |
+| Trigger | SC1 cross-building back-to-back (same teacher + consecutive + different building) | 同 |
+| Move | slot2 to room A (resolve SC1) | 同 |
+| Full soft delta | +3 (SC1 +5 cleared, MIN_PERT -2 added) | +3 |
+| Delta soft | -2 (MIN_PERT only, **SC1 missing**) | **+3** (SC1 +5, MIN_PERT -2) |
+| Result | **KNOWN_FAIL** | **PASS** |
 
-### 10.2 Why Known Failure Is Expected
+### 10.2 历史 Why Known Failure Was Expected (K22-C 阶段)
 
-K22-A 明确 SC1 delta missing 是 HIGH 风险。本阶段不修 SC1 delta，所以该 case 必然失败。脚本设计成：
-1. 检测 `delta.deltaSoft !== fullSoftDelta` 且 `delta.deltaSoft === -2` → KNOWN_FAIL
+K22-A 明确 SC1 delta missing 是 HIGH 风险。K22-C 不修 SC1 delta，所以该 case 必然失败。脚本设计成：
+1. 检测 `delta.deltaSoft !== fullSoftDelta` 且 `delta.deltaSoft === -2` → KNOWN_FAIL（K22-C 阶段）
 2. 整体 exit code 仍为 0（KNOWN_FAIL 不阻塞）
 3. 详细 evidence 记录 before/after/delta/expected，便于 K22-D 修复后对比
 
-### 10.3 K22-D Migration Path
+### 10.3 K22-D Resolution (已完成)
 
 K22-D 修复 SC1 delta 后：
-- `calculateDeltaScore` 中添加 SC1 逻辑（检查 old / new 位置对 SC1 的影响）
-- A.2 case 的 delta.soft 应从 `-2` 变为 `+3`
-- A.2 status 应从 KNOWN_FAIL 变为 PASS
-- C.1 default snapshot 不变（fixture 中无 SC1 触发）
-- C.2 perturbed snapshot 可能变化（如果 perturbed 状态触发 SC1）
+- ✅ `calculateDeltaScore` 中添加 SC1 逻辑（mirror full score SC1 detection）
+- ✅ A.2 case 的 delta.soft 已从 `-2` 变为 `+3`
+- ✅ A.2 status 已从 KNOWN_FAIL 变为 **PASS**
+- ✅ C.1 default snapshot 不变（fixture 中无 SC1 触发）
+- ✅ C.2 perturbed snapshot 不变（fixture 仍无 SC1 触发）
+- ✅ K22-C verify 脚本 K22-D 后总体：17 PASS / 0 KNOWN_FAIL / 0 FAIL
+- ✅ A.2 case 现在作为 **regression guard** 保留 — 如果未来 SC1 delta regress，case 会重新 FAIL
+
+详细 K22-D 实现见 `docs/k22-score-delta-sc1-fix.md`。
 
 ---
 
@@ -454,14 +462,15 @@ K22-C-SCORE-REGRESSION-HARNESS-IMPLEMENTATION 按 spec 完整执行：
 - ✅ 新增 Markdown implementation 文档 (本文件)
 - ✅ 新增 JSON implementation 报告 (`docs/k22-score-regression-harness-implementation.json`)
 - ✅ 新增 Default Snapshot JSON (`docs/k22-score-default-snapshot.json`)
-- ✅ 实施 Harness A (Full/Delta): 4 PASS + 1 KNOWN_FAIL (SC1)
+- ✅ 实施 Harness A (Full/Delta): K22-C 阶段 4 PASS + 1 KNOWN_FAIL (SC1); **K22-D 后 5 PASS + 0 KNOWN_FAIL (regression guard)**
 - ✅ 实施 Harness B (HC1-HC5 + separation): 6/6 PASS
 - ✅ 实施 Harness C (Default Snapshot + Perturbation): 2/2 PASS
 - ✅ 实施 Harness D (Fixed Seed Solver): 2/2 PASS (smoke level)
 - ✅ 实施 Harness E (K21 Config Regression): 2/2 PASS (static delegation)
-- ✅ 5/5 harness 全部完成；SC1 known failure 是 expected
+- ✅ 5/5 harness 全部完成
+- ✅ K22-C 阶段 KNOWN_FAIL=1 (SC1 expected), K22-D 后 KNOWN_FAIL=0
 - ✅ 整体 exit code = 0, BLOCKING = NO
-- ✅ 不修改任何业务代码 / 不写数据库 / 不改 score.ts
-- ✅ 工作区状态: 仅新增 4 个 K22-C 文件
+- ✅ K22-C 阶段不修改任何业务代码 / 不写数据库 / 不改 score.ts
+- ✅ K22-D 阶段（后续 commit）修了 `score.ts` 的 SC1 delta 块（mirror full score），并把 A.2 case 转为 PASS regression guard
 
-**本阶段可关闭, 推荐进入 K22-D-SCORE-DELTA-SC1-FIX (在 harness 保护下修复 SC1 delta)。**
+**本阶段 (K22-C) 可关闭. K22-D 已完成 SC1 delta 修复，A.2 case 现在 PASS。下一步推荐 K22-SCORE-WEIGHTS-ROADMAP (penalty 动态化) 或 K22-B-SOFT-CONSTRAINTS-ROADMAP-AUDIT (7 items 软约束评估)。**

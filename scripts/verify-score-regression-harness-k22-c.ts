@@ -311,13 +311,14 @@ function runHarnessA(): void {
     })
   }
 
-  // ── A.2: SC1 cross-building resolution — KNOWN FAILURE ──
+  // ── A.2: SC1 cross-building resolution — regression guard (was KNOWN_FAIL in K22-C, fixed in K22-D) ──
   // SC1 trigger condition: same teacher OR shared class + same day + consecutive slotIndex
   // + different building. We isolate SC1 from SC4 by using DIFFERENT teachingTaskIds
   // (SC4 strictly requires same teachingTaskId). Same teacherId + same classGroupId
   // ensure SC1 fires. Different teachingTaskIds ensure SC4 and SC2 don't fire.
-  // After moving slot2 to slot1's building, full soft delta = +5 (SC1 resolved).
-  // Current delta returns 0 (BUG). Mark as KNOWN_FAIL.
+  // After moving slot2 to slot1's building, full soft delta = +3 (SC1 +5 cleared, MIN_PERT -2 added).
+  // K22-D added SC1 delta logic; expected delta.soft = +3 (matches full).
+  // If SC1 delta ever regresses (returns 0 or wrong sign), this case must FAIL.
   {
     const ctx = buildContext(
       [
@@ -345,50 +346,54 @@ function runHarnessA(): void {
     const afterSC1 = summarizeDetails(after.details)['SC1_CROSS_BUILDING_BACK_TO_BACK'] ?? 0
 
     const fullSoftDelta = after.softScore - before.softScore
-    // Expected behavior with current code:
-    //   full score: SC1 cleared → +5, MIN_PERT introduced (move away from original) → -2, net fullΔ = +3
-    //   delta: SC1 missing (returns 0), MIN_PERT correct → delta.soft = -2
-    // After K22-D fix, delta should correctly return +3 (matching full).
-    const expectedFullSoftDelta = 3
-    const expectedCurrentDeltaSoft = -2 // MIN_PERT correct, SC1 missing
+    const expectedFullSoftDelta = 3 // SC1 +5 cleared, MIN_PERT -2 added
+    const expectedDeltaSoft = 3 // K22-D fix: SC1 +5, MIN_PERT -2, net +3
     const hardOK = before.hardScore === after.hardScore && delta.deltaHard === 0
     const fullMatchesExpected = fullSoftDelta === expectedFullSoftDelta && beforeSC1 === 1 && afterSC1 === 0
-    const deltaMatchesExpected = delta.deltaSoft === expectedCurrentDeltaSoft
+    const deltaMatchesFull = delta.deltaSoft === fullSoftDelta && delta.deltaSoft === expectedDeltaSoft
 
-    let status: Status
-    let detail: string
-    if (fullMatchesExpected && hardOK && deltaMatchesExpected) {
-      // Bug as designed: delta captures MIN_PERT but not SC1.
-      // Once K22-D fixes SC1 delta, this same fixture's delta.soft should become +3
-      // and fullSoftDelta should still be +3.
-      // For K22-C: SC1 delta is still missing, so this is the expected "known failure".
-      status = 'KNOWN_FAIL'
-      detail = `SC1 delta missing: fullΔsoft=${fullSoftDelta} (SC1 +5 cleared, MIN_PERT -2 introduced → +3 net), delta.soft=${delta.deltaSoft} (BUG: returns ${expectedCurrentDeltaSoft} from MIN_PERT only, missing SC1 +5). SC1 details before=${beforeSC1}, after=${afterSC1}. Known failure: K22-D will fix SC1 delta so delta.soft becomes +3.`
-    } else if (fullMatchesExpected && hardOK && delta.deltaSoft === fullSoftDelta) {
-      // SC1 already fixed: delta = full = +3. K22-A HIGH risk may be resolved.
-      status = 'PASS'
-      detail = `Unexpected: SC1 delta already fixed. delta.soft=${delta.deltaSoft} matches fullΔsoft=${fullSoftDelta}. K22-A HIGH risk may be resolved.`
+    if (fullMatchesExpected && hardOK && deltaMatchesFull) {
+      record({
+        id: 'A2',
+        harness: 'A',
+        title: 'SC1 cross-building consecutive delta (regression guard, fixed in K22-D)',
+        status: 'PASS',
+        detail: `SC1 delta correctly reflects SC1 resolution. fullΔsoft=${fullSoftDelta} (SC1 +5 cleared, MIN_PERT -2 added), delta.soft=${delta.deltaSoft} (matches full). SC1 details before=${beforeSC1}, after=${afterSC1}.`,
+        evidence: [
+          `before.hard=${before.hardScore}, before.soft=${before.softScore}`,
+          `after.hard=${after.hardScore}, after.soft=${after.softScore}`,
+          `fullSoftDelta=${fullSoftDelta}, delta.deltaSoft=${delta.deltaSoft}`,
+          `SC1 details: before=${beforeSC1}, after=${afterSC1}`,
+          `K22-D provenance: calculateDeltaScore now mirrors SC1 detection; this test guards against future SC1 delta regressions.`,
+        ],
+      })
     } else {
-      status = 'FAIL'
-      detail = `Unexpected score values: before={hard:${before.hardScore},soft:${before.softScore}}, after={hard:${after.hardScore},soft:${after.softScore}}, fullΔsoft=${fullSoftDelta}, delta=${JSON.stringify(delta)}, SC1 before=${beforeSC1}, after=${afterSC1}`
+      // Build a clear failure message describing the regression
+      let failureReason = ''
+      if (!fullMatchesExpected) {
+        failureReason += `full score expectations failed: fullSoftDelta=${fullSoftDelta} (expected ${expectedFullSoftDelta}), SC1 details before=${beforeSC1} (expected 1), after=${afterSC1} (expected 0). `
+      }
+      if (!hardOK) {
+        failureReason += `hard score changed unexpectedly: before.hard=${before.hardScore}, after.hard=${after.hardScore}, delta.deltaHard=${delta.deltaHard}. `
+      }
+      if (!deltaMatchesFull) {
+        failureReason += `SC1 delta regression: delta.soft=${delta.deltaSoft} (expected ${expectedDeltaSoft}, matching fullSoftDelta=${fullSoftDelta}). The K22-D SC1 delta fix may have regressed. `
+      }
+      record({
+        id: 'A2',
+        harness: 'A',
+        title: 'SC1 cross-building consecutive delta (regression guard, fixed in K22-D)',
+        status: 'FAIL',
+        detail: failureReason,
+        evidence: [
+          `before.hard=${before.hardScore}, before.soft=${before.softScore}`,
+          `after.hard=${after.hardScore}, after.soft=${after.softScore}`,
+          `fullSoftDelta=${fullSoftDelta}, delta.deltaSoft=${delta.deltaSoft}`,
+          `expected fullSoftDelta=${expectedFullSoftDelta}, expected deltaSoft=${expectedDeltaSoft}`,
+          `SC1 details: before=${beforeSC1}, after=${afterSC1}`,
+        ],
+      })
     }
-
-    record({
-      id: 'A2',
-      harness: 'A',
-      title: 'SC1 cross-building consecutive delta (KNOWN FAILURE — K22-D target)',
-      status,
-      detail,
-      evidence: [
-        `before.hard=${before.hardScore}, before.soft=${before.softScore}`,
-        `after.hard=${after.hardScore}, after.soft=${after.softScore}`,
-        `fullSoftDelta=${fullSoftDelta}, delta.deltaSoft=${delta.deltaSoft}`,
-        `expected fullSoftDelta=+${expectedFullSoftDelta} (SC1 +5 cleared, MIN_PERT -2 added)`,
-        `expected current deltaSoft=${expectedCurrentDeltaSoft} (MIN_PERT only, SC1 missing — BUG)`,
-        `expected after K22-D fix deltaSoft=+${expectedFullSoftDelta} (matches full)`,
-        `SC1 details: before=${beforeSC1}, after=${afterSC1}`,
-      ],
-    })
   }
 
   // ── A.3: MIN_PERT introduction (positive case — mirror of A.4 resolution) ──
@@ -1091,23 +1096,26 @@ function main() {
       blocking,
     },
     sc1KnownFailure: {
+      // K22-D: SC1 delta was fixed. This block is retained as historical context
+      // showing what the A.2 case used to test (KNOWN_FAIL in K22-C) and now
+      // guards as a regression (PASS in K22-D).
       caseName: 'SC1 cross-building consecutive delta',
       harness: 'A2',
-      title: 'SC1 delta missing — K22-A HIGH risk, K22-D target',
+      title: 'SC1 delta — fixed in K22-D, regression guard in K22-C',
       // A.2 fixture: 2 tasks (same teacher, same class, different teachingTaskIds),
       // 2 rooms (A/B), 2 slots at day1/slot1, day1/slot2.
       // SC1 fires on the teacher dimension (same teacher + consecutive + different building).
       // Move slot2 to building A → SC1 cleared (+5 in full), MIN_PERT introduced (-2 in full).
       // Net fullSoftDelta = +3.
-      // Current delta misses SC1 (returns 0 for that part), so delta.soft = -2 (MIN_PERT only).
-      // After K22-D fix: delta.soft should become +3.
-      currentDeltaSoft: -2,
+      // K22-D fix: delta.soft now = +3 (SC1 +5, MIN_PERT -2). Matches full.
+      // Pre-K22-D: delta.soft = -2 (SC1 missing, MIN_PERT only). Bug fixed in K22-D.
+      currentDeltaSoft: 3,
       expectedFullSoftDelta: 3,
       currentFullSoftDelta: 3,
       sc1Contribution: 5,
       minPertContribution: -2,
-      deltaMatchesFull: false,
-      willBeFixedIn: 'K22-D',
+      deltaMatchesFull: true,
+      fixedIn: 'K22-D',
     },
     results: results.map((r) => ({
       id: r.id,
@@ -1127,7 +1135,7 @@ function main() {
     console.error(`\nFAIL: ${fail} unexpected failure(s). Exit code = 1.`)
     process.exit(1)
   } else {
-    console.log(`\nNo unexpected failures. KNOWN_FAIL=${knownFail} is allowed and expected for SC1 delta missing.`)
+    console.log(`\nNo unexpected failures. KNOWN_FAIL=${knownFail} (0 after K22-D SC1 delta fix; A.2 SC1 case now PASSes).`)
     process.exit(0)
   }
 }

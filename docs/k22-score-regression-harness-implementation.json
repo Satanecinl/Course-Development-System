@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-06-06T06:24:13.550Z",
+  "generatedAt": "2026-06-06T06:51:11.618Z",
   "phase": "K22-C-SCORE-REGRESSION-HARNESS-IMPLEMENTATION",
   "mode": "read-only, db-free, synthetic-fixture score regression harness",
   "summary": {
     "total": 17,
-    "pass": 16,
-    "knownFail": 1,
+    "pass": 17,
+    "knownFail": 0,
     "fail": 0,
     "info": 0,
     "blocking": "NO"
@@ -13,14 +13,14 @@
   "sc1KnownFailure": {
     "caseName": "SC1 cross-building consecutive delta",
     "harness": "A2",
-    "title": "SC1 delta missing — K22-A HIGH risk, K22-D target",
-    "currentDeltaSoft": -2,
+    "title": "SC1 delta — fixed in K22-D, regression guard in K22-C",
+    "currentDeltaSoft": 3,
     "expectedFullSoftDelta": 3,
     "currentFullSoftDelta": 3,
     "sc1Contribution": 5,
     "minPertContribution": -2,
-    "deltaMatchesFull": false,
-    "willBeFixedIn": "K22-D"
+    "deltaMatchesFull": true,
+    "fixedIn": "K22-D"
   },
   "results": [
     {
@@ -37,17 +37,15 @@
     {
       "id": "A2",
       "harness": "A",
-      "title": "SC1 cross-building consecutive delta (KNOWN FAILURE — K22-D target)",
-      "status": "KNOWN_FAIL",
-      "detail": "SC1 delta missing: fullΔsoft=3 (SC1 +5 cleared, MIN_PERT -2 introduced → +3 net), delta.soft=-2 (BUG: returns -2 from MIN_PERT only, missing SC1 +5). SC1 details before=1, after=0. Known failure: K22-D will fix SC1 delta so delta.soft becomes +3.",
+      "title": "SC1 cross-building consecutive delta (regression guard, fixed in K22-D)",
+      "status": "PASS",
+      "detail": "SC1 delta correctly reflects SC1 resolution. fullΔsoft=3 (SC1 +5 cleared, MIN_PERT -2 added), delta.soft=3 (matches full). SC1 details before=1, after=0.",
       "evidence": [
         "before.hard=0, before.soft=-5",
         "after.hard=0, after.soft=-2",
-        "fullSoftDelta=3, delta.deltaSoft=-2",
-        "expected fullSoftDelta=+3 (SC1 +5 cleared, MIN_PERT -2 added)",
-        "expected current deltaSoft=-2 (MIN_PERT only, SC1 missing — BUG)",
-        "expected after K22-D fix deltaSoft=+3 (matches full)",
-        "SC1 details: before=1, after=0"
+        "fullSoftDelta=3, delta.deltaSoft=3",
+        "SC1 details: before=1, after=0",
+        "K22-D provenance: calculateDeltaScore now mirrors SC1 detection; this test guards against future SC1 delta regressions."
       ]
     },
     {

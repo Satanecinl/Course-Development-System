@@ -415,6 +415,67 @@ export function calculateDeltaScore(
   if (old.slotIndex >= 5) deltaSoft -= SOFT_SC3_EXTREME_TIME
   if (move.newSlotIndex >= 5) deltaSoft += SOFT_SC3_EXTREME_TIME
 
+  // SC1 跨楼栋连续课（教师 + 班级维度）
+  // Mirror calculateScoreWithDetails SC1 detection: for each "other" slot, check
+  // whether (slot, other) pair triggers SC1 at the OLD position and at the NEW position.
+  // deltaSoft = sum over others of (newPenalty - oldPenalty) where penalty is -5 if triggered else 0.
+  // Clearing a trigger: +5. Introducing a trigger: -5.
+  for (const other of ctx.slots) {
+    if (other.id === slot.id) continue
+    const oPos = getPos(other, state)
+    if (oPos.room === 0) continue
+
+    const otherRoom = ctx.roomById.get(oPos.room)
+    if (!otherRoom) continue
+
+    // Pair triggers SC1 if: same day + |idx diff| = 1 + both rooms have non-UNKNOWN building
+    // + different building + (same teacher OR shared class).
+    const sameTeacher = task.teacherId != null && task.teacherId === other.teachingTask.teacherId
+    if (!sameTeacher) {
+      // Check shared class only if not same teacher
+      let sharedClass = false
+      for (const tcA of task.taskClasses) {
+        for (const tcB of other.teachingTask.taskClasses) {
+          if (tcA.classGroupId === tcB.classGroupId) { sharedClass = true; break }
+        }
+        if (sharedClass) break
+      }
+      if (!sharedClass) continue
+    }
+
+    // OLD position: was (slot at old) paired with (other at oPos) triggering SC1?
+    if (old.roomId !== 0) {
+      const oldRoomObj = ctx.roomById.get(old.roomId)
+      if (oldRoomObj) {
+        const oldBuilding = getBuilding(oldRoomObj)
+        const otherBuilding = getBuilding(otherRoom)
+        if (
+          oldBuilding !== 'UNKNOWN' && otherBuilding !== 'UNKNOWN' && oldBuilding !== otherBuilding &&
+          old.dayOfWeek === oPos.day && Math.abs(old.slotIndex - oPos.idx) === 1
+        ) {
+          // Cleared: penalty was -5, now 0 → delta += +5
+          deltaSoft -= SOFT_SC1_CROSS_BUILDING
+        }
+      }
+    }
+
+    // NEW position: does (slot at move) paired with (other at oPos) now trigger SC1?
+    if (move.newRoomId !== 0) {
+      const newRoomObj = ctx.roomById.get(move.newRoomId)
+      if (newRoomObj) {
+        const newBuilding = getBuilding(newRoomObj)
+        const otherBuilding = getBuilding(otherRoom)
+        if (
+          newBuilding !== 'UNKNOWN' && otherBuilding !== 'UNKNOWN' && newBuilding !== otherBuilding &&
+          move.newDay === oPos.day && Math.abs(move.newSlotIndex - oPos.idx) === 1
+        ) {
+          // Introduced: penalty was 0, now -5 → delta += -5
+          deltaSoft += SOFT_SC1_CROSS_BUILDING
+        }
+      }
+    }
+  }
+
   // SC4 跨校区
   if (siblings) {
     const oldRoomB = oldRoom?.building
