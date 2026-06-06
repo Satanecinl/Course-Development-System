@@ -291,8 +291,12 @@ const fullScoreCases: FullScoreCase[] = [
   {
     id: 'MIXED-LINXIAO',
     title: 'MIXED classGroup in Linxiao → hard -1000 (K22-F2A correction)',
-    // K22-F11: explicit classGroupStudentCounts= [40, 40] (total 80, util 0.80 in cap=100) so SC10 doesn't fire.
-    // Without these, FALLBACK=50×2=100 yields util 1.0 and fires SC10 tight (-2).
+    // K22-F11A fixture isolation: explicit classGroupStudentCounts= [40, 40] (total 80, util 0.80 in cap=100)
+    //   so SC10 doesn't fire. Without these, FALLBACK=50×2=100 yields util 1.0 and fires SC10 tight (-2).
+    // K22-F11A: this is an ISOLATION change only — classGroup membership (汽车检测1班 + 计算机1班)
+    //   is still MIXED. HC6 (Linxiao forbidden for non-automotive) still fires -1000.
+    //   SC6 (automotive-only preference) still applies. SC7 (weekend avoidance) still applies.
+    //   No F3 test semantics changed.
     taskInput: { id: 1, teacherId: 10, courseName: '综合实践', classGroupIds: [1, 2], classGroupNames: ['汽车检测1班', '计算机1班'], classGroupStudentCounts: [40, 40] },
     room: LX_ROOM,
     dayOfWeek: 1,
@@ -303,7 +307,10 @@ const fullScoreCases: FullScoreCase[] = [
   {
     id: 'MIXED-NON_LINXIAO',
     title: 'MIXED classGroup in non-Linxiao → no penalty',
-    // K22-F11: explicit classGroupStudentCounts= [40, 40] (total 80, util 0.80 in cap=100) so SC10 doesn't fire.
+    // K22-F11A fixture isolation: explicit classGroupStudentCounts= [40, 40] (total 80, util 0.80 in cap=100)
+    //   so SC10 doesn't fire. K22-F11A: ISOLATION only — classGroup membership is still MIXED.
+    //   HC6 does NOT fire (non-Linxiao, MIXED is OK). SC6 does NOT fire (non-Linxiao is not preferred for AUTO).
+    //   SC7 does NOT fire (weekday). No F3 test semantics changed.
     taskInput: { id: 1, teacherId: 10, courseName: '综合实践', classGroupIds: [1, 2], classGroupNames: ['汽车检测1班', '计算机1班'], classGroupStudentCounts: [40, 40] },
     room: NON_LX_ROOM,
     dayOfWeek: 1,
@@ -418,7 +425,9 @@ const deltaCases: DeltaCase[] = [
   {
     id: 'DELTA-MIXED-NON_LINXIAO-TO-LINXIAO',
     title: 'Move MIXED to Linxiao → deltaHard=-1000 (HC6 for MIXED, K22-F2A)',
-    // K22-F11: explicit classGroupStudentCounts= [40, 40] (total 80, util 0.80 in cap=100) so SC10 doesn't fire.
+    // K22-F11A fixture isolation: explicit classGroupStudentCounts= [40, 40] (total 80, util 0.80 in cap=100)
+    //   so SC10 doesn't fire. K22-F11A: ISOLATION only — classGroup membership is still MIXED.
+    //   HC6 still fires on move to Linxiao. No F3 test semantics changed.
     taskInput: { id: 1, teacherId: 10, courseName: '综合实践', classGroupIds: [1, 2], classGroupNames: ['汽车检测1班', '计算机1班'], classGroupStudentCounts: [40, 40] },
     oldRoom: NON_LX_ROOM,
     oldDay: 1,

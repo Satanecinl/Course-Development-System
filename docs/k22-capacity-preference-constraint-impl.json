@@ -32,8 +32,8 @@
   "constants": {
     "SC10_CAPACITY_TIGHT_FIT_PENALTY": -2,
     "SC10_CAPACITY_WASTE_PENALTY": -1,
-    "SC10_TIGHT_UTILIZATION_THRESHOLD": 0.90,
-    "SC10_WASTE_UTILIZATION_THRESHOLD": 0.30,
+    "SC10_TIGHT_UTILIZATION_THRESHOLD": 0.9,
+    "SC10_WASTE_UTILIZATION_THRESHOLD": 0.3,
     "SC10_WASTE_ROOM_CAPACITY_THRESHOLD": 100
   },
   "formula": {
@@ -80,34 +80,160 @@
     "perRoomCapacity": "Per-room capacity field on slots; default 100"
   },
   "harnessJCases": [
-    { "id": "J1-CAPACITY-GOOD-FIT", "type": "full", "title": "utilization 0.50 → SC10 0", "expectedTotalSoft": 0, "expectedSC10Soft": 0, "expectedSC10Count": 0, "isolation": "in band" },
-    { "id": "J2-CAPACITY-TIGHT-FIT", "type": "full", "title": "utilization 0.95 → SC10 -2", "expectedTotalSoft": -2, "expectedSC10Soft": -2, "expectedSC10Count": 1, "isolation": "tight branch" },
-    { "id": "J3-CAPACITY-OVER-CAPACITY", "type": "full", "title": "utilization 1.20 → SC10 skip (HC4)", "expectedTotalSoft": 0, "expectedSC10Soft": 0, "expectedSC10Count": 0, "isolation": "over-capacity skip" },
-    { "id": "J4-CAPACITY-SMALL-CLASS-HUGE-ROOM", "type": "full", "title": "utilization 0.17, cap=120 → SC10 -1", "expectedTotalSoft": -1, "expectedSC10Soft": -1, "expectedSC10Count": 1, "isolation": "waste branch" },
-    { "id": "J5-CAPACITY-SMALL-CLASS-NORMAL-ROOM", "type": "full", "title": "utilization 0.40, cap=60 → SC10 0", "expectedTotalSoft": 0, "expectedSC10Soft": 0, "expectedSC10Count": 0, "isolation": "in band, cap<100 (waste skip)" },
-    { "id": "J6-CAPACITY-ROOM-ZERO-SKIP", "type": "full", "title": "room=0 → SC10 skip", "expectedTotalSoft": 0, "expectedSC10Soft": 0, "expectedSC10Count": 0, "isolation": "room=0 skip" },
-    { "id": "J7-CAPACITY-MISSING-STUDENT-COUNT-SKIP", "type": "full", "title": "studentCount=0 → SC10 skip", "expectedTotalSoft": 0, "expectedSC10Soft": 0, "expectedSC10Count": 0, "isolation": "defensive skip" },
-    { "id": "J8-CAPACITY-EXACT-0.90-BOUNDARY", "type": "full", "title": "utilization=0.90 → SC10 0 (strict >)", "expectedTotalSoft": 0, "expectedSC10Soft": 0, "expectedSC10Count": 0, "isolation": "boundary test" },
-    { "id": "J9-DELTA-IMPROVE-TIGHT-TO-GOOD", "type": "delta", "title": "tight 0.95 → good 0.475 → +2", "expectedDeltaSoft": 2, "expectedSC10Delta": 2, "isolation": "1 task 1 slot, 3rd-position originalAssignments" },
-    { "id": "J10-DELTA-WORSEN-GOOD-TO-TIGHT", "type": "delta", "title": "good 0.475 → tight 0.95 → -2", "expectedDeltaSoft": -2, "expectedSC10Delta": -2, "isolation": "1 task 1 slot, 3rd-position originalAssignments" },
-    { "id": "J11-DELTA-SMALL-HUGE-TO-NORMAL", "type": "delta", "title": "waste 0.17 → good 0.50 → +1", "expectedDeltaSoft": 1, "expectedSC10Delta": 1, "isolation": "1 task 1 slot, 3rd-position originalAssignments" },
-    { "id": "J12-DELTA-NORMAL-TO-HUGE", "type": "delta", "title": "good 0.50 → waste 0.17 → -1", "expectedDeltaSoft": -1, "expectedSC10Delta": -1, "isolation": "1 task 1 slot, 3rd-position originalAssignments" },
-    { "id": "J13-DELTA-OVER-CAPACITY-INTRODUCED", "type": "delta", "title": "introduce over-capacity (HC4 fires, SC10 skip)", "expectedDeltaHard": -1000, "expectedDeltaSoft": 0, "expectedSC10Delta": 0, "isolation": "SC10 skip; HC4 owns" }
+    {
+      "id": "J1-CAPACITY-GOOD-FIT",
+      "type": "full",
+      "title": "utilization 0.50 → SC10 0",
+      "expectedTotalSoft": 0,
+      "expectedSC10Soft": 0,
+      "expectedSC10Count": 0,
+      "isolation": "in band"
+    },
+    {
+      "id": "J2-CAPACITY-TIGHT-FIT",
+      "type": "full",
+      "title": "utilization 0.95 → SC10 -2",
+      "expectedTotalSoft": -2,
+      "expectedSC10Soft": -2,
+      "expectedSC10Count": 1,
+      "isolation": "tight branch"
+    },
+    {
+      "id": "J3-CAPACITY-OVER-CAPACITY",
+      "type": "full",
+      "title": "utilization 1.20 → SC10 skip (HC4)",
+      "expectedTotalSoft": 0,
+      "expectedSC10Soft": 0,
+      "expectedSC10Count": 0,
+      "isolation": "over-capacity skip"
+    },
+    {
+      "id": "J4-CAPACITY-SMALL-CLASS-HUGE-ROOM",
+      "type": "full",
+      "title": "utilization 0.17, cap=120 → SC10 -1",
+      "expectedTotalSoft": -1,
+      "expectedSC10Soft": -1,
+      "expectedSC10Count": 1,
+      "isolation": "waste branch"
+    },
+    {
+      "id": "J5-CAPACITY-SMALL-CLASS-NORMAL-ROOM",
+      "type": "full",
+      "title": "utilization 0.40, cap=60 → SC10 0",
+      "expectedTotalSoft": 0,
+      "expectedSC10Soft": 0,
+      "expectedSC10Count": 0,
+      "isolation": "in band, cap<100 (waste skip)"
+    },
+    {
+      "id": "J6-CAPACITY-ROOM-ZERO-SKIP",
+      "type": "full",
+      "title": "room=0 → SC10 skip",
+      "expectedTotalSoft": 0,
+      "expectedSC10Soft": 0,
+      "expectedSC10Count": 0,
+      "isolation": "room=0 skip"
+    },
+    {
+      "id": "J7-CAPACITY-MISSING-STUDENT-COUNT-SKIP",
+      "type": "full",
+      "title": "studentCount=0 → SC10 skip",
+      "expectedTotalSoft": 0,
+      "expectedSC10Soft": 0,
+      "expectedSC10Count": 0,
+      "isolation": "defensive skip"
+    },
+    {
+      "id": "J8-CAPACITY-EXACT-0.90-BOUNDARY",
+      "type": "full",
+      "title": "utilization=0.90 → SC10 0 (strict >)",
+      "expectedTotalSoft": 0,
+      "expectedSC10Soft": 0,
+      "expectedSC10Count": 0,
+      "isolation": "boundary test"
+    },
+    {
+      "id": "J9-DELTA-IMPROVE-TIGHT-TO-GOOD",
+      "type": "delta",
+      "title": "tight 0.95 → good 0.475 → +2",
+      "expectedDeltaSoft": 2,
+      "expectedSC10Delta": 2,
+      "isolation": "1 task 1 slot, 3rd-position originalAssignments"
+    },
+    {
+      "id": "J10-DELTA-WORSEN-GOOD-TO-TIGHT",
+      "type": "delta",
+      "title": "good 0.475 → tight 0.95 → -2",
+      "expectedDeltaSoft": -2,
+      "expectedSC10Delta": -2,
+      "isolation": "1 task 1 slot, 3rd-position originalAssignments"
+    },
+    {
+      "id": "J11-DELTA-SMALL-HUGE-TO-NORMAL",
+      "type": "delta",
+      "title": "waste 0.17 → good 0.50 → +1",
+      "expectedDeltaSoft": 1,
+      "expectedSC10Delta": 1,
+      "isolation": "1 task 1 slot, 3rd-position originalAssignments"
+    },
+    {
+      "id": "J12-DELTA-NORMAL-TO-HUGE",
+      "type": "delta",
+      "title": "good 0.50 → waste 0.17 → -1",
+      "expectedDeltaSoft": -1,
+      "expectedSC10Delta": -1,
+      "isolation": "1 task 1 slot, 3rd-position originalAssignments"
+    },
+    {
+      "id": "J13-DELTA-OVER-CAPACITY-INTRODUCED",
+      "type": "delta",
+      "title": "introduce over-capacity (HC4 fires, SC10 skip)",
+      "expectedDeltaHard": -1000,
+      "expectedDeltaSoft": 0,
+      "expectedSC10Delta": 0,
+      "isolation": "SC10 skip; HC4 owns"
+    }
   ],
   "f11WrapperCases": [
-    { "id": "SC10-CAPACITY-GOOD-FIT" },
-    { "id": "SC10-CAPACITY-TIGHT-FIT" },
-    { "id": "SC10-CAPACITY-OVER-CAPACITY" },
-    { "id": "SC10-CAPACITY-SMALL-CLASS-HUGE-ROOM" },
-    { "id": "SC10-CAPACITY-SMALL-CLASS-NORMAL-ROOM" },
-    { "id": "SC10-CAPACITY-ROOM-ZERO-SKIP" },
-    { "id": "SC10-CAPACITY-MISSING-STUDENT-COUNT-SKIP" },
-    { "id": "SC10-CAPACITY-EXACT-0.90-BOUNDARY" },
-    { "id": "SC10-DELTA-IMPROVE-TIGHT-TO-GOOD" },
-    { "id": "SC10-DELTA-WORSEN-GOOD-TO-TIGHT" },
-    { "id": "SC10-DELTA-SMALL-HUGE-TO-NORMAL" },
-    { "id": "SC10-DELTA-NORMAL-TO-HUGE" },
-    { "id": "SC10-DELTA-OVER-CAPACITY-INTRODUCED" }
+    {
+      "id": "SC10-CAPACITY-GOOD-FIT"
+    },
+    {
+      "id": "SC10-CAPACITY-TIGHT-FIT"
+    },
+    {
+      "id": "SC10-CAPACITY-OVER-CAPACITY"
+    },
+    {
+      "id": "SC10-CAPACITY-SMALL-CLASS-HUGE-ROOM"
+    },
+    {
+      "id": "SC10-CAPACITY-SMALL-CLASS-NORMAL-ROOM"
+    },
+    {
+      "id": "SC10-CAPACITY-ROOM-ZERO-SKIP"
+    },
+    {
+      "id": "SC10-CAPACITY-MISSING-STUDENT-COUNT-SKIP"
+    },
+    {
+      "id": "SC10-CAPACITY-EXACT-0.90-BOUNDARY"
+    },
+    {
+      "id": "SC10-DELTA-IMPROVE-TIGHT-TO-GOOD"
+    },
+    {
+      "id": "SC10-DELTA-WORSEN-GOOD-TO-TIGHT"
+    },
+    {
+      "id": "SC10-DELTA-SMALL-HUGE-TO-NORMAL"
+    },
+    {
+      "id": "SC10-DELTA-NORMAL-TO-HUGE"
+    },
+    {
+      "id": "SC10-DELTA-OVER-CAPACITY-INTRODUCED"
+    }
   ],
   "defaultSnapshot": {
     "changed": false,
@@ -167,5 +293,64 @@
     "Preferred room / home room schema",
     "Specialty classroom / lab-room matching"
   ],
-  "recommendedNextStage": "K22-F12-SCORE-CONSTRAINT-SUMMARY-AUDIT-REFRESH"
+  "recommendedNextStage": "K22-F12-SCORE-CONSTRAINT-SUMMARY-AUDIT-REFRESH",
+  "f11ACrossHarnessFixtureIsolation": {
+    "purpose": "K22-F11A is the doc/harness alignment stage. This section explains why pre-F11 fixtures (F3 MIXED, K22-C H8) received surgical classGroupStudentCounts updates and proves the original constraint semantics are preserved.",
+    "f3MIXEDUpdate": {
+      "file": "scripts/verify-specialty-campus-weekend-constraints-k22-f3.ts",
+      "cases": [
+        "MIXED-LINXIAO",
+        "MIXED-NON_LINXIAO",
+        "DELTA-MIXED-NON_LINXIAO-TO-LINXIAO"
+      ],
+      "change": "classGroupStudentCounts: [40, 40] (total 80, util 0.80 in cap=100) so SC10 does not fire.",
+      "why": "Without explicit counts, FALLBACK=50×2=100 yields util 1.0 and fires SC10 tight (-2), polluting F3 specialty assertions.",
+      "preservedSemantics": {
+        "classGroupMembership": "classGroupIds: [1, 2] = 汽车检测1班 + 计算机1班 (still MIXED)",
+        "lxRoomForMixed": "LX_ROOM unchanged → HC6 still fires -1000 for MIXED-in-Linxiao",
+        "nonLxRoom": "NON_LX_ROOM unchanged → SC6 still applies for non-Linxiao",
+        "weekendAvoidance": "SC7 still applies (verified by F7, F8 cases)",
+        "expectedResults": "All 16 F3 cases still PASS; expected hard/soft scores unchanged"
+      }
+    },
+    "k22CH8Update": {
+      "file": "scripts/verify-score-regression-harness-k22-c.ts",
+      "case": "H8-MULTI-CLASSGROUP-MERGED",
+      "change": "taskSpecs: merged A: [20, 20]; B: [40]; C: [40]. All in 0.30-0.90 utilization band, no SC10 fire.",
+      "why": "Without explicit counts, FALLBACK=50×2=100 yields util 1.0 and fires SC10 tight (-2), polluting H8 SC8 expected total soft (-9 → -11).",
+      "preservedSemantics": {
+        "classGroupMembership": "mergedClassGroupIds: [1, 2] for A still merged; cg1 + cg2 still tested",
+        "periodLayout": "Periods 1, 3, 5 unchanged → gaps in (1,3) and (1,5) preserved",
+        "sc8Contribution": "cg1 {1,3} gap=1 → -2; cg2 {1,5} gap=3 → -6; total SC8 = -8 (preserved)",
+        "sc3Contribution": "Period 5 still fires SC3 (-1, preserved)",
+        "expectedResults": "H8 still PASSes: hard=0, total soft=-9, SC8 count=2, SC8 sum=-8 (all unchanged)"
+      }
+    },
+    "isolationPolicy": {
+      "rule1": "Old harnesses must not be polluted by new constraints. Surgical fixture update or component-level assertion is required.",
+      "rule2": "Preferred mitigation: (a) component-level assertion (F6A/F8A/F11A pattern); (b) surgical fixture update on synthetic params like studentCount; (c) add new fixture variant if both behaviors must be tested.",
+      "rule3": "Surgical fixture updates MUST be documented in (a) code comment, (b) new-constraint impl doc, (c) new-constraint JSON report.",
+      "rule4": "Surgical fixture updates MUST NOT change: classGroup membership, room, day/period, expected constraint contribution.",
+      "rule5": "Forbidden: changing test expected* value to absorb new constraint contribution. This would silently couple old fixture to new constraint."
+    },
+    "crossStageRegressionSanity": {
+      "k22CHarnessA": "5/5 PASS",
+      "k22CHarnessB": "6/6 PASS",
+      "k22CHarnessC": "2/2 PASS",
+      "k22CHarnessD": "2/2 PASS",
+      "k22CHarnessE": "2/2 PASS",
+      "k22CHarnessF": "11/11 PASS",
+      "k22CHarnessG": "9/9 PASS",
+      "k22CHarnessH": "12/12 PASS (includes H8 with surgical isolation)",
+      "k22CHarnessI": "11/11 PASS",
+      "k22CHarnessJ": "13/13 PASS (F11 new)",
+      "total": "73 PASS / 0 KNOWN_FAIL / 0 FAIL / 0 INFO",
+      "f11Wrapper": "13/13 PASS",
+      "f3Wrapper": "16/16 PASS",
+      "f6Wrapper": "12/12 PASS",
+      "f4Wrapper": "13/13 PASS",
+      "f8Wrapper": "11/11 PASS",
+      "note": "All pre-F11 wrapper pass counts unchanged from F8 commit. F11 added Harness J (+13) and F11 wrapper (+13). No semantic regression."
+    }
+  }
 }

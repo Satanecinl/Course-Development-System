@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-06-06T17:17:26.774Z",
+  "generatedAt": "2026-06-06T23:40:27.050Z",
   "phase": "K22-C-SCORE-REGRESSION-HARNESS-IMPLEMENTATION",
   "mode": "read-only, db-free, synthetic-fixture score regression harness",
   "summary": {
-    "total": 60,
-    "pass": 60,
+    "total": 73,
+    "pass": 73,
     "knownFail": 0,
     "fail": 0,
     "info": 0,
@@ -447,7 +447,7 @@
       "status": "PASS",
       "detail": "hard=0 (expect 0); total soft=-9 (expect -9); SC8 count=2 (expect 2); SC8 sum=-8 (expect -8)",
       "evidence": [
-        "3 separate tasks, teacherId=null, merged A(cg{1,2},p1) + B(cg{1},p3) + C(cg{2},p5). SC2 skip. SC5 skip. SC3 fires on period 5 = -1. SC8: cg1 {1,3} gap=1 → -2; cg2 {1,5} gap=3 → -6. Total SC8 = -8 (2 details). Total = -9, SC8 = -8. Component assertion: SC8 details count = 2, sum = -8.",
+        "3 separate tasks, teacherId=null, merged A(cg{1,2},p1) + B(cg{1},p3) + C(cg{2},p5). SC2 skip. SC5 skip. SC3 fires on period 5 = -1. SC8: cg1 {1,3} gap=1 → -2; cg2 {1,5} gap=3 → -6. Total SC8 = -8 (2 details). Total = -9, SC8 = -8. Component assertion: SC8 details count = 2, sum = -8. K22-F11: explicit classGroupStudentCounts keep utilization in 0.30-0.90 band, no SC10 fire.",
         "Full breakdown: SC3_EXTREME_TIME_SLOT=-1, SC8_CLASS_GAP=-2, SC8_CLASS_GAP=-6"
       ]
     },
@@ -606,6 +606,144 @@
       "detail": "deltaHard=-1000 (expect -1000); deltaSoft=2 (expect 2); SC9 component delta=2 (expect 2); SC9 details: before count=1 sum=-2, after count=0 sum=0",
       "evidence": [
         "Before: {100,200}, SC9=-2. After: room=0 skipped, {100}, SC9=0. SC9 delta=+2. SC2: same task same day, delta=0. deltaHard=-1000 (HC5). Total = +2 - 1000."
+      ]
+    },
+    {
+      "id": "J1-CAPACITY-GOOD-FIT",
+      "harness": "J",
+      "title": "SC10 full: good fit (50/100=0.50) → SC10 0 (no fire)",
+      "status": "PASS",
+      "detail": "hard=0; total soft=0 (expect 0); SC10 count=0 (expect 0); SC10 sum=0 (expect 0)",
+      "evidence": [
+        "1 task, 50 students, room 100 cap=100. utilization=0.50 (in 0.30-0.90 band). SC10 0. SC2 skip (1 slot). SC5 skip. SC3 skip. Total=0, SC10=0.",
+        "Breakdown: (none)"
+      ]
+    },
+    {
+      "id": "J2-CAPACITY-TIGHT-FIT",
+      "harness": "J",
+      "title": "SC10 full: tight fit (95/100=0.95) → SC10 -2",
+      "status": "PASS",
+      "detail": "hard=0; total soft=-2 (expect -2); SC10 count=1 (expect 1); SC10 sum=-2 (expect -2)",
+      "evidence": [
+        "1 task, 95 students, room 100 cap=100. utilization=0.95 > 0.90 → tight -2. Total=-2, SC10=-2.",
+        "Breakdown: SC10_ROOM_CAPACITY_UTILIZATION=-2"
+      ]
+    },
+    {
+      "id": "J3-CAPACITY-OVER-CAPACITY",
+      "harness": "J",
+      "title": "SC10 full: over-capacity (120/100=1.20) → HC4 fires, SC10 skips",
+      "status": "PASS",
+      "detail": "hard=-1000; total soft=0 (expect 0); SC10 count=0 (expect 0); SC10 sum=0 (expect 0)",
+      "evidence": [
+        "1 task, 120 students, room 100 cap=100. utilization=1.20 > 1.0 → SC10 skip (HC4 owns). SC10 details=0. Component assertion.",
+        "Breakdown: HC4_CAPACITY=-1000"
+      ]
+    },
+    {
+      "id": "J4-CAPACITY-SMALL-CLASS-HUGE-ROOM",
+      "harness": "J",
+      "title": "SC10 full: small class in huge room (20/120=0.17, cap>=100) → SC10 -1 waste",
+      "status": "PASS",
+      "detail": "hard=0; total soft=-1 (expect -1); SC10 count=1 (expect 1); SC10 sum=-1 (expect -1)",
+      "evidence": [
+        "1 task, 20 students, room 120 cap=120. utilization=0.17 < 0.30 AND cap=120 >= 100 → waste -1. Total=-1, SC10=-1.",
+        "Breakdown: SC10_ROOM_CAPACITY_UTILIZATION=-1"
+      ]
+    },
+    {
+      "id": "J5-CAPACITY-SMALL-CLASS-NORMAL-ROOM",
+      "harness": "J",
+      "title": "SC10 full: small class in normal room (24/60=0.40) → SC10 0",
+      "status": "PASS",
+      "detail": "hard=0; total soft=0 (expect 0); SC10 count=0 (expect 0); SC10 sum=0 (expect 0)",
+      "evidence": [
+        "1 task, 24 students, room 60 cap=60. utilization=0.40 (in band). cap<100 → waste branch does not apply. Total=0, SC10=0.",
+        "Breakdown: (none)"
+      ]
+    },
+    {
+      "id": "J6-CAPACITY-ROOM-ZERO-SKIP",
+      "harness": "J",
+      "title": "SC10 full: room=0 skip → SC10 0",
+      "status": "PASS",
+      "detail": "hard=0; total soft=0 (expect 0); SC10 count=0 (expect 0); SC10 sum=0 (expect 0)",
+      "evidence": [
+        "1 task, room=0 (unscheduled). SC10 skip (room=0). SC10 details=0. Total=0.",
+        "Breakdown: (none)"
+      ]
+    },
+    {
+      "id": "J7-CAPACITY-MISSING-STUDENT-COUNT-SKIP",
+      "harness": "J",
+      "title": "SC10 full: taskStudentCount=0 (defensive) → SC10 0",
+      "status": "PASS",
+      "detail": "hard=0; total soft=0 (expect 0); SC10 count=0 (expect 0); SC10 sum=0 (expect 0)",
+      "evidence": [
+        "1 task, 0 students, room 100 cap=100. SC10 skip (studentCount<=0). SC10 details=0. Total=0.",
+        "Breakdown: (none)"
+      ]
+    },
+    {
+      "id": "J8-CAPACITY-EXACT-0.90-BOUNDARY",
+      "harness": "J",
+      "title": "SC10 full: boundary utilization=0.90 → SC10 0 (strict >)",
+      "status": "PASS",
+      "detail": "hard=0; total soft=0 (expect 0); SC10 count=0 (expect 0); SC10 sum=0 (expect 0)",
+      "evidence": [
+        "1 task, 90 students, room 100 cap=100. utilization=0.90 (NOT > 0.90 strict). SC10 0. Total=0.",
+        "Breakdown: (none)"
+      ]
+    },
+    {
+      "id": "J9-DELTA-IMPROVE-TIGHT-TO-GOOD",
+      "harness": "J",
+      "title": "SC10 delta: tight 0.95 → good 0.475 → deltaSoft=+2 (SC10 only)",
+      "status": "PASS",
+      "detail": "deltaHard=0 (expect 0); deltaSoft=2 (expect 2); SC10 component delta=2 (expect 2); SC10 details: before count=1 sum=-2, after count=0 sum=0",
+      "evidence": [
+        "Before: util 0.95 → -2 (tight). After: util 0.475 → 0. SC10 delta = +2. SC2: 1 slot, delta=0. SC9: 1 slot, 1 distinct room, delta=0. Total = +2."
+      ]
+    },
+    {
+      "id": "J10-DELTA-WORSEN-GOOD-TO-TIGHT",
+      "harness": "J",
+      "title": "SC10 delta: good 0.475 → tight 0.95 → deltaSoft=-2 (SC10 only)",
+      "status": "PASS",
+      "detail": "deltaHard=0 (expect 0); deltaSoft=-2 (expect -2); SC10 component delta=-2 (expect -2); SC10 details: before count=0 sum=0, after count=1 sum=-2",
+      "evidence": [
+        "Before: util 0.475 → 0. After: util 0.95 → -2. SC10 delta = -2. SC2: 1 slot, delta=0. SC9: 1 slot, 1 distinct room, delta=0. Total = -2."
+      ]
+    },
+    {
+      "id": "J11-DELTA-SMALL-HUGE-TO-NORMAL",
+      "harness": "J",
+      "title": "SC10 delta: small in huge (20/120=0.17, waste) → small in normal (20/40=0.50, good) → deltaSoft=+1",
+      "status": "PASS",
+      "detail": "deltaHard=0 (expect 0); deltaSoft=1 (expect 1); SC10 component delta=1 (expect 1); SC10 details: before count=1 sum=-1, after count=0 sum=0",
+      "evidence": [
+        "Before: util 0.17 cap=120 → -1 (waste). After: util 0.50 cap=40 → 0. SC10 delta = +1. SC2: 1 slot, delta=0. SC9: 1 slot, delta=0. Total = +1."
+      ]
+    },
+    {
+      "id": "J12-DELTA-NORMAL-TO-HUGE",
+      "harness": "J",
+      "title": "SC10 delta: small in normal (20/40=0.50) → small in huge (20/120=0.17) → deltaSoft=-1",
+      "status": "PASS",
+      "detail": "deltaHard=0 (expect 0); deltaSoft=-1 (expect -1); SC10 component delta=-1 (expect -1); SC10 details: before count=0 sum=0, after count=1 sum=-1",
+      "evidence": [
+        "Before: util 0.50 cap=40 → 0. After: util 0.17 cap=120 → -1. SC10 delta = -1. SC2: 1 slot, delta=0. SC9: 1 slot, delta=0. Total = -1."
+      ]
+    },
+    {
+      "id": "J13-DELTA-OVER-CAPACITY-INTRODUCED",
+      "harness": "J",
+      "title": "SC10 delta: introduce over-capacity (HC4 fires, SC10 skips) → deltaHard=-1000, deltaSoft=0",
+      "status": "PASS",
+      "detail": "deltaHard=-1000 (expect -1000); deltaSoft=0 (expect 0); SC10 component delta=0 (expect 0); SC10 details: before count=0 sum=0, after count=0 sum=0",
+      "evidence": [
+        "Before: util 0.50 → 0. After: util 1.25 → SC10 skip (HC4 owns). HC4 deltaHard = -1000. SC10 component delta = 0. Total = -1000."
       ]
     }
   ]

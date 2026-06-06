@@ -1427,8 +1427,11 @@ function runHarnessH(): void {
       id: 'H8-MULTI-CLASSGROUP-MERGED',
       title: 'SC8 full: merged A(cg{1,2},p1) + B(cg{1},p3) + C(cg{2},p5) → SC8 -8, SC3 -1 also fires (component assertion)',
       taskSpecs: [
-        // K22-F11: explicit counts so no SC10 fire.
+        // K22-F11A fixture isolation: explicit counts so no SC10 fire.
         // A merged = 20+20=40 (util 0.40). B/C single = 40 (util 0.40). All in 0.30-0.90 band, no SC10.
+        // K22-F11A: ISOLATION only — classGroup membership is unchanged (merged A + single B + single C).
+        //   SC8 expected contribution (cg1 {1,3} gap=-2, cg2 {1,5} gap=-6, total=-8) is preserved.
+        //   SC3 fires on period 5 (preserved). No SC8/SC3 semantics changed.
         { day: 1, period: 1, classGroupId: 1, mergedClassGroupIds: [1, 2], classGroupStudentCounts: [20, 20] },
         { day: 1, period: 3, classGroupId: 1, classGroupStudentCounts: [40] },
         { day: 1, period: 5, classGroupId: 2, classGroupStudentCounts: [40] },

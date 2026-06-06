@@ -293,6 +293,129 @@ These updates are documented in code comments. No semantic change to the origina
 
 ---
 
+## 9.5. F11A Cross-Harness Fixture Isolation
+
+K22-F11A is the doc/harness alignment stage. It adds an explicit "isolation policy" section
+that explains why pre-F11 fixtures received surgical updates and proves the original constraint
+semantics are preserved.
+
+### 9.5.1 Why F3 MIXED fixtures need `classGroupStudentCounts`
+
+`scripts/verify-specialty-campus-weekend-constraints-k22-f3.ts` is the **specialty campus
+weekend** wrapper. Its goal is to verify HC6 / SC6 / SC7 (Linxiao + automotive + weekend
+rules). It is **not** designed to verify SC10.
+
+Without the surgical update, F3's MIXED cases (2 classGroups with no explicit
+`classGroupStudentCounts`) default to `studentCount: null` per class → FALLBACK=50 each →
+`taskStudentCount = 100`. With the harness's default room capacity of 100, utilization = 1.0,
+which triggers SC10's tight branch (-2). This pollutes the F3 expected soft scores with
+unintended SC10 contributions, making the fixture's `expectedSoft: 0` assertion fail.
+
+The surgical fix sets `classGroupStudentCounts: [40, 40]` (total 80, utilization 0.80 in
+cap=100), keeping SC10 neutral. **What is preserved**:
+
+- `classGroupIds: [1, 2]` is unchanged (still 汽车检测1班 + 计算机1班) → still MIXED.
+- `classGroupNames: ['汽车检测1班', '计算机1班']` is unchanged → still triggers the
+  `classifySpecialty` MIXED branch.
+- `LX_ROOM` (林校) is unchanged → HC6 still fires for MIXED-in-Linxiao (-1000).
+- `NON_LX_ROOM` (A101) is unchanged → SC6 still applies for non-Linxiao.
+- HC6 hard violation for MIXED-in-Linxiao is preserved (verified by all 3 MIXED cases
+  passing the `expectedHard` assertion).
+- SC6 automotive-only preference is preserved (verified by F5 and F6 cases).
+- SC7 weekend avoidance is preserved (verified by F7 and F8 cases).
+- All 16 F3 cases still PASS (`16/16 PASS`).
+
+**What changes**: only the implicit `studentCount` per class, which is a synthetic fixture
+parameter that does not represent any real course data. F3 continues to test HC6 / SC6 /
+SC7 semantics with no semantic regression.
+
+### 9.5.2 Why K22-C Harness H8 needs fixture update
+
+`scripts/verify-score-regression-harness-k22-c.ts` Harness H8 (`H8-MULTI-CLASSGROUP-MERGED`)
+is the **SC8 multi-classGroup expansion** test. Its goal is to verify SC8 detects gaps in
+merged-class scenarios. It is **not** designed to verify SC10.
+
+Without the surgical update, H8's merged-class task A (2 classes, no explicit
+`classGroupStudentCounts`) defaults to FALLBACK=50×2=100, in cap=100 → util 1.0 → SC10
+fires tight (-2). This pollutes H8's expected soft score (-9 → -11), making the
+`expectedTotalSoft: -9` assertion fail.
+
+The surgical fix sets explicit `classGroupStudentCounts` to keep all 3 tasks (merged A,
+single B, single C) in the 0.30-0.90 utilization band. **What is preserved**:
+
+- `mergedClassGroupIds: [1, 2]` for task A is unchanged → still tests merged-class
+  SC8 detection.
+- Period 1 / 3 / 5 layout is unchanged → still produces the same gaps in
+  classGroup 1 and classGroup 2.
+- SC8 expected contribution (cg1 {1,3} gap=1 → -2; cg2 {1,5} gap=3 → -6; total SC8 = -8)
+  is preserved (verified by `expectedSC8Soft: -8` and `expectedSC8Count: 2` assertions).
+- SC3 contribution on period 5 (-1) is preserved.
+- H8 case expected `{hard:0, total soft:-9, SC8 count:2, SC8 sum:-8}` all match.
+- All 12 H cases still PASS.
+- Total K22-C Harness H PASSes: 12/12.
+
+**What changes**: only the implicit `studentCount` per class (synthetic fixture parameter).
+H8 continues to test SC8 semantics with no semantic regression.
+
+### 9.5.3 Isolation policy for future constraints
+
+The following policy is established for any future constraint addition (K22-F12+):
+
+1. **Old harnesses must not be polluted by new constraints.** Adding a new constraint that
+   affects pre-existing fixtures' aggregate `softScore` requires a surgical fixture
+   update OR a component-level assertion in the old fixture.
+
+2. **Preferred mitigation order** (most to least invasive):
+   - **Component-level assertion**: assert BOTH total soft AND new-constraint details count
+     + sum. This is the F6A / F8A / F11A pattern.
+   - **Surgical fixture update**: change only the fixture's implicit `studentCount` (or
+     similar synthetic parameter) to keep the new constraint neutral. Document the
+     change in code comments + impl doc.
+   - **Adding a new fixture variant**: leave old fixtures untouched, add a new
+     `H8-...-WITH-SC10` variant if both behaviors need to be tested.
+
+3. **Surgical fixture updates MUST be documented in:**
+   - The fixture's code comment (immediate context).
+   - The new-constraint's impl doc under "Pre-F11 Fixture Updates" or equivalent.
+   - The new-constraint's JSON report under `preF11FixtureUpdates` or equivalent.
+
+4. **Surgical fixture updates MUST NOT change:**
+   - The classGroup membership (preserves specialty / aggregation semantics).
+   - The room (preserves Linxiao / building / capacity semantics).
+   - The day / period (preserves weekend / time-slot semantics).
+   - The expected constraint contribution (preserves the original test's assertion).
+
+5. **Forbidden:** changing the test's `expected*` value to "absorb" a new constraint
+   contribution. This would silently couple the old fixture to the new constraint, breaking
+   regression isolation.
+
+### 9.5.4 Cross-stage regression sanity
+
+After the F11A alignment:
+
+- K22-C K22-C Harness A: 5/5 PASS (full/delta consistency)
+- K22-C Harness B: 6/6 PASS (HC1-HC5 hard invariant)
+- K22-C Harness C: 2/2 PASS (default snapshot)
+- K22-C Harness D: 2/2 PASS (fixed-seed solver)
+- K22-C Harness E: 2/2 PASS (K21 config)
+- K22-C Harness F: 11/11 PASS (HC6 / SC6 / SC7) — F3 wrapper equivalent
+- K22-C Harness G: 9/9 PASS (SC5 teacher day balance)
+- K22-C Harness H: 12/12 PASS (SC8 class gap) — includes H8 with surgical isolation
+- K22-C Harness I: 11/11 PASS (SC9 classroom stability)
+- K22-C Harness J: 13/13 PASS (SC10 room capacity utilization) — F11 new
+- **Total: 73 PASS / 0 KNOWN_FAIL / 0 FAIL / 0 INFO**
+
+F11 wrapper: 13/13 PASS.
+F3 wrapper: 16/16 PASS.
+F6 wrapper: 12/12 PASS.
+F4 wrapper: 13/13 PASS.
+F8 wrapper: 11/11 PASS.
+
+All pre-F11 wrappers' pass count is unchanged from the F8 commit. F11 added Harness J
+(+13 cases) and F11 wrapper (+13 cases). No semantic regression in any pre-F11 wrapper.
+
+---
+
 ## 10. Verification Results
 
 | Command | Result | Notes |
