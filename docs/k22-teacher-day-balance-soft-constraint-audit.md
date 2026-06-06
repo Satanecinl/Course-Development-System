@@ -127,24 +127,26 @@ K22-F1 目标是为 SC5_TEACHER_DAY_BALANCE 设计清晰、可实现、可验证
 |---|---|
 | **Constraint ID** | `SC5_TEACHER_DAY_BALANCE` |
 | **Name** | 教师每日课时负载均衡 |
+| **Teaching days** | `TEACHING_DAYS = [1, 2, 3, 4, 5]` (Mon-Fri) |
 | **统计对象** | All slots with `room != 0` and `teachingTask.teacherId != null`, grouped by `teacherId` then `dayOfWeek` |
-| **Threshold** | `LOAD_DIFF_THRESHOLD = 2` (max - min over non-zero days must be **strictly greater than** 2) |
+| **`min` 包含 0 课日** | **Yes** — dailyCounts 在计数前先初始化所有 TEACHING_DAYS 为 0，min 包含 0 课日 |
+| **Threshold** | `LOAD_DIFF_THRESHOLD = 2` (max - min over TEACHING_DAYS must be **strictly greater than** 2) |
 | **Penalty** | `SOFT_SC5_TEACHER_DAY_BALANCE = -3` per unit of imbalance (i.e., per `(max - min - 2)`) |
 | **Skip rules** | `total < 3` (MIN_SLOTS_THRESHOLD), `teacherId == null`, `room == 0` |
 | **Why** | Direct measure of concentration. Lighter than SC1/SC2 (preference not hard violation). Skip rule prevents over-penalizing low-load teachers. |
 
-### Example calculations
+### Example calculations (K22-F1A corrected, min includes 0)
 
 | Load (Mon-Fri) | Total | Max | Min | diff | Penalty |
 |---|---|---|---|---|---|
-| 4/0/0/0/0 | 4 | 4 | 0 | 4 | -3 * 2 = -6 |
-| 3/1/0/0/0 | 4 | 3 | 1 | 2 | 0 (not > 2) |
-| 3/1/0/0/1 | 5 | 3 | 1 | 2 | 0 (not > 2) |
-| 3/0/0/0/1 | 4 | 3 | 1 | 2 | 0 (not > 2) |
-| 2/1/1/1/0 | 5 | 2 | 1 | 1 | 0 |
-| 2/2/0/0/0 | 4 | 2 | 2 | 0 | 0 |
-| 1/1/1/1/1 | 5 | 1 | 1 | 0 | 0 (best) |
-| 5/0/0/0/0 | 5 | 5 | 0 | 5 | -3 * 3 = -9 |
+| 4/0/0/0/0 | 4 | 4 | 0 | 4 | -3 * 2 = **-6** |
+| 3/1/0/0/0 | 4 | 3 | 0 | 3 | -3 * 1 = **-3** |
+| 3/1/0/0/1 | 5 | 3 | 0 | 3 | -3 * 1 = **-3** |
+| 3/0/0/0/1 | 4 | 3 | 0 | 3 | -3 * 1 = **-3** |
+| 2/1/1/1/0 | 5 | 2 | 0 | 2 | 0 (not > 2) |
+| 2/2/0/0/0 | 4 | 2 | 0 | 2 | 0 (not > 2) |
+| 1/1/1/1/1 | 5 | 1 | 0 | 1 | 0 (best) |
+| 5/0/0/0/0 | 5 | 5 | 0 | 5 | -3 * 3 = **-9** |
 | 0/4/0/0/0 | 4 | 4 | 0 | 4 | -6 |
 
 ---
@@ -167,29 +169,99 @@ K22-F1 目标是为 SC5_TEACHER_DAY_BALANCE 设计清晰、可实现、可验证
 
 ---
 
+## 7A. K22-F1A Definition Correction
+
+> **Stage**: K22-F1A-TEACHER-DAY-BALANCE-DEFINITION-CORRECTION
+> **Status**: K22-F1 had a pseudocode-vs-harness contradiction; K22-F1A unifies the definition.
+
+### 7A.1 Original issue
+
+K22-F1's pseudocode used `Math.min(...dayMap.values())` after `dayMap.set(p.day, ...)` only for days that have at least one slot. This means:
+
+- For a teacher with 4 slots on Monday only, `dayMap = {1: 4}`. `Math.min(...dayMap.values())` = 4. `max = 4`. `diff = 0`. **No penalty**.
+- But the K22-F1 harness case `SC5-FULL-1` expected `penalty = -6` for this scenario.
+
+This is a real contradiction: the recommended definition, pseudocode, and harness expectations were inconsistent.
+
+### 7A.2 Correction
+
+K22-F1A unifies the SC5 v1 definition:
+
+- **`TEACHING_DAYS = [1, 2, 3, 4, 5]`** is fixed (Mon-Fri, the default 高校排课 工作日范围).
+- **`dailyCounts` is initialized to 0 for all 5 teaching days BEFORE slot counting** (not lazily populated only for days that have slots).
+- **`min` includes 0-count days** (max - min spans the full 5-day array, not just non-zero days).
+- This is consistent with the harness expectation `4/0/0/0/0 → diff=4 → penalty=-6`.
+
+### 7A.3 Corrected examples (K22-F1A)
+
+| Load (Mon-Fri) | Total | Max | Min | diff | Penalty |
+|---|---|---|---|---|---|
+| 4/0/0/0/0 | 4 | 4 | 0 | 4 | -6 |
+| 3/1/0/0/0 | 4 | 3 | 0 | 3 | -3 |
+| 2/2/0/0/0 | 4 | 2 | 0 | 2 | 0 (not > 2) |
+| 1/1/1/1/1 | 5 | 1 | 0 | 1 | 0 (best) |
+| total = 2 (any pattern) | 2 | - | - | - | 0 (skip, total < 3) |
+
+### 7A.4 Delta examples (K22-F1A)
+
+- **Resolve**: `3/0/0/0/1` → `2/1/0/0/1`. Before: max=3, min=0, diff=3, penalty=-3. After: max=2, min=0, diff=2, no penalty. `deltaSoft = 0 - (-3) = +3`.
+- **Introduce**: `2/0/0/0/1` → `3/0/0/0/0`. Before: max=2, min=0, diff=2, no penalty. After: max=3, min=0, diff=3, penalty=-3. `deltaSoft = -3 - 0 = -3`.
+
+### 7A.5 Next stage implementation guidance
+
+`K22-F2-SOFT-CONSTRAINT-TEACHER-DAY-BALANCE-IMPL` must use the K22-F1A corrected definition verbatim:
+
+```ts
+const TEACHING_DAYS = [1, 2, 3, 4, 5]
+
+// FULL SCORE
+for (const [tid, dayMap] of teacherDayCounts) {
+  const loads = TEACHING_DAYS.map(d => dayMap.get(d) ?? 0)  // 5 values, includes 0
+  const total = loads.reduce((a, b) => a + b, 0)
+  if (total < 3) continue
+  const maxLoad = Math.max(...loads)
+  const minLoad = Math.min(...loads)  // includes 0
+  if (maxLoad - minLoad > 2) {
+    softScore += -3 * (maxLoad - minLoad - 2)
+  }
+}
+```
+
+Any future SC5 modifications must preserve: (a) `TEACHING_DAYS = [1,2,3,4,5]`, (b) zero-initialization, (c) min-includes-zero semantics.
+
+---
+
 ## 8. Full Score Design
 
-### Algorithm
+### Algorithm (K22-F1A corrected)
 
 ```
+const TEACHING_DAYS = [1, 2, 3, 4, 5]
+
 // 1. Group slots by (teacherId, dayOfWeek) using current assignment
+//    K22-F1A: initialize each teacher's dayMap with all TEACHING_DAYS = 0
 const teacherDayCounts = new Map<number, Map<number, number>>()
 for (const p of positions) {
   if (p.room === 0) continue                          // skip unassigned
   const tid = p.slot.teachingTask.teacherId
   if (tid == null) continue                           // skip null teacher
   let dayMap = teacherDayCounts.get(tid)
-  if (!dayMap) { dayMap = new Map(); teacherDayCounts.set(tid, dayMap) }
+  if (!dayMap) {
+    dayMap = new Map()
+    for (const d of TEACHING_DAYS) dayMap.set(d, 0)
+    teacherDayCounts.set(tid, dayMap)
+  }
   dayMap.set(p.day, (dayMap.get(p.day) ?? 0) + 1)
 }
 
 // 2. For each teacher, compute penalty
+//    K22-F1A: use TEACHING_DAYS-mapped values so min can return 0
 for (const [tid, dayMap] of teacherDayCounts) {
-  const total = [...dayMap.values()].reduce((a, b) => a + b, 0)
+  const loads = TEACHING_DAYS.map(d => dayMap.get(d) ?? 0)
+  const total = loads.reduce((a, b) => a + b, 0)
   if (total < MIN_SLOTS_THRESHOLD) continue
-  const loads = [...dayMap.values()]
   const maxLoad = Math.max(...loads)
-  const minLoad = Math.min(...loads)
+  const minLoad = Math.min(...loads)  // includes 0-count days
   if (maxLoad - minLoad > LOAD_DIFF_THRESHOLD) {
     const penalty = SOFT_SC5_TEACHER_DAY_BALANCE * (maxLoad - minLoad - LOAD_DIFF_THRESHOLD)
     softScore += penalty
@@ -214,21 +286,21 @@ for (const [tid, dayMap] of teacherDayCounts) {
 
 ## 9. Delta Score Design
 
-### Algorithm
+### Algorithm (K22-F1A corrected)
 
 ```
+const TEACHING_DAYS = [1, 2, 3, 4, 5]
+
 // 1. Only the moved slot's teacher is affected
 const task = slot.teachingTask
 const tid = task.teacherId
 if (tid == null) return { deltaHard, deltaSoft }   // null teacher exempt
 
-// 2. Build dailyCounts for teacher T at OLD state (using all other slots + the moved slot at its old position)
-const oldDailyCounts = computeDailyCountsForTeacher(tid, ctx, state, excludeMovedSlot=true)
-oldDailyCounts.set(old.dayOfWeek, (oldDailyCounts.get(old.dayOfWeek) ?? 0) + 1)  // re-add moved slot at OLD
+// 2. Build dailyCounts for teacher T at OLD state (all TEACHING_DAYS initialized to 0)
+const oldDailyCounts = buildTeacherDailyCounts(tid, ctx, state, excludeSlotId: slot.id, atPosition: old)
 
 // 3. Build dailyCounts for teacher T at NEW state
-const newDailyCounts = computeDailyCountsForTeacher(tid, ctx, state, excludeMovedSlot=true)
-newDailyCounts.set(move.newDay, (newDailyCounts.get(move.newDay) ?? 0) + 1)    // re-add moved slot at NEW
+const newDailyCounts = buildTeacherDailyCounts(tid, ctx, state, excludeSlotId: slot.id, atPosition: move)
 
 // 4. Compute before / after penalty using same helper as full score
 const beforePenalty = teacherImbalancePenalty(oldDailyCounts)   // shared helper
@@ -236,6 +308,21 @@ const afterPenalty = teacherImbalancePenalty(newDailyCounts)
 
 // 5. deltaSoft += afterPenalty - beforePenalty
 deltaSoft += afterPenalty - beforePenalty
+
+// Helper: build teacher T's daily counts, with all TEACHING_DAYS initialized to 0
+function buildTeacherDailyCounts(teacherId, ctx, state, excludeSlotId, atPosition) {
+  const counts = new Map()
+  for (const d of TEACHING_DAYS) counts.set(d, 0)   // K22-F1A: zero-initialize
+  for (const slot of ctx.slots) {
+    if (slot.id === excludeSlotId) continue
+    if (slot.teachingTask.teacherId !== teacherId) continue
+    const pos = getPos(slot, state)
+    if (pos.room === 0) continue
+    counts.set(pos.day, (counts.get(pos.day) ?? 0) + 1)
+  }
+  counts.set(atPosition.day, (counts.get(atPosition.day) ?? 0) + 1)  // re-add moved slot
+  return counts
+}
 ```
 
 ### Properties
@@ -425,4 +512,16 @@ K22-F1-SOFT-CONSTRAINT-TEACHER-DAY-BALANCE-AUDIT 按 spec 完整执行：
 - ✅ 不修改 DB / schema / score.ts / solver / API / frontend / importer / parser / RBAC
 - ✅ 工作区状态：仅新增 3 个 K22-F1 文件
 
-**本阶段可关闭, 推荐进入 K22-F2-SOFT-CONSTRAINT-TEACHER-DAY-BALANCE-IMPL (实施 SC5 full + delta, 复用 K22-C harness)。**
+### K22-F1A follow-up (correction)
+
+> K22-F1A-TEACHER-DAY-BALANCE-DEFINITION-CORRECTION unifies the SC5 v1 definition.
+
+- ✅ K22-F1A 修正 SC5 v1 定义：min 包含 0 课日，TEACHING_DAYS = [1,2,3,4,5] 固定
+- ✅ 修正伪代码（buildFullScoreDesign、buildDeltaScoreDesign、buildRecommendedDefinition）
+- ✅ 修正 harness case descriptions（SC5-FULL-1, SC5-DELTA-RESOLVE, SC5-DELTA-INTRODUCE, SC5-EDGE-EXACT-THRESHOLD）
+- ✅ 修正 example calculation table (3/1/0/0/0 → -3, 3/0/0/0/1 → -3 等)
+- ✅ 新增 finding K22-F1A-D-1 (LOW severity)
+- ✅ JSON 报告新增 `correctionNote` 字段
+- ✅ Markdown §7A 完整记录原问题、修正、修正后示例、下一阶段实现指南
+
+**K22-F1 + K22-F1A 都可关闭, 推荐进入 K22-F2-SOFT-CONSTRAINT-TEACHER-DAY-BALANCE-IMPL (实施 SC5 full + delta, 必须使用 K22-F1A 修正后的定义)。**

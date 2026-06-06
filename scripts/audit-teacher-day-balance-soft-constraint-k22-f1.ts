@@ -201,10 +201,13 @@ function buildDefinitionOptions(): DefinitionOption[] {
       name: '教师每日课时负载均衡 (per-day load balance)',
       description:
         'Goal: ensure each teacher has a similar number of slots on each teaching day. ' +
-        'For each teacher, compute per-day slot count across the week. ' +
-        'If max - min (over non-zero days) > threshold, penalize. ' +
+        'For each teacher, compute per-day slot count across the 5 teaching days (Mon-Fri, ' +
+        'TEACHING_DAYS = [1,2,3,4,5]). ' +
+        'If max - min (over TEACHING_DAYS, including 0-count days) > threshold, penalize. ' +
         'Specifically: skip teachers with total slots < MIN_SLOTS (e.g. 3) to avoid over-penalizing low-load teachers. ' +
-        'Penalty = -k * max(0, maxDailyLoad - minNonZeroDailyLoad - threshold).',
+        'Penalty = -k * max(0, maxDailyLoad - minDailyLoad - threshold). ' +
+        '(K22-F1A correction: min includes 0-count days. Without this correction, 4/0/0/0/0 would have min=4 not 0, ' +
+        'and the formula would not penalize a teacher with all 4 slots on Monday.)',
       pros: [
         'Captures the actual concentration: 4/0/0/0/0 is penalized, 1/1/1/1/1 is not',
         'Threshold-based: tunable via hardcoded constant for v1',
@@ -250,13 +253,23 @@ function buildRecommendedDefinition(): Record<string, unknown> {
   return {
     constraintId: 'SC5_TEACHER_DAY_BALANCE',
     name: '教师每日课时负载均衡',
+    // K22-F1A correction: the dayMap MUST be initialized to all TEACHING_DAYS = [1,2,3,4,5] with 0
+    // before slot counting. This way min() includes 0 (zero-load days) and the harness expectation
+    // 4/0/0/0/0 → diff=4 → penalty=-6 is consistent with the formula.
+    minIncludesZeroDays: true,
+    teachingDays: [1, 2, 3, 4, 5],
+    threshold: 2,
+    penalty: -3,
+    totalSlotsSkipBelow: 3,
     formula:
       'For each teacher T with total weekly slots >= MIN_SLOTS_THRESHOLD (default 3):\n' +
-      '  compute dailyCounts[T] = Map<dayOfWeek 1-5, slot count>\n' +
-      '  maxLoad = max(dailyCounts[T].values())\n' +
-      '  minLoad = min(dailyCounts[T].values() where count > 0)\n' +
+      '  initialize dailyCounts[T] with all TEACHING_DAYS = [1,2,3,4,5] set to 0\n' +
+      '  for each slot of T (in current assignment): dailyCounts[T][slot.dayOfWeek] += 1\n' +
+      '  loads = dailyCounts[T].values()  // 5 values, includes 0-count days\n' +
+      '  maxLoad = max(loads)\n' +
+      '  minLoad = min(loads)  // 0 if teacher has 0 slots on some teaching day\n' +
       '  if maxLoad - minLoad > LOAD_DIFF_THRESHOLD (default 2):\n' +
-      '    penalty = SOFT_SC5_TEACHER_DAY_BALANCE * (maxLoad - minLoad - LOAD_DIFF_THRESHOLD)\n' +
+      '    penalty = SOFT_SC5_TEACHER_DAY_BALANCE * (maxLoad - minLoad - LOAD_DIFF_THRESHOLD)  // default -3 * (diff - 2)\n' +
       '  else: penalty = 0',
     skipRules: [
       'teacher.totalWeeklySlots < MIN_SLOTS_THRESHOLD (default 3) — small load teachers exempt',
@@ -265,9 +278,14 @@ function buildRecommendedDefinition(): Record<string, unknown> {
     ],
     rationale:
       'Option B captures the core problem (concentration) while keeping the formula simple. ' +
+      'K22-F1A correction: TEACHING_DAYS is fixed to [1,2,3,4,5] (周一至周五), which matches the ' +
+      'Chinese 高校排课 默认 5-day work week and the harness expectation 4/0/0/0/0 → -6. ' +
       'The skip rule for low-load teachers prevents over-penalization. The threshold is hardcoded for v1 ' +
       'and can later be moved to SchedulingConfig (K22-weights-roadmap).',
     pseudocode: `
+// K22-F1A corrected pseudocode: TEACHING_DAYS = [1,2,3,4,5]; dailyCounts initialized to 0
+const TEACHING_DAYS = [1, 2, 3, 4, 5]
+
 // FULL SCORE (calculateScoreWithDetails)
 const teacherDayCounts = new Map<number, Map<number, number>>()  // teacherId -> (day -> count)
 for (const p of positions) {
@@ -275,16 +293,20 @@ for (const p of positions) {
   const tid = p.slot.teachingTask.teacherId
   if (tid == null) continue
   let dayMap = teacherDayCounts.get(tid)
-  if (!dayMap) { dayMap = new Map(); teacherDayCounts.set(tid, dayMap) }
+  if (!dayMap) {
+    dayMap = new Map()
+    for (const d of TEACHING_DAYS) dayMap.set(d, 0)
+    teacherDayCounts.set(tid, dayMap)
+  }
   dayMap.set(p.day, (dayMap.get(p.day) ?? 0) + 1)
 }
 
 for (const [tid, dayMap] of teacherDayCounts) {
-  const total = [...dayMap.values()].reduce((a, b) => a + b, 0)
+  const loads = TEACHING_DAYS.map(d => dayMap.get(d) ?? 0)
+  const total = loads.reduce((a, b) => a + b, 0)
   if (total < MIN_SLOTS_THRESHOLD) continue
-  const loads = [...dayMap.values()]
   const maxLoad = Math.max(...loads)
-  const minLoad = Math.min(...loads)
+  const minLoad = Math.min(...loads)  // includes 0-count days
   if (maxLoad - minLoad > LOAD_DIFF_THRESHOLD) {
     const penalty = SOFT_SC5_TEACHER_DAY_BALANCE * (maxLoad - minLoad - LOAD_DIFF_THRESHOLD)
     softScore += penalty
@@ -299,10 +321,13 @@ for (const [tid, dayMap] of teacherDayCounts) {
 
 function buildFullScoreDesign(): Record<string, unknown> {
   return {
-    aggregation: 'Group ctx.slots by teachingTask.teacherId (skip null). For each teacher, build Map<dayOfWeek, count> from current assignment positions.',
+    aggregation:
+      'Group ctx.slots by teachingTask.teacherId (skip null). For each teacher, initialize Map<dayOfWeek, count> ' +
+      'with all TEACHING_DAYS = [1,2,3,4,5] set to 0 (K22-F1A correction: zero-load days must be present so min() can return 0). ' +
+      'Increment the day for each slot in current assignment.',
     calculation:
       'Per teacher: total = sum(counts); if total < MIN_SLOTS_THRESHOLD skip; ' +
-      'else compute max - min (over non-zero days) and apply threshold + penalty formula.',
+      'else compute max - min (over TEACHING_DAYS, including 0-count days) and apply threshold + penalty formula.',
     complexity: 'O(n) where n = number of slots. Single pass to group + single pass to compute penalty.',
     excludes: 'SC2 (different key: per task-day not per teacher-day)',
     detailsEmitted: 'One SC5_TEACHER_DAY_BALANCE detail per teacher per imbalance (vs SC2 one detail per task-day).',
@@ -313,31 +338,48 @@ function buildFullScoreDesign(): Record<string, unknown> {
 function buildDeltaScoreDesign(): Record<string, unknown> {
   return {
     affectedTeacher: 'Only the teacher of the moved slot is affected. Other teachers\' daily loads do not change.',
-    beforeAfter: 'For teacher T of moved slot: compute dailyCounts[T] before (using old.dayOfWeek) and after (using move.newDay).',
+    beforeAfter:
+      'For teacher T of moved slot: build a dailyCounts map at OLD and NEW state. ' +
+      'Both maps must include all TEACHING_DAYS = [1,2,3,4,5] initialized to 0 (K22-F1A correction).',
     formula:
       'deltaSoft += afterPenalty(T) - beforePenalty(T). ' +
       'afterPenalty and beforePenalty use the same MIN_SLOTS_THRESHOLD and LOAD_DIFF_THRESHOLD as full score. ' +
-      'Both call a shared helper teacherImbalancePenalty(dailyCounts, total) → number.',
+      'Both call a shared helper teacherImbalancePenalty(dailyCounts) → number.',
     complexity: 'O(1) per move (one teacher, one day shift).',
     hardScoreImpact: 'None. deltaHard is unaffected.',
     doesNotIterate: 'No need to scan all teachers — only the moved slot\'s teacher.',
     pseudocode: `
+// K22-F1A corrected delta pseudocode: same TEACHING_DAYS = [1,2,3,4,5] initialization
+const TEACHING_DAYS = [1, 2, 3, 4, 5]
+
 // DELTA SCORE (calculateDeltaScore)
 const task = slot.teachingTask
 const tid = task.teacherId
 if (tid == null) { /* SC5 not affected */ return { deltaHard, deltaSoft } }
 
-// Build dailyCounts for teacher T at OLD state
-const oldDailyCounts = computeDailyCountsForTeacher(tid, ctx, state, exceptSlotId: slot.id, exceptDay: old.dayOfWeek, exceptSlotIndex: old.slotIndex, exceptRoomId: old.roomId)
-oldDailyCounts.set(old.dayOfWeek, (oldDailyCounts.get(old.dayOfWeek) ?? 0) + 1)  // re-add moved slot at old position
-
-// Build dailyCounts for teacher T at NEW state
-const newDailyCounts = computeDailyCountsForTeacher(tid, ctx, state, exceptSlotId: slot.id, exceptDay: old.dayOfWeek, exceptSlotIndex: old.slotIndex, exceptRoomId: old.roomId)
-newDailyCounts.set(move.newDay, (newDailyCounts.get(move.newDay) ?? 0) + 1)  // re-add moved slot at new position
+// Build dailyCounts for teacher T at OLD state (all TEACHING_DAYS initialized to 0)
+const oldDailyCounts = buildTeacherDailyCounts(tid, ctx, state, excludeSlotId: slot.id, atPosition: old)
+const newDailyCounts = buildTeacherDailyCounts(tid, ctx, state, excludeSlotId: slot.id, atPosition: move)
 
 const beforePenalty = teacherImbalancePenalty(oldDailyCounts)
 const afterPenalty = teacherImbalancePenalty(newDailyCounts)
 deltaSoft += afterPenalty - beforePenalty
+
+// Helper: build teacher T's daily counts, with all TEACHING_DAYS initialized to 0
+function buildTeacherDailyCounts(teacherId, ctx, state, excludeSlotId, atPosition) {
+  const counts = new Map()
+  for (const d of TEACHING_DAYS) counts.set(d, 0)
+  for (const slot of ctx.slots) {
+    if (slot.id === excludeSlotId) continue
+    if (slot.teachingTask.teacherId !== teacherId) continue
+    const pos = getPos(slot, state)  // current day/idx/room
+    if (pos.room === 0) continue
+    counts.set(pos.day, (counts.get(pos.day) ?? 0) + 1)
+  }
+  // Re-add the excluded slot at atPosition
+  counts.set(atPosition.day, (counts.get(atPosition.day) ?? 0) + 1)
+  return counts
+}
 `,
   }
 }
@@ -397,6 +439,11 @@ function buildSC2Interaction(): Record<string, unknown> {
       'Both can fire together (teacher with 2-slot task A on Mon + 1-slot task B on Mon + 1-slot task C on Tue = SC2 -10 + SC5 -3). ' +
       'Both penalties are valid: SC2 penalizes the task-day, SC5 penalizes the teacher distribution.',
     effectOnSC2: 'NONE — SC5 does not modify SC2 logic, threshold, or aggregation.',
+    k22F1ACorrection:
+      'K22-F1A unified the SC5 semantics: TEACHING_DAYS = [1,2,3,4,5] is fixed, dailyCounts are ' +
+      'initialized to 0 for all 5 days, and min includes 0-count days. This makes 4/0/0/0/0 → diff=4 → penalty=-6 ' +
+      'work as expected in harness cases. The K22-F1 pseudocode that used Math.min(...dayMap.values()) ' +
+      'without zero-initialization was inconsistent with the harness and has been corrected.',
   }
 }
 
@@ -447,14 +494,17 @@ function buildHarnessPlan(): HarnessCase[] {
       purpose: 'Move a slot from high-load day to low-load day: SC5 penalty decreases, deltaSoft is positive',
       fixture:
         '1 teacher (id=100), 2 tasks. Task 1: 3 slots on day 1. Task 2: 1 slot on day 5. ' +
-        'Initial: load = [3,0,0,0,1], diff = 3 > 2, penalty = -3 * (3-2) = -3. ' +
-        'Move: one of task 1\'s slots from day 1 to day 2. New: load = [2,1,0,0,1], diff = 2 not > 2, no penalty. ' +
+        'Initial: load (K22-F1A corrected, TEACHING_DAYS=[1..5] initialized to 0) = [3,0,0,0,1], ' +
+        'max=3, min=0, diff=3 > 2, penalty = -3 * (3-2) = -3. ' +
+        'Move: one of task 1\'s slots from day 1 to day 2. ' +
+        'New: load = [2,1,0,0,1], max=2, min=0, diff=2 not > 2, no penalty. ' +
         'deltaSoft = 0 - (-3) = +3.',
       expectedHardScore: 0,
       expectedSoftScoreDelta: 3,
       expectedSC5DetailCount: 0,
       expectedStatus: 'PASS',
-      notes: 'Verifies delta correctly reflects SC5 reduction. Note: hardScore may be affected by room/day moves — test should pin room to avoid HC4.',
+      notes: 'K22-F1A: under corrected definition, initial load [3,0,0,0,1] has min=0 (not 2 as K22-F1 originally stated). ' +
+        'Verifies delta correctly reflects SC5 reduction. Note: hardScore may be affected by room/day moves — test should pin room to avoid HC4.',
     },
     {
       id: 'SC5-DELTA-INTRODUCE',
@@ -462,8 +512,9 @@ function buildHarnessPlan(): HarnessCase[] {
       purpose: 'Move a slot to the high-load day: SC5 penalty increases, deltaSoft is negative',
       fixture:
         '1 teacher (id=100), 2 tasks. Task 1: 2 slots on day 1. Task 2: 1 slot on day 5. ' +
-        'Initial: load = [2,0,0,0,1], diff = 2 not > 2, no penalty. ' +
-        'Move: task 2 slot from day 5 to day 1. New: load = [3,0,0,0,0], diff = 3 > 2, penalty = -3. ' +
+        'Initial: load (K22-F1A corrected) = [2,0,0,0,1], max=2, min=0, diff=2 not > 2, no penalty. ' +
+        'Move: task 2 slot from day 5 to day 1. ' +
+        'New: load = [3,0,0,0,0], max=3, min=0, diff=3 > 2, penalty = -3. ' +
         'deltaSoft = -3 - 0 = -3.',
       expectedHardScore: 0,
       expectedSoftScoreDelta: -3,
@@ -506,7 +557,7 @@ function buildHarnessPlan(): HarnessCase[] {
       purpose: 'Boundary: max - min = 2 exactly should NOT fire (threshold is > not >=)',
       fixture:
         '1 teacher (id=100), 2 tasks. Task 1: 2 slots on day 1, task 2: 1 slot on day 3. ' +
-        'Initial: load = [2,0,0,1,0], total = 3, max = 2, min = 1, diff = 2. ' +
+        'Initial: load (K22-F1A corrected) = [2,0,0,1,0], total = 3, max = 2, min = 0, diff = 2. ' +
         'diff > 2 is false, no penalty.',
       expectedHardScore: 0,
       expectedSoftScoreDelta: 0,
@@ -680,6 +731,27 @@ function buildFindings(
     suggestedNextStage: 'K22-F2-SOFT-CONSTRAINT-TEACHER-DAY-BALANCE-IMPL',
   })
 
+  // K22-F1A correction finding
+  findings.push({
+    id: 'K22-F1A-D-1',
+    severity: 'LOW',
+    category: 'D. K22-F1A definition correction',
+    title: 'K22-F1A 修正 SC5 v1 定义：min 包含 0 课日，TEACHING_DAYS = [1,2,3,4,5] 固定',
+    currentStatus:
+      'K22-F1 推荐定义中，伪代码 Math.min(...dayMap.values()) 只统计有课日（非 0），导致 4/0/0/0/0 的 min=4, diff=0, ' +
+      'penalty=0，与 harness 预期 4/0/0/0/0 → -6 矛盾。' +
+      'K22-F1A 统一：TEACHING_DAYS = [1,2,3,4,5] 固定，dailyCounts 在计数前先初始化所有 5 个教学日为 0，' +
+      'min 包含 0 课日。修正后：4/0/0/0/0 → max=4, min=0, diff=4, penalty=-3*(4-2)=-6 ✓',
+    evidence: [
+      'K22-F1 audit script line ~287: Math.min(...dayMap.values()) — only non-zero days',
+      'K22-F1 harness SC5-FULL-1 expected: penalty = -6 (load 4/0/0/0/0)',
+      'K22-F1A correction: dailyCounts initialized with all 5 teaching days = 0',
+    ],
+    risk: 'LOW: K22-F1A 是设计阶段审计，无生产代码影响。修正仅影响 K22-F2 实施阶段的伪代码实现。',
+    recommendation: 'K22-F2 必须使用 K22-F1A 修正后的定义：TEACHING_DAYS 固定，dailyCounts 初始化为 0，min 包含 0 课日。',
+    suggestedNextStage: 'K22-F2-SOFT-CONSTRAINT-TEACHER-DAY-BALANCE-IMPL',
+  })
+
   return findings
 }
 
@@ -784,6 +856,32 @@ function main() {
     harnessPlan,
     risks,
     findings,
+    correctionNote: {
+      stage: 'K22-F1A',
+      issue: 'K22-F1 audit reported a contradiction: pseudocode used Math.min(...dayMap.values()) which only counts non-zero days, but harness SC5-FULL-1 expected 4/0/0/0/0 → penalty=-6 (which requires min=0 to be penalized).',
+      fix:
+        'K22-F1A unified the SC5 v1 definition: TEACHING_DAYS = [1,2,3,4,5] is fixed (Mon-Fri), ' +
+        'dailyCounts are initialized to 0 for all 5 days BEFORE slot counting, and min() includes 0-count days. ' +
+        'The pseudocode in buildRecommendedDefinition / buildFullScoreDesign / buildDeltaScoreDesign has been updated. ' +
+        'The Option B description, SC2 interaction analysis, and harness case fixtures have been aligned with the corrected definition.',
+      verified: {
+        'minIncludesZeroDays': true,
+        'teachingDays': [1, 2, 3, 4, 5],
+        'threshold': 2,
+        'penalty': -3,
+        'totalSlotsSkipBelow': 3,
+        'SC5-FULL-1 4/0/0/0/0 expectedPenalty': -6,
+        'SC5-DELTA-RESOLVE expectedDelta': 3,
+        'SC5-DELTA-INTRODUCE expectedDelta': -3,
+        'SC5-EDGE-EXACT-THRESHOLD 2/0/0/1/0 expectedPenalty': 0,
+        'SC5-FULL-2 2/2/0/0/0 expectedPenalty': 0,
+        'SC5-FULL-3 total=2 expectedPenalty': 0,
+      },
+      nextStageImplGuidance:
+        'K22-F2-SOFT-CONSTRAINT-TEACHER-DAY-BALANCE-IMPL must use the corrected definition verbatim. ' +
+        'Any future SC5 modifications should preserve TEACHING_DAYS = [1,2,3,4,5], ' +
+        'zero-initialization of dailyCounts, and min-includes-zero semantics.',
+    },
     recommendedNextStage: 'K22-F2-SOFT-CONSTRAINT-TEACHER-DAY-BALANCE-IMPL',
     reasonsForRecommendation: [
       'Option B captures the actual problem (concentration) with a simple threshold-based formula',
