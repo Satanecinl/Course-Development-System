@@ -454,7 +454,70 @@ K22-D 修复 SC1 delta 后：
 
 ---
 
-## 15. Closing Note
+## 15. Harness F: Specialty Campus Weekend Constraints (K22-F3)
+
+Added in commit `e4a40ba` (K22-F3) and aligned in `f55c0a7` (K22-F3A).
+
+Harness F covers HC6 (non-automotive forbidden in Linxiao), SC6 (automotive prefers Linxiao), and SC7 (weekend avoidance):
+
+### Cases (11)
+
+| Case | Category | Expected |
+|---|---|---|
+| F1-HC6-NON_AUTO | HC6 | hard=-1000, soft=0 |
+| F2-HC6-MIXED | HC6 (K22-F2A) | hard=-1000, soft=0 |
+| F3-HC6-COURSE | HC6 (K22-F2A) | hard=-1000, soft=0 |
+| F4-HC6-REMARK | HC6 (K22-F2A) | hard=-1000, soft=0 |
+| F5-SC6-NON_LX | SC6 | hard=0, soft=-20 |
+| F6-SC6-IN_LX | SC6 | hard=0, soft=0 |
+| F7-SC7-WEEKEND | SC7 | hard=0, soft=-15 |
+| F8-SC7-WEEKDAY | SC7 | hard=0, soft=0 |
+| F9-DELTA-HC6 | HC6 delta | deltaHard=-1000 |
+| F10-DELTA-SC6 | SC6 delta | deltaSoft=+20 |
+| F11-DELTA-SC7 | SC7 delta | deltaSoft=-15 |
+
+Delta cases use 3rd-position `originalAssignments` to isolate HC6/SC6/SC7 from MIN_PERT.
+
+---
+
+## 16. Harness G: SC5 Teacher Day Balance (K22-F4)
+
+Added in commit `d6bf806` (K22-F4).
+
+Harness G covers SC5 (teacher day balance): penalizes teachers whose weekly teaching load is unevenly distributed across weekdays.
+
+### Constants
+
+```ts
+const TEACHING_DAYS = [1, 2, 3, 4, 5]
+const SC5_PENALTY_PER_EXCESS = -3
+const SC5_THRESHOLD = 2
+const SC5_MIN_TOTAL = 3
+```
+
+### Cases (9)
+
+| Case | Days | Expected | Description |
+|---|---|---|---|
+| G1-4_0_0_0_0 | [1,1,1,1] | soft=-6 | diff=4>2, -3*(4-2)=-6 |
+| G2-3_1_0_0_0 | [1,1,1,2] | soft=-3 | diff=3>2, -3*(3-2)=-3 |
+| G3-2_2_0_0_0 | [1,1,2,2] | soft=0 | diff=2=threshold |
+| G4-TOTAL_LT_3 | [1,2] | soft=0 | total=2<3, skip |
+| G5-1_1_1_0_0 | [1,2,3] | soft=0 | diff=1<=2 |
+| G6-2_1_0_0_0 | [1,1,2] | soft=0 | diff=2=threshold |
+| G7-DELTA-IMPROVE | [1,1,1,5] | deltaSoft=+3 | [3,0,0,0,1]→[2,1,0,0,1] |
+| G8-DELTA-WORSEN | [1,1,5] | deltaSoft=-3 | [2,0,0,0,1]→[3,0,0,0,0] |
+| G9-DELTA-SKIP | [1,5] | deltaSoft=0 | total=2<3, skip |
+
+Delta cases use 3rd-position `originalAssignments` to isolate SC5 delta from MIN_PERT.
+
+### Default Snapshot Impact
+
+Default fixture has 3 teachers with `total < 3` each → SC5 does not trigger → snapshot unchanged (`hardScore=0, softScore=-11`).
+
+---
+
+## 17. Closing Note
 
 K22-C-SCORE-REGRESSION-HARNESS-IMPLEMENTATION 按 spec 完整执行：
 
@@ -467,10 +530,9 @@ K22-C-SCORE-REGRESSION-HARNESS-IMPLEMENTATION 按 spec 完整执行：
 - ✅ 实施 Harness C (Default Snapshot + Perturbation): 2/2 PASS
 - ✅ 实施 Harness D (Fixed Seed Solver): 2/2 PASS (smoke level)
 - ✅ 实施 Harness E (K21 Config Regression): 2/2 PASS (static delegation)
-- ✅ 5/5 harness 全部完成
-- ✅ K22-C 阶段 KNOWN_FAIL=1 (SC1 expected), K22-D 后 KNOWN_FAIL=0
+- ✅ 实施 Harness F (HC6/SC6/SC7): 11/11 PASS (K22-F3)
+- ✅ 实施 Harness G (SC5 Teacher Day Balance): 9/9 PASS (K22-F4)
+- ✅ K22-C summary: **37 PASS / 0 KNOWN_FAIL / 0 FAIL / 0 INFO**
 - ✅ 整体 exit code = 0, BLOCKING = NO
-- ✅ K22-C 阶段不修改任何业务代码 / 不写数据库 / 不改 score.ts
-- ✅ K22-D 阶段（后续 commit）修了 `score.ts` 的 SC1 delta 块（mirror full score），并把 A.2 case 转为 PASS regression guard
 
-**本阶段 (K22-C) 可关闭. K22-D 已完成 SC1 delta 修复，A.2 case 现在 PASS。下一步推荐 K22-SCORE-WEIGHTS-ROADMAP (penalty 动态化) 或 K22-B-SOFT-CONSTRAINTS-ROADMAP-AUDIT (7 items 软约束评估)。**
+**当前状态: K22-D 已修 SC1 delta，K22-F3 已实现 HC6/SC6/SC7，K22-F4 已实现 SC5。Harness 共覆盖 A-G 七个维度，37 个 cases。下一步推荐 K22-F5-CLASS-GAP-REDUCTION-AUDIT (只读审计班级空洞约束建模)。**

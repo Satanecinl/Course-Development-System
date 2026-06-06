@@ -298,8 +298,8 @@ const deltaCases: DeltaCase[] = [
     note: 'Before: diff=4>2, penalty=-6. After: diff=3>2, penalty=-3. Delta=+3.',
   },
   {
-    id: 'SC5-DELTA-NO-CHANGE',
-    title: 'Move from day1 to day2: [2,2,0,0,0] → [1,3,0,0,0], deltaSoft=-3',
+    id: 'SC5-DELTA-WORSEN-BALANCED-TO-IMBALANCED',
+    title: 'Move from day1 to day2: [2,2,0,0,0] → [1,3,0,0,0], deltaSoft=-3 (crosses threshold)',
     days: [1, 1, 2, 2],
     moveSlotIdx: 0,
     newDay: 2,
