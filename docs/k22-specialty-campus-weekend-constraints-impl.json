@@ -1,0 +1,80 @@
+{
+  "generatedAt": "2026-06-06T11:00:00Z",
+  "phase": "K22-F3-SPECIALTY-CAMPUS-WEEKEND-CONSTRAINT-IMPL",
+  "mode": "implementation",
+  "summary": {
+    "constraintsImplemented": ["HC6_NON_AUTOMOTIVE_FORBID_LINXIAO", "SC6_AUTOMOTIVE_PREFERS_LINXIAO", "SC7_WEEKEND_AVOIDANCE"],
+    "harnessCasesTotal": 16,
+    "harnessCasesPass": 16,
+    "harnessCasesFail": 0,
+    "k22CVerifyPass": 17,
+    "k22CVerifyKnownFail": 0,
+    "k22CVerifyFail": 0,
+    "snapshotChanged": false,
+    "lintNewErrors": 0
+  },
+  "implementation": {
+    "scoreTsChanges": {
+      "newConstants": ["HC6_NON_AUTOMOTIVE_LINXIAO_PENALTY=-1000", "SC6_AUTOMOTIVE_NON_LINXIAO_PENALTY=-20", "SC7_WEEKEND_PENALTY=-15"],
+      "newHelpers": ["AUTOMOTIVE_KEYWORDS", "isLinxiaoRoomName", "classifySpecialty", "computeHC6Penalty", "computeSC6Penalty"],
+      "newFullScoreBlocks": ["HC6+SC6 per-slot loop after MINIMUM_PERTURBATION", "SC7 weekend loop after HC6/SC6"],
+      "newDeltaBlocks": ["HC6 before/after room check", "SC6 before/after room check", "SC7 before/after day check"],
+      "existingConstraintsUnchanged": true
+    },
+    "classification": {
+      "type": "SpecialtyClassification = AUTOMOTIVE_ONLY | NON_AUTOMOTIVE_ONLY | MIXED_AUTOMOTIVE_AND_NON_AUTOMOTIVE | NO_CLASSGROUP_AUX_AUTOMOTIVE_SIGNAL | UNKNOWN_NO_SIGNAL",
+      "primarySignal": "classGroupMembership",
+      "auxiliarySignals": ["courseName", "remark"],
+      "automotiveKeywords": ["汽车", "车辆", "新能源", "智能网联", "汽修"],
+      "linxiaoDetection": "strict keyword '林校' in room.name or room.building",
+      "conservativeForUnknown": true
+    }
+  },
+  "harnessCases": [
+    { "id": "AUTO_ONLY-LINXIAO", "category": "SC6", "expectedHard": 0, "expectedSoft": 0, "result": "PASS" },
+    { "id": "AUTO_ONLY-NON_LINXIAO", "category": "SC6", "expectedHard": 0, "expectedSoft": -20, "result": "PASS" },
+    { "id": "NON_AUTO-LINXIAO", "category": "HC6", "expectedHard": -1000, "expectedSoft": 0, "result": "PASS" },
+    { "id": "NON_AUTO-NON_LINXIAO", "category": "HC6", "expectedHard": 0, "expectedSoft": 0, "result": "PASS" },
+    { "id": "MIXED-LINXIAO", "category": "HC6", "expectedHard": -1000, "expectedSoft": 0, "result": "PASS", "note": "K22-F2A: MIXED in Linxiao = HC6" },
+    { "id": "MIXED-NON_LINXIAO", "category": "HC6", "expectedHard": 0, "expectedSoft": 0, "result": "PASS" },
+    { "id": "COURSE_NAME_AUTO-BUT-NON_AUTO_CLASS-LINXIAO", "category": "HC6", "expectedHard": -1000, "expectedSoft": 0, "result": "PASS", "note": "K22-F2A: courseName cannot override classGroup" },
+    { "id": "REMARK_AUTO-BUT-NON_AUTO_CLASS-LINXIAO", "category": "HC6", "expectedHard": -1000, "expectedSoft": 0, "result": "PASS", "note": "K22-F2A: remark cannot override classGroup" },
+    { "id": "NO_CLASSGROUP_AUX_AUTO_SIGNAL-LINXIAO", "category": "HC6", "expectedHard": -1000, "expectedSoft": 0, "result": "PASS" },
+    { "id": "UNKNOWN_NO_SIGNAL-LINXIAO", "category": "HC6", "expectedHard": -1000, "expectedSoft": 0, "result": "PASS" },
+    { "id": "SC7-WEEKEND", "category": "SC7", "expectedHard": 0, "expectedSoft": -15, "result": "PASS" },
+    { "id": "SC7-WEEKDAY", "category": "SC7", "expectedHard": 0, "expectedSoft": 0, "result": "PASS" },
+    { "id": "DELTA-AUTO-NON_LINXIAO-TO-LINXIAO", "category": "SC6_DELTA", "expectedDeltaHard": 0, "expectedDeltaSoft": 18, "result": "PASS", "note": "SC6 +20, MIN_PERT -2" },
+    { "id": "DELTA-NON_AUTO-NON_LINXIAO-TO-LINXIAO", "category": "HC6_DELTA", "expectedDeltaHard": -1000, "expectedDeltaSoft": -2, "result": "PASS", "note": "HC6 -1000, MIN_PERT -2" },
+    { "id": "DELTA-MIXED-NON_LINXIAO-TO-LINXIAO", "category": "HC6_DELTA", "expectedDeltaHard": -1000, "expectedDeltaSoft": -2, "result": "PASS", "note": "K22-F2A: MIXED deltaHard -1000, MIN_PERT -2" },
+    { "id": "DELTA-WEEKDAY-TO-WEEKEND", "category": "SC7_DELTA", "expectedDeltaHard": 0, "expectedDeltaSoft": -17, "result": "PASS", "note": "SC7 -15, MIN_PERT -2" }
+  ],
+  "k22CVerify": {
+    "pass": 17,
+    "knownFail": 0,
+    "fail": 0,
+    "blocking": "NO"
+  },
+  "snapshot": {
+    "changed": false,
+    "reason": "Default fixture has no tasks in Linxiao rooms, no AUTOMOTIVE_ONLY tasks, and all slots on weekdays. HC6/SC6/SC7 not triggered.",
+    "hardScore": 0,
+    "softScore": -11,
+    "breakdown": { "SC2_SAME_DAY": 1, "SC3_EXTREME_TIME_SLOT": 1 }
+  },
+  "unmodifiedScope": [
+    "Prisma schema",
+    "prisma/migrations",
+    "prisma/dev.db",
+    "solver algorithm",
+    "scheduler config API/UI",
+    "frontend",
+    "API routes",
+    "importer/parser",
+    "RBAC",
+    "seed/业务数据",
+    "SC5 teacher day balance",
+    "Department/Room.campus models",
+    "hardWeights/softWeights"
+  ],
+  "recommendedNextStage": "K22-F4-TEACHER-DAY-BALANCE-IMPL"
+}

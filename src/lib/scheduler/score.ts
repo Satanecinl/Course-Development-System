@@ -19,6 +19,9 @@ const SOFT_SC2_SAME_DAY = -10
 const SOFT_SC3_EXTREME_TIME = -1
 const SOFT_SC4_CROSS_CAMPUS = -5
 const SOFT_MINIMUM_PERTURBATION = -2
+const HC6_NON_AUTOMOTIVE_LINXIAO_PENALTY = -1000
+const SC6_AUTOMOTIVE_NON_LINXIAO_PENALTY = -20
+const SC7_WEEKEND_PENALTY = -15
 
 // ── 周次缓存 ──
 const weekSetCache = new Map<number, Set<number>>()
@@ -94,7 +97,59 @@ function isRoomAvailable(
   return true
 }
 
-// ── 核心评分函数 ──
+// ── HC6 / SC6 / SC7: 专业教室约束与周末约束 ──
+
+// K22-F2A: 汽车专业关键词（classGroup membership 为主信号，courseName/remark 为辅助）
+const AUTOMOTIVE_KEYWORDS = ['汽车', '车辆', '新能源', '智能网联', '汽修']
+
+/** 判断教室是否为林校 (K22-F2: strict keyword "林校" only) */
+function isLinxiaoRoomName(room: RoomWithAvailability): boolean {
+  if (room.name.includes('林校')) return true
+  if (room.building && room.building.includes('林校')) return true
+  return false
+}
+
+/**
+ * K22-F2A 5-class specialty classification.
+ * classGroup membership 是 primary hard-rule signal；courseName / remark 只是 auxiliary。
+ */
+type SpecialtyClassification =
+  | 'AUTOMOTIVE_ONLY'
+  | 'NON_AUTOMOTIVE_ONLY'
+  | 'MIXED_AUTOMOTIVE_AND_NON_AUTOMOTIVE'
+  | 'NO_CLASSGROUP_AUX_AUTOMOTIVE_SIGNAL'
+  | 'UNKNOWN_NO_SIGNAL'
+
+function classifySpecialty(task: TaskWithRelations): SpecialtyClassification {
+  const cgs = task.taskClasses.map(tc => tc.classGroup.name)
+  // Case 1: no classGroup membership at all
+  if (cgs.length === 0) {
+    const auxAuto =
+      (task.course?.name != null && AUTOMOTIVE_KEYWORDS.some(kw => task.course!.name.includes(kw))) ||
+      (task.remark != null && AUTOMOTIVE_KEYWORDS.some(kw => task.remark!.includes(kw)))
+    return auxAuto ? 'NO_CLASSGROUP_AUX_AUTOMOTIVE_SIGNAL' : 'UNKNOWN_NO_SIGNAL'
+  }
+  // Case 2: at least one classGroup exists — classGroup membership dominates
+  const anyAuto = cgs.some(n => AUTOMOTIVE_KEYWORDS.some(kw => n.includes(kw)))
+  const anyNonAuto = cgs.some(n => !AUTOMOTIVE_KEYWORDS.some(kw => n.includes(kw)))
+  if (anyAuto && anyNonAuto) return 'MIXED_AUTOMOTIVE_AND_NON_AUTOMOTIVE'
+  if (anyAuto) return 'AUTOMOTIVE_ONLY'
+  return 'NON_AUTOMOTIVE_ONLY'
+}
+
+/** 计算 HC6 penalty: 非汽车专业/混合/未知任务在 Linxiao 教室 */
+function computeHC6Penalty(cls: SpecialtyClassification, isLx: boolean): number {
+  if (!isLx) return 0
+  if (cls === 'AUTOMOTIVE_ONLY') return 0
+  return HC6_NON_AUTOMOTIVE_LINXIAO_PENALTY
+}
+
+/** 计算 SC6 penalty: 汽车专业任务不在 Linxiao 教室 */
+function computeSC6Penalty(cls: SpecialtyClassification, isLx: boolean): number {
+  if (cls !== 'AUTOMOTIVE_ONLY') return 0
+  if (isLx) return 0
+  return SC6_AUTOMOTIVE_NON_LINXIAO_PENALTY
+}
 
 /**
  * 全量计算分数，返回带详情的结果
@@ -311,6 +366,48 @@ export function calculateScoreWithDetails(
     }
   }
 
+  // ── HC6 / SC6: 专业教室约束 (K22-F2A classification) ──
+  // classGroup membership 是 primary hard-rule signal；courseName/remark 只是 auxiliary
+  for (const p of positions) {
+    if (p.room === 0) continue
+    const room = ctx.roomById.get(p.room)
+    if (!room) continue
+    const cls = classifySpecialty(p.slot.teachingTask)
+    const isLx = isLinxiaoRoomName(room)
+    // HC6: 非汽车专业/混合/未知任务在 Linxiao 教室 → hard penalty
+    const hc6 = computeHC6Penalty(cls, isLx)
+    if (hc6 !== 0) {
+      hardScore += hc6
+      details.push({
+        type: 'HC6_NON_AUTOMOTIVE_FORBID_LINXIAO', level: 'HARD', penalty: hc6,
+        slotId: p.slot.id,
+        message: `林校教室限制: ${p.slot.teachingTask.course?.name ?? '?'} (分类: ${cls}) 不可在林校教室 ${room.name}`,
+      })
+    }
+    // SC6: 汽车专业任务不在 Linxiao 教室 → soft penalty
+    const sc6 = computeSC6Penalty(cls, isLx)
+    if (sc6 !== 0) {
+      softScore += sc6
+      details.push({
+        type: 'SC6_AUTOMOTIVE_PREFERS_LINXIAO', level: 'SOFT', penalty: sc6,
+        slotId: p.slot.id,
+        message: `汽车专业优先林校: ${p.slot.teachingTask.course?.name ?? '?'} 在非林校教室 ${room.name}`,
+      })
+    }
+  }
+
+  // ── SC7: 周末一般不排课 (K22-F3) ──
+  for (const p of positions) {
+    if (p.day >= 6) {
+      softScore += SC7_WEEKEND_PENALTY
+      details.push({
+        type: 'SC7_WEEKEND_AVOIDANCE', level: 'SOFT', penalty: SC7_WEEKEND_PENALTY,
+        slotId: p.slot.id,
+        message: `周末排课: ${p.slot.teachingTask.course?.name ?? '?'} 在周${p.day === 6 ? '六' : '日'}第${p.idx}节`,
+      })
+    }
+  }
+
   return { hardScore, softScore, details }
 }
 
@@ -501,6 +598,42 @@ export function calculateDeltaScore(
     if (wasMoved && !nowMoved) deltaSoft -= SOFT_MINIMUM_PERTURBATION
     if (!wasMoved && nowMoved) deltaSoft += SOFT_MINIMUM_PERTURBATION
   }
+
+  // HC6 / SC6: 专业教室约束 delta (K22-F2A classification)
+  // classifySpecialty depends only on task (stable), not on room/day. Compute once.
+  const cls = classifySpecialty(task)
+
+  // HC6 delta: 非汽车专业/混合/未知任务在 Linxiao 教室
+  if (old.roomId !== 0) {
+    const oldRoom = ctx.roomById.get(old.roomId)
+    if (oldRoom && computeHC6Penalty(cls, isLinxiaoRoomName(oldRoom)) !== 0) {
+      deltaHard -= HC6_NON_AUTOMOTIVE_LINXIAO_PENALTY // 移出旧位置的 HC6 违规
+    }
+  }
+  if (move.newRoomId !== 0) {
+    const newRoom = ctx.roomById.get(move.newRoomId)
+    if (newRoom && computeHC6Penalty(cls, isLinxiaoRoomName(newRoom)) !== 0) {
+      deltaHard += HC6_NON_AUTOMOTIVE_LINXIAO_PENALTY // 新位置引入 HC6 违规
+    }
+  }
+
+  // SC6 delta: 汽车专业任务不在 Linxiao 教室
+  if (old.roomId !== 0) {
+    const oldRoom = ctx.roomById.get(old.roomId)
+    if (oldRoom && computeSC6Penalty(cls, isLinxiaoRoomName(oldRoom)) !== 0) {
+      deltaSoft -= SC6_AUTOMOTIVE_NON_LINXIAO_PENALTY // 移出旧位置的 SC6 违规
+    }
+  }
+  if (move.newRoomId !== 0) {
+    const newRoom = ctx.roomById.get(move.newRoomId)
+    if (newRoom && computeSC6Penalty(cls, isLinxiaoRoomName(newRoom)) !== 0) {
+      deltaSoft += SC6_AUTOMOTIVE_NON_LINXIAO_PENALTY // 新位置引入 SC6 违规
+    }
+  }
+
+  // SC7 delta: 周末一般不排课
+  if (old.dayOfWeek >= 6) deltaSoft -= SC7_WEEKEND_PENALTY
+  if (move.newDay >= 6) deltaSoft += SC7_WEEKEND_PENALTY
 
   return { deltaHard, deltaSoft }
 }
