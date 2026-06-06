@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-06-06T11:32:03.339Z",
+  "generatedAt": "2026-06-06T15:07:28.044Z",
   "phase": "K22-C-SCORE-REGRESSION-HARNESS-IMPLEMENTATION",
   "mode": "read-only, db-free, synthetic-fixture score regression harness",
   "summary": {
-    "total": 37,
-    "pass": 37,
+    "total": 49,
+    "pass": 49,
     "knownFail": 0,
     "fail": 0,
     "info": 0,
@@ -362,6 +362,134 @@
       "title": "SC5 delta: 1,5 → softΔ=0",
       "status": "PASS",
       "detail": "deltaHard=0, deltaSoft=0"
+    },
+    {
+      "id": "H1-NO-GAP-1_2_3",
+      "harness": "H",
+      "title": "SC8 full: {1,2,3} no gap → SC8 0 (only SC8 verified)",
+      "status": "PASS",
+      "detail": "hard=0 (expect 0); total soft=0 (expect 0); SC8 count=0 (expect 0); SC8 sum=0 (expect 0)",
+      "evidence": [
+        "3 separate tasks, teacherId=null, periods {1,2,3} on day 1 for classGroup 100. SC2 skip (count=1 each). SC5 skip (no teacher). SC8: {1,2,3} no gap, 0. Total = 0. SC8 details = 0.",
+        "Full breakdown: (none)"
+      ]
+    },
+    {
+      "id": "H2-SINGLE-GAP-1_3",
+      "harness": "H",
+      "title": "SC8 full: {1,3} single gap → SC8 -2 (SC8-only contribution)",
+      "status": "PASS",
+      "detail": "hard=0 (expect 0); total soft=-2 (expect -2); SC8 count=1 (expect 1); SC8 sum=-2 (expect -2)",
+      "evidence": [
+        "2 separate tasks, teacherId=null, periods {1,3} on day 1. SC2 skip. SC5 skip. SC8: {1,3} gap=1, -2. Total = -2. SC8 details = 1, sum = -2.",
+        "Full breakdown: SC8_CLASS_GAP=-2"
+      ]
+    },
+    {
+      "id": "H3-MULTI-GAP-1_4",
+      "harness": "H",
+      "title": "SC8 full: {1,4} multi gap → SC8 -4 (SC8-only contribution)",
+      "status": "PASS",
+      "detail": "hard=0 (expect 0); total soft=-4 (expect -4); SC8 count=1 (expect 1); SC8 sum=-4 (expect -4)",
+      "evidence": [
+        "2 separate tasks, teacherId=null, periods {1,4} on day 1. SC2 skip. SC5 skip. SC8: {1,4} gap=2, -4. Total = -4. SC8 details = 1, sum = -4.",
+        "Full breakdown: SC8_CLASS_GAP=-4"
+      ]
+    },
+    {
+      "id": "H4-MULTI-SEGMENT-1_3_5",
+      "harness": "H",
+      "title": "SC8 full: {1,3,5} multi segment → SC8 -4, SC3 -1 also fires (component assertion)",
+      "status": "PASS",
+      "detail": "hard=0 (expect 0); total soft=-5 (expect -5); SC8 count=1 (expect 1); SC8 sum=-4 (expect -4)",
+      "evidence": [
+        "3 separate tasks, teacherId=null, periods {1,3,5} on day 1. SC2 skip. SC5 skip. SC3 fires on period 5 = -1. SC8: {1,3,5} gaps 1+1=2, -4. Total = -5, SC8 = -4. Component assertion: SC8 details sum = -4.",
+        "Full breakdown: SC3_EXTREME_TIME_SLOT=-1, SC8_CLASS_GAP=-4"
+      ]
+    },
+    {
+      "id": "H5-SINGLE-LESSON-SKIP",
+      "harness": "H",
+      "title": "SC8 full: {1} single lesson → SC8 skip (size<2)",
+      "status": "PASS",
+      "detail": "hard=0 (expect 0); total soft=0 (expect 0); SC8 count=0 (expect 0); SC8 sum=0 (expect 0)",
+      "evidence": [
+        "1 task, 1 slot. SC2 skip (count=1). SC5 skip. SC8: {1} size<2 skip, 0 details. Total = 0. SC8 details = 0.",
+        "Full breakdown: (none)"
+      ]
+    },
+    {
+      "id": "H6-WEEKEND-SKIP",
+      "harness": "H",
+      "title": "SC8 full: day 6 → SC8 skip (SC7 owns; component assertion verifies SC8=0)",
+      "status": "PASS",
+      "detail": "hard=0 (expect 0); total soft=-15 (expect -15); SC8 count=0 (expect 0); SC8 sum=0 (expect 0)",
+      "evidence": [
+        "1 task on day 6. SC2 skip. SC5 skip. SC7 fires (weekend) = -15. SC8: day 6 >= 6, skip, 0 details. Total = -15, SC8 = 0. Component assertion: SC8 absent.",
+        "Full breakdown: SC7_WEEKEND_AVOIDANCE=-15"
+      ]
+    },
+    {
+      "id": "H7-ROOM-ZERO-SKIP",
+      "harness": "H",
+      "title": "SC8 full: room=0 skip → only period 1 counted, size<2 → SC8 0",
+      "status": "PASS",
+      "detail": "hard=0 (expect 0); total soft=0 (expect 0); SC8 count=0 (expect 0); SC8 sum=0 (expect 0)",
+      "evidence": [
+        "2 separate tasks, teacherId=null. Period 3 has roomId=0 (unscheduled). SC2 skip. SC5 skip. SC8: only period 1 counted, size<2, 0. Total = 0. SC8 details = 0.",
+        "Full breakdown: (none)"
+      ]
+    },
+    {
+      "id": "H8-MULTI-CLASSGROUP-MERGED",
+      "harness": "H",
+      "title": "SC8 full: merged A(cg{1,2},p1) + B(cg{1},p3) + C(cg{2},p5) → SC8 -8, SC3 -1 also fires (component assertion)",
+      "status": "PASS",
+      "detail": "hard=0 (expect 0); total soft=-9 (expect -9); SC8 count=2 (expect 2); SC8 sum=-8 (expect -8)",
+      "evidence": [
+        "3 separate tasks, teacherId=null, merged A(cg{1,2},p1) + B(cg{1},p3) + C(cg{2},p5). SC2 skip. SC5 skip. SC3 fires on period 5 = -1. SC8: cg1 {1,3} gap=1 → -2; cg2 {1,5} gap=3 → -6. Total SC8 = -8 (2 details). Total = -9, SC8 = -8. Component assertion: SC8 details count = 2, sum = -8.",
+        "Full breakdown: SC3_EXTREME_TIME_SLOT=-1, SC8_CLASS_GAP=-2, SC8_CLASS_GAP=-6"
+      ]
+    },
+    {
+      "id": "H9-DELTA-REDUCE-GAP",
+      "harness": "H",
+      "title": "SC8 delta: {1,3}→{1,2} reduce gap, deltaSoft=+2 (SC8-only)",
+      "status": "PASS",
+      "detail": "deltaHard=0 (expect 0); deltaSoft=2 (expect 2); SC8 component delta=2 (expect 2); SC8 details: before count=1 sum=-2, after count=0 sum=0",
+      "evidence": [
+        "Before: {1,3} gap=1, SC8=-2. After: {1,2} no gap, SC8=0. SC8 delta=+2. Other deltas 0 (teacherId=null, 1 slot/task, weekday). MIN_PERT=0 (3rd-position). Total = +2."
+      ]
+    },
+    {
+      "id": "H10-DELTA-INTRODUCE-GAP",
+      "harness": "H",
+      "title": "SC8 delta: {1,2}→{1,3} introduce gap, deltaSoft=-2 (SC8-only)",
+      "status": "PASS",
+      "detail": "deltaHard=0 (expect 0); deltaSoft=-2 (expect -2); SC8 component delta=-2 (expect -2); SC8 details: before count=0 sum=0, after count=1 sum=-2",
+      "evidence": [
+        "Before: {1,2} no gap, SC8=0. After: {1,3} gap=1, SC8=-2. SC8 delta=-2. Other deltas 0. Total = -2."
+      ]
+    },
+    {
+      "id": "H11-DELTA-MOVE-CROSS-DAY-WEEKDAY",
+      "harness": "H",
+      "title": "SC8 delta: {1,3} day 1 → day 2 (cross-day weekday, no weekend/SC2/SC5/SC7) → deltaSoft=+2",
+      "status": "PASS",
+      "detail": "deltaHard=0 (expect 0); deltaSoft=2 (expect 2); SC8 component delta=2 (expect 2); SC8 details: before count=1 sum=-2, after count=0 sum=0",
+      "evidence": [
+        "Before: cg day 1 {1,3} gap=1, SC8=-2. After: day 1 {1} size<2 skip; day 2 {1} size<2 skip. SC8 delta = +2. All other deltas 0. Total = +2. (F6A variant: cross-day weekday to fully isolate SC8 from SC2/SC7.)"
+      ]
+    },
+    {
+      "id": "H12-DELTA-MULTI-CLASSGROUP",
+      "harness": "H",
+      "title": "SC8 delta: merged A(cg{1,2},p1)→p2 with B(cg{1},p3) → deltaSoft=+4 (SC8-only)",
+      "status": "PASS",
+      "detail": "deltaHard=0 (expect 0); deltaSoft=4 (expect 4); SC8 component delta=4 (expect 4); SC8 details: before count=2 sum=-8, after count=1 sum=-4",
+      "evidence": [
+        "Before: cg1 {1,3} gap=1 → SC8=-2; cg2 {1,5} gap=3 → SC8=-6. After: cg1 {2,3} no gap → SC8=0; cg2 {2,5} gap=2 → SC8=-4. SC8 delta cg1 = +2, cg2 = +2. Total SC8 = +4. Other deltas 0. Total = +4."
+      ]
     }
   ]
 }

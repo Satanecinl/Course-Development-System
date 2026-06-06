@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-06T14:30:00.000Z",
-  "phase": "K22-F6-CLASS-GAP-REDUCTION-IMPL",
-  "mode": "implementation + regression harness extension",
+  "generatedAt": "2026-06-06T15:00:00.000Z",
+  "phase": "K22-F6-CLASS-GAP-REDUCTION-IMPL + K22-F6A-HARNESS-ISOLATION",
+  "mode": "implementation + isolated regression harness",
   "summary": {
     "k22CSummary": {
       "pass": 49,
@@ -18,6 +18,7 @@
       "fail": 0,
       "total": 12
     },
+    "f6AIsolated": true,
     "f5AuditReaffirmed": {
       "high": 0,
       "medium": 1,
@@ -27,7 +28,8 @@
       "blocking": false
     },
     "predecessor": "K22-F5-CLASS-GAP-REDUCTION-AUDIT",
-    "predecessorCommit": "82acea9"
+    "predecessorCommit": "82acea9",
+    "implementationCommit": "17bfea0"
   },
   "constraintId": "SC8_CLASS_GAP_REDUCTION",
   "constraintName": "班级空洞减少",
@@ -65,34 +67,50 @@
     "localComputation": "O(affectedKeys × ctx.slots) — does not re-evaluate all classGroup-day pairs",
     "minPertIsolation": "3rd-position originalAssignments = {dayOfWeek: 9, slotIndex: 1, roomId: 999} in harness"
   },
+  "f6AIsolationStrategy": {
+    "teacherId": "teacherId=null on all tasks → SC5 skips (no teacher)",
+    "taskGranularity": "1 slot per task (separate tasks per period) → SC2 skips (no same-day multi per task)",
+    "weekdayOnlyForDelta": "Delta cases use weekday targets → SC7 doesn't fire",
+    "minPertIsolation": "3rd-position originalAssignments → MIN_PERT net 0",
+    "componentAssertion": "Cases that must trigger SC3 (period 5) or SC7 (day 6) use component-level assertion: total soft + SC8 details count + SC8 sum, both verified"
+  },
   "harnessHCases": [
-    { "id": "H1-NO-GAP-1_2_3", "type": "full", "title": "{1,2,3} no gap", "expectedSoft": -23, "expectedSoftBreakdown": "SC2 -20 (1 task 3 same-day) + SC5 -3 (teacher 3 slots day 1)" },
-    { "id": "H2-SINGLE-GAP-1_3", "type": "full", "title": "{1,3} single gap", "expectedSoft": -12, "expectedSoftBreakdown": "SC2 -10 + SC8 -2" },
-    { "id": "H3-MULTI-GAP-1_4", "type": "full", "title": "{1,4} multi gap", "expectedSoft": -14, "expectedSoftBreakdown": "SC2 -10 + SC8 -4" },
-    { "id": "H4-MULTI-SEGMENT-1_3_5", "type": "full", "title": "{1,3,5} multi segment", "expectedSoft": -28, "expectedSoftBreakdown": "SC2 -20 + SC3 -1 + SC5 -3 + SC8 -4" },
-    { "id": "H5-SINGLE-LESSON-SKIP", "type": "full", "title": "{1} single lesson", "expectedSoft": 0, "expectedSoftBreakdown": "SC8 skip (size<2)" },
-    { "id": "H6-WEEKEND-SKIP", "type": "full", "title": "day 6 {1,3}", "expectedSoft": -40, "expectedSoftBreakdown": "SC2 -10 + SC7 -30 (SC8 skip weekend)" },
-    { "id": "H7-ROOM-ZERO-SKIP", "type": "full", "title": "1 scheduled + 1 room=0", "expectedSoft": 0, "expectedSoftBreakdown": "room=0 skip, 2 separate tasks each count=1" },
-    { "id": "H8-MULTI-CLASSGROUP-MERGED", "type": "full", "title": "merged A(cg{1,2},p1) + B(cg{1},p3) + C(cg{2},p5)", "expectedSoft": -9, "expectedSoftBreakdown": "SC3 -1 + SC8 -8 (cg1 -2, cg2 -6)" },
-    { "id": "H9-DELTA-REDUCE-GAP", "type": "delta", "title": "{1,3}→{1,2} reduce gap", "expectedDeltaSoft": 2, "expectedDeltaSoftBreakdown": "SC8 +2" },
-    { "id": "H10-DELTA-INTRODUCE-GAP", "type": "delta", "title": "{1,2}→{1,3} introduce gap", "expectedDeltaSoft": -2, "expectedDeltaSoftBreakdown": "SC8 -2" },
-    { "id": "H11-DELTA-MOVE-TO-WEEKEND", "type": "delta", "title": "day 1 → day 6", "expectedDeltaSoft": -3, "expectedDeltaSoftBreakdown": "SC8 +2 + SC2 +10 + SC7 -15" },
-    { "id": "H12-DELTA-MULTI-CLASSGROUP", "type": "delta", "title": "merged A p1→p2", "expectedDeltaSoft": 4, "expectedDeltaSoftBreakdown": "SC8 cg1 +2 + SC8 cg2 +2" }
+    { "id": "H1-NO-GAP-1_2_3", "type": "full", "title": "{1,2,3} no gap", "expectedTotalSoft": 0, "expectedSC8Soft": 0, "expectedSC8Count": 0, "isolation": "3 separate tasks, teacherId=null. SC2/SC3/SC5/SC7 all skip." },
+    { "id": "H2-SINGLE-GAP-1_3", "type": "full", "title": "{1,3} single gap", "expectedTotalSoft": -2, "expectedSC8Soft": -2, "expectedSC8Count": 1, "isolation": "2 separate tasks, teacherId=null. SC2/SC5 skip. SC8 = -2 = total." },
+    { "id": "H3-MULTI-GAP-1_4", "type": "full", "title": "{1,4} multi gap", "expectedTotalSoft": -4, "expectedSC8Soft": -4, "expectedSC8Count": 1, "isolation": "2 separate tasks, teacherId=null. SC2/SC5 skip. SC8 = -4 = total." },
+    { "id": "H4-MULTI-SEGMENT-1_3_5", "type": "full", "title": "{1,3,5} multi segment", "expectedTotalSoft": -5, "expectedSC8Soft": -4, "expectedSC8Count": 1, "isolation": "3 separate tasks, teacherId=null. SC3 fires (period 5) = -1. SC8 = -4. Component assertion." },
+    { "id": "H5-SINGLE-LESSON-SKIP", "type": "full", "title": "{1} single lesson", "expectedTotalSoft": 0, "expectedSC8Soft": 0, "expectedSC8Count": 0, "isolation": "1 task, 1 slot. SC2/SC5 skip. SC8: size<2 skip." },
+    { "id": "H6-WEEKEND-SKIP", "type": "full", "title": "day 6", "expectedTotalSoft": -15, "expectedSC8Soft": 0, "expectedSC8Count": 0, "isolation": "1 task on day 6. SC7 fires = -15. SC8: day>=6 skip. Component assertion verifies SC8 absent." },
+    { "id": "H7-ROOM-ZERO-SKIP", "type": "full", "title": "1 scheduled + 1 room=0", "expectedTotalSoft": 0, "expectedSC8Soft": 0, "expectedSC8Count": 0, "isolation": "2 separate tasks. Period 3 has roomId=0. SC8: only period 1, size<2 skip." },
+    { "id": "H8-MULTI-CLASSGROUP-MERGED", "type": "full", "title": "merged A(cg{1,2},p1) + B(cg{1},p3) + C(cg{2},p5)", "expectedTotalSoft": -9, "expectedSC8Soft": -8, "expectedSC8Count": 2, "isolation": "3 separate tasks, teacherId=null. SC3 fires (period 5) = -1. SC8: cg1 -2, cg2 -6. Total SC8 = -8. Component assertion verifies 2 details." },
+    { "id": "H9-DELTA-REDUCE-GAP", "type": "delta", "title": "{1,3}→{1,2} reduce gap", "expectedDeltaSoft": 2, "expectedSC8Delta": 2, "isolation": "SC8-only delta via teacherId=null + 1 slot/task + weekday. MIN_PERT 3rd-position." },
+    { "id": "H10-DELTA-INTRODUCE-GAP", "type": "delta", "title": "{1,2}→{1,3} introduce gap", "expectedDeltaSoft": -2, "expectedSC8Delta": -2, "isolation": "SC8-only delta via teacherId=null + 1 slot/task + weekday. MIN_PERT 3rd-position." },
+    { "id": "H11-DELTA-MOVE-CROSS-DAY-WEEKDAY", "type": "delta", "title": "day 1 → day 2 (F6A redesign from move-to-weekend)", "expectedDeltaSoft": 2, "expectedSC8Delta": 2, "isolation": "Cross-day weekday to fully isolate from SC2/SC7. SC8-only delta." },
+    { "id": "H12-DELTA-MULTI-CLASSGROUP", "type": "delta", "title": "merged A p1→p2 with B at p3", "expectedDeltaSoft": 4, "expectedSC8Delta": 4, "isolation": "SC8-only delta: cg1 +2 + cg2 +2 = +4. teacherId=null + 1 slot/task + weekday. MIN_PERT 3rd-position." }
   ],
   "f6WrapperCases": [
-    { "id": "SC8-FULL-1", "type": "full", "expectedSoft": -23 },
-    { "id": "SC8-FULL-2", "type": "full", "expectedSoft": -12 },
-    { "id": "SC8-FULL-3", "type": "full", "expectedSoft": -14 },
-    { "id": "SC8-FULL-4", "type": "full", "expectedSoft": -28 },
-    { "id": "SC8-FULL-5", "type": "full", "expectedSoft": 0 },
-    { "id": "SC8-FULL-6", "type": "full", "expectedSoft": -40 },
-    { "id": "SC8-FULL-7", "type": "full", "expectedSoft": 0 },
-    { "id": "SC8-FULL-8", "type": "full", "expectedSoft": -9 },
-    { "id": "SC8-DELTA-1", "type": "delta", "expectedDeltaSoft": 2 },
-    { "id": "SC8-DELTA-2", "type": "delta", "expectedDeltaSoft": -2 },
-    { "id": "SC8-DELTA-3", "type": "delta", "expectedDeltaSoft": -3 },
-    { "id": "SC8-DELTA-4", "type": "delta", "expectedDeltaSoft": 4 }
+    { "id": "SC8-CLASS-GAP-NO-GAP-1_2_3", "type": "full", "expectedTotalSoft": 0, "expectedSC8Soft": 0, "expectedSC8Count": 0 },
+    { "id": "SC8-CLASS-GAP-SINGLE-GAP-1_3", "type": "full", "expectedTotalSoft": -2, "expectedSC8Soft": -2, "expectedSC8Count": 1 },
+    { "id": "SC8-CLASS-GAP-MULTI-GAP-1_4", "type": "full", "expectedTotalSoft": -4, "expectedSC8Soft": -4, "expectedSC8Count": 1 },
+    { "id": "SC8-CLASS-GAP-MULTI-SEGMENT-1_3_5", "type": "full", "expectedTotalSoft": -5, "expectedSC8Soft": -4, "expectedSC8Count": 1 },
+    { "id": "SC8-CLASS-GAP-SINGLE-LESSON-SKIP", "type": "full", "expectedTotalSoft": 0, "expectedSC8Soft": 0, "expectedSC8Count": 0 },
+    { "id": "SC8-CLASS-GAP-WEEKEND-SKIP", "type": "full", "expectedTotalSoft": -15, "expectedSC8Soft": 0, "expectedSC8Count": 0 },
+    { "id": "SC8-CLASS-GAP-ROOM_ZERO-SKIP", "type": "full", "expectedTotalSoft": 0, "expectedSC8Soft": 0, "expectedSC8Count": 0 },
+    { "id": "SC8-CLASS-GAP-MULTI-CLASSGROUP", "type": "full", "expectedTotalSoft": -9, "expectedSC8Soft": -8, "expectedSC8Count": 2 },
+    { "id": "SC8-DELTA-REDUCE-GAP-1_3-TO-1_2", "type": "delta", "expectedDeltaSoft": 2, "expectedSC8Delta": 2 },
+    { "id": "SC8-DELTA-INTRODUCE-GAP-1_2-TO-1_3", "type": "delta", "expectedDeltaSoft": -2, "expectedSC8Delta": -2 },
+    { "id": "SC8-DELTA-MOVE-CROSS-DAY-WEEKDAY", "type": "delta", "expectedDeltaSoft": 2, "expectedSC8Delta": 2 },
+    { "id": "SC8-DELTA-MULTI-CLASSGROUP", "type": "delta", "expectedDeltaSoft": 4, "expectedSC8Delta": 4 }
   ],
+  "f6ACorrectionsFromF6": {
+    "H1": "soft=-23 (mixed) → total=0, SC8=0 (SC8-only verified via isolation)",
+    "H2": "soft=-12 (mixed) → total=-2, SC8=-2 (SC8-only)",
+    "H3": "soft=-14 (mixed) → total=-4, SC8=-4 (SC8-only)",
+    "H4": "soft=-28 (mixed) → total=-5, SC8=-4 (SC3 -1 also fires, component assertion)",
+    "H6": "soft=-40 (mixed) → total=-15, SC8=0 (SC7 -15 also fires, component assertion)",
+    "H8": "soft=-9 (kept) but added component assertion: SC8 count=2, sum=-8",
+    "H11": "soft=-3 (mixed SC8+SC2+SC7) → redesigned to cross-day weekday, total=+2, SC8=+2 (SC8-only)"
+  },
   "defaultSnapshot": {
     "changed": false,
     "reason": "Default fixture (3 rooms, 3 tasks, 4 slots) has no (classGroup, day) key with size >= 2 and a gap. classGroup 1 has {1,2} (no gap), classGroup 2 has {1} (size<2), classGroup 3 has {5} (size<2). SC8 does not fire.",
@@ -106,14 +124,30 @@
       }
     }
   },
-  "filesModified": [
-    "src/lib/scheduler/score.ts",
-    "scripts/verify-score-regression-harness-k22-c.ts"
-  ],
-  "filesCreated": [
+  "filesModifiedF6A": [
     "scripts/verify-class-gap-reduction-constraint-k22-f6.ts",
+    "scripts/verify-score-regression-harness-k22-c.ts",
     "docs/k22-class-gap-reduction-constraint-impl.md",
-    "docs/k22-class-gap-reduction-constraint-impl.json"
+    "docs/k22-class-gap-reduction-constraint-impl.json",
+    "docs/k22-score-regression-harness-implementation.md"
+  ],
+  "filesUnmodifiedF6A": [
+    "src/lib/scheduler/score.ts (no SC8 implementation bug found by isolation tests)",
+    "prisma/schema.prisma",
+    "prisma/migrations/**",
+    "prisma/dev.db",
+    "solver algorithm",
+    "solver move generation",
+    "scheduler config API/UI",
+    "frontend",
+    "API routes",
+    "importer",
+    "parser",
+    "RBAC",
+    "seed",
+    "business data",
+    "hardWeights/softWeights",
+    "other soft constraints (SC1-7 unchanged)"
   ],
   "unmodifiedScope": [
     "prisma/schema.prisma",
@@ -130,7 +164,8 @@
     "seed",
     "business data",
     "hardWeights/softWeights",
-    "other soft constraints (SC1-7 unchanged)"
+    "other soft constraints (SC1-7 unchanged)",
+    "src/lib/scheduler/score.ts (no F6A-driven changes)"
   ],
   "recommendedNextStage": "K22-F7-CLASSROOM-STABILITY-AUDIT"
 }

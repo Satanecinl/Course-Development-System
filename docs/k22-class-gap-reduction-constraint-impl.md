@@ -2,13 +2,30 @@
 
 | Field | Value |
 |---|---|
-| Phase | K22-F6-CLASS-GAP-REDUCTION-IMPL |
-| Type | Implementation (SC8 in score.ts + K22-C regression harness extension) |
+| Phase | K22-F6-CLASS-GAP-REDUCTION-IMPL + K22-F6A-HARNESS-ISOLATION |
+| Type | Implementation (SC8 in score.ts) + isolated regression harness (F6A) |
 | Generated | 2026-06-06 |
 | Predecessor | K22-F5-CLASS-GAP-REDUCTION-AUDIT (commit `82acea9`) |
-| Verify wrapper | `scripts/verify-class-gap-reduction-constraint-k22-f6.ts` |
-| K22-C harness | `scripts/verify-score-regression-harness-k22-c.ts` (Harness H, 12 cases) |
+| Implementation commit | `17bfea0 feat(scheduler): implement SC8 class gap reduction constraint` |
+| Verify wrapper | `scripts/verify-class-gap-reduction-constraint-k22-f6.ts` (12 cases, all isolated) |
+| K22-C harness | `scripts/verify-score-regression-harness-k22-c.ts` (Harness H, 12 cases, all isolated) |
 | K22-C summary | 49 PASS / 0 KNOWN_FAIL / 0 FAIL / 0 INFO (was 37 / 0 / 0 / 0 before F6) |
+
+---
+
+## 0. F6A Harness Isolation Notes
+
+K22-F6A (this update) corrected F6 harness isolation issues. The original F6 cases mixed SC2/SC3/SC5/SC7 contributions into aggregate `expectedSoft` values, which made SC8 regression detection less precise.
+
+**Isolation strategy** (applied to both F6 wrapper and K22-C Harness H):
+- **`teacherId=null` on all tasks** → SC5 skips (no teacher → skip)
+- **1 slot per task (separate tasks per period)** → SC2 skips (no same-day multi per task)
+- **Periods < 5 except where SC3 contribution is expected** → SC3 only fires on periods 5+ and is verified separately via component assertion
+- **Weekday-only moves for delta cases** → SC7 only fires for day >= 6; isolated by avoiding weekend targets
+- **3rd-position `originalAssignments = {dayOfWeek: 9, slotIndex: 1, roomId: 999}`** → MIN_PERT net 0 (K22-F3/F4 pattern)
+- **Component-level assertion** for cases where SC3 or SC7 must fire (H4, H6, H8): each case asserts BOTH `total soft` AND `SC8_CLASS_GAP details count + sum`
+
+**Corrected expected values** (H1-H8 + H9-H12): see updated tables in section 6 and 7 below.
 
 ---
 
@@ -220,42 +237,59 @@ if (classGroupIds.length > 0) {
 
 ---
 
-## 6. K22-C Harness H (12 cases)
+## 6. K22-C Harness H (12 cases, F6A isolated)
 
-| ID | Title | Expected |
-|---|---|---|
-| H1-NO-GAP-1_2_3 | {1,2,3} no gap, 1 task | soft=-23 (SC2 -20, SC5 -3, SC8 0) |
-| H2-SINGLE-GAP-1_3 | {1,3} single gap | soft=-12 (SC2 -10, SC8 -2) |
-| H3-MULTI-GAP-1_4 | {1,4} multi gap | soft=-14 (SC2 -10, SC8 -4) |
-| H4-MULTI-SEGMENT-1_3_5 | {1,3,5} multi segment | soft=-28 (SC2 -20, SC3 -1, SC5 -3, SC8 -4) |
-| H5-SINGLE-LESSON-SKIP | {1} single period | soft=0 (size<2 skip) |
-| H6-WEEKEND-SKIP | day 6, {1,3} | soft=-40 (SC2 -10, SC7 -30, SC8 0) |
-| H7-ROOM-ZERO-SKIP | 1 scheduled + 1 room=0 | soft=0 (room=0 skip + 2 tasks count=1) |
-| H8-MULTI-CLASSGROUP-MERGED | merged-class A(cg{1,2},p1) + B(cg{1},p3) + C(cg{2},p5) | soft=-9 (SC3 -1, SC8 -8) |
-| H9-DELTA-REDUCE-GAP | {1,3}→{1,2} reduce gap | deltaSoft=+2 |
-| H10-DELTA-INTRODUCE-GAP | {1,2}→{1,3} introduce gap | deltaSoft=-2 |
-| H11-DELTA-MOVE-TO-WEEKEND | day 1 → day 6 | deltaSoft=-3 (SC8 +2, SC2 +10, SC7 -15) |
-| H12-DELTA-MULTI-CLASSGROUP | merged-class A p1→p2 with B at p3 | deltaSoft=+4 (cg1 +2, cg2 +2) |
+K22-F6A isolation: `teacherId=null` + 1 slot per task + weekday-only for delta + component assertion for cases that must trigger SC3/SC7.
+
+| ID | Title | Total Soft | SC8 Sum | SC8 Count | Note |
+|---|---|---:|---:|---:|---|
+| H1-NO-GAP-1_2_3 | {1,2,3} no gap | 0 | 0 | 0 | 3 separate tasks, teacherId=null. SC8 only, others skip. |
+| H2-SINGLE-GAP-1_3 | {1,3} single gap | -2 | -2 | 1 | SC8-only contribution. |
+| H3-MULTI-GAP-1_4 | {1,4} multi gap | -4 | -4 | 1 | SC8-only contribution. |
+| H4-MULTI-SEGMENT-1_3_5 | {1,3,5} multi segment | -5 | -4 | 1 | Component: SC3 -1 also fires. SC8 = -4. |
+| H5-SINGLE-LESSON-SKIP | {1} single period | 0 | 0 | 0 | size<2 skip. |
+| H6-WEEKEND-SKIP | day 6 | -15 | 0 | 0 | Component: SC7 -15 (1 weekend slot). SC8 absent. |
+| H7-ROOM-ZERO-SKIP | 1 scheduled + 1 room=0 | 0 | 0 | 0 | room=0 skip. |
+| H8-MULTI-CLASSGROUP-MERGED | merged A(cg{1,2},p1) + B(cg{1},p3) + C(cg{2},p5) | -9 | -8 | 2 | Component: SC3 -1 also fires. SC8 = -8 (cg1 -2, cg2 -6). |
+| H9-DELTA-REDUCE-GAP | {1,3}→{1,2} | +2 | +2 | — | SC8-only delta. |
+| H10-DELTA-INTRODUCE-GAP | {1,2}→{1,3} | -2 | -2 | — | SC8-only delta. |
+| H11-DELTA-MOVE-CROSS-DAY-WEEKDAY | day 1 → day 2 | +2 | +2 | — | F6A variant: cross-day weekday to fully isolate (was move-to-weekend in F6). |
+| H12-DELTA-MULTI-CLASSGROUP | merged A p1→p2 with B at p3 | +4 | +4 | — | SC8-only delta. |
 
 **Coverage**:
-- ✅ no gap → soft=0
+- ✅ no gap → SC8 0
 - ✅ single gap → SC8 -2
 - ✅ multi gap → SC8 -4
-- ✅ multi segment → SC8 -4
-- ✅ single lesson skip
-- ✅ weekend skip
-- ✅ room=0 skip
-- ✅ multi-classGroup / 合班 expansion
+- ✅ multi segment → SC8 -4 (component assertion)
+- ✅ single lesson skip → SC8 absent
+- ✅ weekend skip → SC8 absent (SC7 fires; component assertion)
+- ✅ room=0 skip → SC8 absent
+- ✅ multi-classGroup / 合班 expansion → 2 SC8 details, sum -8 (component assertion)
 - ✅ delta reduce gap +2
 - ✅ delta introduce gap -2
-- ✅ delta move to weekend
-- ✅ delta multi-classGroup
+- ✅ delta cross-day weekday (F6A redesign) +2
+- ✅ delta multi-classGroup +4
 
 ---
 
-## 7. F6 Wrapper (12 cases)
+## 7. F6 Wrapper (12 cases, F6A isolated)
 
-`scripts/verify-class-gap-reduction-constraint-k22-f6.ts` — same 12 cases as K22-C Harness H, with detailed per-case evidence logging. **12/12 PASS**.
+`scripts/verify-class-gap-reduction-constraint-k22-f6.ts` — same 12 cases as K22-C Harness H with F6A isolation. Each case asserts BOTH total soft score AND SC8 component contribution (count + sum). **12/12 PASS**.
+
+| ID | Total | SC8 Sum | SC8 Count |
+|---|---:|---:|---:|
+| SC8-CLASS-GAP-NO-GAP-1_2_3 | 0 | 0 | 0 |
+| SC8-CLASS-GAP-SINGLE-GAP-1_3 | -2 | -2 | 1 |
+| SC8-CLASS-GAP-MULTI-GAP-1_4 | -4 | -4 | 1 |
+| SC8-CLASS-GAP-MULTI-SEGMENT-1_3_5 | -5 | -4 | 1 |
+| SC8-CLASS-GAP-SINGLE-LESSON-SKIP | 0 | 0 | 0 |
+| SC8-CLASS-GAP-WEEKEND-SKIP | -15 | 0 | 0 |
+| SC8-CLASS-GAP-ROOM_ZERO-SKIP | 0 | 0 | 0 |
+| SC8-CLASS-GAP-MULTI-CLASSGROUP | -9 | -8 | 2 |
+| SC8-DELTA-REDUCE-GAP-1_3-TO-1_2 | +2 | +2 | — |
+| SC8-DELTA-INTRODUCE-GAP-1_2-TO-1_3 | -2 | -2 | — |
+| SC8-DELTA-MOVE-CROSS-DAY-WEEKDAY | +2 | +2 | — |
+| SC8-DELTA-MULTI-CLASSGROUP | +4 | +4 | — |
 
 ---
 
@@ -317,16 +351,27 @@ if (classGroupIds.length > 0) {
 
 ## 11. Closing Note
 
-K22-F6-CLASS-GAP-REDUCTION-IMPL 按 spec 完整执行：
+K22-F6-CLASS-GAP-REDUCTION-IMPL + K22-F6A-HARNESS-ISOLATION 按 spec 完整执行：
 
+**F6 (initial implementation, commit `17bfea0`)**:
 - ✅ 修改 `src/lib/scheduler/score.ts`: 1 个新常量 + 2 个新 helper 函数 + 1 个 full-score 段 + 1 个 delta-score 段
 - ✅ 新增 `scripts/verify-class-gap-reduction-constraint-k22-f6.ts`: 12 cases (8 full + 4 delta)
 - ✅ 扩展 K22-C harness Harness H: 12 cases (8 full + 4 delta)
 - ✅ K22-C summary: 37/0/0/0 → 49/0/0/0
-- ✅ 12/12 F6 cases PASS
 - ✅ Default snapshot unchanged (SC8 doesn't fire on default fixture)
 - ✅ 与 SC1/SC2/SC3/SC5/SC7/MIN_PERT 无冲突
 - ✅ 0 schema 变更 / 0 solver 变更 / 0 API 变更 / 0 frontend 变更
-- ✅ Recommended next stage: **K22-F7-CLASSROOM-STABILITY-AUDIT**
+
+**F6A (this update — harness isolation)**:
+- ✅ 修正 F6 wrapper: 所有 12 cases 现断言 SC8-only contribution（通过 teacherId=null, 1 slot/task, weekday-only for delta, 3rd-position MIN_PERT 隔离）
+- ✅ 修正 K22-C Harness H: 同上策略
+- ✅ 添加 component-level assertion (extractSC8Contribution helper): H4/H6/H8 显式断言 SC8 count + sum
+- ✅ H11 从 move-to-weekend (F6) 改为 cross-day weekday (F6A)，完全隔离 SC8 from SC2/SC7
+- ✅ K22-C summary 保持 49/0/0/0 PASS
+- ✅ F6 wrapper summary 保持 12/12 PASS
+- ✅ score.ts 未改（isolation tests 未发现 SC8 实现 bug）
+- ✅ Default snapshot 保持不变
+
+**Recommended next stage**: **K22-F7-CLASSROOM-STABILITY-AUDIT**
 
 **本阶段可关闭, 推荐进入 K22-F7-CLASSROOM-STABILITY-AUDIT (只读审计"同一班级/课程尽量使用稳定教室"建模方式)。**

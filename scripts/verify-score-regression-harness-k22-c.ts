@@ -1288,96 +1288,150 @@ function runHarnessG(): void {
   }
 }
 
-// ── Harness H: SC8 Class Gap Reduction (K22-F6) ──
+// ── Harness H: SC8 Class Gap Reduction (K22-F6 / F6A) ──
 
 function runHarnessH(): void {
-  console.log('\n─── Harness H: SC8 Class Gap Reduction (K22-F6) ───')
+  console.log('\n─── Harness H: SC8 Class Gap Reduction (K22-F6 / F6A isolated) ───')
 
-  // Helper: build a fixture where one task can have multiple periods (same classGroup),
-  // and additional tasks each have one period. This mirrors the F6 wrapper's behavior.
-  // taskSpecs is an array of { day, periods[], classGroupId, mergedClassGroupIds? }.
-  // Each spec entry becomes ONE task; the task's slots are the periods on the same day.
-  function buildSC8Fixture(taskSpecs: { day: number; periods: number[]; classGroupId: number; mergedClassGroupIds?: number[]; roomId?: number }[]) {
+  // F6A isolation strategy:
+  //   - teacherId=null on all tasks → SC5 skips (no teacher)
+  //   - 1 slot per task (separate tasks per period) → SC2 skips
+  //   - periods < 5 except H4 and H8 → SC3 may fire on those
+  //   - H4, H6, H8 use component-level assertion (SC8 sum vs total) since other SCs also fire
+  //   - H11 redesigned as cross-day weekday move to fully isolate SC8 (no SC7 fire)
+
+  // Helper: build a fixture. Each task has 1 slot. teacherId=null skips SC5.
+  // taskSpecs is an array of { day, period, classGroupId, mergedClassGroupIds?, roomId? }.
+  function buildSC8Fixture(taskSpecs: { day: number; period: number; classGroupId: number; mergedClassGroupIds?: number[]; roomId?: number }[]) {
     const taskInputs: FixtureTaskInput[] = []
     const slotInputs: FixtureSlotInput[] = []
     let id = 0
-    for (const spec of taskSpecs) {
+    for (const s of taskSpecs) {
       id++
       const taskId = id
-      const classGroupIds = spec.mergedClassGroupIds ?? [spec.classGroupId]
-      taskInputs.push({ id: taskId, teacherId: 10 + taskId, classGroupIds })
-      for (const p of spec.periods) {
-        id++
-        slotInputs.push({ id, teachingTaskId: taskId, dayOfWeek: spec.day, slotIndex: p, roomId: spec.roomId ?? 100 })
-      }
+      const classGroupIds = s.mergedClassGroupIds ?? [s.classGroupId]
+      taskInputs.push({ id: taskId, teacherId: null, classGroupIds })
+      slotInputs.push({ id: id + 1000, teachingTaskId: taskId, dayOfWeek: s.day, slotIndex: s.period, roomId: s.roomId ?? 100 })
     }
     return { tasks: taskInputs, slots: slotInputs }
   }
 
+  // Extract SC8 contribution from score details
+  function extractSC8Contribution(details: { type: string; penalty: number }[]): { count: number; total: number } {
+    let count = 0
+    let total = 0
+    for (const d of details) {
+      if (d.type === 'SC8_CLASS_GAP') {
+        count++
+        total += d.penalty
+      }
+    }
+    return { count, total }
+  }
+
   // Full score cases (8 cases)
-  const fullCases: { id: string; title: string; taskSpecs: { day: number; periods: number[]; classGroupId: number; mergedClassGroupIds?: number[]; roomId?: number }[]; expectedSoft: number; note: string }[] = [
+  // Each asserts total soft + SC8 component contribution
+  const fullCases: {
+    id: string
+    title: string
+    taskSpecs: { day: number; period: number; classGroupId: number; mergedClassGroupIds?: number[]; roomId?: number }[]
+    expectedTotalSoft: number
+    expectedSC8Soft: number
+    expectedSC8Count: number
+    note: string
+  }[] = [
     {
       id: 'H1-NO-GAP-1_2_3',
-      title: 'SC8 full: {1,2,3} no gap → SC8 0, total soft = -23 (SC2 -20 + SC5 -3)',
-      taskSpecs: [{ day: 1, periods: [1, 2, 3], classGroupId: 100 }],
-      expectedSoft: -23,
-      note: 'Set {1,2,3}, no gap. SC2 fires (1 task 3 same-day) = -20. SC5 fires (teacher 3 slots day 1) = -3. SC8 = 0. Total = -23.',
+      title: 'SC8 full: {1,2,3} no gap → SC8 0 (only SC8 verified)',
+      taskSpecs: [
+        { day: 1, period: 1, classGroupId: 100 },
+        { day: 1, period: 2, classGroupId: 100 },
+        { day: 1, period: 3, classGroupId: 100 },
+      ],
+      expectedTotalSoft: 0,
+      expectedSC8Soft: 0,
+      expectedSC8Count: 0,
+      note: '3 separate tasks, teacherId=null, periods {1,2,3} on day 1 for classGroup 100. SC2 skip (count=1 each). SC5 skip (no teacher). SC8: {1,2,3} no gap, 0. Total = 0. SC8 details = 0.',
     },
     {
       id: 'H2-SINGLE-GAP-1_3',
-      title: 'SC8 full: {1,3} single gap → SC8 -2, total = -12',
-      taskSpecs: [{ day: 1, periods: [1, 3], classGroupId: 100 }],
-      expectedSoft: -12,
-      note: 'Set {1,3}, gap=1, SC8=-2. SC2 = -10. SC5 skip (total<3). Total = -12.',
+      title: 'SC8 full: {1,3} single gap → SC8 -2 (SC8-only contribution)',
+      taskSpecs: [
+        { day: 1, period: 1, classGroupId: 100 },
+        { day: 1, period: 3, classGroupId: 100 },
+      ],
+      expectedTotalSoft: -2,
+      expectedSC8Soft: -2,
+      expectedSC8Count: 1,
+      note: '2 separate tasks, teacherId=null, periods {1,3} on day 1. SC2 skip. SC5 skip. SC8: {1,3} gap=1, -2. Total = -2. SC8 details = 1, sum = -2.',
     },
     {
       id: 'H3-MULTI-GAP-1_4',
-      title: 'SC8 full: {1,4} multi gap → SC8 -4, total = -14',
-      taskSpecs: [{ day: 1, periods: [1, 4], classGroupId: 100 }],
-      expectedSoft: -14,
-      note: 'Set {1,4}, gap=2, SC8=-4. SC2 = -10. Total = -14.',
+      title: 'SC8 full: {1,4} multi gap → SC8 -4 (SC8-only contribution)',
+      taskSpecs: [
+        { day: 1, period: 1, classGroupId: 100 },
+        { day: 1, period: 4, classGroupId: 100 },
+      ],
+      expectedTotalSoft: -4,
+      expectedSC8Soft: -4,
+      expectedSC8Count: 1,
+      note: '2 separate tasks, teacherId=null, periods {1,4} on day 1. SC2 skip. SC5 skip. SC8: {1,4} gap=2, -4. Total = -4. SC8 details = 1, sum = -4.',
     },
     {
       id: 'H4-MULTI-SEGMENT-1_3_5',
-      title: 'SC8 full: {1,3,5} multi segment → SC8 -4, total = -28',
-      taskSpecs: [{ day: 1, periods: [1, 3, 5], classGroupId: 100 }],
-      expectedSoft: -28,
-      note: 'Set {1,3,5}, gaps 1+1=2, SC8=-4. SC2 = -20 (3 same-day). SC3 = -1 (period 5). SC5 = -3. Total = -28.',
+      title: 'SC8 full: {1,3,5} multi segment → SC8 -4, SC3 -1 also fires (component assertion)',
+      taskSpecs: [
+        { day: 1, period: 1, classGroupId: 100 },
+        { day: 1, period: 3, classGroupId: 100 },
+        { day: 1, period: 5, classGroupId: 100 },
+      ],
+      expectedTotalSoft: -5,
+      expectedSC8Soft: -4,
+      expectedSC8Count: 1,
+      note: '3 separate tasks, teacherId=null, periods {1,3,5} on day 1. SC2 skip. SC5 skip. SC3 fires on period 5 = -1. SC8: {1,3,5} gaps 1+1=2, -4. Total = -5, SC8 = -4. Component assertion: SC8 details sum = -4.',
     },
     {
       id: 'H5-SINGLE-LESSON-SKIP',
-      title: 'SC8 full: {1} single lesson → SC8 skip, total = 0',
-      taskSpecs: [{ day: 1, periods: [1], classGroupId: 100 }],
-      expectedSoft: 0,
-      note: 'Set {1}, size<2, SC8 skip. SC2 skip. SC5 skip. Total = 0.',
+      title: 'SC8 full: {1} single lesson → SC8 skip (size<2)',
+      taskSpecs: [{ day: 1, period: 1, classGroupId: 100 }],
+      expectedTotalSoft: 0,
+      expectedSC8Soft: 0,
+      expectedSC8Count: 0,
+      note: '1 task, 1 slot. SC2 skip (count=1). SC5 skip. SC8: {1} size<2 skip, 0 details. Total = 0. SC8 details = 0.',
     },
     {
       id: 'H6-WEEKEND-SKIP',
-      title: 'SC8 full: day 6 → SC8 skip (SC7 owns), total = -40',
-      taskSpecs: [{ day: 6, periods: [1, 3], classGroupId: 100 }],
-      expectedSoft: -40,
-      note: 'day 6 >= 6: SC8 skips. SC2 = -10 (1 task 2 same-day). SC7 = -30 (2 weekend slots). Total = -40.',
+      title: 'SC8 full: day 6 → SC8 skip (SC7 owns; component assertion verifies SC8=0)',
+      taskSpecs: [{ day: 6, period: 1, classGroupId: 100 }],
+      expectedTotalSoft: -15,
+      expectedSC8Soft: 0,
+      expectedSC8Count: 0,
+      note: '1 task on day 6. SC2 skip. SC5 skip. SC7 fires (weekend) = -15. SC8: day 6 >= 6, skip, 0 details. Total = -15, SC8 = 0. Component assertion: SC8 absent.',
     },
     {
       id: 'H7-ROOM-ZERO-SKIP',
-      title: 'SC8 full: room=0 skip → only period 1 counted, size<2 → SC8 0, total = 0',
+      title: 'SC8 full: room=0 skip → only period 1 counted, size<2 → SC8 0',
       taskSpecs: [
-        { day: 1, periods: [1], classGroupId: 100 },
-        { day: 1, periods: [3], classGroupId: 100, roomId: 0 }, // unscheduled
+        { day: 1, period: 1, classGroupId: 100, roomId: 100 },
+        { day: 1, period: 3, classGroupId: 100, roomId: 0 }, // unscheduled
       ],
-      expectedSoft: 0,
-      note: 'Room=0 (period 3) skipped; only period 1 remains; size<2; SC8=0. 2 separate tasks each with 1 slot → SC2 skip. SC5 skip (room=0). Total = 0.',
+      expectedTotalSoft: 0,
+      expectedSC8Soft: 0,
+      expectedSC8Count: 0,
+      note: '2 separate tasks, teacherId=null. Period 3 has roomId=0 (unscheduled). SC2 skip. SC5 skip. SC8: only period 1 counted, size<2, 0. Total = 0. SC8 details = 0.',
     },
     {
       id: 'H8-MULTI-CLASSGROUP-MERGED',
-      title: 'SC8 full: merged-class A(cg{1,2},p1) + B(cg{1},p3) + C(cg{2},p5) → SC8 -8, total = -9',
+      title: 'SC8 full: merged A(cg{1,2},p1) + B(cg{1},p3) + C(cg{2},p5) → SC8 -8, SC3 -1 also fires (component assertion)',
       taskSpecs: [
-        { day: 1, periods: [1], classGroupId: 1, mergedClassGroupIds: [1, 2] },
-        { day: 1, periods: [3], classGroupId: 1 },
-        { day: 1, periods: [5], classGroupId: 2 },
+        { day: 1, period: 1, classGroupId: 1, mergedClassGroupIds: [1, 2] },
+        { day: 1, period: 3, classGroupId: 1 },
+        { day: 1, period: 5, classGroupId: 2 },
       ],
-      expectedSoft: -9,
-      note: 'cg1: {1,3} gap=1 → -2; cg2: {1,5} gap=3 → -6; SC8=-8. SC2 skip (each task 1 slot). SC3 = -1 (period 5). Total = -9.',
+      expectedTotalSoft: -9,
+      expectedSC8Soft: -8,
+      expectedSC8Count: 2,
+      note: '3 separate tasks, teacherId=null, merged A(cg{1,2},p1) + B(cg{1},p3) + C(cg{2},p5). SC2 skip. SC5 skip. SC3 fires on period 5 = -1. SC8: cg1 {1,3} gap=1 → -2; cg2 {1,5} gap=3 → -6. Total SC8 = -8 (2 details). Total = -9, SC8 = -8. Component assertion: SC8 details count = 2, sum = -8.',
     },
   ]
 
@@ -1386,76 +1440,87 @@ function runHarnessH(): void {
     const ctx = buildContext(tasks, [{ id: 100, name: 'A101', building: 'A', capacity: 100 }], slots)
     const state = buildStateFromSlots(ctx)
     const result = calculateScoreWithDetails(ctx, state)
-    const softOK = result.softScore === tc.expectedSoft
+    const sc8 = extractSC8Contribution(result.details)
+    const totalOK = result.softScore === tc.expectedTotalSoft
+    const sc8OK = sc8.total === tc.expectedSC8Soft && sc8.count === tc.expectedSC8Count
     const hardOK = result.hardScore === 0
-    const sc8Details = result.details.filter(d => d.type === 'SC8_CLASS_GAP')
+    const breakdown = result.details.map(d => `${d.type}=${d.penalty}`).join(', ')
     record({
-      id: tc.id, harness: 'H', title: tc.title, status: (hardOK && softOK) ? 'PASS' : 'FAIL',
-      detail: `hard=${result.hardScore}, soft=${result.softScore} (expect ${tc.expectedSoft}), sc8Details=${sc8Details.length}`,
-      evidence: [tc.note],
+      id: tc.id, harness: 'H', title: tc.title, status: (hardOK && totalOK && sc8OK) ? 'PASS' : 'FAIL',
+      detail: `hard=${result.hardScore} (expect 0); total soft=${result.softScore} (expect ${tc.expectedTotalSoft}); SC8 count=${sc8.count} (expect ${tc.expectedSC8Count}); SC8 sum=${sc8.total} (expect ${tc.expectedSC8Soft})`,
+      evidence: [tc.note, `Full breakdown: ${breakdown || '(none)'}`],
     })
   }
 
-  // Delta cases (4 cases) — 3rd-position originalAssignments to isolate SC8 from MIN_PERT
+  // Delta cases (4 cases) — all SC8-only contribution via teacherId=null + 1 slot per task + weekday
   interface SC8DeltaCase {
     id: string
     title: string
-    taskSpecs: { day: number; periods: number[]; classGroupId: number; mergedClassGroupIds?: number[]; roomId?: number }[]
-    moveTaskIdx: number
-    movePeriodIdx: number
+    taskSpecs: { day: number; period: number; classGroupId: number; mergedClassGroupIds?: number[]; roomId?: number }[]
+    moveSlotIdx: number
     newDay: number
     newPeriod: number
     expectedDeltaSoft: number
+    expectedSC8Delta: number
     note: string
   }
   const deltaCases: SC8DeltaCase[] = [
     {
       id: 'H9-DELTA-REDUCE-GAP',
-      title: 'SC8 delta: {1,3}→{1,2} reduce gap, deltaSoft=+2',
-      taskSpecs: [{ day: 1, periods: [1, 3], classGroupId: 100 }],
-      moveTaskIdx: 0,
-      movePeriodIdx: 1, // move the period-3 slot
+      title: 'SC8 delta: {1,3}→{1,2} reduce gap, deltaSoft=+2 (SC8-only)',
+      taskSpecs: [
+        { day: 1, period: 1, classGroupId: 100 },
+        { day: 1, period: 3, classGroupId: 100 },
+      ],
+      moveSlotIdx: 1,
       newDay: 1,
       newPeriod: 2,
       expectedDeltaSoft: 2,
-      note: 'Before: {1,3} gap=1, SC8=-2. After: {1,2} no gap, SC8=0. SC8 delta=+2. SC2: same task same day count=2 both, delta=0. Total = +2.',
+      expectedSC8Delta: 2,
+      note: 'Before: {1,3} gap=1, SC8=-2. After: {1,2} no gap, SC8=0. SC8 delta=+2. Other deltas 0 (teacherId=null, 1 slot/task, weekday). MIN_PERT=0 (3rd-position). Total = +2.',
     },
     {
       id: 'H10-DELTA-INTRODUCE-GAP',
-      title: 'SC8 delta: {1,2}→{1,3} introduce gap, deltaSoft=-2',
-      taskSpecs: [{ day: 1, periods: [1, 2], classGroupId: 100 }],
-      moveTaskIdx: 0,
-      movePeriodIdx: 1, // move the period-2 slot
+      title: 'SC8 delta: {1,2}→{1,3} introduce gap, deltaSoft=-2 (SC8-only)',
+      taskSpecs: [
+        { day: 1, period: 1, classGroupId: 100 },
+        { day: 1, period: 2, classGroupId: 100 },
+      ],
+      moveSlotIdx: 1,
       newDay: 1,
       newPeriod: 3,
       expectedDeltaSoft: -2,
-      note: 'Before: {1,2} no gap, SC8=0. After: {1,3} gap=1, SC8=-2. SC8 delta=-2. SC2: same task same day, delta=0. Total = -2.',
+      expectedSC8Delta: -2,
+      note: 'Before: {1,2} no gap, SC8=0. After: {1,3} gap=1, SC8=-2. SC8 delta=-2. Other deltas 0. Total = -2.',
     },
     {
-      id: 'H11-DELTA-MOVE-TO-WEEKEND',
-      title: 'SC8 delta: {1,3} on day 1 → period 3 to day 6, deltaSoft=-3 (SC8 +2, SC2 +10, SC7 -15)',
-      taskSpecs: [{ day: 1, periods: [1, 3], classGroupId: 100 }],
-      moveTaskIdx: 0,
-      movePeriodIdx: 1,
-      newDay: 6,
+      id: 'H11-DELTA-MOVE-CROSS-DAY-WEEKDAY',
+      title: 'SC8 delta: {1,3} day 1 → day 2 (cross-day weekday, no weekend/SC2/SC5/SC7) → deltaSoft=+2',
+      taskSpecs: [
+        { day: 1, period: 1, classGroupId: 100 },
+        { day: 1, period: 3, classGroupId: 100 },
+      ],
+      moveSlotIdx: 1,
+      newDay: 2,
       newPeriod: 1,
-      expectedDeltaSoft: -3,
-      note: 'Before: cg{1,3} gap=1, SC8=-2. After: day 1 {1} size<2 skip; day 6 skip. SC8 delta=+2. SC2: before count=2 = -10; after count=1 = 0; delta=+10. SC7: -15 (new weekend). Total = +2+10-15 = -3.',
+      expectedDeltaSoft: 2,
+      expectedSC8Delta: 2,
+      note: 'Before: cg day 1 {1,3} gap=1, SC8=-2. After: day 1 {1} size<2 skip; day 2 {1} size<2 skip. SC8 delta = +2. All other deltas 0. Total = +2. (F6A variant: cross-day weekday to fully isolate SC8 from SC2/SC7.)',
     },
     {
       id: 'H12-DELTA-MULTI-CLASSGROUP',
-      title: 'SC8 delta: merged-class A(cg{1,2},p1)→p2 with B(cg{1},p3) → deltaSoft=+4 (cg1 +2, cg2 +2)',
+      title: 'SC8 delta: merged A(cg{1,2},p1)→p2 with B(cg{1},p3) → deltaSoft=+4 (SC8-only)',
       taskSpecs: [
-        { day: 1, periods: [1], classGroupId: 1, mergedClassGroupIds: [1, 2] },
-        { day: 1, periods: [3], classGroupId: 1 },
-        { day: 1, periods: [5], classGroupId: 2 },
+        { day: 1, period: 1, classGroupId: 1, mergedClassGroupIds: [1, 2] },
+        { day: 1, period: 3, classGroupId: 1 },
+        { day: 1, period: 5, classGroupId: 2 },
       ],
-      moveTaskIdx: 0,
-      movePeriodIdx: 0, // the period-1 slot of merged task A
+      moveSlotIdx: 0,
       newDay: 1,
       newPeriod: 2,
       expectedDeltaSoft: 4,
-      note: 'Before: cg1 {1,3} gap=1 → SC8=-2; cg2 {1,5} gap=3 → SC8=-6. After: cg1 {2,3} no gap → SC8=0; cg2 {2,5} gap=2 → SC8=-4. SC8 delta cg1 = +2, cg2 = +2. Total = +4.',
+      expectedSC8Delta: 4,
+      note: 'Before: cg1 {1,3} gap=1 → SC8=-2; cg2 {1,5} gap=3 → SC8=-6. After: cg1 {2,3} no gap → SC8=0; cg2 {2,5} gap=2 → SC8=-4. SC8 delta cg1 = +2, cg2 = +2. Total SC8 = +4. Other deltas 0. Total = +4.',
     },
   ]
 
@@ -1466,17 +1531,21 @@ function runHarnessH(): void {
     const assignments = new Map(slots.map(s => [s.id, { dayOfWeek: s.dayOfWeek, slotIndex: s.slotIndex, roomId: s.roomId }]))
     const origAssignments = new Map(slots.map(s => [s.id, { dayOfWeek: 9, slotIndex: 1, roomId: 999 }]))
     const state: ScheduleState = { assignments, originalAssignments: origAssignments }
-    // Find the slot to move: dc.moveTaskIdx-th task's dc.movePeriodIdx-th period
-    const targetTaskId = tasks[dc.moveTaskIdx].id
-    const targetSlots = slots.filter(s => s.teachingTaskId === targetTaskId)
-    const moveSlotId = targetSlots[dc.movePeriodIdx].id
+    const moveSlotId = slots[dc.moveSlotIdx].id
     const move: Move = { slotId: moveSlotId, newDay: dc.newDay, newSlotIndex: dc.newPeriod, newRoomId: 100 }
     const delta = calculateDeltaScore(ctx, state, move)
-    const softOK = delta.deltaSoft === dc.expectedDeltaSoft
+    // Re-evaluate full scores before/after to extract SC8 component delta
+    const stateBefore = { assignments: new Map(slots.map(s => [s.id, { dayOfWeek: s.dayOfWeek, slotIndex: s.slotIndex, roomId: s.roomId }])), originalAssignments: new Map(slots.map(s => [s.id, { dayOfWeek: 9, slotIndex: 1, roomId: 999 }])) }
+    const stateAfter = { assignments: new Map(slots.map(s => [s.id, s.id === moveSlotId ? { dayOfWeek: move.newDay, slotIndex: move.newSlotIndex, roomId: 100 } : { dayOfWeek: s.dayOfWeek, slotIndex: s.slotIndex, roomId: s.roomId }])), originalAssignments: new Map(slots.map(s => [s.id, { dayOfWeek: 9, slotIndex: 1, roomId: 999 }])) }
+    const sc8Before = extractSC8Contribution(calculateScoreWithDetails(ctx, stateBefore).details)
+    const sc8After = extractSC8Contribution(calculateScoreWithDetails(ctx, stateAfter).details)
+    const sc8DeltaByComponent = sc8After.total - sc8Before.total
+    const totalOK = delta.deltaSoft === dc.expectedDeltaSoft
+    const sc8OK = sc8DeltaByComponent === dc.expectedSC8Delta
     const hardOK = delta.deltaHard === 0
     record({
-      id: dc.id, harness: 'H', title: dc.title, status: (hardOK && softOK) ? 'PASS' : 'FAIL',
-      detail: `deltaHard=${delta.deltaHard}, deltaSoft=${delta.deltaSoft} (expect ${dc.expectedDeltaSoft})`,
+      id: dc.id, harness: 'H', title: dc.title, status: (hardOK && totalOK && sc8OK) ? 'PASS' : 'FAIL',
+      detail: `deltaHard=${delta.deltaHard} (expect 0); deltaSoft=${delta.deltaSoft} (expect ${dc.expectedDeltaSoft}); SC8 component delta=${sc8DeltaByComponent} (expect ${dc.expectedSC8Delta}); SC8 details: before count=${sc8Before.count} sum=${sc8Before.total}, after count=${sc8After.count} sum=${sc8After.total}`,
       evidence: [dc.note],
     })
   }
