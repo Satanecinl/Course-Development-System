@@ -1,0 +1,820 @@
+{
+  "generatedAt": "2026-06-06T22:02:52.578Z",
+  "stage": "K22-G-ROOM-TYPE-DATA-QUALITY-AUDIT",
+  "mode": "read-only data quality audit",
+  "predecessor": "K22-F9-SCORE-CONSTRAINT-SUMMARY-AUDIT (commit 33ffe8d)",
+  "roomTypeDistribution": [
+    {
+      "type": "NORMAL",
+      "count": 53,
+      "percent": 100,
+      "notes": "Default value; no real classification."
+    }
+  ],
+  "roomKeywordInference": [
+    {
+      "keyword": "机房",
+      "matched": 1,
+      "percent": 2,
+      "inferredType": "COMPUTER_LAB",
+      "confidence": "HIGH",
+      "notes": "机房 = computer lab"
+    },
+    {
+      "keyword": "计算机",
+      "matched": 0,
+      "percent": 0,
+      "inferredType": "COMPUTER_LAB",
+      "confidence": "MEDIUM",
+      "notes": "计算机 = computer, often in 计算机教室"
+    },
+    {
+      "keyword": "实训",
+      "matched": 2,
+      "percent": 4,
+      "inferredType": "TRAINING_ROOM",
+      "confidence": "HIGH",
+      "notes": "实训 = practical training"
+    },
+    {
+      "keyword": "实验",
+      "matched": 0,
+      "percent": 0,
+      "inferredType": "LAB",
+      "confidence": "HIGH",
+      "notes": "实验 = lab"
+    },
+    {
+      "keyword": "语音",
+      "matched": 0,
+      "percent": 0,
+      "inferredType": "LANGUAGE_LAB",
+      "confidence": "HIGH",
+      "notes": "语音 = language lab"
+    },
+    {
+      "keyword": "多媒体",
+      "matched": 0,
+      "percent": 0,
+      "inferredType": "MULTIMEDIA",
+      "confidence": "MEDIUM",
+      "notes": "多媒体 = multimedia"
+    },
+    {
+      "keyword": "画室",
+      "matched": 0,
+      "percent": 0,
+      "inferredType": "STUDIO",
+      "confidence": "HIGH",
+      "notes": "画室 = art studio"
+    },
+    {
+      "keyword": "舞蹈",
+      "matched": 0,
+      "percent": 0,
+      "inferredType": "DANCE",
+      "confidence": "HIGH",
+      "notes": "舞蹈 = dance"
+    },
+    {
+      "keyword": "汽修",
+      "matched": 0,
+      "percent": 0,
+      "inferredType": "AUTOMOTIVE_LAB",
+      "confidence": "HIGH",
+      "notes": "汽修 = auto repair"
+    },
+    {
+      "keyword": "汽车",
+      "matched": 0,
+      "percent": 0,
+      "inferredType": "AUTOMOTIVE_LAB",
+      "confidence": "MEDIUM",
+      "notes": "汽车 = auto"
+    },
+    {
+      "keyword": "林校",
+      "matched": 10,
+      "percent": 19,
+      "inferredType": "LINXIAO",
+      "confidence": "HIGH",
+      "notes": "林校 = Linxiao campus"
+    }
+  ],
+  "roomCapacityAudit": {
+    "distribution": [
+      {
+        "bucket": "<30",
+        "count": 10,
+        "percent": 19,
+        "notes": "small room"
+      },
+      {
+        "bucket": "30-49",
+        "count": 29,
+        "percent": 55,
+        "notes": "below default 50"
+      },
+      {
+        "bucket": "50-79",
+        "count": 7,
+        "percent": 13,
+        "notes": "around default 50"
+      },
+      {
+        "bucket": "80-119",
+        "count": 6,
+        "percent": 11,
+        "notes": "medium-large"
+      },
+      {
+        "bucket": ">=200",
+        "count": 1,
+        "percent": 2,
+        "notes": "extra large"
+      }
+    ],
+    "range": {
+      "min": 3,
+      "max": 200,
+      "avg": 46,
+      "median": 40,
+      "buckets": {
+        "30-49": 29,
+        "50-79": 7,
+        "80-119": 6,
+        ">=200": 1,
+        "<30": 10
+      }
+    },
+    "suspiciousRooms": [
+      {
+        "id": 18,
+        "name": "1号楼虚拟仿真实训室",
+        "type": "NORMAL",
+        "building": "",
+        "capacity": 100,
+        "reasons": [
+          "type=NORMAL but name has specialty keyword (实训)"
+        ]
+      },
+      {
+        "id": 21,
+        "name": "林校\n305",
+        "type": "NORMAL",
+        "building": null,
+        "capacity": 92,
+        "reasons": [
+          "type=NORMAL but name has specialty keyword (林校)"
+        ]
+      },
+      {
+        "id": 22,
+        "name": "林校\n304",
+        "type": "NORMAL",
+        "building": null,
+        "capacity": 61,
+        "reasons": [
+          "type=NORMAL but name has specialty keyword (林校)"
+        ]
+      },
+      {
+        "id": 23,
+        "name": "林校304",
+        "type": "NORMAL",
+        "building": null,
+        "capacity": 28,
+        "reasons": [
+          "type=NORMAL but name has specialty keyword (林校)"
+        ]
+      },
+      {
+        "id": 24,
+        "name": "林校305",
+        "type": "NORMAL",
+        "building": null,
+        "capacity": 92,
+        "reasons": [
+          "type=NORMAL but name has specialty keyword (林校)"
+        ]
+      },
+      {
+        "id": 25,
+        "name": "林校\n301",
+        "type": "NORMAL",
+        "building": null,
+        "capacity": 28,
+        "reasons": [
+          "type=NORMAL but name has specialty keyword (林校)"
+        ]
+      },
+      {
+        "id": 26,
+        "name": "林校303",
+        "type": "NORMAL",
+        "building": null,
+        "capacity": 25,
+        "reasons": [
+          "type=NORMAL but name has specialty keyword (林校)"
+        ]
+      },
+      {
+        "id": 27,
+        "name": "林校\n303",
+        "type": "NORMAL",
+        "building": null,
+        "capacity": 25,
+        "reasons": [
+          "type=NORMAL but name has specialty keyword (林校)"
+        ]
+      },
+      {
+        "id": 28,
+        "name": "林校301",
+        "type": "NORMAL",
+        "building": null,
+        "capacity": 40,
+        "reasons": [
+          "type=NORMAL but name has specialty keyword (林校)"
+        ]
+      },
+      {
+        "id": 29,
+        "name": "林校306",
+        "type": "NORMAL",
+        "building": null,
+        "capacity": 40,
+        "reasons": [
+          "type=NORMAL but name has specialty keyword (林校)"
+        ]
+      },
+      {
+        "id": 41,
+        "name": "12楼机房",
+        "type": "NORMAL",
+        "building": null,
+        "capacity": 41,
+        "reasons": [
+          "type=NORMAL but name has specialty keyword (机房)"
+        ]
+      },
+      {
+        "id": 44,
+        "name": "12号楼机器人实训室",
+        "type": "NORMAL",
+        "building": null,
+        "capacity": 39,
+        "reasons": [
+          "type=NORMAL but name has specialty keyword (实训)"
+        ]
+      },
+      {
+        "id": 49,
+        "name": "林校\n306",
+        "type": "NORMAL",
+        "building": null,
+        "capacity": 40,
+        "reasons": [
+          "type=NORMAL but name has specialty keyword (林校)"
+        ]
+      }
+    ]
+  },
+  "courseTypeAudit": {
+    "schemaField": "Course has no type field; only name",
+    "courseTotal": 104,
+    "taskTotal": 308,
+    "courseKeywordHits": [
+      {
+        "keyword": "上机",
+        "matched": 0,
+        "percent": 0,
+        "inferredTaskType": "COMPUTER_LAB_REQUIRED",
+        "confidence": "HIGH",
+        "notes": "上机 = hands-on computer use"
+      },
+      {
+        "keyword": "机房",
+        "matched": 0,
+        "percent": 0,
+        "inferredTaskType": "COMPUTER_LAB_REQUIRED",
+        "confidence": "MEDIUM",
+        "notes": "机房 in course name suggests computer lab requirement"
+      },
+      {
+        "keyword": "计算机",
+        "matched": 0,
+        "percent": 0,
+        "inferredTaskType": "COMPUTER_LAB_REQUIRED",
+        "confidence": "MEDIUM",
+        "notes": "计算机 = computer course"
+      },
+      {
+        "keyword": "CAD",
+        "matched": 0,
+        "percent": 0,
+        "inferredTaskType": "COMPUTER_LAB_REQUIRED",
+        "confidence": "HIGH",
+        "notes": "CAD = computer-aided design"
+      },
+      {
+        "keyword": "制图",
+        "matched": 3,
+        "percent": 3,
+        "inferredTaskType": "COMPUTER_LAB_REQUIRED",
+        "confidence": "MEDIUM",
+        "notes": "制图 = drafting (often CAD)"
+      },
+      {
+        "keyword": "实训",
+        "matched": 2,
+        "percent": 2,
+        "inferredTaskType": "TRAINING_ROOM_REQUIRED",
+        "confidence": "HIGH",
+        "notes": "实训 = practical training"
+      },
+      {
+        "keyword": "实操",
+        "matched": 0,
+        "percent": 0,
+        "inferredTaskType": "TRAINING_ROOM_REQUIRED",
+        "confidence": "HIGH",
+        "notes": "实操 = hands-on practice"
+      },
+      {
+        "keyword": "实验",
+        "matched": 0,
+        "percent": 0,
+        "inferredTaskType": "TRAINING_ROOM_REQUIRED",
+        "confidence": "MEDIUM",
+        "notes": "实验 = lab (could also be computer lab)"
+      },
+      {
+        "keyword": "汽修",
+        "matched": 0,
+        "percent": 0,
+        "inferredTaskType": "SPECIALTY_ROOM_PREFERRED",
+        "confidence": "HIGH",
+        "notes": "汽修 = auto repair"
+      },
+      {
+        "keyword": "汽车",
+        "matched": 9,
+        "percent": 9,
+        "inferredTaskType": "SPECIALTY_ROOM_PREFERRED",
+        "confidence": "MEDIUM",
+        "notes": "汽车 = auto (specialty)"
+      },
+      {
+        "keyword": "电工",
+        "matched": 2,
+        "percent": 2,
+        "inferredTaskType": "SPECIALTY_ROOM_PREFERRED",
+        "confidence": "MEDIUM",
+        "notes": "电工 = electrical work"
+      },
+      {
+        "keyword": "电子",
+        "matched": 3,
+        "percent": 3,
+        "inferredTaskType": "SPECIALTY_ROOM_PREFERRED",
+        "confidence": "LOW",
+        "notes": "电子 = electronics (broad)"
+      },
+      {
+        "keyword": "传感器",
+        "matched": 4,
+        "percent": 4,
+        "inferredTaskType": "SPECIALTY_ROOM_PREFERRED",
+        "confidence": "MEDIUM",
+        "notes": "传感器 = sensors"
+      },
+      {
+        "keyword": "检测",
+        "matched": 2,
+        "percent": 2,
+        "inferredTaskType": "SPECIALTY_ROOM_PREFERRED",
+        "confidence": "MEDIUM",
+        "notes": "检测 = inspection"
+      },
+      {
+        "keyword": "理实一体",
+        "matched": 0,
+        "percent": 0,
+        "inferredTaskType": "TRAINING_ROOM_REQUIRED",
+        "confidence": "HIGH",
+        "notes": "理实一体 = theory + practice integrated"
+      },
+      {
+        "keyword": "焊接",
+        "matched": 0,
+        "percent": 0,
+        "inferredTaskType": "SPECIALTY_ROOM_PREFERRED",
+        "confidence": "HIGH",
+        "notes": "焊接 = welding"
+      },
+      {
+        "keyword": "维修",
+        "matched": 1,
+        "percent": 1,
+        "inferredTaskType": "SPECIALTY_ROOM_PREFERRED",
+        "confidence": "MEDIUM",
+        "notes": "维修 = maintenance"
+      }
+    ],
+    "taskKeywordHits": [
+      {
+        "keyword": "上机",
+        "matchedTasks": 0,
+        "matchedCourses": 0,
+        "notes": "上机 = hands-on computer use"
+      },
+      {
+        "keyword": "机房",
+        "matchedTasks": 0,
+        "matchedCourses": 0,
+        "notes": "机房 in course name suggests computer lab requirement"
+      },
+      {
+        "keyword": "计算机",
+        "matchedTasks": 0,
+        "matchedCourses": 0,
+        "notes": "计算机 = computer course"
+      },
+      {
+        "keyword": "CAD",
+        "matchedTasks": 0,
+        "matchedCourses": 0,
+        "notes": "CAD = computer-aided design"
+      },
+      {
+        "keyword": "制图",
+        "matchedTasks": 0,
+        "matchedCourses": 3,
+        "notes": "制图 = drafting (often CAD)"
+      },
+      {
+        "keyword": "实训",
+        "matchedTasks": 0,
+        "matchedCourses": 2,
+        "notes": "实训 = practical training"
+      },
+      {
+        "keyword": "实操",
+        "matchedTasks": 0,
+        "matchedCourses": 0,
+        "notes": "实操 = hands-on practice"
+      },
+      {
+        "keyword": "实验",
+        "matchedTasks": 0,
+        "matchedCourses": 0,
+        "notes": "实验 = lab (could also be computer lab)"
+      },
+      {
+        "keyword": "汽修",
+        "matchedTasks": 0,
+        "matchedCourses": 0,
+        "notes": "汽修 = auto repair"
+      },
+      {
+        "keyword": "汽车",
+        "matchedTasks": 46,
+        "matchedCourses": 9,
+        "notes": "汽车 = auto (specialty)"
+      },
+      {
+        "keyword": "电工",
+        "matchedTasks": 0,
+        "matchedCourses": 2,
+        "notes": "电工 = electrical work"
+      },
+      {
+        "keyword": "电子",
+        "matchedTasks": 0,
+        "matchedCourses": 3,
+        "notes": "电子 = electronics (broad)"
+      },
+      {
+        "keyword": "传感器",
+        "matchedTasks": 0,
+        "matchedCourses": 4,
+        "notes": "传感器 = sensors"
+      },
+      {
+        "keyword": "检测",
+        "matchedTasks": 0,
+        "matchedCourses": 2,
+        "notes": "检测 = inspection"
+      },
+      {
+        "keyword": "理实一体",
+        "matchedTasks": 0,
+        "matchedCourses": 0,
+        "notes": "理实一体 = theory + practice integrated"
+      },
+      {
+        "keyword": "焊接",
+        "matchedTasks": 0,
+        "matchedCourses": 0,
+        "notes": "焊接 = welding"
+      },
+      {
+        "keyword": "维修",
+        "matchedTasks": 0,
+        "matchedCourses": 1,
+        "notes": "维修 = maintenance"
+      }
+    ]
+  },
+  "sourceEvidenceAvailability": {
+    "total": 446,
+    "fields": [
+      {
+        "field": "sourceKeyword",
+        "populated": 0,
+        "total": 446,
+        "percent": 0,
+        "notes": "from parser merge keyword"
+      },
+      {
+        "field": "sourceRemark",
+        "populated": 0,
+        "total": 446,
+        "percent": 0,
+        "notes": "from Word cell remark"
+      },
+      {
+        "field": "sourceClassName",
+        "populated": 0,
+        "total": 446,
+        "percent": 0,
+        "notes": "from Word cell class name"
+      },
+      {
+        "field": "sourceArtifactFilename",
+        "populated": 0,
+        "total": 446,
+        "percent": 0,
+        "notes": "from upload filename"
+      },
+      {
+        "field": "matchStrategy",
+        "populated": 0,
+        "total": 446,
+        "percent": 0,
+        "notes": "EXACT | WEAK | SUBSEQ | BASE"
+      },
+      {
+        "field": "matchConfidence",
+        "populated": 0,
+        "total": 446,
+        "percent": 0,
+        "notes": "parser confidence label"
+      }
+    ]
+  },
+  "candidateStrategies": [
+    {
+      "id": "A",
+      "name": "Keyword-based soft preference (no schema change)",
+      "description": "Infer room type from Room.name keyword and course/task type from courseName / remark keyword. Add a soft constraint that prefers matched room over unmatched room. No schema / importer / admin UI change required.",
+      "schemaRequired": false,
+      "riskLevel": "MEDIUM",
+      "implementationEffort": "LOW",
+      "pros": [
+        "No schema change. Can be implemented quickly.",
+        "Reuses existing SchedulingContext (room.name, course.name, task.remark) — no data loader change.",
+        "Soft preference is reversible; can be tuned via penalty constant.",
+        "Aligns with K22-F2A pattern: classGroup membership is the primary signal for HC6; keyword is auxiliary."
+      ],
+      "cons": [
+        "Keyword inference is fragile (typos, abbreviations, naming variations).",
+        "High risk of false positives / false negatives.",
+        "Hard to maintain over time (new keywords, deprecated names).",
+        "Should NOT be a hard constraint; K22-F2A explicitly says courseName/remark cannot back a hard rule.",
+        "Newly imported rooms / courses may not have inferred types until keywords are confirmed."
+      ],
+      "recommended": true,
+      "rationale": "Cheapest path to a soft preference. Even with limited coverage, a soft preference cannot introduce HC violations; it can only bias the LAHC exploration toward specialty rooms when the data supports it. Safe to prototype. However, it should be paired with a data-quality backfill step (K22-G2 or similar) before any hard rule is attempted."
+    },
+    {
+      "id": "B",
+      "name": "Schema-backed Room.type / Course.type / requiredRoomType",
+      "description": "Add structured type fields: Room.type (replace default-NORMAL with real classification), Course.type (theory / practice / lab), TeachingTask.requiredRoomType, TeachingTask.preferredRoomType. Schema migration + admin UI + importer + backfill.",
+      "schemaRequired": true,
+      "riskLevel": "HIGH",
+      "implementationEffort": "HIGH",
+      "pros": [
+        "Semantic clarity: structured fields are unambiguous.",
+        "Supports both soft and hard constraints.",
+        "UI-manageable.",
+        "Importer can infer types from courseName regex with admin override."
+      ],
+      "cons": [
+        "Schema migration + backfill required (high coordination cost).",
+        "Admin UI form needs new fields (Course.type, Room.type picker).",
+        "Importer must write Room.type / Course.type at import time.",
+        "Existing 53 rooms + 104 courses need manual classification (work effort).",
+        "Source evidence cannot help retroactively (only forward-fill)."
+      ],
+      "recommended": false,
+      "rationale": "Correct long-term direction but too heavy for current stage. Needs planning first (K22-G2-ROOM-TYPE-SCHEMA-PLAN). This stage recommends opening the planning stage but NOT attempting the migration in this audit."
+    },
+    {
+      "id": "C",
+      "name": "Source-evidence assisted classification (admin review)",
+      "description": "Use existing TeachingTaskClass source-evidence fields (sourceKeyword, sourceRemark, sourceClassName, sourceArtifactFilename, matchStrategy, matchConfidence) to surface uncertain classifications. Admin reviews ambiguous cases and assigns requiredRoomType.",
+      "schemaRequired": false,
+      "riskLevel": "LOW",
+      "implementationEffort": "MEDIUM",
+      "pros": [
+        "Reuses existing K20-FIX-B source-evidence infrastructure.",
+        "No schema change.",
+        "Reversible: admin can re-classify.",
+        "High confidence: admin makes the final call."
+      ],
+      "cons": [
+        "Requires admin UI flow (review queue, bulk confirm).",
+        "Manual work for ambiguous cases.",
+        "Does not directly improve score.ts; needs a feedback loop into Room.type / Course.type.",
+        "Slow rollout: depends on admin review throughput."
+      ],
+      "recommended": false,
+      "rationale": "Good complement to Candidate A or B (admin can correct misclassifications). Not a standalone path: review is valuable but does not by itself produce a score.ts signal. Recommended as a parallel track, not the primary path."
+    },
+    {
+      "id": "D",
+      "name": "Capacity-first proxy (avoid room type entirely)",
+      "description": "Do not attempt room-type matching. Instead, implement \"大班优先大教室 / 容量余量优化\" as a soft preference, using existing Room.capacity and studentCount fields. This sidesteps the room-type data quality problem entirely.",
+      "schemaRequired": false,
+      "riskLevel": "LOW",
+      "implementationEffort": "LOW",
+      "pros": [
+        "Capacity is real, reliable data (K21-FIX-A confirmed all 53 rooms have real capacity).",
+        "No schema change.",
+        "No new keyword logic.",
+        "Reuses existing HC4 capacity check.",
+        "Direct student-facing benefit (avoiding overcrowded rooms)."
+      ],
+      "cons": [
+        "Does not solve 实训课 / 机房课 matching.",
+        "Does not address specialty rooms (e.g. automotive lab at Linxiao).",
+        "May duplicate existing capacity-aware logic in solver."
+      ],
+      "recommended": true,
+      "rationale": "Safe first step in the P1 family. If room type is blocked, capacity is the next highest-value P1. Recommended as either the primary P1 path or a parallel track."
+    }
+  ],
+  "implementationReadiness": {
+    "hardRoomTypeRule": "NOT_READY",
+    "softKeywordPreference": "PARTIAL_READY (data access OK; coverage partial)",
+    "capacityPreference": "READY (K21-FIX-A confirmed)",
+    "rationale": "Hard rule on Room.type is NOT READY: all 53 rooms are NORMAL, Course has no type field. Hard rule on Room.name keyword is NOT READY for production: keyword coverage is partial (13 room hits, 26 course hits).",
+    "prerequisites": [
+      "Schema: add Course.type field (enum or string)",
+      "Schema: expose Room.type in admin form (currently hidden in config.ts:48-52)",
+      "Importer: persist Room.type from name keyword or admin override (currently hardcoded \"NORMAL\" at importer.ts:940)",
+      "Backfill: classify all 53 rooms by hand or by inference + admin review",
+      "Backfill: classify all 104 courses by hand or by inference + admin review"
+    ]
+  },
+  "findings": [
+    {
+      "id": "G-F-1",
+      "severity": "MEDIUM",
+      "category": "G-F. Room.type data quality",
+      "title": "All 53 rooms have type=NORMAL; no real classification available",
+      "currentStatus": "Room.type is a free-form String field with default \"NORMAL\". All 53 rooms in the database are NORMAL. The importer hardcodes \"NORMAL\" at room creation (src/lib/import/importer.ts:940: type: 'NORMAL'). Admin form does not expose Room.type. The field exists in schema but is not maintained.",
+      "evidence": [
+        "Room.type distribution: {\"NORMAL\":53}",
+        "prisma/schema.prisma: Room.type String @default(\"NORMAL\")",
+        "src/lib/admin-db/config.ts: getFormFields(\"room\") returns [name, building, capacity] (no type)",
+        "src/lib/import/importer.ts:940: type: 'NORMAL' hardcoded at upsert"
+      ],
+      "risk": "Room.type cannot be used as a real classification signal. Any constraint that branches on room.type (e.g. require task with COMPUTER_LAB_REQUIRED to be placed in a room with type=COMPUTER_LAB) would not fire in production because all rooms are NORMAL. This is the primary blocker for the \"实训课 / 机房课 matching\" P1 candidate.",
+      "recommendation": "Open K22-G2-ROOM-TYPE-SCHEMA-PLAN (planning-only stage) to evaluate: (a) admin UI form extension to expose Room.type; (b) importer change to infer type from Room.name keyword; (c) one-time backfill script (separate stage). Do NOT implement hard rule on Room.type until backfill is complete.",
+      "suggestedNextStage": "K22-G2-ROOM-TYPE-SCHEMA-PLAN"
+    },
+    {
+      "id": "G-F-2",
+      "severity": "LOW",
+      "category": "G-F. Room keyword inference",
+      "title": "Room.name keyword inference: 13 total matches across 11 keywords",
+      "currentStatus": "Per-keyword hit counts: {\"实训\":2,\"林校\":10,\"机房\":1}. Some rooms have specialty names that can be inferred. Inference is fragile: a room named \"11号楼301\" with no keyword would be classified as GENERAL.",
+      "evidence": [
+        "Room keyword hits: {\"实训\":2,\"林校\":10,\"机房\":1}",
+        "Score.ts already uses keyword inference for building (inferBuilding) — precedent for keyword-based logic."
+      ],
+      "risk": "Keyword inference is heuristic. False positives (e.g. \"语音室\" can be language lab or general if equipped with projectors) and false negatives (e.g. \"11号楼501\" with no keyword but actually a computer lab) are both possible. Cannot serve as hard rule.",
+      "recommendation": "Keyword inference is acceptable for soft preference with low penalty (e.g. -2 to -5). Always pair with a confidence indicator in audit logs. Do not implement as hard rule.",
+      "suggestedNextStage": "K22-G3-KEYWORD-BASED-ROOM-SUITABILITY-PROTOTYPE-AUDIT (if pursuing Candidate A)"
+    },
+    {
+      "id": "G-F-3",
+      "severity": "NONE",
+      "category": "G-F. Room capacity data quality",
+      "title": "Room.capacity range: min=3, max=200, median=40; distribution: {\"30-49\":29,\"50-79\":7,\"80-119\":6,\">=200\":1,\"<30\":10}",
+      "currentStatus": "K21-FIX-A confirmed all 53 rooms have real capacity. Min: 3, max: 200, median: 40. All in 50-79 bucket: false. Suspicious rooms (capacity=0, capacity=50 default with specialty keyword, etc.): 13.",
+      "evidence": [
+        "Capacity distribution: {\"30-49\":29,\"50-79\":7,\"80-119\":6,\">=200\":1,\"<30\":10}",
+        "Suspicious rooms: 13 (see JSON report for full list)"
+      ],
+      "risk": "Capacity distribution looks healthy.",
+      "recommendation": "Capacity is real (K21-FIX-A). Candidate D (大班优先大教室) is viable. No data-quality blocker for capacity-based constraints.",
+      "suggestedNextStage": "K22-F10-CAPACITY-PREFERENCE-AUDIT (if pursuing Candidate D)"
+    },
+    {
+      "id": "G-F-4",
+      "severity": "MEDIUM",
+      "category": "G-F. Course type data quality",
+      "title": "Course model has no type field; course name is the only signal",
+      "currentStatus": "Course model: id, name (unique), createdAt, updatedAt. No type / category / kind / practical flag. Task model has remark (free-form text) but no structured course type. All classification must come from courseName regex or remark regex.",
+      "evidence": [
+        "prisma/schema.prisma: Course has only id + name",
+        "prisma/schema.prisma: TeachingTask has remark: String? (free-form)",
+        "src/lib/admin-db/config.ts: getFormFields(\"course\") returns [name] (no type)"
+      ],
+      "risk": "courseName / remark are not reliable classification signals. They may include unrelated text (e.g. \"森林草原防火技术1班\" has \"技术\" which is on the parser blacklist but still appears). Hard rule on courseName regex would mis-fire on these cases.",
+      "recommendation": "Add Course.type field in a future schema migration. In the meantime, rely on courseName / remark keyword for SOFT preference only, with low penalty.",
+      "suggestedNextStage": "K22-G2-ROOM-TYPE-SCHEMA-PLAN (includes Course.type as scope)"
+    },
+    {
+      "id": "G-F-5",
+      "severity": "LOW",
+      "category": "G-F. Course / task keyword coverage",
+      "title": "Course.name keyword hits: 26 (of 104); Task.remark hits: 46 (of 308)",
+      "currentStatus": "Per-keyword course hits: {\"实训\":2,\"传感器\":4,\"检测\":2,\"汽车\":9,\"制图\":3,\"维修\":1,\"电工\":2,\"电子\":3}. Per-keyword task remark hits: {\"汽车\":46}. 26 of 104 courses match at least one keyword (25% if counted naively; note: a single course can match multiple keywords).",
+      "evidence": [
+        "Course.name keyword hits: {\"实训\":2,\"传感器\":4,\"检测\":2,\"汽车\":9,\"制图\":3,\"维修\":1,\"电工\":2,\"电子\":3}",
+        "Task.remark keyword hits: {\"汽车\":46}"
+      ],
+      "risk": "Keyword coverage is partial. Courses without keywords would be classified as GENERAL, which is the safe default but means the constraint has limited effect on most courses.",
+      "recommendation": "Combine courseName + task.remark signals. Where both match the same type, confidence is higher. Where only one matches, use the matched type with low confidence. Where neither matches, default to GENERAL."
+    },
+    {
+      "id": "G-F-6",
+      "severity": "INFO",
+      "category": "G-F. Source evidence availability",
+      "title": "Source evidence coverage: 0% sourceKeyword, 0% sourceClassName (out of 446 TeachingTaskClass rows)",
+      "currentStatus": "TeachingTaskClass has rich per-link source-evidence fields (K20-FIX-B): sourceKeyword, sourceRemark, sourceClassName, sourceArtifactFilename, matchStrategy, matchConfidence. These were forward-filled at import time and are not retroactively populated. They can help admin review ambiguous cases.",
+      "evidence": [
+        "sourceKeyword: 0/446 (0%)",
+        "sourceRemark: 0/446 (0%)",
+        "sourceClassName: 0/446 (0%)",
+        "sourceArtifactFilename: 0/446 (0%)",
+        "matchStrategy: 0/446 (0%)",
+        "matchConfidence: 0/446 (0%)"
+      ],
+      "risk": "Source evidence is not retroactive. If a new keyword-based classification is designed, source evidence can only help for TeachingTaskClass rows that were created after the keyword change, not for existing rows.",
+      "recommendation": "Source evidence is a complement, not a primary signal. Use it in admin review (Candidate C) but not as a primary classification input for score.ts."
+    },
+    {
+      "id": "G-F-7",
+      "severity": "NONE",
+      "category": "G-F. Scheduler context readiness",
+      "title": "SchedulingContext has full access to room.name, course.name, task.remark, room.building, room.capacity, room.type",
+      "currentStatus": "data-loader.ts loads tasks with course/teacher/taskClasses, rooms with availabilities, and slots with room + teachingTask. Score.ts can access room.name, room.type, room.building, room.capacity, course.name, task.remark without any new data path. No new data source is needed for a keyword-based room suitability constraint.",
+      "evidence": [
+        "src/lib/scheduler/types.ts: RoomWithAvailability includes name, building, capacity, type, availabilities",
+        "src/lib/scheduler/types.ts: TaskWithRelations includes course (name), teacher, taskClasses (classGroup.name), remark (via Prisma passthrough)",
+        "src/lib/scheduler/data-loader.ts: include statements cover all needed relations",
+        "score.ts already uses task.remark (line 131) and room.name (line 70, inferBuilding)"
+      ],
+      "risk": "No risk. Scheduler has full data access.",
+      "recommendation": "Any new keyword-based or capacity-based constraint can be implemented in score.ts without data-loader changes."
+    },
+    {
+      "id": "G-F-8",
+      "severity": "LOW",
+      "category": "G-F. Building data quality",
+      "title": "53 of 53 rooms have null building (100%)",
+      "currentStatus": "Most rooms have building=null. inferBuilding(name) provides fallback for SC1 detection (林校 / 实训楼 / 11号楼 / 12号楼 / 1号楼), but SC4 only uses Room.building directly. A keyword-based room suitability constraint would similarly rely on Room.name inference.",
+      "evidence": [
+        "Building null: 53 / 53",
+        "score.ts: inferBuilding() supports 林校, 实训, 11号楼, 12号楼, 1号楼"
+      ],
+      "risk": "Same as F9-E-1 in F9 audit: keyword-based inference is fragile. Building inference is acceptable for soft preference but not for hard rule.",
+      "recommendation": "Continue using inferBuilding as fallback. Not a blocker for keyword-based soft preference."
+    }
+  ],
+  "severitySummary": {
+    "HIGH": 0,
+    "MEDIUM": 2,
+    "LOW": 3,
+    "INFO": 1,
+    "NONE": 2
+  },
+  "blocking": false,
+  "recommendedNextStage": "K22-G2-ROOM-TYPE-SCHEMA-PLAN (planning) OR K22-F10-CAPACITY-PREFERENCE-AUDIT (capacity-first) OR K22-G3-KEYWORD-BASED-ROOM-SUITABILITY-PROTOTYPE-AUDIT (soft-only)",
+  "notes": [
+    "K22-G is a read-only audit. No Prisma writes, no score.ts changes, no schema changes.",
+    "Room.type is a free-form String field with default \"NORMAL\"; importer hardcodes \"NORMAL\" at room creation (importer.ts:940).",
+    "All 53 rooms in dev.db have type=NORMAL. This is the primary blocker for hard room-type rules.",
+    "Room.name keyword inference is feasible but fragile — appropriate for soft preference only.",
+    "Course has no type field. courseName + remark are the only signals.",
+    "Capacity is real (K21-FIX-A). Capacity-based soft preference is READY.",
+    "Source evidence (K20-FIX-B) is forward-fill only; cannot retroactively classify existing data.",
+    "No new constraint should be implemented in this stage. K22-G is audit-only."
+  ]
+}
