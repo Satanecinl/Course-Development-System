@@ -1,0 +1,386 @@
+{
+  "generatedAt": "2026-06-06T07:38:29.998Z",
+  "phase": "K22-F1-SOFT-CONSTRAINT-TEACHER-DAY-BALANCE-AUDIT",
+  "mode": "read-only design audit",
+  "summary": {
+    "totalFindings": 6,
+    "severity": {
+      "HIGH": 0,
+      "MEDIUM": 1,
+      "LOW": 1,
+      "INFO": 1,
+      "NONE": 3
+    },
+    "blocking": false,
+    "recommendedDefinition": "SC5_TEACHER_DAY_BALANCE",
+    "recommendedStage": "K22-F2-SOFT-CONSTRAINT-TEACHER-DAY-BALANCE-IMPL"
+  },
+  "existingTeacherLogic": {
+    "sc2": {
+      "key": "${teachingTaskId}-${day}",
+      "aggregate": "per task-day",
+      "penalty": -10
+    },
+    "sc1": {
+      "aggregate": "per (p, q) pair with same teacher OR shared class, same day, |idx diff|=1, different building",
+      "penalty": -5,
+      "deltaStatus": "K22-D added SC1 delta logic"
+    },
+    "hc2": {
+      "penalty": -1000,
+      "detection": "pair (a, b) with same teacherId, same day, same slotIndex, week overlap"
+    },
+    "deltaTeacher": {
+      "matched": true,
+      "notes": "K22-D SC1 delta iterates ctx.slots and checks teacherId equality per (moved, other) pair. Pattern is reusable for teacher-day-balance delta."
+    },
+    "slotsByTeacherUsed": false
+  },
+  "k22CFixtureBuilder": {
+    "reusable": true,
+    "notes": "K22-C buildContext supports teacherId/dayOfWeek/slotIndex, applyMoveToState + buildStateFromSlots are present. NEW-SC-01 cases can be added by extending the harness with new buildContext calls. buildContext=true, teacherId=true, dayOfWeek=true, slotIndex=true, applyMoveToState=true, buildStateFromSlots=true."
+  },
+  "definitionOptions": [
+    {
+      "id": "OPTION_A",
+      "name": "教师上课日数量均衡 (number-of-teaching-days balance)",
+      "description": "Goal: ensure each teacher has a similar number of distinct teaching days per week. For example, penalize teachers who teach only 1 day out of 5 weekdays when their total weekly load >= some threshold. Symmetric: also penalize teachers with too many distinct days (e.g. 5/5).",
+      "pros": [
+        "Simple intuition: avoid concentration on a single day",
+        "Easy to communicate to 教务处 (academic affairs)",
+        "Does not require room/time conflict data — just slot positions"
+      ],
+      "cons": [
+        "Different teachers have different total loads; 1 day for a 2-slot teacher is fine, but 1 day for a 6-slot teacher is concentration",
+        "Threshold for \"too few\" or \"too many\" days is arbitrary without data calibration",
+        "Coarse: a teacher with 4/0/0/0/0 (4 slots on Monday) and 0/4/0/0/0 (4 slots on Tuesday) have the same \"1 day\" but very different weekly experience"
+      ],
+      "dataReady": true,
+      "recommended": false,
+      "rejectionReason": "Coarse metric. Misses the actual problem: a teacher with 4/0/0/0/0 has a \"1 day\" count but still gets 4 consecutive slots. Better to look at load per day (Option B)."
+    },
+    {
+      "id": "OPTION_B",
+      "name": "教师每日课时负载均衡 (per-day load balance)",
+      "description": "Goal: ensure each teacher has a similar number of slots on each teaching day. For each teacher, compute per-day slot count across the week. If max - min (over non-zero days) > threshold, penalize. Specifically: skip teachers with total slots < MIN_SLOTS (e.g. 3) to avoid over-penalizing low-load teachers. Penalty = -k * max(0, maxDailyLoad - minNonZeroDailyLoad - threshold).",
+      "pros": [
+        "Captures the actual concentration: 4/0/0/0/0 is penalized, 1/1/1/1/1 is not",
+        "Threshold-based: tunable via hardcoded constant for v1",
+        "Independent of total load (with skip rule for very low load)",
+        "Reuses per-day aggregation pattern from SC2 (different key: teacherId instead of teachingTaskId)",
+        "Reuses slot positions in current assignment (no new data needed)"
+      ],
+      "cons": [
+        "Threshold tuning requires data analysis on real schedules",
+        "Does not consider whether slots on the same day are consecutive (a teacher with 4 slots all at idx 1, 3, 5, 6 is \"balanced\" but spread across morning + evening — not great)",
+        "Refinement: combine with half-day concentration (NEW-SC-07) for finer granularity"
+      ],
+      "dataReady": true,
+      "recommended": true
+    },
+    {
+      "id": "OPTION_C",
+      "name": "教师跨周分布均衡 (cross-week distribution balance)",
+      "description": "Goal: ensure each teacher has even distribution across weeks and across days. For each teacher, compute slots per (week, day) and penalize variance.",
+      "pros": [
+        "Theoretically most thorough"
+      ],
+      "cons": [
+        "Current score.ts does not use week overlap in soft constraints",
+        "Overly complex for v1; increases regression risk",
+        "Week overlap logic exists for HC1-HC5 but is heavier; introduces soft weekly-aggregation that has never been tested",
+        "Data is available (ScheduleSlot has startWeek/endWeek via TeachingTask) but adds moving part"
+      ],
+      "dataReady": false,
+      "recommended": false,
+      "rejectionReason": "Too complex for v1. Cross-week variance adds a dimension that is not exercised by any existing soft constraint. Defer to a future P1/P2 stage after Option B is mature. Data is technically available but introduces a new aggregation dimension that has never been tested in soft scoring."
+    }
+  ],
+  "recommendedDefinition": {
+    "constraintId": "SC5_TEACHER_DAY_BALANCE",
+    "name": "教师每日课时负载均衡",
+    "formula": "For each teacher T with total weekly slots >= MIN_SLOTS_THRESHOLD (default 3):\n  compute dailyCounts[T] = Map<dayOfWeek 1-5, slot count>\n  maxLoad = max(dailyCounts[T].values())\n  minLoad = min(dailyCounts[T].values() where count > 0)\n  if maxLoad - minLoad > LOAD_DIFF_THRESHOLD (default 2):\n    penalty = SOFT_SC5_TEACHER_DAY_BALANCE * (maxLoad - minLoad - LOAD_DIFF_THRESHOLD)\n  else: penalty = 0",
+    "skipRules": [
+      "teacher.totalWeeklySlots < MIN_SLOTS_THRESHOLD (default 3) — small load teachers exempt",
+      "task.teacherId == null — anonymous tasks exempt",
+      "position.room == 0 (unassigned) — not counted in any teacher total"
+    ],
+    "rationale": "Option B captures the core problem (concentration) while keeping the formula simple. The skip rule for low-load teachers prevents over-penalization. The threshold is hardcoded for v1 and can later be moved to SchedulingConfig (K22-weights-roadmap).",
+    "pseudocode": "\n// FULL SCORE (calculateScoreWithDetails)\nconst teacherDayCounts = new Map<number, Map<number, number>>()  // teacherId -> (day -> count)\nfor (const p of positions) {\n  if (p.room === 0) continue\n  const tid = p.slot.teachingTask.teacherId\n  if (tid == null) continue\n  let dayMap = teacherDayCounts.get(tid)\n  if (!dayMap) { dayMap = new Map(); teacherDayCounts.set(tid, dayMap) }\n  dayMap.set(p.day, (dayMap.get(p.day) ?? 0) + 1)\n}\n\nfor (const [tid, dayMap] of teacherDayCounts) {\n  const total = [...dayMap.values()].reduce((a, b) => a + b, 0)\n  if (total < MIN_SLOTS_THRESHOLD) continue\n  const loads = [...dayMap.values()]\n  const maxLoad = Math.max(...loads)\n  const minLoad = Math.min(...loads)\n  if (maxLoad - minLoad > LOAD_DIFF_THRESHOLD) {\n    const penalty = SOFT_SC5_TEACHER_DAY_BALANCE * (maxLoad - minLoad - LOAD_DIFF_THRESHOLD)\n    softScore += penalty\n    details.push({ type: 'SC5_TEACHER_DAY_BALANCE', level: 'SOFT', penalty, message: `教师 ${tid}: 跨天负载 ${maxLoad}/${minLoad}` })\n  }\n}\n"
+  },
+  "fullScoreDesign": {
+    "aggregation": "Group ctx.slots by teachingTask.teacherId (skip null). For each teacher, build Map<dayOfWeek, count> from current assignment positions.",
+    "calculation": "Per teacher: total = sum(counts); if total < MIN_SLOTS_THRESHOLD skip; else compute max - min (over non-zero days) and apply threshold + penalty formula.",
+    "complexity": "O(n) where n = number of slots. Single pass to group + single pass to compute penalty.",
+    "excludes": "SC2 (different key: per task-day not per teacher-day)",
+    "detailsEmitted": "One SC5_TEACHER_DAY_BALANCE detail per teacher per imbalance (vs SC2 one detail per task-day).",
+    "pseudocode": "\n// FULL SCORE (calculateScoreWithDetails)\nconst teacherDayCounts = new Map<number, Map<number, number>>()  // teacherId -> (day -> count)\nfor (const p of positions) {\n  if (p.room === 0) continue\n  const tid = p.slot.teachingTask.teacherId\n  if (tid == null) continue\n  let dayMap = teacherDayCounts.get(tid)\n  if (!dayMap) { dayMap = new Map(); teacherDayCounts.set(tid, dayMap) }\n  dayMap.set(p.day, (dayMap.get(p.day) ?? 0) + 1)\n}\n\nfor (const [tid, dayMap] of teacherDayCounts) {\n  const total = [...dayMap.values()].reduce((a, b) => a + b, 0)\n  if (total < MIN_SLOTS_THRESHOLD) continue\n  const loads = [...dayMap.values()]\n  const maxLoad = Math.max(...loads)\n  const minLoad = Math.min(...loads)\n  if (maxLoad - minLoad > LOAD_DIFF_THRESHOLD) {\n    const penalty = SOFT_SC5_TEACHER_DAY_BALANCE * (maxLoad - minLoad - LOAD_DIFF_THRESHOLD)\n    softScore += penalty\n    details.push({ type: 'SC5_TEACHER_DAY_BALANCE', level: 'SOFT', penalty, message: `教师 ${tid}: 跨天负载 ${maxLoad}/${minLoad}` })\n  }\n}\n"
+  },
+  "deltaScoreDesign": {
+    "affectedTeacher": "Only the teacher of the moved slot is affected. Other teachers' daily loads do not change.",
+    "beforeAfter": "For teacher T of moved slot: compute dailyCounts[T] before (using old.dayOfWeek) and after (using move.newDay).",
+    "formula": "deltaSoft += afterPenalty(T) - beforePenalty(T). afterPenalty and beforePenalty use the same MIN_SLOTS_THRESHOLD and LOAD_DIFF_THRESHOLD as full score. Both call a shared helper teacherImbalancePenalty(dailyCounts, total) → number.",
+    "complexity": "O(1) per move (one teacher, one day shift).",
+    "hardScoreImpact": "None. deltaHard is unaffected.",
+    "doesNotIterate": "No need to scan all teachers — only the moved slot's teacher.",
+    "pseudocode": "\n// DELTA SCORE (calculateDeltaScore)\nconst task = slot.teachingTask\nconst tid = task.teacherId\nif (tid == null) { /* SC5 not affected */ return { deltaHard, deltaSoft } }\n\n// Build dailyCounts for teacher T at OLD state\nconst oldDailyCounts = computeDailyCountsForTeacher(tid, ctx, state, exceptSlotId: slot.id, exceptDay: old.dayOfWeek, exceptSlotIndex: old.slotIndex, exceptRoomId: old.roomId)\noldDailyCounts.set(old.dayOfWeek, (oldDailyCounts.get(old.dayOfWeek) ?? 0) + 1)  // re-add moved slot at old position\n\n// Build dailyCounts for teacher T at NEW state\nconst newDailyCounts = computeDailyCountsForTeacher(tid, ctx, state, exceptSlotId: slot.id, exceptDay: old.dayOfWeek, exceptSlotIndex: old.slotIndex, exceptRoomId: old.roomId)\nnewDailyCounts.set(move.newDay, (newDailyCounts.get(move.newDay) ?? 0) + 1)  // re-add moved slot at new position\n\nconst beforePenalty = teacherImbalancePenalty(oldDailyCounts)\nconst afterPenalty = teacherImbalancePenalty(newDailyCounts)\ndeltaSoft += afterPenalty - beforePenalty\n"
+  },
+  "penaltyDesign": {
+    "constraintId": "SC5_TEACHER_DAY_BALANCE",
+    "defaultPenalty": -3,
+    "penaltyRationale": "-3 per unit of imbalance. Lighter than SC1 (-5) and SC2 (-10) because imbalance is a soft preference, not a hard violation. Equivalent to one SC3 (extreme time) per imbalance unit.",
+    "minSlotsThreshold": 3,
+    "minSlotsRationale": "A teacher with 1 or 2 weekly slots cannot meaningfully be \"imbalanced\" — a single day is normal. Threshold 3 is the minimum to compute max - min with at least 2 non-zero days.",
+    "loadDiffThreshold": 2,
+    "loadDiffRationale": "max - min > 2 means the teacher has at least 3 more slots on one day than the lightest day. Example: 4/1 distribution → diff = 3 → penalty = -3. Example: 3/2 distribution → diff = 1 → no penalty. Threshold 2 prevents penalizing minor variations like 2/1/1.",
+    "configurable": false,
+    "configurableRationale": "For v1 the penalty is hardcoded alongside SOFT_SC1-4 in score.ts. K22-weights-roadmap (separate stage) will move all soft weights to SchedulingConfig.",
+    "inResultSnapshotConfig": false,
+    "resultSnapshotRationale": "SchedulingRun.resultSnapshot.config is the configId + overrides + serialized snapshot. SC5 does not add a config field for v1 (consistent with SC1-SC4). K22-weights-roadmap will add hardWeights/softWeights JSON to SchedulingConfig in a future stage."
+  },
+  "sc2Interaction": {
+    "overlap": "NONE",
+    "overlapAnalysis": "SC2 keys by `${teachingTaskId}-${day}` (per task-day). SC5 keys by `${teacherId}-${day}` (per teacher-day). They are independent:\n  - SC2 fires when ONE teaching task has >1 slot on the same day (e.g. 4-hour lab course)\n  - SC5 fires when ONE teacher's load (across all their teaching tasks) is uneven across days\nExample: Teacher T teaches 3 different tasks (A, B, C) with one slot each, on Monday only.   SC2: 0 (no single task has >1 slot on Monday)\n  SC5: -3 (load 3/0/0/0/0, diff = 3 > 2)\nExample: Task A has 2 slots on Monday, 0 on other days.\n  SC2: -10 (2 slots same day for one task)\n  SC5: depends on teacher. If teacher only has Task A: load 2/0/0/0/0, diff = 2, not > 2, no penalty.   If teacher also has other tasks: depends on distribution.\nNo double-penalty, no missed detection.",
+    "symmetricOverlap": "NONE",
+    "symmetricAnalysis": "SC5 may fire even when SC2 is silent (teacher across multiple tasks on one day). SC2 may fire even when SC5 is silent (single task with multiple sessions, total teacher load < 3). Both can fire together (teacher with 2-slot task A on Mon + 1-slot task B on Mon + 1-slot task C on Tue = SC2 -10 + SC5 -3). Both penalties are valid: SC2 penalizes the task-day, SC5 penalizes the teacher distribution.",
+    "effectOnSC2": "NONE — SC5 does not modify SC2 logic, threshold, or aggregation."
+  },
+  "harnessPlan": [
+    {
+      "id": "SC5-FULL-1",
+      "category": "FULL",
+      "purpose": "Imbalanced teacher: 4 slots on Monday only → SC5 should fire",
+      "fixture": "1 teacher (id=100), 4 tasks (id=1,2,3,4) each with 1 slot, all on dayOfWeek=1. Different rooms. No other teachers. Total = 4 slots, loads = [4,0,0,0,0], diff = 4 > 2, penalty = -3 * (4-2) = -6.",
+      "expectedHardScore": 0,
+      "expectedSoftScoreDelta": -6,
+      "expectedSC5DetailCount": 1,
+      "expectedStatus": "PASS",
+      "notes": "Pure full-score test. SC2 should also fire if any task has >1 slot on the same day — but here each task has 1 slot, so SC2 is 0. Only SC5 fires."
+    },
+    {
+      "id": "SC5-FULL-2",
+      "category": "FULL",
+      "purpose": "Balanced teacher: 2/2/0/0/0 → SC5 should NOT fire (diff = 2 not > 2)",
+      "fixture": "1 teacher (id=100), 2 tasks (id=1, 2) each with 2 slots, on dayOfWeek=1 and dayOfWeek=2.",
+      "expectedHardScore": 0,
+      "expectedSoftScoreDelta": 0,
+      "expectedSC5DetailCount": 0,
+      "expectedStatus": "PASS",
+      "notes": "Even distribution, diff = 2 = threshold, no penalty. Verifies threshold is strictly > (not >=). SC2: task 1 has 2 slots on day 1 → -10; task 2 has 2 slots on day 2 → -10. Total SC2 = -20, expected."
+    },
+    {
+      "id": "SC5-FULL-3",
+      "category": "FULL",
+      "purpose": "Below threshold: teacher with 2 slots on day 1 → SC5 should NOT fire (total < 3)",
+      "fixture": "1 teacher (id=100), 1 task (id=1) with 2 slots on dayOfWeek=1.",
+      "expectedHardScore": 0,
+      "expectedSoftScoreDelta": 0,
+      "expectedSC5DetailCount": 0,
+      "expectedStatus": "PASS",
+      "notes": "Skip rule: total = 2 < MIN_SLOTS_THRESHOLD (3), no SC5 penalty. SC2: -10 (2 slots same task same day)."
+    },
+    {
+      "id": "SC5-DELTA-RESOLVE",
+      "category": "DELTA_RESOLVE",
+      "purpose": "Move a slot from high-load day to low-load day: SC5 penalty decreases, deltaSoft is positive",
+      "fixture": "1 teacher (id=100), 2 tasks. Task 1: 3 slots on day 1. Task 2: 1 slot on day 5. Initial: load = [3,0,0,0,1], diff = 3 > 2, penalty = -3 * (3-2) = -3. Move: one of task 1's slots from day 1 to day 2. New: load = [2,1,0,0,1], diff = 2 not > 2, no penalty. deltaSoft = 0 - (-3) = +3.",
+      "expectedHardScore": 0,
+      "expectedSoftScoreDelta": 3,
+      "expectedSC5DetailCount": 0,
+      "expectedStatus": "PASS",
+      "notes": "Verifies delta correctly reflects SC5 reduction. Note: hardScore may be affected by room/day moves — test should pin room to avoid HC4."
+    },
+    {
+      "id": "SC5-DELTA-INTRODUCE",
+      "category": "DELTA_INTRODUCE",
+      "purpose": "Move a slot to the high-load day: SC5 penalty increases, deltaSoft is negative",
+      "fixture": "1 teacher (id=100), 2 tasks. Task 1: 2 slots on day 1. Task 2: 1 slot on day 5. Initial: load = [2,0,0,0,1], diff = 2 not > 2, no penalty. Move: task 2 slot from day 5 to day 1. New: load = [3,0,0,0,0], diff = 3 > 2, penalty = -3. deltaSoft = -3 - 0 = -3.",
+      "expectedHardScore": 0,
+      "expectedSoftScoreDelta": -3,
+      "expectedSC5DetailCount": 1,
+      "expectedStatus": "PASS",
+      "notes": "Inverse of DELTA-RESOLVE. Verifies delta correctly reflects SC5 increase."
+    },
+    {
+      "id": "SC5-EDGE-LOW-LOAD",
+      "category": "EDGE",
+      "purpose": "Move a slot when total < 3: SC5 should not fire before or after",
+      "fixture": "1 teacher (id=100), 1 task (id=1) with 2 slots. Initial: load = [2,0,0,0,0], total = 2 < 3, no SC5. Move one slot to day 2. New: load = [1,1,0,0,0], total = 2 < 3, no SC5. deltaSoft = 0.",
+      "expectedHardScore": 0,
+      "expectedSoftScoreDelta": 0,
+      "expectedSC5DetailCount": 0,
+      "expectedStatus": "PASS",
+      "notes": "Edge case: skip rule holds even after move. delta should be 0."
+    },
+    {
+      "id": "SC5-EDGE-NULL-TEACHER",
+      "category": "EDGE",
+      "purpose": "Move a slot belonging to a null-teacher task: SC5 should not be affected",
+      "fixture": "Mix: 1 task (id=1) with teacherId=100, 2 slots on day 1; 1 task (id=2) with teacherId=null, 1 slot on day 3. Initial: load for teacher 100 = [2,0,0,0,0], total = 2 < 3, no SC5. Move task 2 slot from day 3 to day 1. Teacher 100 load unchanged: [2,0,0,0,0]. deltaSoft = 0 (null teacher does not enter aggregation).",
+      "expectedHardScore": 0,
+      "expectedSoftScoreDelta": 0,
+      "expectedSC5DetailCount": 0,
+      "expectedStatus": "PASS",
+      "notes": "Verifies null-teacher skip rule."
+    },
+    {
+      "id": "SC5-EDGE-EXACT-THRESHOLD",
+      "category": "EDGE",
+      "purpose": "Boundary: max - min = 2 exactly should NOT fire (threshold is > not >=)",
+      "fixture": "1 teacher (id=100), 2 tasks. Task 1: 2 slots on day 1, task 2: 1 slot on day 3. Initial: load = [2,0,0,1,0], total = 3, max = 2, min = 1, diff = 2. diff > 2 is false, no penalty.",
+      "expectedHardScore": 0,
+      "expectedSoftScoreDelta": 0,
+      "expectedSC5DetailCount": 0,
+      "expectedStatus": "PASS",
+      "notes": "Boundary test for the > vs >= threshold logic."
+    },
+    {
+      "id": "SC5-ISOLATION-SC2",
+      "category": "SC2_ISOLATION",
+      "purpose": "Verify SC5 and SC2 fire independently with no double-counting",
+      "fixture": "1 teacher (id=100), 2 tasks (id=1, id=2). Task 1: 2 slots on day 1 (SC2 trigger). Task 2: 1 slot on day 1. Initial: SC2: -10 (task 1 has 2 slots on day 1), SC5: load = [3,0,0,0,0], diff = 3 > 2, penalty = -3. Move: task 2 slot from day 1 to day 2. SC2: task 1 still 2 slots on day 1, unchanged. Task 2 now 1 slot on day 2 (1 slot per day, no SC2). SC2 unchanged = 0 delta. SC5: new load = [2,1,0,0,0], diff = 2 not > 2, no penalty. deltaSoft = 0 - (-3) = +3.",
+      "expectedHardScore": 0,
+      "expectedSoftScoreDelta": 3,
+      "expectedSC5DetailCount": 0,
+      "expectedStatus": "PASS",
+      "notes": "Verifies SC2 and SC5 operate independently. SC2 delta = 0 (unchanged), SC5 delta = +3 (resolved)."
+    }
+  ],
+  "risks": [
+    {
+      "id": "K22-F1-R-1",
+      "severity": "LOW",
+      "title": "Threshold (LOAD_DIFF_THRESHOLD=2) is hardcoded; tuning may require data analysis",
+      "mitigation": "Document threshold choice. After K22-weights-roadmap, expose as softWeights.SC5.threshold."
+    },
+    {
+      "id": "K22-F1-R-2",
+      "severity": "LOW",
+      "title": "Encourages \"balanced\" distributions that may not match teacher preferences (some teachers prefer concentrated days)",
+      "mitigation": "Light penalty (-3) makes it a preference, not a hard requirement. Teachers with strong preferences can use K22-H NEW-SC-08 (teacher preference) once schema is extended."
+    },
+    {
+      "id": "K22-F1-R-3",
+      "severity": "LOW",
+      "title": "Skip rule for total < 3 may over-exempt very low-load teachers",
+      "mitigation": "Acceptable trade-off: low-load teachers cannot meaningfully be imbalanced. If we want stricter rules for part-time teachers, add Teacher.maxDailyLoad in a future schema extension."
+    },
+    {
+      "id": "K22-F1-R-4",
+      "severity": "LOW",
+      "title": "SC5 delta may not match SC5 full exactly when moved slot crosses a teacher boundary (rare: same teachingTaskId reassigned to different teacher)",
+      "mitigation": "In current data model, TeachingTask.teacherId is fixed; cannot change at solver time. The only way teacherId changes is via import. delta mirroring stays valid."
+    },
+    {
+      "id": "K22-F1-R-5",
+      "severity": "INFO",
+      "title": "Half-day concentration (NEW-SC-07) may overlap with SC5; K22-F1 implements SC5 only, K22-G adds SC7",
+      "mitigation": "SC5 uses per-day counts; SC7 uses per-half-day counts. Different aggregation granularity. They can coexist without double-counting if implemented carefully."
+    }
+  ],
+  "findings": [
+    {
+      "id": "K22-F1-A-1",
+      "severity": "NONE",
+      "category": "A. Existing teacher-related score logic inventory",
+      "title": "现有 score.ts 中与教师相关逻辑",
+      "currentStatus": "SC2 (per task-day) 与 SC5 (per teacher-day) 键不同，相互独立。HC2 (teacher conflict) 已在 full + delta 中覆盖。SC1 / K22-D SC1 delta 已用 teacherId equality pattern。",
+      "evidence": [
+        "SC2: key=${teachingTaskId}-${day}, penalty=-10",
+        "SC1: penalty=-5, K22-D added SC1 delta logic",
+        "HC2: penalty=-1000",
+        "slotsByTeacher used in score.ts: false (built in data-loader but score.ts uses per-slot teachingTask.teacherId)"
+      ],
+      "risk": "无风险。已有逻辑可作为 SC5 设计的参考模式。",
+      "recommendation": "复用 SC2 的 per-day aggregation 模式，但 key 从 `${teachingTaskId}-${day}` 改为 `${teacherId}-${day}`。"
+    },
+    {
+      "id": "K22-F1-A-2",
+      "severity": "NONE",
+      "category": "A. Definition option analysis",
+      "title": "3 个定义选项分析 — 推荐 Option B (per-day load balance)",
+      "currentStatus": "Option A (distinct-day count) 过于粗粒度。Option B (per-day load max-min) 直接捕捉问题，threshold 简单。Option C (cross-week variance) 引入未测试的 soft weekly 维度，过早。",
+      "evidence": [
+        "OPTION_A (REJECTED): 教师上课日数量均衡 (number-of-teaching-days balance)",
+        "OPTION_B (RECOMMENDED): 教师每日课时负载均衡 (per-day load balance)",
+        "OPTION_C (REJECTED): 教师跨周分布均衡 (cross-week distribution balance)"
+      ],
+      "risk": "如果选 Option A: 错过 4/0/0/0/0 的实际集中问题。如果选 Option C: 引入新维度未测试，回归风险高。",
+      "recommendation": "推荐 Option B 作为 v1。Option A 留作后续 refinement，Option C 留作 future work。"
+    },
+    {
+      "id": "K22-F1-A-3",
+      "severity": "NONE",
+      "category": "A. SC2 and SC5 interaction",
+      "title": "SC5 与 SC2 相互独立，无重复惩罚",
+      "currentStatus": "SC2 keys by ${teachingTaskId}-${day} (per task-day)。SC5 keys by ${teacherId}-${day} (per teacher-day)。两者触发条件不同，可同时 fire 而不重复。",
+      "evidence": [
+        "SC2 example: Task A has 2 slots on Mon → SC2 = -10",
+        "SC5 example: Teacher T has 3 different tasks all on Mon → SC5 = -3",
+        "Both fire together: Teacher T has Task A (2 slots on Mon) + Task B (1 slot on Mon) → SC2 = -10, SC5 = -3"
+      ],
+      "risk": "无风险。",
+      "recommendation": "实施 SC5 时保持 SC2 完全不变。两 constraint 在代码中独立 block，keys 不同，无干扰。"
+    },
+    {
+      "id": "K22-F1-B-1",
+      "severity": "LOW",
+      "category": "B. K22-C fixture builder reuse",
+      "title": "K22-C fixture builder 可复用 — 不需新增 helper",
+      "currentStatus": "K22-C verify 脚本的 buildContext() 已支持 teacherId / dayOfWeek / slotIndex / classGroupId / building。applyMoveToState + buildStateFromSlots 已有。",
+      "evidence": [
+        "K22-C buildContext supports teacherId/dayOfWeek/slotIndex, applyMoveToState + buildStateFromSlots are present. NEW-SC-01 cases can be added by extending the harness with new buildContext calls. buildContext=true, teacherId=true, dayOfWeek=true, slotIndex=true, applyMoveToState=true, buildStateFromSlots=true.",
+        "✓ Reusable"
+      ],
+      "risk": "如果 fixture builder 不能复用，会增加实施 SC5 的工作量。",
+      "recommendation": "直接复用 K22-C buildContext。新增 6-9 个 SC5 cases 即可。",
+      "suggestedNextStage": "K22-F2-SOFT-CONSTRAINT-TEACHER-DAY-BALANCE-IMPL"
+    },
+    {
+      "id": "K22-F1-B-2",
+      "severity": "MEDIUM",
+      "category": "B. Implementation requires delta mirroring",
+      "title": "SC5 需要同时实现 full + delta 保持 LAHC 决策正确",
+      "currentStatus": "LAHC solver 使用 calculateDeltaScore 决策。如果只实现 full 不实现 delta，solver 会在 SC5 维度走弯路（与 K22-A HIGH 风险 SC1 delta missing 同类）。",
+      "evidence": [
+        "solver.ts: solve() uses calculateDeltaScore for LAHC accept/reject",
+        "K22-A HIGH 教训: SC1 delta missing 让 solver 接受引入 SC1 penalty 的 move"
+      ],
+      "risk": "MEDIUM: 如果只实现 full 不实现 delta, solver 决策 sub-optimal, 但 best score 仍由 full score 追踪。K22-D SC1 的修复经验是 mirror full + delta in one shot。",
+      "recommendation": "K22-F2 实施阶段同时实现 full + delta。复用 K22-D SC1 delta 的设计模式。",
+      "suggestedNextStage": "K22-F2-SOFT-CONSTRAINT-TEACHER-DAY-BALANCE-IMPL"
+    },
+    {
+      "id": "K22-F1-C-1",
+      "severity": "INFO",
+      "category": "C. Future extensions",
+      "title": "SC5 v1 之后可扩展为 half-day balance (NEW-SC-07) 或 teacher preference (NEW-SC-08)",
+      "currentStatus": "SC5 v1 只看 per-day count。K22-G 计划实施 NEW-SC-07 (half-day) 时，可复用 SC5 的 per-day aggregation 但按 morning/afternoon 切分。K22-H 计划实施 NEW-SC-08 (teacher preference) 时，可让 teacher 关闭 SC5 或反向加权。",
+      "evidence": [
+        "K22-E audit recommends NEW-SC-07 as P1, NEW-SC-08 as P2",
+        "SC5 v1 与 SC7 (per-half-day) 是不同 granularity，可并存"
+      ],
+      "risk": "INFO: 扩展时需要小心不要让 SC5 + SC7 + 偏好形成复杂冲突。",
+      "recommendation": "K22-F2 实施 SC5 v1 时考虑 extensibility。预留 helper function teacherImbalancePenalty(dailyCounts, total) 便于 SC7 复用。",
+      "suggestedNextStage": "K22-F2-SOFT-CONSTRAINT-TEACHER-DAY-BALANCE-IMPL"
+    }
+  ],
+  "recommendedNextStage": "K22-F2-SOFT-CONSTRAINT-TEACHER-DAY-BALANCE-IMPL",
+  "reasonsForRecommendation": [
+    "Option B captures the actual problem (concentration) with a simple threshold-based formula",
+    "All data is available in existing ctx.slots and ScheduleState.assignments (no schema change)",
+    "LOW implementation complexity, LOW regression risk",
+    "Independent of SC2 (different key: per teacher-day vs per task-day)",
+    "K22-C fixture builder is fully reusable",
+    "Skip rule for total < 3 prevents over-penalization of low-load teachers",
+    "Reuses K22-D delta mirroring pattern (per-teacher iteration, before/after compare)",
+    "3 P0 soft constraints exist; SC5 is the first to be implemented in K22-F2 (NEW-SC-01)",
+    "Why not also implement NEW-SC-02 (class gap) and NEW-SC-03 (room stability): K22-E roadmap recommends one-at-a-time to limit scope. K22-F2 focuses on SC5 only; K22-F3+ will follow for the others."
+  ],
+  "notes": [
+    "K22-F1 is a read-only design audit. No Prisma writes, no score.ts changes, no schema changes.",
+    "NEW-SC-01 is the canonical name from K22-E audit. SC5 is the proposed score.ts id (following SC1-SC4).",
+    "Harness plan proposes 9 cases; minimum required per spec is 4 (full + delta resolve + delta introduce + edge).",
+    "K22-C fixture builder is verified reusable — no new helper needed."
+  ]
+}
