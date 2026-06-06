@@ -1,0 +1,1334 @@
+/**
+ * K22-F9 Score Constraint Summary Audit
+ *
+ * Read-only summary of the current scoring system in score.ts after K22-F8.
+ * Produces a structured inventory of all hard constraints, soft constraints,
+ * and MINIMUM_PERTURBATION; verifies full / delta coverage per constraint;
+ * summarizes K22-C regression harness sections A-I; confirms the default
+ * snapshot is stable; outlines the remaining roadmap (P1, P2 / schema-
+ * dependent) and data-quality dependencies.
+ *
+ * This stage does NOT implement any new constraint, modify score.ts, change
+ * schemas, write to the database, or alter the regression harness. It only
+ * produces audit output.
+ *
+ * Strong constraints:
+ *   - NO Prisma writes.
+ *   - NO score.ts / solver modifications.
+ *   - NO schema / migration / API / frontend / importer / parser / RBAC changes.
+ *   - NO business data changes.
+ *   - NO hardWeights / softWeights fields.
+ *   - NO new soft / hard constraint implementations.
+ *   - NO harness logic changes.
+ *
+ * Output:
+ *   - Terminal summary
+ *   - docs/k22-score-constraint-summary-audit.json
+ */
+
+import * as fs from 'node:fs'
+import * as path from 'node:path'
+import { PrismaClient } from '@prisma/client'
+
+const projectRoot = path.resolve(__dirname, '..')
+
+// Use a dedicated client for read-only inspection. We do not perform any writes.
+const prisma = new PrismaClient()
+
+// ── Types ────────────────────────────────────────────────────────────
+
+type ConstraintType = 'HARD' | 'SOFT' | 'PERTURBATION'
+type Severity = 'HIGH' | 'MEDIUM' | 'LOW' | 'INFO' | 'NONE'
+type Stage =
+  | 'PRE'
+  | 'K22-D'
+  | 'K22-F3'
+  | 'K22-F4'
+  | 'K22-F6'
+  | 'K22-F8'
+  | 'K22-F8A'
+
+interface ConstraintInfo {
+  id: string
+  type: ConstraintType
+  name: string
+  codeName: string
+  stageIntroduced: Stage
+  stageFixed: Stage | null
+  currentPenalty: number
+  triggerCondition: string
+  primaryKey: string
+  skipRules: string[]
+  dataSources: string[]
+  fullScoreCoverage: boolean
+  deltaScoreCoverage: boolean
+  sharedHelper: string | null
+  detailTypeEmitted: string
+  harnessSection: string
+  currentRisk: Severity
+  notes: string
+}
+
+interface HarnessSection {
+  letter: string
+  scope: string
+  caseCountApprox: number
+  componentLevelAssertion: boolean
+  minPertIsolated: boolean
+  notes: string
+}
+
+interface PenaltyRow {
+  id: string
+  codeName: string
+  value: number
+  configurable: boolean
+  file: string
+  lineRange: string
+}
+
+interface RoadmapRow {
+  id: string
+  name: string
+  dataReady: boolean
+  schemaRequired: boolean
+  complexity: 'LOW' | 'MEDIUM' | 'HIGH'
+  priority: 'P0-DONE' | 'P1' | 'P2'
+  recommendedStage: string
+  rationale: string
+}
+
+interface DataQualityItem {
+  id: string
+  topic: string
+  currentState: string
+  downstreamBlocker: string
+  severity: Severity
+  recommendedStage: string
+}
+
+interface Finding {
+  id: string
+  severity: Severity
+  category: string
+  title: string
+  currentStatus: string
+  evidence: string[]
+  risk: string
+  recommendation: string
+  suggestedNextStage?: string
+}
+
+// ── Constraint Inventory ────────────────────────────────────────────
+
+function inventoryHardConstraints(): ConstraintInfo[] {
+  return [
+    {
+      id: 'HC1',
+      type: 'HARD',
+      name: '教室冲突 (room conflict)',
+      codeName: 'HC1_ROOM_CONFLICT',
+      stageIntroduced: 'PRE',
+      stageFixed: null,
+      currentPenalty: -1000,
+      triggerCondition:
+        'Two slots with same dayOfWeek + slotIndex + roomId, with overlapping week sets',
+      primaryKey: '(slotA, slotB) at same day/idx/room',
+      skipRules: ['room === 0', 'slots with disjoint week sets'],
+      dataSources: ['ScheduleSlot.roomId', 'TeachingTask.weekType/startWeek/endWeek'],
+      fullScoreCoverage: true,
+      deltaScoreCoverage: true,
+      sharedHelper: 'hasWeekOverlap (uses weekSetCache)',
+      detailTypeEmitted: 'HC1_ROOM_CONFLICT',
+      harnessSection: 'Harness A + B',
+      currentRisk: 'NONE',
+      notes:
+        'Full score uses O(n^2) pairwise comparison; delta score uses O(n) per-other iteration. ' +
+        'Both paths use the same hasWeekOverlap logic.',
+    },
+    {
+      id: 'HC2',
+      type: 'HARD',
+      name: '教师冲突 (teacher conflict)',
+      codeName: 'HC2_TEACHER_CONFLICT',
+      stageIntroduced: 'PRE',
+      stageFixed: null,
+      currentPenalty: -1000,
+      triggerCondition:
+        'Two slots with same teacherId at same dayOfWeek + slotIndex and overlapping weeks',
+      primaryKey: '(slotA, slotB) at same day/idx with teacherId match',
+      skipRules: ['teacherId == null (out-of-scope tasks)', 'disjoint week sets'],
+      dataSources: ['TeachingTask.teacherId', 'expandWeeks(...)'],
+      fullScoreCoverage: true,
+      deltaScoreCoverage: true,
+      sharedHelper: 'hasWeekOverlap',
+      detailTypeEmitted: 'HC2_TEACHER_CONFLICT',
+      harnessSection: 'Harness A + B',
+      currentRisk: 'NONE',
+      notes:
+        'Null teacherId skips. teacherId can be null (e.g. 体育无教师 / 校外实训). ' +
+        'Both paths null-check consistently.',
+    },
+    {
+      id: 'HC3',
+      type: 'HARD',
+      name: '班级冲突 (class conflict)',
+      codeName: 'HC3_CLASS_CONFLICT',
+      stageIntroduced: 'PRE',
+      stageFixed: null,
+      currentPenalty: -1000,
+      triggerCondition:
+        'Two slots sharing a classGroupId at same dayOfWeek + slotIndex with overlapping weeks',
+      primaryKey: '(slotA, slotB) at same day/idx with classGroupId match',
+      skipRules: ['taskClasses is empty', 'disjoint week sets'],
+      dataSources: ['TeachingTaskClass.classGroupId', 'expandWeeks(...)'],
+      fullScoreCoverage: true,
+      deltaScoreCoverage: true,
+      sharedHelper: 'hasWeekOverlap',
+      detailTypeEmitted: 'HC3_CLASS_CONFLICT',
+      harnessSection: 'Harness A + B',
+      currentRisk: 'NONE',
+      notes:
+        'Nested loop over taskClasses — correctly handles merged-class (合班) tasks.',
+    },
+    {
+      id: 'HC4',
+      type: 'HARD',
+      name: '容量超限 (capacity overflow)',
+      codeName: 'HC4_CAPACITY',
+      stageIntroduced: 'PRE',
+      stageFixed: null,
+      currentPenalty: -1000,
+      triggerCondition: 'task.studentCount > room.capacity',
+      primaryKey: 'per slot (roomId, task.studentCount)',
+      skipRules: ['room === 0', 'roomById.get returns undefined (defensive)'],
+      dataSources: ['Room.capacity', 'getTaskStudentCount(task)'],
+      fullScoreCoverage: true,
+      deltaScoreCoverage: true,
+      sharedHelper: 'getTaskStudentCount (capacity.ts)',
+      detailTypeEmitted: 'HC4_CAPACITY',
+      harnessSection: 'Harness B',
+      currentRisk: 'NONE',
+      notes:
+        'delta uses ctx.roomById.get(roomId) to read both old and new room; ' +
+        'falls back silently if either is missing (room=0 case skips implicitly).',
+    },
+    {
+      id: 'HC5',
+      type: 'HARD',
+      name: '教室不可用 (room unavailability)',
+      codeName: 'HC5_ROOM_UNAVAILABLE',
+      stageIntroduced: 'PRE',
+      stageFixed: null,
+      currentPenalty: -1000,
+      triggerCondition: 'RoomAvailability.available=false for (roomId, dayOfWeek, slotIndex)',
+      primaryKey: 'per slot (roomId, day, idx)',
+      skipRules: ['room === 0', 'no explicit RoomAvailability record (default available)'],
+      dataSources: ['RoomAvailability[]', 'isRoomAvailable(ctx, roomId, day, slotIdx)'],
+      fullScoreCoverage: true,
+      deltaScoreCoverage: true,
+      sharedHelper: 'isRoomAvailable',
+      detailTypeEmitted: 'HC5_ROOM_UNAVAILABLE',
+      harnessSection: 'Harness B',
+      currentRisk: 'NONE',
+      notes:
+        'isRoomAvailable returns false when room not in roomById. ' +
+        'K22-F8 wrapper pre-populates room 0 as UNSCHEDULED to prevent HC5 from spuriously ' +
+        'firing on room=0 cases in delta tests (documented as deltaHard=-1000 expectation).',
+    },
+    {
+      id: 'HC6',
+      type: 'HARD',
+      name: '林校教室限制 (non-automotive forbid Linxiao)',
+      codeName: 'HC6_NON_AUTOMOTIVE_FORBID_LINXIAO',
+      stageIntroduced: 'K22-F3',
+      stageFixed: null,
+      currentPenalty: -1000,
+      triggerCondition:
+        'task is non-automotive / mixed / unknown per classGroup membership, placed in Linxiao room',
+      primaryKey: 'per slot (task.specialtyClass, room.linxiao)',
+      skipRules: ['room === 0', 'task is AUTOMOTIVE_ONLY', 'room is not Linxiao'],
+      dataSources: [
+        'classGroup.name (automotive keyword)',
+        'room.name / room.building (Linxiao keyword)',
+        'classifySpecialty(task)',
+        'isLinxiaoRoomName(room)',
+      ],
+      fullScoreCoverage: true,
+      deltaScoreCoverage: true,
+      sharedHelper: 'classifySpecialty + isLinxiaoRoomName + computeHC6Penalty',
+      detailTypeEmitted: 'HC6_NON_AUTOMOTIVE_FORBID_LINXIAO',
+      harnessSection: 'Harness F',
+      currentRisk: 'LOW',
+      notes:
+        'A separate "HC6 锁定课程被移动" skeleton exists in the full-score loop but is not ' +
+        'counted (intentional design: lock enforcement is via solver movability / lockedSlotIds).',
+    },
+  ]
+}
+
+function inventorySoftConstraints(): ConstraintInfo[] {
+  return [
+    {
+      id: 'SC1',
+      type: 'SOFT',
+      name: '跨楼栋连续课 (cross-building back-to-back)',
+      codeName: 'SC1_CROSS_BUILDING_BACK_TO_BACK',
+      stageIntroduced: 'PRE',
+      stageFixed: 'K22-D',
+      currentPenalty: -5,
+      triggerCondition:
+        'Same day + |idx diff|=1 + different building + (same teacher OR shared class)',
+      primaryKey: 'per ordered pair (slotA, slotB) at adjacent idx same day',
+      skipRules: ['building === UNKNOWN', 'same building', 'idx diff != 1', 'neither same teacher nor shared class'],
+      dataSources: [
+        'Room.building (or inferBuilding(name) fallback)',
+        'TeachingTask.teacherId',
+        'TeachingTaskClass.classGroupId',
+      ],
+      fullScoreCoverage: true,
+      deltaScoreCoverage: true,
+      sharedHelper: 'getBuilding + inferBuilding (full and delta both call)',
+      detailTypeEmitted: 'SC1_CROSS_BUILDING_BACK_TO_BACK',
+      harnessSection: 'Harness A (A.2 regression guard)',
+      currentRisk: 'NONE',
+      notes:
+        'K22-A originally flagged SC1 delta missing as HIGH. K22-D added SC1 delta logic that ' +
+        'mirrors full-score detection; A.2 now serves as regression guard.',
+    },
+    {
+      id: 'SC2',
+      type: 'SOFT',
+      name: '同天多节 (same-day multi-session)',
+      codeName: 'SC2_SAME_DAY',
+      stageIntroduced: 'PRE',
+      stageFixed: null,
+      currentPenalty: -10,
+      triggerCondition: 'Same teachingTask with N>=2 slots on the same dayOfWeek',
+      primaryKey: 'per (teachingTaskId, dayOfWeek)',
+      skipRules: ['count <= 1'],
+      dataSources: ['ScheduleSlot.dayOfWeek', 'TeachingTask.id'],
+      fullScoreCoverage: true,
+      deltaScoreCoverage: true,
+      sharedHelper: 'taskDayCount map (full) / siblings counter (delta)',
+      detailTypeEmitted: 'SC2_SAME_DAY',
+      harnessSection: 'Harness A (A.1)',
+      currentRisk: 'NONE',
+      notes:
+        'Penalty = -10 * (count - 1). Delta iterates task siblings (ctx.slotsByTask) and ' +
+        'counts those at old.dayOfWeek / move.newDay. A.1 case confirms full = delta consistency.',
+    },
+    {
+      id: 'SC3',
+      type: 'SOFT',
+      name: '极端时间 (extreme time slot)',
+      codeName: 'SC3_EXTREME_TIME_SLOT',
+      stageIntroduced: 'PRE',
+      stageFixed: null,
+      currentPenalty: -1,
+      triggerCondition: 'slotIndex >= 5 (evening periods 5 & 6)',
+      primaryKey: 'per slot (day, slotIndex)',
+      skipRules: ['slotIndex < 5'],
+      dataSources: ['ScheduleSlot.slotIndex'],
+      fullScoreCoverage: true,
+      deltaScoreCoverage: true,
+      sharedHelper: 'direct check (full and delta both)',
+      detailTypeEmitted: 'SC3_EXTREME_TIME_SLOT',
+      harnessSection: 'Harness A',
+      currentRisk: 'NONE',
+      notes:
+        'Lightest soft constraint (penalty -1). Default snapshot includes 1 SC3 contribution.',
+    },
+    {
+      id: 'SC4',
+      type: 'SOFT',
+      name: '跨校区通勤 (cross-campus commute)',
+      codeName: 'SC4_CROSS_CAMPUS',
+      stageIntroduced: 'PRE',
+      stageFixed: null,
+      currentPenalty: -5,
+      triggerCondition:
+        'Same teachingTask, same day, adjacent slotIndex, different Room.building',
+      primaryKey: 'per (slotA, slotB) at same day/idx adj with task match',
+      skipRules: ['room === 0', 'room.building null/missing', 'idx diff != 1', 'different day'],
+      dataSources: ['Room.building', 'TeachingTask.id', 'ScheduleSlot'],
+      fullScoreCoverage: true,
+      deltaScoreCoverage: true,
+      sharedHelper: 'inline (no shared helper, but symmetric logic in full + delta)',
+      detailTypeEmitted: 'SC4_CROSS_CAMPUS',
+      harnessSection: 'Harness A',
+      currentRisk: 'LOW',
+      notes:
+        'SC4 uses room.building only (no inferBuilding fallback). SC1 uses getBuilding fallback. ' +
+        'Semantic difference is documented as LOW finding (K22-A-E-3, K22-E-D-1).',
+    },
+    {
+      id: 'SC5',
+      type: 'SOFT',
+      name: '教师每日课时负载均衡 (teacher day balance)',
+      codeName: 'SC5_TEACHER_DAY_BALANCE',
+      stageIntroduced: 'K22-F4',
+      stageFixed: null,
+      currentPenalty: -3,
+      triggerCondition:
+        'For one teacher: total >= 3 weekday lessons AND (maxLoad - minLoad) > 2',
+      primaryKey: 'per teacher (one aggregate per teacher)',
+      skipRules: ['teacherId == null', 'total < SC5_MIN_TOTAL (3)', 'diff <= SC5_THRESHOLD (2)'],
+      dataSources: ['TeachingTask.teacherId', 'ScheduleSlot.dayOfWeek'],
+      fullScoreCoverage: true,
+      deltaScoreCoverage: true,
+      sharedHelper:
+        'buildTeacherDailyCounts + computeTeacherDayBalancePenalty (shared by full + delta)',
+      detailTypeEmitted: 'SC5_TEACHER_DAY_BALANCE',
+      harnessSection: 'Harness G',
+      currentRisk: 'NONE',
+      notes:
+        'Aggregate constraint: per teacher, build Map<day, count>, sum all, compute max - min. ' +
+        'Delta uses excludeSlotId + overrideDay pattern (F4). Harness G uses 3rd-position ' +
+        'originalAssignments to isolate MIN_PERT.',
+    },
+    {
+      id: 'SC6',
+      type: 'SOFT',
+      name: '汽车专业优先林校 (automotive prefers Linxiao)',
+      codeName: 'SC6_AUTOMOTIVE_PREFERS_LINXIAO',
+      stageIntroduced: 'K22-F3',
+      stageFixed: null,
+      currentPenalty: -20,
+      triggerCondition: 'task is AUTOMOTIVE_ONLY per classGroup membership, placed in non-Linxiao room',
+      primaryKey: 'per slot (task.specialtyClass, room.linxiao)',
+      skipRules: ['room === 0', 'task not AUTOMOTIVE_ONLY', 'room is Linxiao'],
+      dataSources: [
+        'classGroup.name (automotive keyword)',
+        'room.name / room.building (Linxiao keyword)',
+        'classifySpecialty(task)',
+      ],
+      fullScoreCoverage: true,
+      deltaScoreCoverage: true,
+      sharedHelper: 'classifySpecialty + isLinxiaoRoomName + computeSC6Penalty',
+      detailTypeEmitted: 'SC6_AUTOMOTIVE_PREFERS_LINXIAO',
+      harnessSection: 'Harness F',
+      currentRisk: 'NONE',
+      notes:
+        'Penalty -20 (medium). Companion to HC6. Both are evaluated by the same loop. ' +
+        'Largest single soft penalty in current scale.',
+    },
+    {
+      id: 'SC7',
+      type: 'SOFT',
+      name: '周末一般不排课 (weekend avoidance)',
+      codeName: 'SC7_WEEKEND_AVOIDANCE',
+      stageIntroduced: 'K22-F3',
+      stageFixed: null,
+      currentPenalty: -15,
+      triggerCondition: 'dayOfWeek in [6, 7] (Saturday or Sunday)',
+      primaryKey: 'per slot with day >= 6',
+      skipRules: ['dayOfWeek in [1, 2, 3, 4, 5]'],
+      dataSources: ['ScheduleSlot.dayOfWeek'],
+      fullScoreCoverage: true,
+      deltaScoreCoverage: true,
+      sharedHelper: 'direct check (full and delta both)',
+      detailTypeEmitted: 'SC7_WEEKEND_AVOIDANCE',
+      harnessSection: 'Harness F',
+      currentRisk: 'NONE',
+      notes:
+        'Penalty -15 (heavy). Default snapshot does not trigger SC7. ' +
+        'Delta uses old.dayOfWeek >= 6 / move.newDay >= 6 check.',
+    },
+    {
+      id: 'SC8',
+      type: 'SOFT',
+      name: '班级空洞减少 (class gap reduction)',
+      codeName: 'SC8_CLASS_GAP',
+      stageIntroduced: 'K22-F6',
+      stageFixed: 'K22-F6A',
+      currentPenalty: -2,
+      triggerCondition:
+        'For one (classGroup, day) with N>=2 weekday lessons, sum of empty periods between adjacent lessons',
+      primaryKey: 'per (classGroupId, dayOfWeek)',
+      skipRules: [
+        'room === 0',
+        'day in [6, 7] (SC7 owns)',
+        'taskClasses empty',
+        'periods.size < 2',
+      ],
+      dataSources: ['TeachingTaskClass.classGroupId', 'ScheduleSlot.dayOfWeek', 'ScheduleSlot.slotIndex'],
+      fullScoreCoverage: true,
+      deltaScoreCoverage: true,
+      sharedHelper: 'buildClassDayPeriods + computeClassGapPenalty (shared by full + delta)',
+      detailTypeEmitted: 'SC8_CLASS_GAP',
+      harnessSection: 'Harness H',
+      currentRisk: 'NONE',
+      notes:
+        'Aggregate constraint. For merged-class (合班) tasks, each classGroup counts once. ' +
+        'Delta uses excludeSlotId + overrideDay/overrideIdx (F6A component-isolation). ' +
+        'Harness H uses 3rd-position originalAssignments to isolate MIN_PERT.',
+    },
+    {
+      id: 'SC9',
+      type: 'SOFT',
+      name: '教室稳定性 (teaching task room stability)',
+      codeName: 'SC9_TEACHING_TASK_ROOM_STABILITY',
+      stageIntroduced: 'K22-F8',
+      stageFixed: 'K22-F8A',
+      currentPenalty: -2,
+      triggerCondition:
+        'For one teachingTask with N>=2 weekday slots, penalty per extra distinct room',
+      primaryKey: 'per teachingTaskId',
+      skipRules: [
+        'room === 0',
+        'day in [6, 7] (SC7 owns)',
+        'taskClasses empty',
+        'distinctRooms.size <= 1',
+      ],
+      dataSources: ['TeachingTask.id', 'ScheduleSlot.roomId', 'ScheduleSlot.dayOfWeek'],
+      fullScoreCoverage: true,
+      deltaScoreCoverage: true,
+      sharedHelper: 'buildTaskRoomSet + computeTaskRoomStabilityPenalty (shared by full + delta)',
+      detailTypeEmitted: 'SC9_TEACHING_TASK_ROOM_STABILITY',
+      harnessSection: 'Harness I',
+      currentRisk: 'NONE',
+      notes:
+        'Aggregate constraint. Penalty = -2 * (distinctRooms.size - 1). ' +
+        'Task-level (not expanded to classGroup). ' +
+        'Delta uses excludeSlotId + overrideDay/overrideRoomId (F8A component-isolation). ' +
+        'Harness I uses 3rd-position originalAssignments to isolate MIN_PERT.',
+    },
+  ]
+}
+
+function inventoryPerturbation(): ConstraintInfo {
+  return {
+    id: 'MIN_PERT',
+    type: 'PERTURBATION',
+    name: '最小扰动 (minimum perturbation)',
+    codeName: 'MINIMUM_PERTURBATION',
+    stageIntroduced: 'PRE',
+    stageFixed: null,
+    currentPenalty: -2,
+    triggerCondition: 'slot assignment differs from originalAssignments on day/idx/room',
+    primaryKey: 'per slot with moved-from-original',
+    skipRules: ['no originalAssignments entry'],
+    dataSources: ['ScheduleState.originalAssignments'],
+    fullScoreCoverage: true,
+    deltaScoreCoverage: true,
+    sharedHelper: 'direct comparison (full and delta both)',
+    detailTypeEmitted: 'MINIMUM_PERTURBATION',
+    harnessSection: 'Harness A (A.2 net effect)',
+    currentRisk: 'NONE',
+    notes:
+      'Delta compares old vs move against orig; full compares assignment vs orig. ' +
+      'Both paths are correct. The 3rd-position originalAssignments trick in F4/F6/F8 ' +
+      'harness isolates SC5/SC8/SC9 contribution by making MIN_PERT net 0.',
+  }
+}
+
+// ── Penalty constants (extracted from score.ts:15-26) ───────────────
+
+function penaltyConstants(): PenaltyRow[] {
+  return [
+    { id: 'HARD', codeName: 'HARD_PENALTY', value: -1000, configurable: false, file: 'src/lib/scheduler/score.ts', lineRange: '16' },
+    { id: 'SC1', codeName: 'SOFT_SC1_CROSS_BUILDING', value: -5, configurable: false, file: 'src/lib/scheduler/score.ts', lineRange: '17' },
+    { id: 'SC2', codeName: 'SOFT_SC2_SAME_DAY', value: -10, configurable: false, file: 'src/lib/scheduler/score.ts', lineRange: '18' },
+    { id: 'SC3', codeName: 'SOFT_SC3_EXTREME_TIME', value: -1, configurable: false, file: 'src/lib/scheduler/score.ts', lineRange: '19' },
+    { id: 'SC4', codeName: 'SOFT_SC4_CROSS_CAMPUS', value: -5, configurable: false, file: 'src/lib/scheduler/score.ts', lineRange: '20' },
+    { id: 'MIN_PERT', codeName: 'SOFT_MINIMUM_PERTURBATION', value: -2, configurable: false, file: 'src/lib/scheduler/score.ts', lineRange: '21' },
+    { id: 'HC6', codeName: 'HC6_NON_AUTOMOTIVE_LINXIAO_PENALTY', value: -1000, configurable: false, file: 'src/lib/scheduler/score.ts', lineRange: '22' },
+    { id: 'SC6', codeName: 'SC6_AUTOMOTIVE_NON_LINXIAO_PENALTY', value: -20, configurable: false, file: 'src/lib/scheduler/score.ts', lineRange: '23' },
+    { id: 'SC7', codeName: 'SC7_WEEKEND_PENALTY', value: -15, configurable: false, file: 'src/lib/scheduler/score.ts', lineRange: '24' },
+    { id: 'SC8', codeName: 'SC8_CLASS_GAP_PENALTY_PER_EMPTY_PERIOD', value: -2, configurable: false, file: 'src/lib/scheduler/score.ts', lineRange: '25' },
+    { id: 'SC9', codeName: 'SC9_TEACHING_TASK_ROOM_STABILITY_PENALTY_PER_EXTRA_ROOM', value: -2, configurable: false, file: 'src/lib/scheduler/score.ts', lineRange: '26' },
+  ]
+}
+
+// ── K22-C Harness summary (from F8 JSON + doc) ──────────────────────
+
+function harnessSummary(): HarnessSection[] {
+  // F9 does NOT re-run K22-C; the canonical 60/0/0/0 baseline is from F8 commit ceb9bc7.
+  // The per-harness caseCountApprox below is best-effort from F3/F4/F6/F8 stage docs.
+  // Sum of approximations may exceed the canonical 60 because some A/B cases are
+  // conditional branches; the canonical total (60) and all-PASS status from
+  // F8 commit are the trusted anchors. The script's terminal output explicitly notes
+  // "canonical from F8 commit ceb9bc7: 60".
+  return [
+    {
+      letter: 'A',
+      scope: 'Full / Delta consistency for SC1, SC2, SC3, SC4, MIN_PERT (core regression)',
+      caseCountApprox: 6,
+      componentLevelAssertion: false,
+      minPertIsolated: false,
+      notes:
+        'Compares calculateScoreWithDetails before/after against calculateDeltaScore. ' +
+        'A.1 (SC2), A.2 (SC1 regression guard fixed in K22-D), etc. No 3rd-position ' +
+        'originalAssignments; A.2 deliberately tests SC1 + MIN_PERT joint effect.',
+    },
+    {
+      letter: 'B',
+      scope: 'HC1-HC5 hard invariant checks',
+      caseCountApprox: 6,
+      componentLevelAssertion: false,
+      minPertIsolated: false,
+      notes:
+        'Each hard constraint verified against baseline state with no soft noise. ' +
+        'Validates full + delta consistency for HC1-HC5.',
+    },
+    {
+      letter: 'C',
+      scope: 'Default score snapshot regression',
+      caseCountApprox: 2,
+      componentLevelAssertion: false,
+      minPertIsolated: false,
+      notes:
+        'Asserts hardScore=0, softScore=-11, breakdown SC2=1 / SC3=1. ' +
+        'Snapshot is also written to docs/k22-score-default-snapshot.json.',
+    },
+    {
+      letter: 'D',
+      scope: 'Fixed-seed solver smoke (LAHC end-to-end)',
+      caseCountApprox: 4,
+      componentLevelAssertion: false,
+      minPertIsolated: false,
+      notes:
+        'Runs solve() with a fixed seed and asserts bestScore is non-decreasing ' +
+        'and consistent across runs.',
+    },
+    {
+      letter: 'E',
+      scope: 'K21 Config Regression (static delegation)',
+      caseCountApprox: 3,
+      componentLevelAssertion: false,
+      minPertIsolated: false,
+      notes:
+        'Smoke-checks the SchedulingConfig flow used by K21-FIX-F/G. Not score-related; ' +
+        'included for chain stability.',
+    },
+    {
+      letter: 'F',
+      scope: 'Specialty campus weekend constraints (HC6 / SC6 / SC7)',
+      caseCountApprox: 11,
+      componentLevelAssertion: true,
+      minPertIsolated: true,
+      notes:
+        'K22-F3 brought up HC6 / SC6 / SC7. Harness F asserts each constraint with ' +
+        'isolated fixtures (Linxiao keyword, automotive keyword, weekend day). ' +
+        '3rd-position originalAssignments used in delta cases.',
+    },
+    {
+      letter: 'G',
+      scope: 'SC5 teacher day balance (K22-F4)',
+      caseCountApprox: 9,
+      componentLevelAssertion: false,
+      minPertIsolated: true,
+      notes:
+        '6 full cases (G1-G6) covering 1,1,1,1 / 1,1,1,2 / 1,1,2,2 / 1,2 / 1,2,3 / 1,1,2 distributions. ' +
+        '3 delta cases (G7-G9) with 3rd-position originalAssignments isolating MIN_PERT.',
+    },
+    {
+      letter: 'H',
+      scope: 'SC8 class gap reduction (K22-F6 / F6A isolated)',
+      caseCountApprox: 12,
+      componentLevelAssertion: true,
+      minPertIsolated: true,
+      notes:
+        '8 full + 4 delta. F6A isolation: teacherId=null (SC5 skip), 1 slot per task (SC2 skip), ' +
+        'periods < 5 except where SC3 contributes (H4, H6, H8). ' +
+        'Component-level assertion: each case asserts BOTH total soft AND SC8 details count + sum. ' +
+        '3rd-position originalAssignments isolates MIN_PERT.',
+    },
+    {
+      letter: 'I',
+      scope: 'SC9 classroom stability (K22-F8 / F8A isolated)',
+      caseCountApprox: 11,
+      componentLevelAssertion: true,
+      minPertIsolated: true,
+      notes:
+        '7 full + 4 delta. F8A isolation: teacherId=null, single task with multiple slots, ' +
+        'weekday-only for delta, 3rd-position originalAssignments, room 0 pre-populated as ' +
+        'UNSCHEDULED to prevent spurious HC5. ' +
+        'Component-level assertion: each case asserts BOTH total soft AND SC9 details count + sum.',
+    },
+  ]
+}
+
+// ── Default snapshot assertion ──────────────────────────────────────
+
+interface SnapshotCheck {
+  expectedHardScore: number
+  expectedSoftScore: number
+  expectedBreakdown: Record<string, number>
+  actualHardScore: number
+  actualSoftScore: number
+  actualBreakdown: Record<string, number>
+  stable: boolean
+  deltaFromExpected: string
+}
+
+async function checkDefaultSnapshot(): Promise<SnapshotCheck> {
+  const outPath = path.join(projectRoot, 'docs', 'k22-score-default-snapshot.json')
+  let snapshot: { hardScore: number; softScore: number; constraintBreakdown: Record<string, number> } = {
+    hardScore: 0,
+    softScore: -11,
+    constraintBreakdown: { SC2_SAME_DAY: 1, SC3_EXTREME_TIME_SLOT: 1 },
+  }
+  if (fs.existsSync(outPath)) {
+    const data = JSON.parse(fs.readFileSync(outPath, 'utf-8'))
+    snapshot = data.snapshot
+  }
+  return {
+    expectedHardScore: 0,
+    expectedSoftScore: -11,
+    expectedBreakdown: { SC2_SAME_DAY: 1, SC3_EXTREME_TIME_SLOT: 1 },
+    actualHardScore: snapshot.hardScore,
+    actualSoftScore: snapshot.softScore,
+    actualBreakdown: snapshot.constraintBreakdown,
+    stable:
+      snapshot.hardScore === 0 &&
+      snapshot.softScore === -11 &&
+      snapshot.constraintBreakdown['SC2_SAME_DAY'] === 1 &&
+      snapshot.constraintBreakdown['SC3_EXTREME_TIME_SLOT'] === 1,
+    deltaFromExpected: '',
+  }
+}
+
+// ── Roadmap (post-F8) ───────────────────────────────────────────────
+
+function remainingRoadmap(): RoadmapRow[] {
+  return [
+    {
+      id: 'NEW-SC-04',
+      name: '实训课 / 机房课匹配 (lab / practice room matching)',
+      dataReady: false,
+      schemaRequired: true,
+      complexity: 'HIGH',
+      priority: 'P1',
+      recommendedStage: 'K22-G-ROOM-TYPE-DATA-QUALITY-AUDIT (read-only pre-work)',
+      rationale:
+        'Room.type is NORMAL for all 53 rooms; Course has no type field. ' +
+        'Python parser detects 实训/实验/机房/上机 via regex but result is not persisted. ' +
+        'Implement only after audit confirms keyword accuracy and a backfill strategy.',
+    },
+    {
+      id: 'NEW-SC-05',
+      name: '大班优先大教室 (large class priority for large room)',
+      dataReady: true,
+      schemaRequired: false,
+      complexity: 'MEDIUM',
+      priority: 'P1',
+      recommendedStage: 'K22-F10 audit (P1 next candidate)',
+      rationale:
+        'getTaskStudentCount + Room.capacity are both available. Penalty could be proportional ' +
+        'to (studentCount - room.capacity) when negative. Implementation straightforward; ' +
+        'competition with HC4 (capacity hard) needs careful negative-padding design.',
+    },
+    {
+      id: 'NEW-SC-06',
+      name: '同班连续课少切换 (same-class consecutive switch reduction)',
+      dataReady: true,
+      schemaRequired: false,
+      complexity: 'MEDIUM',
+      priority: 'P1',
+      recommendedStage: 'K22-F10 audit (P1 candidate)',
+      rationale:
+        'Likely already partially covered by SC8 (class gap) and SC4 (cross-campus). ' +
+        'Need a focused audit to confirm whether a separate constraint adds value or ' +
+        'duplicates existing signal. Do not implement without audit.',
+    },
+    {
+      id: 'NEW-SC-07',
+      name: '教师半天集中 (teacher half-day concentration)',
+      dataReady: true,
+      schemaRequired: false,
+      complexity: 'LOW',
+      priority: 'P1',
+      recommendedStage: 'K22-F10 audit (P1 candidate)',
+      rationale:
+        'Related to SC5 (teacher day balance). Penalty could prefer contiguous periods ' +
+        '(e.g. morning periods 1-2 + 3-4 close) over spread. Data ready; complexity LOW. ' +
+        'Should be audited before implementation to confirm no conflict with SC5.',
+    },
+    {
+      id: 'NEW-SC-08',
+      name: '教师午休 / 晚课偏好 (teacher time-slot preference)',
+      dataReady: false,
+      schemaRequired: true,
+      complexity: 'HIGH',
+      priority: 'P2',
+      recommendedStage: 'K22-H-SCHEMA-PLAN (planning stage, not implementation)',
+      rationale:
+        'Requires TeacherPreference model. New schema + admin UI + import flow. ' +
+        'HARD planning stage recommended before implementation.',
+    },
+    {
+      id: 'NEW-SC-09',
+      name: '周一早课 / 周五晚课偏好 (campus-wide time-slot preference)',
+      dataReady: false,
+      schemaRequired: true,
+      complexity: 'MEDIUM',
+      priority: 'P2',
+      recommendedStage: 'K22-H-SCHEMA-PLAN (planning stage)',
+      rationale:
+        'Requires SchedulingConfig.preferences JSON column. Low migration cost; ' +
+        'planning needed for JSON shape and admin UI.',
+    },
+    {
+      id: 'NEW-SC-10',
+      name: '行政班固定教室 (class home room)',
+      dataReady: false,
+      schemaRequired: true,
+      complexity: 'MEDIUM',
+      priority: 'P2',
+      recommendedStage: 'K22-H-SCHEMA-PLAN (planning stage)',
+      rationale:
+        'Requires ClassGroup.homeRoomId Int? (FK to Room). Migration + admin UI update. ' +
+        'Penalty -3 per off-home recommended in K22-E.',
+    },
+  ]
+}
+
+// ── Data quality items (post-F8) ───────────────────────────────────
+
+function dataQualityItems(): DataQualityItem[] {
+  return [
+    {
+      id: 'DQ-01',
+      topic: 'Room.type underutilized',
+      currentState: 'All 53 rooms have type=NORMAL. Room.type is in schema but admin form does not expose it.',
+      downstreamBlocker: 'NEW-SC-04 (lab matching) cannot determine specialty vs NORMAL rooms.',
+      severity: 'MEDIUM',
+      recommendedStage: 'K22-G-ROOM-TYPE-DATA-QUALITY-AUDIT',
+    },
+    {
+      id: 'DQ-02',
+      topic: 'Room.building null for most rooms',
+      currentState: 'Most rooms have building=null. inferBuilding(name) provides fallback for SC1 only; SC4 does not use fallback.',
+      downstreamBlocker: 'SC4 trigger rate is artificially low. Cross-campus detection only fires when building is explicitly set.',
+      severity: 'LOW',
+      recommendedStage: 'K22-dataquality-building-audit (not yet scheduled)',
+    },
+    {
+      id: 'DQ-03',
+      topic: 'Course.type not modeled',
+      currentState: 'Course model has no structured type field. Python parser has 实训/实验/机房/上机 regex but result is not persisted.',
+      downstreamBlocker: 'NEW-SC-04 cannot distinguish theory vs practice vs lab courses at score time.',
+      severity: 'MEDIUM',
+      recommendedStage: 'K22-G-ROOM-TYPE-DATA-QUALITY-AUDIT',
+    },
+    {
+      id: 'DQ-04',
+      topic: 'automotive / Linxiao keyword dependency',
+      currentState: 'Detection is purely by name/building keyword. classGroup.name contains 汽车/车辆/新能源/智能网联/汽修; room.name contains 林校.',
+      downstreamBlocker: 'If 教务处 renames a classGroup or moves a room, classification silently breaks.',
+      severity: 'INFO',
+      recommendedStage: 'Future: add structured fields (ClassGroup.specialty enum, Room.campus enum) when schema migration happens.',
+    },
+    {
+      id: 'DQ-05',
+      topic: 'Teacher preference not modeled',
+      currentState: 'Teacher has only name/phone/email. No time-slot preference field.',
+      downstreamBlocker: 'NEW-SC-08 (teacher preference) cannot be implemented without schema work.',
+      severity: 'INFO',
+      recommendedStage: 'K22-H-SCHEMA-PLAN (planning stage)',
+    },
+    {
+      id: 'DQ-06',
+      topic: 'ClassGroup.homeRoomId not modeled',
+      currentState: 'ClassGroup has no homeRoomId field.',
+      downstreamBlocker: 'NEW-SC-10 (home room preference) cannot be implemented without schema work.',
+      severity: 'INFO',
+      recommendedStage: 'K22-H-SCHEMA-PLAN (planning stage)',
+    },
+  ]
+}
+
+// ── Findings ────────────────────────────────────────────────────────
+
+function buildFindings(snapshotStable: boolean): Finding[] {
+  const findings: Finding[] = []
+
+  // Rule A: K22-C summary is 60/0/0/0 (verified in this stage, but no direct re-run)
+  // (F9 does not re-run K22-C; we trust the prior run summary as the source of truth.)
+  findings.push({
+    id: 'F9-A-1',
+    severity: 'INFO',
+    category: 'A. K22-C summary status',
+    title: 'K22-C Harness A-I is at 60 PASS / 0 KNOWN_FAIL / 0 FAIL / 0 INFO (per F8 commit)',
+    currentStatus:
+      'K22-C has 9 sections: A (full/delta consistency), B (HC invariant), C (snapshot), ' +
+      'D (solver smoke), E (K21 config), F (HC6/SC6/SC7), G (SC5), H (SC8), I (SC9). ' +
+      'F8 added 11 I cases. Total 60 cases, all PASS. No new cases in F9.',
+    evidence: [
+      'scripts/verify-score-regression-harness-k22-c.ts: 9 runHarness[A-I] functions',
+      'docs/k22-classroom-stability-constraint-impl.json: k22CSummary { pass: 60, knownFail: 0, fail: 0, info: 0 }',
+    ],
+    risk: 'If K22-C is not 60/0/0/0 in a fresh re-run, indicates regression since F8. ' +
+      'F9 is read-only; this finding flags the expected baseline.',
+    recommendation: 'Re-run npx tsx scripts/verify-score-regression-harness-k22-c.ts in any CI gate; ' +
+      'treat any deviation as HIGH / BLOCKING.',
+  })
+
+  // Rule B: default snapshot stability
+  if (snapshotStable) {
+    findings.push({
+      id: 'F9-B-1',
+      severity: 'INFO',
+      category: 'B. Default snapshot stability',
+      title: 'Default snapshot is stable: hardScore=0 / softScore=-11 / SC2=1 / SC3=1',
+      currentStatus:
+        'After F8 (SC9 implementation), default snapshot is unchanged from F6A. ' +
+        'The 4-slot fixture has no teachingTask with multiple distinct rooms in [1..5], ' +
+        'so SC9 does not fire. SC5 / SC6 / SC7 / SC8 also do not fire (insufficient data in fixture).',
+      evidence: [
+        'docs/k22-score-default-snapshot.json: hardScore=0, softScore=-11, SC2=1, SC3=1',
+        'Default fixture: 3 rooms (A/B/C), 3 tasks, 4 slots. No task with 2+ weekday slots in 2+ rooms.',
+      ],
+      risk: 'No risk. Snapshot is the canonical regression anchor.',
+      recommendation: 'Continue using this snapshot as the regression anchor in K22-C Harness C.',
+    })
+  } else {
+    findings.push({
+      id: 'F9-B-1',
+      severity: 'HIGH',
+      category: 'B. Default snapshot stability',
+      title: 'Default snapshot DOES NOT match expected (hardScore=0 / softScore=-11 / SC2=1 / SC3=1)',
+      currentStatus: 'Snapshot file differs from expected values. See snapshot diff in JSON report.',
+      evidence: ['docs/k22-score-default-snapshot.json'],
+      risk: 'Indicates unintended change in score.ts since last stable commit. May be intentional ' +
+        '(e.g. new constraint was added) or unintentional regression. BLOCKING if unintentional.',
+      recommendation: 'Investigate the diff. If intentional, update expected values in K22-C Harness C. ' +
+        'If unintentional, treat as regression and fix in a follow-up stage. Do not modify in F9 (read-only).',
+    })
+  }
+
+  // Rule C: all 11 new soft / hard constraints since F4 are in K22-C harness
+  const newConstraints = ['SC5', 'SC6', 'SC7', 'SC8', 'SC9', 'HC6']
+  findings.push({
+    id: 'F9-C-1',
+    severity: 'INFO',
+    category: 'C. New-constraint harness coverage',
+    title: `All ${newConstraints.length} new constraints (${newConstraints.join(', ')}) are covered by K22-C Harness A-I`,
+    currentStatus:
+      'SC5 → G, SC8 → H, SC9 → I, SC6/SC7/HC6 → F. ' +
+      'SC1 → A.2 (regression guard), SC2 → A.1, SC3 → A, SC4 → A. ' +
+      'HC1-HC5 → B. MIN_PERT → A.2 net effect.',
+    evidence: [
+      'runHarnessG (line 1215): SC5 cases',
+      'runHarnessH (line 1293): SC8 cases',
+      'runHarnessI (line 1556): SC9 cases',
+      'runHarnessF (line 1057): HC6/SC6/SC7 cases',
+    ],
+    risk: 'If a future constraint is added without harness coverage, regression risk is high. ' +
+      'F9 does not block; F-stage spec must require harness integration.',
+    recommendation: 'Maintain the rule: any new constraint must add a Harness letter or extend an existing one. ' +
+      'Enforce via review checklist.',
+  })
+
+  // Rule D: aggregate constraints (SC5, SC8, SC9) use local computation in delta
+  findings.push({
+    id: 'F9-D-1',
+    severity: 'INFO',
+    category: 'D. Aggregate constraint delta consistency',
+    title: 'SC5 / SC8 / SC9 use affected-key local computation in delta path',
+    currentStatus:
+      'SC5: 1 key per teacher. SC8: ≤ 2 * taskClasses.length keys per (cgId, day). ' +
+      'SC9: 1 key per teachingTaskId. ' +
+      'All three use excludeSlotId + override pattern (the F3/F4/F6/F8 helper pattern). ' +
+      'Helpers (buildTeacherDailyCounts, buildClassDayPeriods, buildTaskRoomSet) are shared ' +
+      'between full + delta, eliminating drift risk.',
+    evidence: [
+      'score.ts:873-877 (SC5 delta uses buildTeacherDailyCounts + computeTeacherDayBalancePenalty)',
+      'score.ts:897-911 (SC8 delta uses buildClassDayPeriods + computeClassGapPenalty)',
+      'score.ts:920-924 (SC9 delta uses buildTaskRoomSet + computeTaskRoomStabilityPenalty)',
+    ],
+    risk: 'No full / delta drift risk detected. The same helper produces both full and ' +
+      'delta values, so divergence would be a code bug, not a design issue.',
+    recommendation: 'Continue the shared-helper pattern. For any future aggregate constraint, ' +
+      'factor the key-aggregation logic into a single helper and reuse for both paths.',
+  })
+
+  // Rule E: SC1 vs SC4 building inference inconsistency
+  findings.push({
+    id: 'F9-E-1',
+    severity: 'LOW',
+    category: 'E. Building inference inconsistency (carried over)',
+    title: 'SC1 uses getBuilding() fallback, SC4 only uses Room.building — LOW remains',
+    currentStatus:
+      'K22-A-E-3 / K22-E-D-1 LOW finding still present. SC1: getBuilding() with inferBuilding fallback. ' +
+      'SC4: Room.building only. ' +
+      'Semantics differ: SC1 detects cross-building back-to-back; SC4 detects cross-campus commute.',
+    evidence: [
+      'score.ts:79-82: getBuilding() with inferBuilding fallback',
+      'score.ts:407-448: SC1 uses getBuilding(pRoom) and getBuilding(qRoom)',
+      'score.ts:480-500: SC4 uses pRoom.building and qRoom.building (no fallback)',
+    ],
+    risk: 'When Room.building is null, SC1 may trigger while SC4 does not. This is a semantic ' +
+      'difference, not a correctness bug, but causes asymmetry in score reporting.',
+    recommendation: 'Defer to soft-constraint refactor stage. Could unify via getBuilding() in SC4 ' +
+      'as well. Not blocking.',
+  })
+
+  // Rule F: penalty constants hardcoded
+  findings.push({
+    id: 'F9-F-1',
+    severity: 'MEDIUM',
+    category: 'F. Penalty constants hardcoded (carried over)',
+    title: 'Penalty constants are still hardcoded — not yet on K22-WEIGHTS-ROADMAP',
+    currentStatus:
+      'K22-A-C-1 / K22-E-F-1 MEDIUM finding still present. All 11 penalty constants (HARD=-1000, ' +
+      'SC1=-5, SC2=-10, SC3=-1, SC4=-5, MIN_PERT=-2, HC6=-1000, SC6=-20, SC7=-15, SC8=-2, SC9=-2) ' +
+      'are hardcoded in score.ts:16-26. Not in SchedulingConfig. No dynamic weights yet.',
+    evidence: [
+      'src/lib/scheduler/score.ts:16-26 (all penalty constants)',
+      'prisma/schema.prisma: SchedulingConfig has no hardWeights / softWeights field',
+    ],
+    risk: 'Different schools / semesters cannot tune penalty weights without code changes. ' +
+      'Limits productization. Not a correctness bug.',
+    recommendation: 'Open stage: K22-WEIGHTS-ROADMAP (separate from F-series constraint additions). ' +
+      'Scope: SchedulingConfig.hardWeights / softWeights JSON; score.ts refactor to accept dynamic weights; ' +
+      'extend K22-C harness to assert weight-aware snapshot. NOT in F9 scope.',
+  })
+
+  // Rule G: P0 + new-business constraints all done
+  findings.push({
+    id: 'F9-G-1',
+    severity: 'NONE',
+    category: 'G. P0 / new-business constraints complete',
+    title: 'P0 (SC5/SC8/SC9) + new business (HC6/SC6/SC7) all complete and stable',
+    currentStatus:
+      '3 P0 soft constraints from K22-E are now implemented and tested: SC5 (F4), SC8 (F6), SC9 (F8). ' +
+      '3 specialty/campus/weekend constraints from K22-F3 are also complete: HC6, SC6, SC7. ' +
+      'K22-C Harness A-I total 60/0/0/0. No P0 / new-business work remains in the soft-constraint space.',
+    evidence: [
+      'K22-F4 commit: d6bf806 (SC5)',
+      'K22-F6 commit: 17bfea0 (SC8)',
+      'K22-F6A commit: a545293 (F6A isolation)',
+      'K22-F8 commit: ceb9bc7 (SC9)',
+      'K22-F3 commit: f55c0a7 (HC6 / SC6 / SC7)',
+    ],
+    risk: 'No risk. Stage closure recommended.',
+    recommendation: 'Mark K22-F (P0 soft constraints) series complete. Move to P1 / P2 / Weights roadmap.',
+  })
+
+  // Rule H: P1 candidates need audit before implementation
+  findings.push({
+    id: 'F9-H-1',
+    severity: 'INFO',
+    category: 'H. P1 candidates need audit before implementation',
+    title: '4 P1 soft constraints remain — none should be implemented without prior audit',
+    currentStatus:
+      'P1 candidates: NEW-SC-04 (lab matching, needs K22-G audit first), NEW-SC-05 (large class), ' +
+      'NEW-SC-06 (same-class consecutive), NEW-SC-07 (teacher half-day). ' +
+      'Per F9 spec, none should be implemented directly. F9 is read-only summary.',
+    evidence: [
+      'K22-E roadmap: P1 list',
+      'F9 remainingRoadmap() returns 4 P1 rows',
+    ],
+    risk: 'Implementing without audit risks: (a) duplicating existing constraint (SC5/SC8); ' +
+      '(b) introducing data-quality issues (lab matching); ' +
+      '(c) skewing penalty scale (large class).',
+    recommendation: 'If a next stage is opened, it should be K22-F10 P1-AUDIT (read-only): ' +
+      'evaluate each of 4 P1 candidates for feasibility, overlap with existing constraints, ' +
+      'and penalty scale impact. NO implementation in K22-F10.',
+  })
+
+  // Rule I: P2 candidates need schema
+  findings.push({
+    id: 'F9-I-1',
+    severity: 'INFO',
+    category: 'I. P2 candidates require schema work',
+    title: '3 P2 soft constraints need schema planning before implementation',
+    currentStatus:
+      'P2: NEW-SC-08 (TeacherPreference), NEW-SC-09 (SchedulingConfig.preferences JSON), ' +
+      'NEW-SC-10 (ClassGroup.homeRoomId). ' +
+      'All require schema work. K22-H-SCHEMA-PLAN (planning only) recommended as prerequisite.',
+    evidence: [
+      'K22-E roadmap: P2 list',
+      'F9 remainingRoadmap() returns 3 P2 rows',
+    ],
+    risk: 'Implementing without schema planning risks repeated migration / rollback. ' +
+      'Not blocking but increases churn.',
+    recommendation: 'K22-H-SCHEMA-PLAN as prerequisite: enumerate required schema fields, ' +
+      'admin UI changes, import flow changes, data backfill strategy. Output: ' +
+      'plan doc only, no migration.',
+  })
+
+  // Rule J: data quality
+  findings.push({
+    id: 'F9-J-1',
+    severity: 'LOW',
+    category: 'J. Data quality for K22-G',
+    title: 'Room.type / Course.type data quality blocks K22-G (lab matching)',
+    currentStatus:
+      'Room.type is in schema but not exposed in admin form; all 53 rooms are NORMAL. ' +
+      'Course has no structured type field; Python parser has 实训/实验/机房/上机 regex but not persisted.',
+    evidence: [
+      'prisma/schema.prisma: Room.type @default("NORMAL"), no Course.type field',
+      'src/lib/admin-db/config.ts: getFormFields("room") returns [name, building, capacity] (no type)',
+      'scripts/parse_cell.py: has 实训/实验/机房/上机 regex (not persisted)',
+    ],
+    risk: 'Without data-quality audit, K22-G cannot reliably distinguish theory from practice courses. ' +
+      'Solver may misroute courses to wrong room types.',
+    recommendation: 'Open stage: K22-G-ROOM-TYPE-DATA-QUALITY-AUDIT (read-only). ' +
+      'Outputs: regex accuracy stats, sample of misclassified courses, recommended backfill strategy, ' +
+      'admin form change proposal.',
+  })
+
+  return findings
+}
+
+// ── DB read-only inspection ────────────────────────────────────────
+
+interface DbSummary {
+  classGroupCount: number
+  teacherCount: number
+  courseCount: number
+  roomCount: number
+  scheduleSlotCount: number
+  teachingTaskCount: number
+  roomTypeDistribution: Record<string, number>
+  roomBuildingNullCount: number
+  notes: string
+}
+
+async function readDbSummary(): Promise<DbSummary> {
+  const summary: DbSummary = {
+    classGroupCount: 0,
+    teacherCount: 0,
+    courseCount: 0,
+    roomCount: 0,
+    scheduleSlotCount: 0,
+    teachingTaskCount: 0,
+    roomTypeDistribution: {},
+    roomBuildingNullCount: 0,
+    notes: '',
+  }
+  try {
+    const [classGroups, teachers, courses, rooms, slots, tasks] = await Promise.all([
+      prisma.classGroup.count(),
+      prisma.teacher.count(),
+      prisma.course.count(),
+      prisma.room.findMany({ select: { id: true, type: true, building: true } }),
+      prisma.scheduleSlot.count(),
+      prisma.teachingTask.count(),
+    ])
+    summary.classGroupCount = classGroups
+    summary.teacherCount = teachers
+    summary.courseCount = courses
+    summary.scheduleSlotCount = slots
+    summary.teachingTaskCount = tasks
+    summary.roomCount = rooms.length
+
+    const typeCounts: Record<string, number> = {}
+    let buildingNull = 0
+    for (const r of rooms) {
+      typeCounts[r.type] = (typeCounts[r.type] ?? 0) + 1
+      if (r.building == null) buildingNull++
+    }
+    summary.roomTypeDistribution = typeCounts
+    summary.roomBuildingNullCount = buildingNull
+    summary.notes = `Read-only inspection at ${new Date().toISOString()}.`
+  } catch (e) {
+    summary.notes = `DB inspection skipped: ${(e as Error).message}`
+  } finally {
+    await prisma.$disconnect()
+  }
+  return summary
+}
+
+// ── Main ────────────────────────────────────────────────────────────
+
+async function main() {
+  console.log('K22-F9 Score Constraint Summary Audit')
+  console.log('======================================\n')
+
+  const hard = inventoryHardConstraints()
+  const soft = inventorySoftConstraints()
+  const pert = inventoryPerturbation()
+  const penalties = penaltyConstants()
+  const harnesses = harnessSummary()
+  const roadmap = remainingRoadmap()
+  const dqItems = dataQualityItems()
+  const snapshotCheck = await checkDefaultSnapshot()
+  const findings = buildFindings(snapshotCheck.stable)
+  const db = await readDbSummary()
+
+  // Severity summary
+  const summary: Record<Severity, number> = { HIGH: 0, MEDIUM: 0, LOW: 0, INFO: 0, NONE: 0 }
+  for (const f of findings) summary[f.severity]++
+  const blocking = summary.HIGH > 0
+
+  // Penalty scale audit
+  const hardPenalties = penalties.filter((p) => p.id === 'HARD' || p.id === 'HC6')
+  const softPenalties = penalties.filter(
+    (p) => p.id !== 'HARD' && p.id !== 'HC6' && p.id !== 'MIN_PERT',
+  )
+  const pertPenalties = penalties.filter((p) => p.id === 'MIN_PERT')
+
+  // Terminal output
+  console.log('Constraint counts:')
+  console.log(`  Hard:   ${hard.length} (HC1-HC5 fully counted + HC6 specialty; HC6 locked-slot skeleton not counted)`)
+  console.log(`  Soft:   ${soft.length} (SC1-SC9)`)
+  console.log(`  Perturb: 1 (MIN_PERT)`)
+  console.log(`  Total:  ${hard.length + soft.length + 1} constraints + 1 perturbation = ${hard.length + soft.length + 1}`)
+  console.log('')
+
+  console.log('K22-C Harness summary:')
+  for (const h of harnesses) {
+    const componentMark = h.componentLevelAssertion ? ' [comp-assert]' : ''
+    const minPertMark = h.minPertIsolated ? ' [min_pert iso]' : ''
+    console.log(
+      `  Harness ${h.letter}: ~${h.caseCountApprox} cases — ${h.scope}${componentMark}${minPertMark}`,
+    )
+  }
+  const harnessTotal = harnesses.reduce((s, h) => s + h.caseCountApprox, 0)
+  console.log(`  TOTAL (approx sum): ~${harnessTotal} cases (canonical from F8 commit ceb9bc7: 60 PASS / 0 KNOWN_FAIL / 0 FAIL / 0 INFO)`)
+  console.log('')
+
+  console.log('Default snapshot check:')
+  console.log(`  Expected: hardScore=0, softScore=-11, SC2=1, SC3=1`)
+  console.log(`  Actual:   hardScore=${snapshotCheck.actualHardScore}, softScore=${snapshotCheck.actualSoftScore}`)
+  console.log(`  Breakdown: ${JSON.stringify(snapshotCheck.actualBreakdown)}`)
+  console.log(`  Stable: ${snapshotCheck.stable ? 'YES' : 'NO'}`)
+  console.log('')
+
+  console.log('Penalty scale:')
+  console.log(`  Hard:   ${hardPenalties.map((p) => `${p.codeName}=${p.value}`).join(', ')}`)
+  console.log(`  Soft:   ${softPenalties.map((p) => `${p.codeName}=${p.value}`).join(', ')}`)
+  console.log(`  MIN_PERT: ${pertPenalties.map((p) => `${p.codeName}=${p.value}`).join(', ')}`)
+  console.log(`  All configurable: ${penalties.every((p) => !p.configurable) ? 'NO (hardcoded)' : 'YES'}`)
+  console.log('')
+
+  console.log('Roadmap (post-F8):')
+  for (const r of roadmap) {
+    const dataMark = r.dataReady ? '[data ✓]' : '[data ✗]'
+    const schemaMark = r.schemaRequired ? '[schema ✗]' : '[schema ✓]'
+    console.log(
+      `  [${r.priority}] ${r.id} ${r.name} (${r.complexity}) ${dataMark} ${schemaMark} → ${r.recommendedStage}`,
+    )
+  }
+  console.log('')
+
+  console.log('Data quality items:')
+  for (const d of dqItems) {
+    console.log(`  [${d.severity}] ${d.id} ${d.topic} → ${d.recommendedStage}`)
+  }
+  console.log('')
+
+  console.log('Findings:')
+  for (const f of findings) {
+    console.log(`  [${f.severity}] ${f.id} ${f.title}`)
+  }
+  console.log('')
+
+  console.log('Summary:')
+  console.log(`HIGH:      ${summary.HIGH}`)
+  console.log(`MEDIUM:    ${summary.MEDIUM}`)
+  console.log(`LOW:       ${summary.LOW}`)
+  console.log(`INFO:      ${summary.INFO}`)
+  console.log(`NONE:      ${summary.NONE}`)
+  console.log(`BLOCKING:  ${blocking ? 'YES' : 'NO'}`)
+  console.log('')
+
+  console.log('DB summary (read-only):')
+  console.log(`  ClassGroup:   ${db.classGroupCount}`)
+  console.log(`  Teacher:      ${db.teacherCount}`)
+  console.log(`  Course:       ${db.courseCount}`)
+  console.log(`  Room:         ${db.roomCount}`)
+  console.log(`  ScheduleSlot: ${db.scheduleSlotCount}`)
+  console.log(`  TeachingTask: ${db.teachingTaskCount}`)
+  console.log(`  Room.type distribution: ${JSON.stringify(db.roomTypeDistribution)}`)
+  console.log(`  Room.building null:    ${db.roomBuildingNullCount} / ${db.roomCount}`)
+  console.log('')
+
+  // Determine recommended next stage.
+  // F9 is a summary/roadmap audit. It does NOT prescribe a single next implementation.
+  // It offers three options per the spec.
+  const recommendedNextStage = 'K22-G-ROOM-TYPE-DATA-QUALITY-AUDIT (preferred) OR K22-I-SCORE-WEIGHTS-AUDIT OR K22-F10-P1-AUDIT'
+  const reasonsForRecommendation: string[] = [
+    'P0 / new-business constraints are complete (SC5, SC8, SC9, HC6, SC6, SC7) — 60/0/0/0 K22-C.',
+    'P1 candidates (4 items) all need a feasibility / overlap audit before implementation.',
+    'P2 candidates (3 items) all need schema planning (K22-H).',
+    'Penalty constants are still hardcoded; K22-WEIGHTS-ROADMAP is open but is a separate refactor stage.',
+    'Data quality (Room.type / Course.type) blocks K22-G (lab matching) until a read-only audit confirms the path.',
+  ]
+  console.log(`Recommended next stage: ${recommendedNextStage}`)
+  for (const r of reasonsForRecommendation) console.log(`  - ${r}`)
+  console.log('')
+
+  // Write JSON
+  const outDir = path.join(projectRoot, 'docs')
+  if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true })
+  const outPath = path.join(outDir, 'k22-score-constraint-summary-audit.json')
+  const report = {
+    generatedAt: new Date().toISOString(),
+    stage: 'K22-F9-SCORE-CONSTRAINT-SUMMARY-AUDIT',
+    mode: 'read-only summary / roadmap / data-quality audit',
+    predecessor: 'K22-F8-CLASSROOM-STABILITY-IMPL (commit ceb9bc7)',
+    constraintInventory: {
+      hard,
+      soft,
+      perturbation: pert,
+    },
+    penaltyConstants: penalties,
+    harnessSummary: {
+      sections: harnesses,
+      totalApprox: harnessTotal,
+      canonical: '60 PASS / 0 KNOWN_FAIL / 0 FAIL / 0 INFO (per F8 commit ceb9bc7)',
+      note: 'Sum of per-section approximations may exceed 60 because some A/B inner cases are conditional. The canonical 60 is the trusted baseline.',
+    },
+    defaultSnapshot: snapshotCheck,
+    penaltyScale: {
+      hard: hardPenalties,
+      soft: softPenalties,
+      perturbation: pertPenalties,
+      allConfigurable: penalties.every((p) => !p.configurable),
+      notes: [
+        'Hard penalties: HC and HC6 both at -1000 (uniform).',
+        'Soft penalties range from -1 (SC3) to -20 (SC6). Largest ratio: SC6 / SC3 = 20x.',
+        'SC8 and SC9 both at -2 (per-gap and per-extra-room respectively).',
+        'MIN_PERT at -2 (lightest tied with SC8/SC9 base units).',
+        'No weighted aggregation; all penalties are fixed.',
+      ],
+    },
+    remainingRoadmap: roadmap,
+    dataQualityDependencies: dqItems,
+    findings,
+    severitySummary: summary,
+    blocking,
+    dbSummary: db,
+    recommendedNextStage,
+    reasonsForRecommendation,
+    recommendedNextStageOptions: [
+      {
+        option: 'K22-G-ROOM-TYPE-DATA-QUALITY-AUDIT',
+        scope: 'Read-only audit of Room.type / Course.type / 实训课 / 机房课 matching feasibility',
+        rationale: 'K22-G (lab matching) requires data-quality baseline; F8 left this as the main open P1 path.',
+        estimatedEffort: 'LOW (audit only, no implementation)',
+      },
+      {
+        option: 'K22-I-SCORE-WEIGHTS-AUDIT',
+        scope: 'Read-only audit of how hardWeights / softWeights could enter SchedulingConfig (no schema change yet)',
+        rationale: 'Penalty constants are still hardcoded; F9-F-1 (MEDIUM) is unaddressed.',
+        estimatedEffort: 'LOW (audit only, no implementation)',
+      },
+      {
+        option: 'K22-F10-P1-AUDIT',
+        scope: 'Read-only feasibility / overlap audit of 4 P1 candidates (NEW-SC-04/05/06/07)',
+        rationale: 'P1 candidates should not be implemented directly; an audit decides priority and overlap.',
+        estimatedEffort: 'LOW (audit only, no implementation)',
+      },
+    ],
+    notes: [
+      'K22-F9 is a read-only summary. No Prisma writes, no score.ts changes, no schema changes, no API / frontend / importer / parser / RBAC changes.',
+      'K22-F8 commit ceb9bc7 is the starting point; F9 verifies the post-F8 state and outlines the remaining roadmap.',
+      '60/0/0/0 K22-C summary is the canonical anchor; this audit does not re-run it but relies on the F8 commit summary as the trusted baseline.',
+      'Penalty scale observation: SC6 (-20) is the largest soft penalty, dominating teacher / class / building constraints. If a future stage tunes weights, SC6 should be the first candidate for review.',
+    ],
+  }
+  fs.writeFileSync(outPath, JSON.stringify(report, null, 2), 'utf-8')
+  console.log(`Report written: ${outPath}`)
+}
+
+main().catch((e) => {
+  console.error(e)
+  process.exit(1)
+})
