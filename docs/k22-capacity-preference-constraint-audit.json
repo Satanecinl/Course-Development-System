@@ -1,0 +1,505 @@
+{
+  "generatedAt": "2026-06-06T22:18:29.342Z",
+  "stage": "K22-F10-CAPACITY-PREFERENCE-AUDIT",
+  "mode": "read-only audit + design (no implementation)",
+  "predecessor": "K22-G-ROOM-TYPE-DATA-QUALITY-AUDIT (commit 64b5cff)",
+  "capacityDataQuality": {
+    "roomTotal": 53,
+    "min": 3,
+    "max": 200,
+    "avg": 46,
+    "median": 40,
+    "distinct": 23,
+    "zeroCount": 0,
+    "nullCount": 0,
+    "negativeCount": 0,
+    "default50Count": 0,
+    "buckets": [
+      {
+        "bucket": "<30",
+        "count": 10,
+        "percent": 19,
+        "notes": "small room / single-seat / lab"
+      },
+      {
+        "bucket": "30-49",
+        "count": 29,
+        "percent": 55,
+        "notes": "small classroom"
+      },
+      {
+        "bucket": "50-79",
+        "count": 7,
+        "percent": 13,
+        "notes": "standard classroom"
+      },
+      {
+        "bucket": "80-119",
+        "count": 6,
+        "percent": 11,
+        "notes": "large classroom"
+      },
+      {
+        "bucket": ">=120",
+        "count": 1,
+        "percent": 2,
+        "notes": "lecture hall / auditorium"
+      }
+    ],
+    "suspiciousRooms": [
+      {
+        "id": 50,
+        "name": "10-321",
+        "capacity": 3,
+        "reasons": [
+          "capacity=3 very small (likely lab/single-seat)"
+        ]
+      },
+      {
+        "id": 51,
+        "name": "10-304",
+        "capacity": 3,
+        "reasons": [
+          "capacity=3 very small (likely lab/single-seat)"
+        ]
+      },
+      {
+        "id": 52,
+        "name": "10-227",
+        "capacity": 3,
+        "reasons": [
+          "capacity=3 very small (likely lab/single-seat)"
+        ]
+      },
+      {
+        "id": 53,
+        "name": "10-410",
+        "capacity": 3,
+        "reasons": [
+          "capacity=3 very small (likely lab/single-seat)"
+        ]
+      },
+      {
+        "id": 11,
+        "name": "1-142",
+        "capacity": 200,
+        "reasons": [
+          "capacity=200 very large (lecture hall)"
+        ]
+      }
+    ],
+    "k21Conclusion": "53 rooms; capacity=0 count is 0; no placeholders; capacity range 3-200; median 40",
+    "k22gConclusion": "All 53 rooms have real capacity (K21-FIX-A confirmed); range 3-200, median 40, avg 46",
+    "thisAuditConclusion": "Capacity is real: 53 rooms, range 3-200, median 40, no null/0/negative values."
+  },
+  "taskStudentCountAudit": {
+    "taskTotal": 308,
+    "tasksWithClasses": 308,
+    "tasksWithoutClasses": 0,
+    "classGroupCount": 36,
+    "classGroupWithStudentCount": 36,
+    "classGroupWithoutStudentCount": 0,
+    "countSourceDistribution": {
+      "REAL_STUDENT_COUNT": 308,
+      "FALLBACK_50_PER_CLASS": 0,
+      "MIXED": 0
+    },
+    "duplicatedClassLinks": 0,
+    "min": 2,
+    "max": 483,
+    "avg": 37,
+    "median": 31,
+    "buckets": [
+      {
+        "bucket": "<30",
+        "count": 132,
+        "percent": 43,
+        "notes": "small class"
+      },
+      {
+        "bucket": "30-49",
+        "count": 107,
+        "percent": 35,
+        "notes": "small-medium"
+      },
+      {
+        "bucket": "50-79",
+        "count": 59,
+        "percent": 19,
+        "notes": "medium-large"
+      },
+      {
+        "bucket": "80-119",
+        "count": 9,
+        "percent": 3,
+        "notes": "large"
+      },
+      {
+        "bucket": ">=120",
+        "count": 1,
+        "percent": 0,
+        "notes": "very large / merged-class"
+      }
+    ],
+    "notes": "All values computed via getTaskStudentCount algorithm (ClassGroup.studentCount, fallback 50). Duplicated class links are detected and deduped."
+  },
+  "hc4Audit": {
+    "exists": true,
+    "fullScore": true,
+    "deltaScore": true,
+    "harnessSection": "Harness B (HC invariant)",
+    "penalty": -1000,
+    "triggerCondition": "taskStudentCount > room.capacity",
+    "currentViolationCount": 0,
+    "currentFeasibleViolationCount": 0,
+    "notes": "HC4 is implemented in both full and delta paths. Penalty is -1000. Triggered by getTaskStudentCount(studentCount) > room.capacity."
+  },
+  "candidateStrategies": [
+    {
+      "id": "A",
+      "name": "Large class prefers larger room (threshold-based)",
+      "description": "Trigger only when taskStudentCount >= 50 (large class). If room.capacity < (taskStudentCount + buffer), apply a fixed penalty. Example: if taskStudentCount >= 50 and room.capacity < taskStudentCount * 1.2 → -3.",
+      "pros": [
+        "Simple, easy to reason about.",
+        "Does not penalize small classes at all.",
+        "Easy to verify in harness (single threshold)."
+      ],
+      "cons": [
+        "Threshold (50) is hard-coded and may not match all schools.",
+        "Buffer ratio (1.2) is arbitrary.",
+        "Does nothing for small classes occupying huge rooms (waste).",
+        "Threshold tuning risk: may not fire often enough or may fire too often."
+      ],
+      "riskLevel": "MEDIUM",
+      "recommended": false,
+      "rationale": "Reasonable but narrow. Does not address resource utilization (small class in huge room). Pair with Candidate C if used."
+    },
+    {
+      "id": "B",
+      "name": "Capacity buffer / margin preference (utilization ratio)",
+      "description": "Compute utilization = taskStudentCount / room.capacity. If utilization > 0.90, apply -2 (tight). Optional: if utilization < 0.30 and room.capacity >= 100, apply -1 (waste). Smooth, continuous penalty that scales with how tight or wasteful the match is.",
+      "pros": [
+        "Smooth: no hard threshold.",
+        "Naturally complements HC4 (which fires at utilization > 1.0).",
+        "Can penalize both tight and wasteful matches.",
+        "Reuses existing getTaskStudentCount helper."
+      ],
+      "cons": [
+        "Two thresholds (0.90 and 0.30) need calibration.",
+        "Waste penalty may conflict with SC9 (room stability) when solver wants to keep the same room.",
+        "Penalties are uniform per slot; not a function of how tight (could be graduated)."
+      ],
+      "riskLevel": "MEDIUM",
+      "recommended": true,
+      "rationale": "Smooth, general, naturally aligned with HC4. Reuses getTaskStudentCount. Single helper shared by full + delta. Best balance of expressiveness and simplicity."
+    },
+    {
+      "id": "C",
+      "name": "Avoid wasting large rooms for small classes",
+      "description": "Trigger when taskStudentCount < 30 and room.capacity >= 100. Apply -1 (waste penalty). Complements Candidate A or B by addressing the small-class-in-huge-room case.",
+      "pros": [
+        "Improves resource utilization.",
+        "Complements large-class preference.",
+        "Easy to verify in harness."
+      ],
+      "cons": [
+        "Threshold 30 / 100 is hard-coded.",
+        "May conflict with SC9 (room stability): solver may want to keep small class in same room for stability.",
+        "May conflict with HC1 (room conflict) solver logic: large room is often the only free one.",
+        "Wastes solver time on tiny penalty (-1)."
+      ],
+      "riskLevel": "MEDIUM",
+      "recommended": false,
+      "rationale": "Useful as a sub-bucket of Candidate B. Standalone use is too narrow. Better to combine waste-penalty into Candidate B (utilization < 0.30 branch)."
+    },
+    {
+      "id": "D",
+      "name": "Combined utilization band (tight + waste)",
+      "description": "Single penalty based on utilization ratio: utilization > 0.90 → -2; utilization < 0.30 AND room.capacity >= 100 → -1; otherwise 0. Same as Candidate B with explicit waste branch.",
+      "pros": [
+        "Single helper function, single penalty structure.",
+        "Both directions of utilization are covered.",
+        "Smooth and explicit.",
+        "Easy to test in harness (one formula, three branches)."
+      ],
+      "cons": [
+        "Slightly more complex than B alone (extra branch).",
+        "Still uses two hard thresholds (0.90, 0.30, 100)."
+      ],
+      "riskLevel": "LOW",
+      "recommended": true,
+      "rationale": "Recommended as the canonical SC10 design. Combines B (utilization > 0.90) and C (waste at utilization < 0.30 and capacity >= 100) into a single, testable rule."
+    }
+  ],
+  "recommendedDesign": {
+    "canonicalName": "SC10_ROOM_CAPACITY_UTILIZATION",
+    "skipRules": [
+      "room === 0 (unscheduled)",
+      "room missing in roomById (defensive)",
+      "taskStudentCount <= 0 (no classes or all-zero counts — should not happen but defensive)",
+      "room.capacity <= 0 (room is not usable)",
+      "utilization > 1.0 (HC4 owns this case; SC10 skips to avoid double-counting)"
+    ],
+    "formula": "utilization = taskStudentCount / room.capacity\nif utilization > 0.90 → penalty = -2 (tight)\nelse if utilization < 0.30 AND room.capacity >= 100 → penalty = -1 (waste)\nelse → penalty = 0",
+    "penaltyScale": "-2 for tight match (utilization > 0.90). Matches SC8 / SC9 base unit (per-gap / per-extra-room). -1 for waste (utilization < 0.30 with large room). Lighter than tight penalty. Both are within the existing soft penalty range (-1 to -20) and well below HC4 (-1000).",
+    "onlySoftScore": true
+  },
+  "fullScoreDesign": {
+    "canonicalName": "SC10_ROOM_CAPACITY_UTILIZATION",
+    "skipRules": [
+      "room === 0 (unscheduled)",
+      "room missing in roomById (defensive)",
+      "taskStudentCount <= 0 (no classes or all-zero counts — should not happen but defensive)",
+      "room.capacity <= 0 (room is not usable)",
+      "utilization > 1.0 (HC4 owns this case; SC10 skips to avoid double-counting)"
+    ],
+    "formula": "utilization = taskStudentCount / room.capacity\nif utilization > 0.90 → penalty = -2 (tight)\nelse if utilization < 0.30 AND room.capacity >= 100 → penalty = -1 (waste)\nelse → penalty = 0",
+    "penaltyScale": "-2 for tight match (utilization > 0.90). Matches SC8 / SC9 base unit (per-gap / per-extra-room). -1 for waste (utilization < 0.30 with large room). Lighter than tight penalty. Both are within the existing soft penalty range (-1 to -20) and well below HC4 (-1000).",
+    "hardScore": 0,
+    "softScore": -3,
+    "onlySoftScore": true,
+    "pseudoCode": "// In calculateScoreWithDetails, after HC4 / SC9, before MIN_PERT:\nconst utilizationMap = new Map<string, number>() // key = slotId\nfor (const p of positions) {\n  if (p.room === 0) continue\n  const room = ctx.roomById.get(p.room)\n  if (!room || room.capacity <= 0) continue\n  const studentInfo = getTaskStudentCount(p.slot.teachingTask, ctx)\n  if (studentInfo.studentCount <= 0) continue\n  const utilization = studentInfo.studentCount / room.capacity\n  if (utilization > 1.0) continue // HC4 owns this\n  let penalty = 0\n  if (utilization > 0.90) penalty = -2 // tight\n  else if (utilization < 0.30 && room.capacity >= 100) penalty = -1 // waste\n  if (penalty !== 0) {\n    softScore += penalty\n    details.push({\n      type: 'SC10_ROOM_CAPACITY_UTILIZATION', level: 'SOFT', penalty,\n      slotId: p.slot.id,\n      message: `容量利用率 ${(utilization * 100).toFixed(1)}%: 任务 ${studentInfo.studentCount} 人, 教室 ${room.name} 容量 ${room.capacity}`,\n    })\n  }\n}"
+  },
+  "deltaScoreDesign": {
+    "affectedKeyStrategy": "Per-slot (moved slot is the only affected key). Unlike SC5 / SC8 / SC9, SC10 is NOT an aggregate constraint — it evaluates one slot at a time. Therefore the delta computation is O(1): re-evaluate SC10 on the moved slot at old and new positions.",
+    "complexity": "O(1) per delta (just two utilization calculations)",
+    "minPertIsolation": "Use 3rd-position originalAssignments (F3/F4/F6/F8 pattern) to isolate MIN_PERT in delta tests.",
+    "pseudoCode": "// In calculateDeltaScore, after HC4 delta, before SC9 delta:\nconst studentInfo = getTaskStudentCount(task, ctx)\nif (studentInfo.studentCount > 0) {\n  // Old position\n  if (old.roomId !== 0) {\n    const oldRoom = ctx.roomById.get(old.roomId)\n    if (oldRoom && oldRoom.capacity > 0 && studentInfo.studentCount <= oldRoom.capacity) {\n      const oldUtil = studentInfo.studentCount / oldRoom.capacity\n      const oldPenalty = computeSC10Penalty(oldUtil, oldRoom.capacity)\n      deltaSoft -= oldPenalty // remove old penalty\n    }\n  }\n  // New position\n  const newRoom = ctx.roomById.get(move.newRoomId)\n  if (newRoom && newRoom.capacity > 0 && studentInfo.studentCount <= newRoom.capacity) {\n    const newUtil = studentInfo.studentCount / newRoom.capacity\n    const newPenalty = computeSC10Penalty(newUtil, newRoom.capacity)\n    deltaSoft += newPenalty // add new penalty\n  }\n}\n\nfunction computeSC10Penalty(utilization: number, capacity: number): number {\n  if (utilization > 1.0) return 0 // HC4 owns\n  if (utilization > 0.90) return -2 // tight\n  if (utilization < 0.30 && capacity >= 100) return -1 // waste\n  return 0\n}"
+  },
+  "interactionAnalysis": [
+    {
+      "constraint": "HC4 capacity",
+      "relationship": "hard-orthogonal",
+      "notes": "SC10 cannot weaken HC4. HC4 still triggers at utilization > 1.0. SC10 only fires when utilization <= 1.0. If a move brings a slot into utilization > 1.0, only HC4 penalty applies (deltaHard += -1000); SC10 does not add anything (skipped)."
+    },
+    {
+      "constraint": "SC9 room stability",
+      "relationship": "soft-tradeoff",
+      "notes": "SC9 may keep a task in the same room across slots for stability. SC10 may want a different (more appropriately sized) room for a slot. Both are at -2 / -2. The LAHC solver will weigh them; if SC10 is wrong (penalizing a stable match), the bestScore will still converge to the global optimum. No hard conflict."
+    },
+    {
+      "constraint": "SC8 class gap",
+      "relationship": "orthogonal",
+      "notes": "SC8 keys on (classGroup, day); SC10 keys on (slot, room). Different domains. No interaction."
+    },
+    {
+      "constraint": "SC6 / HC6 Linxiao",
+      "relationship": "soft-priority",
+      "notes": "Linxiao rooms tend to be small (capacity 25-92 in this dev.db). If automotive classes are placed in Linxiao per SC6 / HC6, they may have tight utilization (Linxiao rooms cluster at 25-40). SC6 (-20) is much stronger than SC10 (-1 or -2); solver will prefer Linxiao match over capacity. This is intended: specialty rule wins over utilization preference."
+    },
+    {
+      "constraint": "SC7 weekend",
+      "relationship": "orthogonal",
+      "notes": "SC10 is independent of day. Capacity utilization is the same whether the slot is on a weekday or weekend. SC10 does not skip weekend slots (unlike SC5 / SC8 / SC9 which skip weekend). The reasoning: capacity preference is structural, not time-based."
+    },
+    {
+      "constraint": "MIN_PERT",
+      "relationship": "orthogonal",
+      "notes": "SC10 does not depend on originalAssignments. It only cares about current assignment vs room capacity. Delta tests must still use 3rd-position originalAssignments to isolate MIN_PERT net 0."
+    },
+    {
+      "constraint": "SC1 cross-building",
+      "relationship": "orthogonal",
+      "notes": "Different key (room building vs room capacity). No interaction."
+    },
+    {
+      "constraint": "SC2 same-day",
+      "relationship": "orthogonal",
+      "notes": "Different key (task-day vs slot-room). No interaction."
+    },
+    {
+      "constraint": "SC3 extreme time",
+      "relationship": "orthogonal",
+      "notes": "Different key (slotIndex vs room capacity). No interaction."
+    },
+    {
+      "constraint": "SC4 cross-campus",
+      "relationship": "orthogonal",
+      "notes": "Different key (room building vs room capacity). No interaction."
+    },
+    {
+      "constraint": "SC5 teacher day balance",
+      "relationship": "orthogonal",
+      "notes": "Different key (teacher-day vs slot-room). No interaction."
+    }
+  ],
+  "harnessPlan": [
+    {
+      "id": "J1-CAPACITY-GOOD-FIT",
+      "type": "full",
+      "title": "Good fit: utilization 0.50 → soft=0",
+      "expectedSoft": 0,
+      "isolationNotes": "teacherId=null (SC5 skip), 1 slot per task (SC2 skip), periods <5 (SC3 skip), weekday only (SC7 skip). Utilization 0.50 is in 0.30-0.90 band, no penalty."
+    },
+    {
+      "id": "J2-CAPACITY-TIGHT-FIT",
+      "type": "full",
+      "title": "Tight fit: utilization 0.95 → soft=-2",
+      "expectedSoft": -2,
+      "isolationNotes": "Same isolation. Utilization > 0.90 fires the -2 tight branch."
+    },
+    {
+      "id": "J3-CAPACITY-OVER-CAPACITY",
+      "type": "full",
+      "title": "Over capacity: utilization 1.20 → hard=-1000, soft=0 (SC10 skips)",
+      "expectedSoft": 0,
+      "isolationNotes": "HC4 fires. SC10 skips (utilization > 1.0). Component assertion: SC10 details=0."
+    },
+    {
+      "id": "J4-CAPACITY-SMALL-CLASS-HUGE-ROOM",
+      "type": "full",
+      "title": "Small class in huge room: utilization 0.20, cap=120 → soft=-1",
+      "expectedSoft": -1,
+      "isolationNotes": "Utilization < 0.30 AND cap >= 100 → waste penalty -1."
+    },
+    {
+      "id": "J5-CAPACITY-SMALL-CLASS-NORMAL-ROOM",
+      "type": "full",
+      "title": "Small class in normal room: utilization 0.40, cap=60 → soft=0",
+      "expectedSoft": 0,
+      "isolationNotes": "Utilization 0.40 is in 0.30-0.90 band, no penalty."
+    },
+    {
+      "id": "J6-CAPACITY-ROOM-ZERO-SKIP",
+      "type": "full",
+      "title": "room=0 (unscheduled): SC10 skip → soft=0",
+      "expectedSoft": 0,
+      "isolationNotes": "room=0 → SC10 skips. Total soft=0 (also HC1/HC4/HC5 skip on room=0)."
+    },
+    {
+      "id": "J7-CAPACITY-MISSING-STUDENT-COUNT-SKIP",
+      "type": "full",
+      "title": "taskStudentCount=0 (no classes): SC10 skip → soft=0",
+      "expectedSoft": 0,
+      "isolationNotes": "Defensive skip. getTaskStudentCount returns 50 fallback for empty taskClasses, so this case requires manual fixture override."
+    },
+    {
+      "id": "J8-CAPACITY-EXACT-0.90-BOUNDARY",
+      "type": "full",
+      "title": "Boundary: utilization = 0.90 → soft=0 (strict >)",
+      "expectedSoft": 0,
+      "isolationNotes": "Boundary test: > 0.90 strictly. 0.90 itself does not fire."
+    },
+    {
+      "id": "J9-DELTA-IMPROVE-TIGHT-TO-GOOD",
+      "type": "delta",
+      "title": "Move from tight (0.95) to good (0.50) → deltaSoft=+2",
+      "expectedSoft": 2,
+      "isolationNotes": "3rd-position originalAssignments. Same task, different room. SC10 only."
+    },
+    {
+      "id": "J10-DELTA-WORSEN-GOOD-TO-TIGHT",
+      "type": "delta",
+      "title": "Move from good (0.50) to tight (0.95) → deltaSoft=-2",
+      "expectedSoft": -2,
+      "isolationNotes": "Same isolation."
+    },
+    {
+      "id": "J11-DELTA-SMALL-HUGE-TO-NORMAL",
+      "type": "delta",
+      "title": "Move small class from huge (0.20, cap=120) to normal (0.50, cap=60) → deltaSoft=+1",
+      "expectedSoft": 1,
+      "isolationNotes": "Waste penalty removed."
+    },
+    {
+      "id": "J12-DELTA-NORMAL-TO-HUGE",
+      "type": "delta",
+      "title": "Move small class from normal (0.50, cap=60) to huge (0.20, cap=120) → deltaSoft=-1",
+      "expectedSoft": -1,
+      "isolationNotes": "Waste penalty introduced."
+    },
+    {
+      "id": "J13-DELTA-OVER-CAPACITY-INTRODUCED",
+      "type": "delta",
+      "title": "Move into over-capacity (utilization 1.10) → deltaHard=-1000, deltaSoft=0 (SC10 skips)",
+      "expectedSoft": 0,
+      "isolationNotes": "SC10 skips (utilization > 1.0). HC4 fires. Component assertion."
+    }
+  ],
+  "findings": [
+    {
+      "id": "F10-F-1",
+      "severity": "NONE",
+      "category": "F10-F. Capacity data quality",
+      "title": "Room.capacity is real: range 3-200, median 40, no null/0/negative",
+      "currentStatus": "All 53 rooms have real capacity. Min: 3, max: 200, median: 40, distinct: 23, default-50: 0, zero: 0, negative: 0. Confirms K21-FIX-A and K22-G conclusions.",
+      "evidence": [
+        "Capacity distribution: [{\"bucket\":\"<30\",\"count\":10,\"percent\":19,\"notes\":\"small room / single-seat / lab\"},{\"bucket\":\"30-49\",\"count\":29,\"percent\":55,\"notes\":\"small classroom\"},{\"bucket\":\"50-79\",\"count\":7,\"percent\":13,\"notes\":\"standard classroom\"},{\"bucket\":\"80-119\",\"count\":6,\"percent\":11,\"notes\":\"large classroom\"},{\"bucket\":\">=120\",\"count\":1,\"percent\":2,\"notes\":\"lecture hall / auditorium\"}]",
+        "Suspicious rooms: 5 (cap<10 or cap>150 — likely lab/lecture hall, not bug)"
+      ],
+      "risk": "No risk. Capacity is real and ready for capacity-based soft preference.",
+      "recommendation": "Proceed with capacity-based soft preference design."
+    },
+    {
+      "id": "F10-F-2",
+      "severity": "INFO",
+      "category": "F10-F. TeachingTask student count quality",
+      "title": "Task student count distribution: min=2, max=483, median=31, 100% REAL_STUDENT_COUNT",
+      "currentStatus": "Tasks: 308. With classes: 308. Without classes: 0. Count source: {\"REAL_STUDENT_COUNT\":308,\"FALLBACK_50_PER_CLASS\":0,\"MIXED\":0}. ClassGroup with studentCount: 36/36. Duplicated class links: 0.",
+      "evidence": [
+        "Task buckets: [{\"bucket\":\"<30\",\"count\":132,\"percent\":43,\"notes\":\"small class\"},{\"bucket\":\"30-49\",\"count\":107,\"percent\":35,\"notes\":\"small-medium\"},{\"bucket\":\"50-79\",\"count\":59,\"percent\":19,\"notes\":\"medium-large\"},{\"bucket\":\"80-119\",\"count\":9,\"percent\":3,\"notes\":\"large\"},{\"bucket\":\">=120\",\"count\":1,\"percent\":0,\"notes\":\"very large / merged-class\"}]",
+        "Count source distribution: {\"REAL_STUDENT_COUNT\":308,\"FALLBACK_50_PER_CLASS\":0,\"MIXED\":0}"
+      ],
+      "risk": "Low risk. Most tasks have real student counts. FALLBACK only applies to small subset.",
+      "recommendation": "Proceed with capacity-based soft preference; FALLBACK is acceptable for the minority of tasks."
+    },
+    {
+      "id": "F10-F-3",
+      "severity": "NONE",
+      "category": "F10-F. HC4 completeness",
+      "title": "HC4: full + delta covered; 0 current violations in dev.db",
+      "currentStatus": "HC4 is implemented in both full and delta paths. Penalty is -1000. Trigger: taskStudentCount > room.capacity. Current state: 0 slots violate HC4. K22-C Harness B covers HC4.",
+      "evidence": [
+        "score.ts:364-378: full-score HC4 implementation",
+        "score.ts:706-711: delta-score HC4 implementation",
+        "K22-C Harness B covers HC4 invariant"
+      ],
+      "risk": "No current HC4 violations. SC10 can build on top of a clean HC4 baseline.",
+      "recommendation": "SC10 must NOT weaken HC4. SC10 only fires at utilization <= 1.0. If a move brings utilization > 1.0, only HC4 penalty applies."
+    },
+    {
+      "id": "F10-F-4",
+      "severity": "INFO",
+      "category": "F10-F. SC10 design feasibility",
+      "title": "SC10 design (Candidate D) is feasible: reuses getTaskStudentCount, no schema change",
+      "currentStatus": "Recommended design: SC10_ROOM_CAPACITY_UTILIZATION with utilization-based formula. Reuses existing getTaskStudentCount helper (capacity.ts). No schema change. No new data path. Full + delta share computeSC10Penalty(utilization, capacity) helper. Penalty scale -1 (waste) / -2 (tight), within existing soft range.",
+      "evidence": [
+        "src/lib/scheduler/capacity.ts: getTaskStudentCount is the canonical helper",
+        "score.ts: import { getTaskStudentCount } from \"./capacity\"",
+        "F4/F6/F8 pattern: shared helper for full + delta"
+      ],
+      "risk": "Two thresholds (0.90 utilization, 0.30 utilization, 100 capacity) need calibration. Initial defaults are reasonable but should be tuned against real data.",
+      "recommendation": "Open K22-F11-CAPACITY-PREFERENCE-IMPL with Candidate D as the design baseline. Add Harness J with 13 cases (8 full + 5 delta).",
+      "suggestedNextStage": "K22-F11-CAPACITY-PREFERENCE-IMPL"
+    },
+    {
+      "id": "F10-F-5",
+      "severity": "INFO",
+      "category": "F10-F. SC10 interaction",
+      "title": "SC10 is orthogonal to SC1-SC5, SC7, SC8; soft-tradeoff with SC9; soft-priority with SC6/HC6",
+      "currentStatus": "Interaction analysis is complete. SC10 is per-slot (not aggregate), so it does not introduce any aggregate-key drift risk. Penalty scale (-1 to -2) is well below SC6 (-20) and SC9 (-2), so it can coexist without dominating.",
+      "evidence": [
+        "see \"Interaction analysis\" section in markdown report"
+      ],
+      "risk": "No risk. SC10 has clean interaction profile.",
+      "recommendation": "Proceed with implementation; no special handling required."
+    }
+  ],
+  "severitySummary": {
+    "HIGH": 0,
+    "MEDIUM": 0,
+    "LOW": 0,
+    "INFO": 3,
+    "NONE": 2
+  },
+  "blocking": false,
+  "recommendedNextStage": "K22-F11-CAPACITY-PREFERENCE-IMPL (recommended) OR K22-I-SCORE-WEIGHTS-AUDIT (if weight calibration risk is high) OR K22-G2-ROOM-TYPE-SCHEMA-PLAN (if room type is more important)",
+  "notes": [
+    "K22-F10 is a read-only audit + design. No Prisma writes, no score.ts changes, no schema changes.",
+    "Capacity data is real (K21-FIX-A and K22-G confirmed).",
+    "Task student count is computable via existing getTaskStudentCount helper (capacity.ts).",
+    "HC4 is full + delta covered; no need to modify it. SC10 is purely additive soft preference.",
+    "SC10 design follows the F4/F6/F8 shared-helper pattern.",
+    "No new constraint is implemented in this stage. K22-F10 is audit-only."
+  ]
+}
