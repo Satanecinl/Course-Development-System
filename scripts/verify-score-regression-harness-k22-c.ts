@@ -53,7 +53,7 @@ type Status = 'PASS' | 'KNOWN_FAIL' | 'FAIL' | 'INFO'
 
 interface CheckResult {
   id: string
-  harness: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H'
+  harness: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I'
   title: string
   status: Status
   detail: string
@@ -1551,6 +1551,229 @@ function runHarnessH(): void {
   }
 }
 
+// ── Harness I: SC9 Classroom Stability (K22-F8) ──
+
+function runHarnessI(): void {
+  console.log('\n─── Harness I: SC9 Classroom Stability (K22-F8) ───')
+
+  function extractSC9(details: { type: string; penalty: number }[]): { count: number; total: number } {
+    let count = 0
+    let total = 0
+    for (const d of details) {
+      if (d.type === 'SC9_TEACHING_TASK_ROOM_STABILITY') {
+        count++
+        total += d.penalty
+      }
+    }
+    return { count, total }
+  }
+
+  interface SC9FullCase {
+    id: string
+    title: string
+    slots: { day: number; period: number; roomId: number }[]
+    classGroupIds: number[]
+    expectedTotalSoft: number
+    expectedSC9Soft: number
+    expectedSC9Count: number
+    note: string
+  }
+  const fullCases: SC9FullCase[] = [
+    {
+      id: 'I1-SAME-ROOM',
+      title: 'SC9 full: 1 task, 2 slots same room → SC9 0',
+      slots: [{ day: 1, period: 1, roomId: 100 }, { day: 1, period: 2, roomId: 100 }],
+      classGroupIds: [100],
+      expectedTotalSoft: -10,
+      expectedSC9Soft: 0,
+      expectedSC9Count: 0,
+      note: '1 task, 2 slots room 100. distinctRooms={100}, size=1, SC9 0. SC2 fires (1 task 2 same-day) = -10. Total = -10, SC9 = 0.',
+    },
+    {
+      id: 'I2-TWO-ROOMS',
+      title: 'SC9 full: 1 task, 2 slots in 2 rooms → SC9 -2',
+      slots: [{ day: 1, period: 1, roomId: 100 }, { day: 1, period: 2, roomId: 200 }],
+      classGroupIds: [100],
+      expectedTotalSoft: -12,
+      expectedSC9Soft: -2,
+      expectedSC9Count: 1,
+      note: '1 task, 2 slots in 2 rooms. distinctRooms={100,200}, SC9=-2. SC2=-10. Total=-12, SC9=-2.',
+    },
+    {
+      id: 'I3-THREE-ROOMS',
+      title: 'SC9 full: 1 task, 3 slots in 3 rooms → SC9 -4',
+      slots: [{ day: 1, period: 1, roomId: 100 }, { day: 1, period: 2, roomId: 200 }, { day: 1, period: 3, roomId: 300 }],
+      classGroupIds: [100],
+      expectedTotalSoft: -24,
+      expectedSC9Soft: -4,
+      expectedSC9Count: 1,
+      note: '1 task, 3 slots in 3 rooms. SC9=-4. SC2=-20. Total=-24, SC9=-4.',
+    },
+    {
+      id: 'I4-SINGLE-SLOT',
+      title: 'SC9 full: 1 task, 1 slot → SC9 0',
+      slots: [{ day: 1, period: 1, roomId: 100 }],
+      classGroupIds: [100],
+      expectedTotalSoft: 0,
+      expectedSC9Soft: 0,
+      expectedSC9Count: 0,
+      note: '1 task, 1 slot. distinctRooms={100}, size=1, SC9 0. SC2 skip. SC5 skip. Total = 0.',
+    },
+    {
+      id: 'I5-ROOM-ZERO-SKIP',
+      title: 'SC9 full: room=0 skip → SC9 0',
+      slots: [{ day: 1, period: 1, roomId: 100 }, { day: 1, period: 2, roomId: 0 }],
+      classGroupIds: [100],
+      expectedTotalSoft: -10,
+      expectedSC9Soft: 0,
+      expectedSC9Count: 0,
+      note: '1 task, 2 slots: room 100 + room 0. SC9: room=0 skipped, only room 100, size=1, SC9 0. SC2=-10. Total=-10, SC9=0.',
+    },
+    {
+      id: 'I6-WEEKEND-SKIP',
+      title: 'SC9 full: weekend skip → SC9 0 (SC7 fires)',
+      slots: [{ day: 1, period: 1, roomId: 100 }, { day: 6, period: 1, roomId: 100 }],
+      classGroupIds: [100],
+      expectedTotalSoft: -15,
+      expectedSC9Soft: 0,
+      expectedSC9Count: 0,
+      note: '1 task, 2 slots: day 1 + day 6. SC9: day 6 skipped, only day 1, size=1, SC9 0. SC7=-15. Total=-15, SC9=0.',
+    },
+    {
+      id: 'I7-MULTI-CLASSGROUP',
+      title: 'SC9 full: merged-class task (cg{1,2}) 2 slots in 2 rooms → SC9 -2',
+      slots: [{ day: 1, period: 1, roomId: 100 }, { day: 1, period: 2, roomId: 200 }],
+      classGroupIds: [1, 2],
+      expectedTotalSoft: -12,
+      expectedSC9Soft: -2,
+      expectedSC9Count: 1,
+      note: '1 merged task with classGroups [1, 2], 2 slots in 2 rooms. SC9=-2 (TeachingTask-level). SC2=-10. Total=-12, SC9=-2.',
+    },
+  ]
+
+  for (const tc of fullCases) {
+    const taskInputs: FixtureTaskInput[] = [{ id: 1, teacherId: null, classGroupIds: tc.classGroupIds }]
+    const slotInputs: FixtureSlotInput[] = tc.slots.map((s, i) => ({ id: 1000 + i + 1, teachingTaskId: 1, dayOfWeek: s.day, slotIndex: s.period, roomId: s.roomId }))
+    const allRoomIds = new Set<number>(tc.slots.map(s => s.roomId).filter(r => r !== 0))
+    const roomInputs: FixtureRoomInput[] = Array.from(allRoomIds).map(rid => ({ id: rid, name: `R${rid}`, building: 'A', capacity: 100 }))
+    const ctx = buildContext(taskInputs, roomInputs, slotInputs)
+    const state = buildStateFromSlots(ctx)
+    const result = calculateScoreWithDetails(ctx, state)
+    const sc9 = extractSC9(result.details)
+    const totalOK = result.softScore === tc.expectedTotalSoft
+    const sc9OK = sc9.total === tc.expectedSC9Soft && sc9.count === tc.expectedSC9Count
+    const hardOK = result.hardScore === 0
+    const status = (hardOK && totalOK && sc9OK) ? 'PASS' : 'FAIL'
+    const breakdown = result.details.map(d => `${d.type}=${d.penalty}`).join(', ')
+    record({
+      id: tc.id, harness: 'I', title: tc.title, status,
+      detail: `hard=${result.hardScore} (expect 0); total soft=${result.softScore} (expect ${tc.expectedTotalSoft}); SC9 count=${sc9.count} (expect ${tc.expectedSC9Count}); SC9 sum=${sc9.total} (expect ${tc.expectedSC9Soft})`,
+      evidence: [tc.note, `Breakdown: ${breakdown || '(none)'}`],
+    })
+  }
+
+  interface SC9DeltaCase {
+    id: string
+    title: string
+    slots: { day: number; period: number; roomId: number }[]
+    moveSlotIdx: number
+    newDay: number
+    newPeriod: number
+    newRoomId: number
+    expectedDeltaHard: number
+    expectedDeltaSoft: number
+    expectedSC9Delta: number
+    note: string
+  }
+  const deltaCases: SC9DeltaCase[] = [
+    {
+      id: 'I8-DELTA-IMPROVE',
+      title: 'SC9 delta: 2 rooms → 1 room → +2 (SC9 only)',
+      slots: [{ day: 1, period: 1, roomId: 100 }, { day: 1, period: 2, roomId: 200 }],
+      moveSlotIdx: 1,
+      newDay: 1,
+      newPeriod: 2,
+      newRoomId: 100,
+      expectedDeltaHard: 0,
+      expectedDeltaSoft: 2,
+      expectedSC9Delta: 2,
+      note: 'Before: {100,200}, SC9=-2. After: {100}, SC9=0. SC9 delta=+2. SC2: same task same day, delta=0. Total = +2.',
+    },
+    {
+      id: 'I9-DELTA-WORSEN',
+      title: 'SC9 delta: 1 room → 2 rooms → -2 (SC9 only)',
+      slots: [{ day: 1, period: 1, roomId: 100 }, { day: 1, period: 2, roomId: 100 }],
+      moveSlotIdx: 1,
+      newDay: 1,
+      newPeriod: 2,
+      newRoomId: 200,
+      expectedDeltaHard: 0,
+      expectedDeltaSoft: -2,
+      expectedSC9Delta: -2,
+      note: 'Before: {100}, SC9=0. After: {100,200}, SC9=-2. SC9 delta=-2. SC2: same task same day, delta=0. Total = -2.',
+    },
+    {
+      id: 'I10-DELTA-ROOM_ZERO-TO-REAL',
+      title: 'SC9 delta: room=0 → real room → -2 (SC9 only)',
+      slots: [{ day: 1, period: 1, roomId: 100 }, { day: 1, period: 2, roomId: 0 }],
+      moveSlotIdx: 1,
+      newDay: 1,
+      newPeriod: 2,
+      newRoomId: 200,
+      expectedDeltaHard: 0,
+      expectedDeltaSoft: -2,
+      expectedSC9Delta: -2,
+      note: 'Before: room=0 skipped, {100}, SC9=0. After: {100,200}, SC9=-2. SC9 delta=-2. SC2: same task same day, delta=0. Total = -2.',
+    },
+    {
+      id: 'I11-DELTA-REAL-TO-ROOM_ZERO',
+      title: 'SC9 delta: real room → room=0 → +2 (deltaHard=-1000 due to HC5)',
+      slots: [{ day: 1, period: 1, roomId: 100 }, { day: 1, period: 2, roomId: 200 }],
+      moveSlotIdx: 1,
+      newDay: 1,
+      newPeriod: 2,
+      newRoomId: 0,
+      expectedDeltaHard: -1000,
+      expectedDeltaSoft: 2,
+      expectedSC9Delta: 2,
+      note: 'Before: {100,200}, SC9=-2. After: room=0 skipped, {100}, SC9=0. SC9 delta=+2. SC2: same task same day, delta=0. deltaHard=-1000 (HC5). Total = +2 - 1000.',
+    },
+  ]
+
+  for (const dc of deltaCases) {
+    const allRoomIds = new Set<number>(dc.slots.map(s => s.roomId))
+    if (dc.newRoomId !== 0 && !allRoomIds.has(dc.newRoomId)) allRoomIds.add(dc.newRoomId)
+    // I8/I9/I10 new room explicitly (rooms 100, 200 already in allRoomIds)
+    const taskInputs: FixtureTaskInput[] = [{ id: 1, teacherId: null, classGroupIds: [100] }]
+    const slotInputs: FixtureSlotInput[] = dc.slots.map((s, i) => ({ id: 1000 + i + 1, teachingTaskId: 1, dayOfWeek: s.day, slotIndex: s.period, roomId: s.roomId }))
+    const roomInputs: FixtureRoomInput[] = Array.from(allRoomIds).map(rid => ({ id: rid, name: rid === 0 ? 'UNSCHEDULED' : `R${rid}`, building: 'A', capacity: 100 }))
+    const ctx = buildContext(taskInputs, roomInputs, slotInputs)
+    if (dc.id === 'I10-DELTA-ROOM_ZERO-TO-REAL') {
+      console.error('DEBUG I10: roomInputs=', roomInputs.map(r => r.id), 'roomById keys=', Array.from(ctx.roomById.keys()))
+    }
+    const assignments = new Map(slotInputs.map(s => [s.id, { dayOfWeek: s.dayOfWeek, slotIndex: s.slotIndex, roomId: s.roomId }]))
+    const origAssignments = new Map(slotInputs.map(s => [s.id, { dayOfWeek: 9, slotIndex: 1, roomId: 999 }]))
+    const state: ScheduleState = { assignments, originalAssignments: origAssignments }
+    const moveSlotId = slotInputs[dc.moveSlotIdx].id
+    const move: Move = { slotId: moveSlotId, newDay: dc.newDay, newSlotIndex: dc.newPeriod, newRoomId: dc.newRoomId }
+    const delta = calculateDeltaScore(ctx, state, move)
+    const stateBefore = { assignments: new Map(slotInputs.map(s => [s.id, { dayOfWeek: s.dayOfWeek, slotIndex: s.slotIndex, roomId: s.roomId }])), originalAssignments: new Map(slotInputs.map(s => [s.id, { dayOfWeek: 9, slotIndex: 1, roomId: 999 }])) }
+    const stateAfter = { assignments: new Map(slotInputs.map(s => [s.id, s.id === moveSlotId ? { dayOfWeek: move.newDay, slotIndex: move.newSlotIndex, roomId: move.newRoomId } : { dayOfWeek: s.dayOfWeek, slotIndex: s.slotIndex, roomId: s.roomId }])), originalAssignments: new Map(slotInputs.map(s => [s.id, { dayOfWeek: 9, slotIndex: 1, roomId: 999 }])) }
+    const sc9Before = extractSC9(calculateScoreWithDetails(ctx, stateBefore).details)
+    const sc9After = extractSC9(calculateScoreWithDetails(ctx, stateAfter).details)
+    const sc9Delta = sc9After.total - sc9Before.total
+    const totalOK = delta.deltaSoft === dc.expectedDeltaSoft
+    const sc9OK = sc9Delta === dc.expectedSC9Delta
+    const hardOK = delta.deltaHard === dc.expectedDeltaHard
+    const status = (hardOK && totalOK && sc9OK) ? 'PASS' : 'FAIL'
+    record({
+      id: dc.id, harness: 'I', title: dc.title, status,
+      detail: `deltaHard=${delta.deltaHard} (expect ${dc.expectedDeltaHard}); deltaSoft=${delta.deltaSoft} (expect ${dc.expectedDeltaSoft}); SC9 component delta=${sc9Delta} (expect ${dc.expectedSC9Delta}); SC9 details: before count=${sc9Before.count} sum=${sc9Before.total}, after count=${sc9After.count} sum=${sc9After.total}`,
+      evidence: [dc.note],
+    })
+  }
+}
+
 // ── Main ────────────────────────────────────────────────────────────
 
 function main() {
@@ -1566,6 +1789,7 @@ function main() {
   runHarnessF()
   runHarnessG()
   runHarnessH()
+  runHarnessI()
 
   // Summary
   const pass = results.filter((r) => r.status === 'PASS').length

@@ -22,6 +22,8 @@ const SOFT_MINIMUM_PERTURBATION = -2
 const HC6_NON_AUTOMOTIVE_LINXIAO_PENALTY = -1000
 const SC6_AUTOMOTIVE_NON_LINXIAO_PENALTY = -20
 const SC7_WEEKEND_PENALTY = -15
+const SC8_CLASS_GAP_PENALTY_PER_EMPTY_PERIOD = -2
+const SC9_TEACHING_TASK_ROOM_STABILITY_PENALTY_PER_EXTRA_ROOM = -2
 
 // ── 周次缓存 ──
 const weekSetCache = new Map<number, Set<number>>()
@@ -196,8 +198,6 @@ function computeTeacherDayBalancePenalty(counts: Map<number, number>): number {
 
 // ── SC8: 班级空洞减少 (K22-F6) ──
 
-const SC8_CLASS_GAP_PENALTY_PER_EMPTY_PERIOD = -2
-
 /**
  * 根据升序 period 集合计算 SC8 penalty。
  * 纯函数，可直接用于 full 和 delta 路径。
@@ -251,6 +251,51 @@ function buildClassDayPeriods(
     periods.add(overrideIdx)
   }
   return periods
+}
+
+// ── SC9: 教室稳定性 (K22-F8) ──
+
+/**
+ * 根据 distinct room 集合计算 SC9 penalty。
+ * 纯函数，可直接用于 full 和 delta 路径。
+ * 算法 (K22-F7 Candidate A):
+ *   - distinctRooms.size <= 1: penalty = 0
+ *   - distinctRooms.size > 1: penalty = -2 * (size - 1)
+ */
+function computeTaskRoomStabilityPenalty(rooms: Iterable<number>): number {
+  const set = new Set(rooms)
+  if (set.size <= 1) return 0
+  return SC9_TEACHING_TASK_ROOM_STABILITY_PENALTY_PER_EXTRA_ROOM * (set.size - 1)
+}
+
+/**
+ * Build the room set for one teachingTaskId.
+ * - Excludes `excludeSlotId` (the moved slot, for delta path)
+ * - Skips room=0, weekend [6,7]
+ * - Adds `overrideRoomId` to the set if `overrideDay` is in [1..5] and `overrideRoomId !== 0`
+ *   (delta path injects the moved slot at its old or new position)
+ */
+function buildTaskRoomSet(
+  taskId: number,
+  ctx: SchedulingContext,
+  state: ScheduleState,
+  excludeSlotId: number,
+  overrideDay: number,
+  overrideRoomId: number,
+): Set<number> {
+  const rooms = new Set<number>()
+  for (const slot of ctx.slots) {
+    if (slot.id === excludeSlotId) continue
+    if (slot.teachingTaskId !== taskId) continue
+    const pos = getPos(slot, state)
+    if (pos.room === 0) continue
+    if (pos.day < 1 || pos.day > 5) continue
+    rooms.add(pos.room)
+  }
+  if (overrideDay >= 1 && overrideDay <= 5 && overrideRoomId !== 0) {
+    rooms.add(overrideRoomId)
+  }
+  return rooms
 }
 
 /**
@@ -570,6 +615,30 @@ export function calculateScoreWithDetails(
     }
   }
 
+  // ── SC9: 教室稳定性 (K22-F8) ──
+  // 聚合 (teachingTaskId) 的 distinct non-zero roomIds 集合 (weekday [1..5] only)。
+  // Skip rules: room=0, weekend (SC7 owns), distinctRooms.size <= 1。
+  // 合班任务不展开：TeachingTask-level 只按 task 计一次。
+  const taskRooms = new Map<number, Set<number>>()
+  for (const p of positions) {
+    if (p.room === 0) continue
+    if (p.day < 1 || p.day > 5) continue
+    const taskId = p.slot.teachingTaskId
+    let roomSet = taskRooms.get(taskId)
+    if (!roomSet) { roomSet = new Set<number>(); taskRooms.set(taskId, roomSet) }
+    roomSet.add(p.room)
+  }
+  for (const [taskId, roomSet] of taskRooms) {
+    const penalty = computeTaskRoomStabilityPenalty(roomSet)
+    if (penalty !== 0) {
+      softScore += penalty
+      details.push({
+        type: 'SC9_TEACHING_TASK_ROOM_STABILITY', level: 'SOFT', penalty,
+        message: `task ${taskId}: ${roomSet.size} distinct rooms, penalty ${penalty}`,
+      })
+    }
+  }
+
   return { hardScore, softScore, details }
 }
 
@@ -842,6 +911,17 @@ export function calculateDeltaScore(
       deltaSoft += afterPenalty - beforePenalty
     }
   }
+
+  // SC9 delta: 教室稳定性 (K22-F8)
+  // Affected key: 单一 teachingTaskId of moved slot (1 key, 比 SC8 的 2 * classGroups.length 更简单)。
+  // Local computation: O(ctx.slots) 但只 filter 1 task 的 slots。
+  // MIN_PERT 隔离: harness 用 3rd-position originalAssignments (F3/F4/F6 模式)。
+  const sc9TaskId = slot.teachingTaskId
+  const beforeRoomSet = buildTaskRoomSet(sc9TaskId, ctx, state, slot.id, old.dayOfWeek, old.roomId)
+  const beforePenalty = computeTaskRoomStabilityPenalty(beforeRoomSet)
+  const afterRoomSet = buildTaskRoomSet(sc9TaskId, ctx, state, slot.id, move.newDay, move.newRoomId)
+  const afterPenalty = computeTaskRoomStabilityPenalty(afterRoomSet)
+  deltaSoft += afterPenalty - beforePenalty
 
   return { deltaHard, deltaSoft }
 }

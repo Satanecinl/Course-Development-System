@@ -1,0 +1,149 @@
+{
+  "generatedAt": "2026-06-07T00:00:00.000Z",
+  "phase": "K22-F8-CLASSROOM-STABILITY-IMPL",
+  "mode": "implementation + isolated regression harness (F8A component assertion)",
+  "summary": {
+    "k22CSummary": {
+      "pass": 60,
+      "knownFail": 0,
+      "fail": 0,
+      "info": 0,
+      "blocking": false,
+      "harnessHBefore": 49,
+      "harnessIAdded": 11,
+      "harnessAAfter": 60
+    },
+    "f8Wrapper": {
+      "pass": 11,
+      "fail": 0,
+      "total": 11
+    },
+    "f7AuditReaffirmed": {
+      "high": 0,
+      "medium": 1,
+      "low": 3,
+      "info": 2,
+      "none": 2,
+      "blocking": false
+    },
+    "predecessor": "K22-F7-CLASSROOM-STABILITY-AUDIT",
+    "predecessorCommit": "b55ff19"
+  },
+  "constraintId": "SC9_TEACHING_TASK_ROOM_STABILITY",
+  "constraintName": "教室稳定性",
+  "constraintKind": "soft",
+  "constants": {
+    "SC9_TEACHING_TASK_ROOM_STABILITY_PENALTY_PER_EXTRA_ROOM": -2
+  },
+  "formula": {
+    "description": "For each teachingTask, build Set<roomId> from slots where room != 0 and day in [1..5]; if set.size > 1, penalty = -2 * (set.size - 1).",
+    "sharedHelpers": [
+      "computeTaskRoomStabilityPenalty(rooms: Iterable<number>): number — pure function for full + delta",
+      "buildTaskRoomSet(taskId, ctx, state, excludeSlotId, overrideDay, overrideRoomId): Set<number> — shared for full + delta; excludes moved slot and injects override"
+    ]
+  },
+  "skipRules": [
+    "room === 0 (unscheduled)",
+    "dayOfWeek in [6, 7] (weekend — SC7 owns)",
+    "taskClasses.length === 0 (orphan task)",
+    "distinctRooms.size <= 1 (no diversity)"
+  ],
+  "interaction": {
+    "HC1": "orthogonal",
+    "HC2": "orthogonal (teacherId=null in tests)",
+    "HC3": "orthogonal",
+    "HC4": "orthogonal",
+    "HC5": "orthogonal (may fire on room=0 cases; documented via deltaHard expectation)",
+    "HC6_SC6": "orthogonal (Linxiao auto)",
+    "SC1_SC4": "orthogonal",
+    "SC2": "orthogonal (may fire on multi-slot tasks; component assertion)",
+    "SC8": "orthogonal (different key)",
+    "MIN_PERT": "isolated via 3rd-position originalAssignments"
+  },
+  "deltaDesign": {
+    "affectedKeysPerClassGroup": "1 key: teachingTaskId of moved slot",
+    "totalAffectedKeys": "1",
+    "beforePenaltyFormula": "computeTaskRoomStabilityPenalty(buildTaskRoomSet(taskId, ctx, state, slot.id, oldDay, oldRoomId))",
+    "afterPenaltyFormula": "computeTaskRoomStabilityPenalty(buildTaskRoomSet(taskId, ctx, state, slot.id, newDay, newRoomId))",
+    "deltaSoft": "afterPenalty - beforePenalty",
+    "localComputation": "O(ctx.slots) with teachingTaskId filter; only 1 task's slots evaluated",
+    "minPertIsolation": "3rd-position originalAssignments = {dayOfWeek: 9, slotIndex: 1, roomId: 999} in harness"
+  },
+  "f8AIsolationStrategy": {
+    "teacherId": "teacherId=null on all tasks → SC5 skips",
+    "taskGranularity": "Single task with multiple slots; SC2 may fire on multi-slot same-day tasks (component assertion)",
+    "weekdayOnlyForDelta": "Delta cases use weekday targets → SC7 doesn't fire (except I11 which moves to room=0)",
+    "minPertIsolation": "3rd-position originalAssignments → MIN_PERT net 0",
+    "componentAssertion": "Each case asserts BOTH total soft + SC9 details count + sum; for cases that must trigger SC2/SC7 (H4, H6, H8), the non-SC9 contribution is explicitly documented"
+  },
+  "harnessICases": [
+    { "id": "I1-SAME-ROOM", "type": "full", "title": "1 task, 2 slots same room → SC9 0", "expectedTotalSoft": -10, "expectedSC9Soft": 0, "expectedSC9Count": 0, "isolation": "SC2 fires (1 task 2 same-day) = -10" },
+    { "id": "I2-TWO-ROOMS", "type": "full", "title": "1 task, 2 slots in 2 rooms → SC9 -2", "expectedTotalSoft": -12, "expectedSC9Soft": -2, "expectedSC9Count": 1, "isolation": "SC2 = -10, SC9 = -2" },
+    { "id": "I3-THREE-ROOMS", "type": "full", "title": "1 task, 3 slots in 3 rooms → SC9 -4", "expectedTotalSoft": -24, "expectedSC9Soft": -4, "expectedSC9Count": 1, "isolation": "SC2 = -20, SC5 = -3, SC9 = -4" },
+    { "id": "I4-SINGLE-SLOT", "type": "full", "title": "1 task, 1 slot → SC9 0", "expectedTotalSoft": 0, "expectedSC9Soft": 0, "expectedSC9Count": 0, "isolation": "no diversity possible" },
+    { "id": "I5-ROOM-ZERO-SKIP", "type": "full", "title": "1 task, 2 slots: 1 room 100 + 1 room 0 → SC9 0", "expectedTotalSoft": -10, "expectedSC9Soft": 0, "expectedSC9Count": 0, "isolation": "SC2 = -10, SC9 room=0 skipped" },
+    { "id": "I6-WEEKEND-SKIP", "type": "full", "title": "1 task, 2 slots: 1 day 1 + 1 day 6 → SC9 0", "expectedTotalSoft": -15, "expectedSC9Soft": 0, "expectedSC9Count": 0, "isolation": "SC7 = -15, SC9 day 6 skipped" },
+    { "id": "I7-MULTI-CLASSGROUP", "type": "full", "title": "merged-class task (cg{1,2}) 2 slots in 2 rooms → SC9 -2", "expectedTotalSoft": -12, "expectedSC9Soft": -2, "expectedSC9Count": 1, "isolation": "SC2 = -10, SC9 = -2 (no double count)" },
+    { "id": "I8-DELTA-IMPROVE", "type": "delta", "title": "2 rooms → 1 room → +2 (SC9 only)", "expectedDeltaSoft": 2, "expectedSC9Delta": 2, "isolation": "SC2 = 0, SC5 = 0, SC7 = 0, MIN_PERT = 0" },
+    { "id": "I9-DELTA-WORSEN", "type": "delta", "title": "1 room → 2 rooms → -2 (SC9 only)", "expectedDeltaSoft": -2, "expectedSC9Delta": -2, "isolation": "SC2 = 0, SC5 = 0, SC7 = 0, MIN_PERT = 0" },
+    { "id": "I10-DELTA-ROOM_ZERO-TO-REAL", "type": "delta", "title": "room=0 → real room → -2 (SC9 only)", "expectedDeltaSoft": -2, "expectedSC9Delta": -2, "isolation": "SC2 = 0, SC5 = 0, SC7 = 0, MIN_PERT = 0" },
+    { "id": "I11-DELTA-REAL-TO-ROOM_ZERO", "type": "delta", "title": "real room → room=0 → +2 (deltaHard=-1000 due to HC5)", "expectedDeltaSoft": 2, "expectedSC9Delta": 2, "isolation": "SC2 = 0, SC5 = 0, SC7 = 0, MIN_PERT = 0; deltaHard=-1000 (HC5 newAvail=false on room=0)" }
+  ],
+  "f8WrapperCases": [
+    { "id": "SC9-TASK-ROOM-STABILITY-SAME-ROOM", "type": "full", "expectedTotalSoft": -10, "expectedSC9Soft": 0, "expectedSC9Count": 0 },
+    { "id": "SC9-TASK-ROOM-STABILITY-TWO-ROOMS", "type": "full", "expectedTotalSoft": -12, "expectedSC9Soft": -2, "expectedSC9Count": 1 },
+    { "id": "SC9-TASK-ROOM-STABILITY-THREE-ROOMS", "type": "full", "expectedTotalSoft": -24, "expectedSC9Soft": -4, "expectedSC9Count": 1 },
+    { "id": "SC9-TASK-ROOM-STABILITY-SINGLE-SLOT", "type": "full", "expectedTotalSoft": 0, "expectedSC9Soft": 0, "expectedSC9Count": 0 },
+    { "id": "SC9-TASK-ROOM-STABILITY-ROOM_ZERO-SKIP", "type": "full", "expectedTotalSoft": -10, "expectedSC9Soft": 0, "expectedSC9Count": 0 },
+    { "id": "SC9-TASK-ROOM-STABILITY-WEEKEND-SKIP", "type": "full", "expectedTotalSoft": -15, "expectedSC9Soft": 0, "expectedSC9Count": 0 },
+    { "id": "SC9-TASK-ROOM-STABILITY-MULTI-CLASSGROUP", "type": "full", "expectedTotalSoft": -12, "expectedSC9Soft": -2, "expectedSC9Count": 1 },
+    { "id": "SC9-DELTA-IMPROVE-TWO-ROOMS-TO-ONE", "type": "delta", "expectedDeltaSoft": 2, "expectedSC9Delta": 2 },
+    { "id": "SC9-DELTA-WORSEN-ONE-ROOM-TO-TWO", "type": "delta", "expectedDeltaSoft": -2, "expectedSC9Delta": -2 },
+    { "id": "SC9-DELTA-ROOM_ZERO-TO-REAL", "type": "delta", "expectedDeltaSoft": -2, "expectedSC9Delta": -2 },
+    { "id": "SC9-DELTA-REAL-TO-ROOM_ZERO", "type": "delta", "expectedDeltaSoft": 2, "expectedSC9Delta": 2 }
+  ],
+  "defaultSnapshot": {
+    "changed": false,
+    "reason": "Default fixture (3 rooms, 3 tasks, 4 slots) has no teachingTask with multiple distinct rooms in [1..5]. classGroup 1 has {1, 2} (1 distinct), classGroup 2 has {1} (1 distinct), classGroup 3 has {5} (1 distinct). All tasks have only 1 distinct room → SC9 = 0. SC8 stable. SC3 stable.",
+    "snapshot": {
+      "hardScore": 0,
+      "softScore": -11,
+      "detailsCount": 2,
+      "constraintBreakdown": {
+        "SC2_SAME_DAY": 1,
+        "SC3_EXTREME_TIME_SLOT": 1
+      }
+    }
+  },
+  "filesModifiedF8": [
+    "src/lib/scheduler/score.ts",
+    "scripts/verify-score-regression-harness-k22-c.ts",
+    "scripts/verify-classroom-stability-constraint-k22-f8.ts",
+    "docs/k22-classroom-stability-constraint-impl.md",
+    "docs/k22-classroom-stability-constraint-impl.json",
+    "docs/k22-score-regression-harness-implementation.md",
+    "docs/k22-score-regression-harness-implementation.json"
+  ],
+  "unmodifiedScope": [
+    "prisma/schema.prisma",
+    "prisma/migrations/**",
+    "prisma/dev.db",
+    "solver algorithm",
+    "solver move generation",
+    "scheduler config API/UI",
+    "frontend",
+    "API routes",
+    "importer",
+    "parser",
+    "RBAC",
+    "seed",
+    "business data",
+    "hardWeights/softWeights",
+    "other soft constraints (SC1-SC8 unchanged)",
+    "Course-level stability (NEW-SC-03 Candidate C)",
+    "ClassGroup-level stability (NEW-SC-03 Candidate B)",
+    "Preferred room / home room schema (NEW-SC-03 Candidate D)",
+    "Specialty classroom / lab-room matching (K22-G)"
+  ],
+  "recommendedNextStage": "K22-F9-SCORE-CONSTRAINT-SUMMARY-AUDIT"
+}
