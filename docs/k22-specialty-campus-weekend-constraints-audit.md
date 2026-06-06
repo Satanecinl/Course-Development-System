@@ -278,7 +278,84 @@ deltaSoft += afterSoft - beforeSoft
 | SC7-WEEKDAY | Weekday slot → no penalty | hard=0, soft=0 |
 | DELTA-RESOLVE-AUTOMOTIVE | Move automotive from non-Linxiao to Linxiao | deltaSoft=+20 |
 | DELTA-INTRODUCE-NON-AUTOMOTIVE | Move non-automotive to Linxiao | deltaHard=-1000 |
+| DELTA-MIXED-NON_LINXIAO-TO-LINXIAO (K22-F2A) | Move MIXED to Linxiao | deltaHard=-1000 |
 | DELTA-WEEKDAY-TO-WEEKEND | Move from weekday to weekend | deltaSoft=-15 |
+
+---
+
+## 11A. K22-F2A Classification Correction
+
+> **Stage**: K22-F2A-SPECIALTY-CAMPUS-CLASSIFICATION-CORRECTION
+> **Status**: K22-F2 had a classification contradiction that violated the "非汽车专业不得放到林校" hard rule. K22-F2A unifies the classification.
+
+### 11A.1 Original problem
+
+K22-F2's mixed case decision table said:
+
+> "Use 'any automotive classGroup triggers automotive classification' rule. Task automotive if any classGroup is automotive."
+
+Combined with `K22-F2 original: any single signal triggers automotive`, this caused:
+
+- **Mixed 合班 in Linxiao → expected hard=0** (K22-F2 MIXED-AMBIGUOUS case). This means a teaching task with one automotive class and one non-automotive class could go to Linxiao, **putting non-automotive students in Linxiao**.
+- **courseName 含 "汽车" 但 classGroup 全是非汽车 → expected automotive**. A non-automotive class taking a "汽车概论" public elective could go to Linxiao.
+- **remark 含 "汽车专业" 但 classGroup 全是非汽车 → expected automotive**. A remark typo / stale text would let a non-automotive task sneak into Linxiao.
+
+All three contradict the business hard rule "其他专业学生不得放到林校".
+
+### 11A.2 Corrected 5-class classification
+
+K22-F2A unified the specialty classification into 5 classes, with `classGroup membership` as the primary hard-rule signal and `courseName` / `remark` as auxiliary flags only:
+
+| Class | Trigger | HC6 in Linxiao | SC6 out of Linxiao |
+|---|---|---|---|
+| `AUTOMOTIVE_ONLY` | all classGroups are automotive | no penalty | -20 (soft preference) |
+| `NON_AUTOMOTIVE_ONLY` | all classGroups are non-automotive | -1000 (hard) | no penalty |
+| `MIXED_AUTOMOTIVE_AND_NON_AUTOMOTIVE` | at least one classGroup is automotive AND at least one is non-automotive | **-1000 (hard)** | no penalty |
+| `NO_CLASSGROUP_AUX_AUTOMOTIVE_SIGNAL` | no classGroup, but courseName/remark contains automotive keyword | manual review / conservative HC6 | manual review |
+| `UNKNOWN_NO_SIGNAL` | no classGroup, no automotive signal | conservative HC6 or manual review | no penalty |
+
+### 11A.3 Signal priority
+
+1. **Primary hard-rule signal**: `TeachingTaskClass` / `ClassGroup` membership. Determines if a task is AUTOMOTIVE_ONLY / NON_AUTOMOTIVE_ONLY / MIXED.
+2. **Auxiliary soft signals**: `Course.name` and `TeachingTask.remark`. Recorded in detail messages for human review. **CANNOT override HC6 hard rule**.
+3. **Manual exception**: Future K22-H schema extension can add explicit override field for specific 合班 exemptions approved by 教务处.
+
+### 11A.4 Corrected harness expectations (K22-F2A)
+
+| Case | Old Expected (K22-F2) | New Expected (K22-F2A) |
+|---|---|---|
+| MIXED-LINXIAO (was MIXED-AMBIGUOUS) | hard=0, soft=0 | **hard=-1000, soft=0** |
+| COURSE_NAME_AUTO-BUT-NON_AUTO_CLASS-LINXIAO | (not in plan) | hard=-1000 |
+| REMARK_AUTO-BUT-NON_AUTO_CLASS-LINXIAO | (not in plan) | hard=-1000 |
+| DELTA-MIXED-NON_LINXIAO-TO-LINXIAO | (not in plan) | deltaHard=-1000 |
+
+The old `MIXED-AMBIGUOUS in Linxiao → hard=0, soft=0` case was **removed** (it would have allowed non-automotive students into Linxiao via mixed 合班, violating the business hard rule).
+
+### 11A.5 JSON field updates
+
+The audit JSON now includes a top-level `classificationPolicy` block:
+
+```json
+{
+  "classificationPolicy": {
+    "primaryHardSignal": "classGroupMembership",
+    "auxiliarySignals": ["courseName", "remark"],
+    "mixedAutomotiveAndNonAutomotive": "HC6_HARD_VIOLATION_IN_LINXIAO",
+    "anySingleSignalTriggersAutomotive": false,
+    "courseNameCannotOverrideClassGroup": true,
+    "remarkCannotOverrideClassGroup": true
+  }
+}
+```
+
+A new finding `K22-F2A-CLASSIFICATION-1` (MEDIUM severity) documents the correction and recommends K22-F3 follow the corrected scheme.
+
+### 11A.6 Next stage implementation guidance
+
+`K22-F3-SPECIALTY-CAMPUS-WEEKEND-CONSTRAINT-IMPL` must use the K22-F2A 5-class classification. Any future specialty modifications must preserve:
+- (a) classGroup membership dominates as the hard-rule signal
+- (b) MIXED in Linxiao triggers HC6 (not exempt)
+- (c) courseName / remark are auxiliary only — record in detail messages for human review, do not change HC6 verdict
 
 ---
 
@@ -289,10 +366,13 @@ deltaSoft += afterSoft - beforeSoft
 | K22-F2-A-1 | LOW | 汽车专业识别 — regex-based on ClassGroup.name / Course.name / TeachingTask.remark |
 | K22-F2-B-1 | NONE | 林校教室识别 — regex-based on Room.name / Room.building (10 rooms identified) |
 | K22-F2-C-1 | INFO | 周末排课当前分布 — 21 weekend slots (4.8% of total) |
-| K22-F2-D-1 | LOW | Mixed/ambiguous case decision table — 7 cases covered |
+| K22-F2-D-1 | LOW | Mixed/ambiguous case decision table — 7 cases covered (K22-F2A corrected) |
 | K22-F2-E-1 | LOW | 3 constraints overall data readiness: READY |
+| K22-F2A-CLASSIFICATION-1 | MEDIUM | K22-F2A 修正 specialty 分类策略 — classGroup membership 是 hard rule 主信号，courseName / remark 不能覆盖 |
 
-**Summary: HIGH=0 / MEDIUM=0 / LOW=3 / INFO=1 / NONE=1 / BLOCKING=NO**
+**Summary: HIGH=0 / MEDIUM=1 / LOW=3 / INFO=1 / NONE=1 / BLOCKING=NO**
+
+The single MEDIUM finding is the K22-F2A correction itself — it documents that K22-F2's original classification had a contradiction that would have allowed non-automotive students into Linxiao. The correction is now in place; K22-F3 must follow it. BLOCKING=NO.
 
 ---
 

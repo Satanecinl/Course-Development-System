@@ -105,6 +105,43 @@ function isLinxiaoRoom(name: string, building: string | null): boolean {
   return false
 }
 
+// ── K22-F2A 5-class specialty classification ────────────────────────
+//
+// classGroup membership is the PRIMARY hard-rule signal. courseName / remark
+// are AUXILIARY signals only. They cannot override the classGroup hard rule:
+// a non-automotive classGroup member in a course whose name contains "汽车"
+// still has a non-automotive student, who is forbidden to enter Linxiao.
+
+type SpecialtyClassification =
+  | 'AUTOMOTIVE_ONLY'
+  | 'NON_AUTOMOTIVE_ONLY'
+  | 'MIXED_AUTOMOTIVE_AND_NON_AUTOMOTIVE'
+  | 'NO_CLASSGROUP_AUX_AUTOMOTIVE_SIGNAL'
+  | 'UNKNOWN_NO_SIGNAL'
+
+interface ClassificationInput {
+  classGroupNames: string[]  // names of all classGroups associated with the task (may be empty)
+  courseName: string | null
+  remark: string | null
+}
+
+function classifySpecialty(input: ClassificationInput): SpecialtyClassification {
+  const cgs = input.classGroupNames
+  // Case 1: no classGroup membership at all
+  if (cgs.length === 0) {
+    const auxAuto =
+      (input.courseName !== null && isAutomotiveName(input.courseName)) ||
+      (input.remark !== null && isAutomotiveName(input.remark))
+    return auxAuto ? 'NO_CLASSGROUP_AUX_AUTOMOTIVE_SIGNAL' : 'UNKNOWN_NO_SIGNAL'
+  }
+  // Case 2: at least one classGroup exists. Classify each.
+  const anyAuto = cgs.some((n) => isAutomotiveName(n))
+  const anyNonAuto = cgs.some((n) => !isAutomotiveName(n))
+  if (anyAuto && anyNonAuto) return 'MIXED_AUTOMOTIVE_AND_NON_AUTOMOTIVE'
+  if (anyAuto && !anyNonAuto) return 'AUTOMOTIVE_ONLY'
+  return 'NON_AUTOMOTIVE_ONLY'
+}
+
 // ── Inspect data via read-only Prisma ──────────────────────────────
 
 async function inspectDataReadiness(): Promise<DataReadiness> {
@@ -311,21 +348,38 @@ function buildMixedCaseTable(): MixedCaseDecision[] {
   return [
     {
       case: 'TeachingTask 同时关联汽车班 + 非汽车班 (合班)',
-      classification: 'MIXED',
-      recommendation: 'Treat as automotive (use score-level: any classGroup automotive → task is automotive for SC6/HC6 purposes). Document via task-level override field in future K22-H schema.',
-      reason: '合班 is common in 高校. 简单 “automotive only” 会让合班任务无法进 林校. 保守地 treat as automotive 让 solver 倾向把合班放 林校, 与 “汽车优先” 一致.',
+      classification: 'MIXED_AUTOMOTIVE_AND_NON_AUTOMOTIVE',
+      recommendation:
+        'K22-F2A correction: classify as MIXED. ' +
+        'In Linxiao: trigger HC6 hard penalty (-1000) — the task has non-automotive students who are forbidden from Linxiao. ' +
+        'Out of Linxiao: no penalty. ' +
+        'If future manual exception is needed, add explicit override field (K22-H schema).',
+      reason:
+        'K22-F2 original said “any automotive classGroup triggers automotive” — this was WRONG. ' +
+        '合班 contains non-automotive students, who are forbidden to enter Linxiao. ' +
+        'Treating mixed as automotive would let non-automotive students sneak into Linxiao. ' +
+        'Conservative: hard rule dominates. ' +
+        'Manual exception can be added in K22-H if 教务处 approves specific 合班 exemptions.',
     },
     {
-      case: '课程名含 “汽车” 但班级不是汽车专业',
-      classification: 'AMBIGUOUS_COURSE',
-      recommendation: 'Use both signals: automotive if (courseName OR classGroup). Any single signal triggers automotive classification.',
-      reason: '有些课程是 “汽车概论” 公共课, 但非汽车班学生选修. 包含课程名 keyword 仍然 treat as automotive 更安全 (prefer Linxiao) 但要记录 K22-H 阶段考虑更精细规则.',
+      case: '课程名含 “汽车” 但 classGroup 全是非汽车',
+      classification: 'NON_AUTOMOTIVE_ONLY_WITH_AUX_FLAG (or just NON_AUTOMOTIVE_ONLY with auxiliary flag recorded)',
+      recommendation:
+        'K22-F2A correction: classGroup dominates. Treat as NON_AUTOMOTIVE_ONLY. ' +
+        'In Linxiao: trigger HC6 hard penalty (-1000) — the non-automotive students must not enter Linxiao. ' +
+        'Auxiliary flag (courseName or remark contains automotive keyword) can be recorded in detail message for human review, ' +
+        'but does NOT change the HC6 hard rule.',
+      reason:
+        'K22-F2 original said “Any single signal triggers automotive” — this was WRONG. ' +
+        'A non-automotive classGroup taking a course with “汽车” in the name (e.g. “汽车概论” public elective) ' +
+        'still has non-automotive students. The classGroup signal is the primary hard-rule signal; ' +
+        'courseName / remark are auxiliary and cannot override HC6.',
     },
     {
       case: '班级名含 “汽车” 但课程是公共课 (e.g. 高等数学)',
-      classification: 'AMBIGUOUS_CLASS',
-      recommendation: 'Use classGroup signal: if classGroup automotive AND course NOT automotive, still treat as automotive for Linxiao preference.',
-      reason: '汽车班学生选 公共课 在 林校 教室仍然合理. SC6 preference 不在意课程内容, 只在意学生是谁.',
+      classification: 'AUTOMOTIVE_ONLY',
+      recommendation: 'classGroup dominates. If all classGroups are automotive (e.g. 汽车检测1班), task is AUTOMOTIVE_ONLY regardless of courseName.',
+      reason: '汽车班学生选 公共课 在 林校 教室仍然合理. SC6 preference does not care about courseName, only about which students are taking it.',
     },
     {
       case: '林校 room 识别不明确 (name 中含 “林” 但不是 “林校”)',
@@ -341,15 +395,28 @@ function buildMixedCaseTable(): MixedCaseDecision[] {
     },
     {
       case: '公共课 teachingTask 关联 multiple classGroups (其中一个是汽车)',
-      classification: 'MIXED',
-      recommendation: 'Use "any automotive classGroup triggers automotive classification" rule. Task automotive if any classGroup is automotive.',
-      reason: '见 case 1. 合班统一规则, simple and safe.',
+      classification: 'MIXED_AUTOMOTIVE_AND_NON_AUTOMOTIVE',
+      recommendation:
+        'K22-F2A correction: classify as MIXED, not as automotive. ' +
+        'In Linxiao: trigger HC6 hard penalty (-1000). ' +
+        'Out of Linxiao: no penalty. ' +
+        'Same rule as case 1 (合班).',
+      reason:
+        'Mixed classGroup contains non-automotive students who are forbidden to enter Linxiao. ' +
+        'Do NOT apply "any automotive classGroup triggers automotive" — that rule was wrong.',
     },
     {
       case: 'TeachingTask 含 remark "汽车专业" 但 classGroup 不是汽车',
-      classification: 'AMBIGUOUS_REMARK',
-      recommendation: 'Use remark signal: if remark contains automotive keyword, treat as automotive regardless of classGroup.',
-      reason: 'Remark 是 教务 manual 输入, 通常准确. Trust remark as authoritative for specialty.',
+      classification: 'NON_AUTOMOTIVE_ONLY_WITH_REMARK_FLAG (or NON_AUTOMOTIVE_ONLY with remark recorded for human review)',
+      recommendation:
+        'K22-F2A correction: classGroup dominates. Treat as NON_AUTOMOTIVE_ONLY. ' +
+        'In Linxiao: trigger HC6 hard penalty (-1000). ' +
+        'Remark is auxiliary — record in detail message for human review but does NOT change HC6. ' +
+        'If 教务处 explicitly approves an exception, add a manual override field (K22-H schema).',
+      reason:
+        'K22-F2 original said "Use remark signal: if remark contains automotive keyword, treat as automotive regardless of classGroup" — this was WRONG. ' +
+        'Remark cannot override classGroup membership for the HC6 hard rule. ' +
+        'A remark typo, stale text, or copy-paste error should NOT let a non-automotive task sneak into Linxiao.',
     },
   ]
 }
@@ -358,56 +425,69 @@ function buildMixedCaseTable(): MixedCaseDecision[] {
 
 function buildFullScoreDesign(): Record<string, unknown> {
   return {
+    classification:
+      'K22-F2A 5-class classification: AUTOMOTIVE_ONLY / NON_AUTOMOTIVE_ONLY / ' +
+      'MIXED_AUTOMOTIVE_AND_NON_AUTOMOTIVE / NO_CLASSGROUP_AUX_AUTOMOTIVE_SIGNAL / UNKNOWN_NO_SIGNAL. ' +
+      'classGroup membership is the primary hard-rule signal. courseName / remark are auxiliary only.',
     automotive: {
       aggregation:
-        'For each slot (in current assignment), check if (a) task has automotive classification ' +
-        '(classGroup keyword OR courseName keyword OR remark keyword), AND (b) room is in Linxiao. ' +
-        'If automotive && !linxiao: SC6_AUTOMOTIVE_PREFERS_LINXIAO soft penalty = -20.',
+        'For each slot, classify task into 5 classes. ' +
+        'If AUTOMOTIVE_ONLY && !linxiao: SC6_AUTOMOTIVE_PREFERS_LINXIAO soft penalty = -20.',
       complexity: 'O(n) where n = number of slots',
       detailsEmitted: 'One SC6 detail per slot that violates preference',
     },
     nonAutomotiveForbid: {
       aggregation:
-        'For each slot, if (a) task is NOT automotive, AND (b) room IS Linxiao: ' +
-        'HC6_NON_AUTOMOTIVE_FORBID_LINXIAO hard penalty = -1000.',
+        'For each slot, if classification is NON_AUTOMOTIVE_ONLY or MIXED ' +
+        'AND room IS Linxiao: HC6_NON_AUTOMOTIVE_FORBID_LINXIAO hard penalty = -1000. ' +
+        'K22-F2A: MIXED in Linxiao also triggers HC6 (mixed has non-automotive students).',
       complexity: 'O(n)',
       detailsEmitted: 'One HC6 detail per violation',
     },
     weekend: {
       aggregation:
-        'For each slot, if dayOfWeek in [6, 7]: SC7_WEEKEND_AVOIDANCE soft penalty = -15.',
+        'For each slot, if dayOfWeek in [6, 7]: SC7_WEEKEND_AVOIDANCE soft penalty = -15. ' +
+        'Independent of classification.',
       complexity: 'O(n)',
       detailsEmitted: 'One SC7 detail per weekend slot',
     },
+    decisionTable: [
+      { classification: 'AUTOMOTIVE_ONLY', lx: true, hard: 0, soft: 0 },
+      { classification: 'AUTOMOTIVE_ONLY', lx: false, hard: 0, soft: -20 },
+      { classification: 'NON_AUTOMOTIVE_ONLY', lx: true, hard: -1000, soft: 0 },
+      { classification: 'NON_AUTOMOTIVE_ONLY', lx: false, hard: 0, soft: 0 },
+      { classification: 'MIXED_AUTOMOTIVE_AND_NON_AUTOMOTIVE', lx: true, hard: -1000, soft: 0 },
+      { classification: 'MIXED_AUTOMOTIVE_AND_NON_AUTOMOTIVE', lx: false, hard: 0, soft: 0 },
+      { classification: 'NO_CLASSGROUP_AUX_AUTOMOTIVE_SIGNAL', lx: true, hard: 'manual review / conservative HC6', soft: 0 },
+      { classification: 'NO_CLASSGROUP_AUX_AUTOMOTIVE_SIGNAL', lx: false, hard: 0, soft: 0 },
+      { classification: 'UNKNOWN_NO_SIGNAL', lx: true, hard: 'manual review / conservative HC6', soft: 0 },
+      { classification: 'UNKNOWN_NO_SIGNAL', lx: false, hard: 0, soft: 0 },
+    ],
     pseudocode: `
-// FULL SCORE (calculateScoreWithDetails)
-const isAutomotive = (task) => {
-  const allClassNames = task.taskClasses.map(tc => tc.classGroup.name).join(',')
-  if (AUTOMOTIVE_KEYWORDS.some(kw => allClassNames.includes(kw))) return true
-  if (AUTOMOTIVE_KEYWORDS.some(kw => task.course?.name?.includes(kw) ?? false)) return true
-  if (task.remark && AUTOMOTIVE_KEYWORDS.some(kw => task.remark.includes(kw))) return true
-  return false
-}
-const isLinxiao = (room, ctx) => isLinxiaoRoom(room.name, room.building)
+// FULL SCORE (calculateScoreWithDetails) — K22-F2A 5-class classification
+const isLinxiao = (room) => isLinxiaoRoom(room.name, room.building)
 
 for (const p of positions) {
   if (p.room === 0) continue
   const task = p.slot.teachingTask
   const room = ctx.roomById.get(p.room)
   if (!room) continue
-  const auto = isAutomotive(task)
-  const lx = isLinxiao(room, ctx)
-  // SC6: automotive prefers Linxiao
-  if (auto && !lx) {
+  const cgs = task.taskClasses.map(tc => tc.classGroup.name)
+  const cls = classifySpecialty({ classGroupNames: cgs, courseName: task.course?.name, remark: task.remark })
+  const lx = isLinxiao(room)
+
+  // SC6: AUTOMOTIVE_ONLY prefers Linxiao (soft preference)
+  if (cls === 'AUTOMOTIVE_ONLY' && !lx) {
     softScore += -20
     details.push({ type: 'SC6_AUTOMOTIVE_PREFERS_LINXIAO', level: 'SOFT', penalty: -20, ... })
   }
-  // HC6: non-automotive forbidden in Linxiao
-  if (!auto && lx) {
+  // HC6: non-automotive forbidden in Linxiao (hard rule)
+  // K22-F2A: MIXED has non-automotive students, so MIXED in Linxiao also triggers HC6
+  if ((cls === 'NON_AUTOMOTIVE_ONLY' || cls === 'MIXED_AUTOMOTIVE_AND_NON_AUTOMOTIVE') && lx) {
     hardScore += -1000
     details.push({ type: 'HC6_NON_AUTOMOTIVE_FORBID_LINXIAO', level: 'HARD', penalty: -1000, ... })
   }
-  // SC7: weekend avoidance
+  // SC7: weekend avoidance (independent)
   if (p.day === 6 || p.day === 7) {
     softScore += -15
     details.push({ type: 'SC7_WEEKEND_AVOIDANCE', level: 'SOFT', penalty: -15, ... })
@@ -511,14 +591,94 @@ function buildHarnessPlan(): HarnessCase[] {
       notes: 'Happy path. !automotive && !lx → no penalty.',
     },
     {
-      id: 'MIXED-AMBIGUOUS',
-      category: 'CONSTRAINT_B',
-      purpose: 'Mixed automotive + non-automotive classGroup in Linxiao → should be automotive (exempt)',
-      fixture: '1 task (id=1, course=综合实践, classes=[汽车检测1班, 计算机1班]) in 1 Linxiao room.',
+      id: 'AUTO_ONLY-LINXIAO',
+      category: 'CONSTRAINT_A',
+      purpose: 'Automotive-only task in Linxiao room → no penalty',
+      fixture: '1 task (id=1, course=汽车检测, classes=[汽车检测1班]) in 1 Linxiao room (id=100, name=林校301).',
       expectedHardScore: 0,
       expectedSoftScoreDelta: 0,
       expectedStatus: 'PASS',
-      notes: 'Per mixed-case decision table: "any automotive classGroup triggers automotive classification".',
+      notes: 'Happy path. AUTOMOTIVE_ONLY && lx → no penalty. K22-F2A: classification is AUTOMOTIVE_ONLY because all classGroups are automotive.',
+    },
+    {
+      id: 'AUTO_ONLY-NON_LINXIAO',
+      category: 'CONSTRAINT_A',
+      purpose: 'Automotive-only task in non-Linxiao room → soft penalty',
+      fixture: '1 task (id=1, course=汽车检测, classes=[汽车检测1班]) in 1 non-Linxiao room (id=200, name=A101).',
+      expectedHardScore: 0,
+      expectedSoftScoreDelta: -20,
+      expectedStatus: 'PASS',
+      notes: 'AUTOMOTIVE_ONLY && !lx → soft penalty -20. SC6 is soft preference, not hard violation.',
+    },
+    {
+      id: 'NON_AUTO-LINXIAO',
+      category: 'CONSTRAINT_B',
+      purpose: 'Non-automotive-only task in Linxiao room → hard penalty',
+      fixture: '1 task (id=1, course=高等数学, classes=[计算机1班]) in 1 Linxiao room (id=100, name=林校301).',
+      expectedHardScore: -1000,
+      expectedSoftScoreDelta: 0,
+      expectedStatus: 'PASS',
+      notes: 'NON_AUTOMOTIVE_ONLY && lx → hard penalty -1000. Solver would never apply this if HC gate is enforced.',
+    },
+    {
+      id: 'NON_AUTO-NON_LINXIAO',
+      category: 'CONSTRAINT_B',
+      purpose: 'Non-automotive-only task in non-Linxiao room → no penalty',
+      fixture: '1 task (id=1, course=高等数学, classes=[计算机1班]) in 1 non-Linxiao room (id=200, name=A101).',
+      expectedHardScore: 0,
+      expectedSoftScoreDelta: 0,
+      expectedStatus: 'PASS',
+      notes: 'Happy path. NON_AUTOMOTIVE_ONLY && !lx → no penalty.',
+    },
+    {
+      id: 'MIXED-LINXIAO',
+      category: 'CONSTRAINT_B',
+      purpose: 'MIXED classGroup (automotive + non-automotive) in Linxiao → hard penalty (K22-F2A correction)',
+      fixture: '1 task (id=1, course=综合实践, classes=[汽车检测1班, 计算机1班]) in 1 Linxiao room (id=100).',
+      expectedHardScore: -1000,
+      expectedSoftScoreDelta: 0,
+      expectedStatus: 'PASS',
+      notes: 'K22-F2A: MIXED in Linxiao triggers HC6 (-1000). The mixed task has non-automotive students who are forbidden from Linxiao. K22-F2 originally said hard=0 (WRONG).',
+    },
+    {
+      id: 'MIXED-NON_LINXIAO',
+      category: 'CONSTRAINT_B',
+      purpose: 'MIXED classGroup in non-Linxiao room → no penalty',
+      fixture: '1 task (id=1, course=综合实践, classes=[汽车检测1班, 计算机1班]) in 1 non-Linxiao room (id=200).',
+      expectedHardScore: 0,
+      expectedSoftScoreDelta: 0,
+      expectedStatus: 'PASS',
+      notes: 'MIXED && !lx → no penalty. Mixed task is allowed in non-Linxiao rooms.',
+    },
+    {
+      id: 'COURSE_NAME_AUTO-BUT-NON_AUTO_CLASS-LINXIAO',
+      category: 'CONSTRAINT_B',
+      purpose: 'courseName has 汽车 but classGroup is non-automotive + in Linxiao → hard penalty (K22-F2A correction)',
+      fixture: '1 task (id=1, course=汽车概论, classes=[计算机1班]) in 1 Linxiao room. courseName has "汽车" but classGroup "计算机1班" is non-automotive.',
+      expectedHardScore: -1000,
+      expectedSoftScoreDelta: 0,
+      expectedStatus: 'PASS',
+      notes: 'K22-F2A: courseName / remark CANNOT override classGroup hard rule. Classification is NON_AUTOMOTIVE_ONLY (with courseName recorded as auxiliary flag). Linxiao triggers HC6.',
+    },
+    {
+      id: 'REMARK_AUTO-BUT-NON_AUTO_CLASS-LINXIAO',
+      category: 'CONSTRAINT_B',
+      purpose: 'remark has 汽车 but classGroup is non-automotive + in Linxiao → hard penalty (K22-F2A correction)',
+      fixture: '1 task (id=1, course=综合实践, remark="汽车专业", classes=[计算机1班]) in 1 Linxiao room.',
+      expectedHardScore: -1000,
+      expectedSoftScoreDelta: 0,
+      expectedStatus: 'PASS',
+      notes: 'K22-F2A: remark is auxiliary. Classification is NON_AUTOMOTIVE_ONLY (with remark recorded as auxiliary flag). Linxiao triggers HC6. Remark typo / stale text / copy-paste must NOT let non-automotive task sneak into Linxiao.',
+    },
+    {
+      id: 'AUTO_PUBLIC_COURSE-NON_LINXIAO',
+      category: 'CONSTRAINT_A',
+      purpose: 'Automotive classGroup taking public course (高等数学) in non-Linxiao → soft penalty',
+      fixture: '1 task (id=1, course=高等数学, classes=[汽车检测1班]) in 1 non-Linxiao room.',
+      expectedHardScore: 0,
+      expectedSoftScoreDelta: -20,
+      expectedStatus: 'PASS',
+      notes: 'classGroup dominates. AUTOMOTIVE_ONLY (all classGroups are automotive) regardless of courseName. Soft penalty SC6 for not in Linxiao.',
     },
     {
       id: 'SC7-WEEKEND',
@@ -541,24 +701,34 @@ function buildHarnessPlan(): HarnessCase[] {
       notes: 'dayOfWeek 1-5 → no penalty.',
     },
     {
-      id: 'DELTA-RESOLVE-AUTOMOTIVE',
+      id: 'DELTA-AUTO-NON_LINXIAO-TO-LINXIAO',
       category: 'DELTA',
-      purpose: 'Move automotive task from non-Linxiao to Linxiao → soft improves',
-      fixture: 'Task automotive in non-Linxiao room. Move to Linxiao room. beforeSoft=-20, afterSoft=0, deltaSoft=+20.',
+      purpose: 'Move AUTOMOTIVE_ONLY task from non-Linxiao to Linxiao → soft improves',
+      fixture: 'AUTOMOTIVE_ONLY task in non-Linxiao room. Move to Linxiao room. beforeSoft=-20 (SC6), afterSoft=0, deltaSoft=+20.',
       expectedHardScore: 0,
       expectedSoftScoreDelta: 20,
       expectedStatus: 'PASS',
       notes: 'Verify delta correctly reflects SC6 resolve.',
     },
     {
-      id: 'DELTA-INTRODUCE-NON-AUTOMOTIVE',
+      id: 'DELTA-NON_AUTO-NON_LINXIAO-TO-LINXIAO',
       category: 'DELTA',
-      purpose: 'Move non-automotive task to Linxiao → hard violation introduced',
-      fixture: 'Task non-automotive in non-Linxiao room. Move to Linxiao. beforeHard=0, afterHard=-1000, deltaHard=-1000.',
+      purpose: 'Move NON_AUTOMOTIVE_ONLY task to Linxiao → hard violation introduced',
+      fixture: 'NON_AUTOMOTIVE_ONLY task in non-Linxiao room. Move to Linxiao. beforeHard=0, afterHard=-1000, deltaHard=-1000.',
       expectedHardScore: -1000,
       expectedSoftScoreDelta: 0,
       expectedStatus: 'PASS',
-      notes: 'Verify delta correctly reflects HC6 introduction. Note: solver would never apply this if hard gate enforced.',
+      notes: 'Verify delta correctly reflects HC6 introduction. Solver would never apply this if hard gate enforced.',
+    },
+    {
+      id: 'DELTA-MIXED-NON_LINXIAO-TO-LINXIAO',
+      category: 'DELTA',
+      purpose: 'Move MIXED task to Linxiao → hard violation introduced (K22-F2A correction)',
+      fixture: 'MIXED task (classes=[汽车检测1班, 计算机1班]) in non-Linxiao room. Move to Linxiao. beforeHard=0, afterHard=-1000, deltaHard=-1000.',
+      expectedHardScore: -1000,
+      expectedSoftScoreDelta: 0,
+      expectedStatus: 'PASS',
+      notes: 'K22-F2A: MIXED in Linxiao triggers HC6. deltaHard=-1000.',
     },
     {
       id: 'DELTA-WEEKDAY-TO-WEEKEND',
@@ -674,6 +844,29 @@ function buildFindings(data: DataReadiness): Finding[] {
     recommendation: 'K22-F2 = design + data audit only. K22-F3 = implementation. K22-F3 may require: (1) data backfill for ambiguous automotive classGroups, (2) admin UI to mark Room.campus, (3) score.ts implementation.',
   })
 
+  // K22-F2A correction finding
+  findings.push({
+    id: 'K22-F2A-CLASSIFICATION-1',
+    severity: 'MEDIUM',
+    category: 'F. K22-F2A Classification Correction',
+    title: 'K22-F2A 修正 specialty 分类策略：classGroup membership 是 hard rule 主信号，courseName / remark 不能覆盖',
+    currentStatus:
+      'K22-F2 原始策略说"any single signal triggers automotive classification"和"any automotive classGroup triggers automotive" — ' +
+      '这两个规则都是错的，会让非汽车学生通过合班或非汽车班选修"汽车概论"等课程绕过 HC6 hard rule 进入林校教室。' +
+      'K22-F2A 修正为 5-class classification：classGroup membership 优先作为 hard rule 主信号，' +
+      'courseName / remark 只能作为辅助信号记录在 detail message 中用于人工 review，但不能改变 HC6。' +
+      '修正后的 MIXED in Linxiao case 期望 hard=-1000（之前是 hard=0）。',
+    evidence: [
+      'K22-F2 audit originally documented "Treat as automotive" for mixed case — K22-F2A corrected to MIXED → HC6 hard violation in Linxiao',
+      'K22-F2 audit originally said "Any single signal triggers automotive" — K22-F2A corrected to classGroup dominates',
+      'K22-F2 audit originally said "Use remark signal: if remark contains automotive keyword, treat as automotive regardless of classGroup" — K22-F2A corrected to remark is auxiliary only',
+      'Harness plan updated: MIXED-LINXIAO hard=-1000 (was 0), COURSE_NAME_AUTO-BUT-NON_AUTO_CLASS-LINXIAO hard=-1000, REMARK_AUTO-BUT-NON_AUTO_CLASS-LINXIAO hard=-1000',
+    ],
+    risk: 'MEDIUM (pre-implementation): if K22-F3 implementation followed K22-F2 (uncorrected) classification, non-automotive students would enter Linxiao via mixed 合班 or non-auto elective of "汽车相关" courses, violating the business hard rule. The design has been corrected; K22-F3 must follow the corrected 5-class scheme.',
+    recommendation: 'K22-F3 must implement the K22-F2A 5-class classification. classGroup membership dominates; courseName / remark are auxiliary flags only. Mixed (含 non-automotive classGroup) in Linxiao triggers HC6 hard penalty. UNKNOWN/NO_CLASSGROUP cases are conservative — default to HC6 unless explicit override is added in K22-H schema.',
+    suggestedNextStage: 'K22-F3-SPECIALTY-CAMPUS-WEEKEND-CONSTRAINT-IMPL',
+  })
+
   return findings
 }
 
@@ -748,6 +941,27 @@ async function main() {
   console.log('  (implement SC6 + HC6 + SC7 in score.ts, with K22-F2A prerequisite: data audit / mapping)')
   console.log('')
 
+  // Demonstrate 5-class classification with a few examples (K22-F2A)
+  const demo = [
+    classifySpecialty({ classGroupNames: ['汽车检测1班'], courseName: '汽车检测', remark: null }),
+    classifySpecialty({ classGroupNames: ['计算机1班'], courseName: '高等数学', remark: null }),
+    classifySpecialty({ classGroupNames: ['汽车检测1班', '计算机1班'], courseName: '综合实践', remark: null }),
+    classifySpecialty({ classGroupNames: [], courseName: '汽车概论', remark: null }),
+    classifySpecialty({ classGroupNames: [], courseName: '高等数学', remark: null }),
+  ]
+  console.log('K22-F2A classification demo:')
+  const demoLabels = [
+    '汽车检测1班/AUTO_ONLY',
+    '计算机1班/NON_AUTO',
+    '汽车+计算机/MIXED',
+    '无classGroup,课程=汽车概论/AUX',
+    '无classGroup,无信号/UNKNOWN',
+  ]
+  for (let i = 0; i < demo.length; i++) {
+    console.log(`  ${demoLabels[i]} → ${demo[i]}`)
+  }
+  console.log('')
+
   // Write JSON
   const outDir = path.join(projectRoot, 'docs')
   if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true })
@@ -768,11 +982,33 @@ async function main() {
       totalScheduleSlots: data.totalScheduleSlots,
     },
     dataReadiness: data,
+    classificationPolicy: {
+      primaryHardSignal: 'classGroupMembership',
+      primaryHardSignalDescription:
+        'ClassGroup membership (TeachingTask.taskClasses[].classGroup.name) is the primary hard-rule signal. ' +
+        'It determines whether a task is AUTOMOTIVE_ONLY, NON_AUTOMOTIVE_ONLY, or MIXED.',
+      auxiliarySignals: ['courseName', 'remark'],
+      auxiliarySignalDescription:
+        'Course.name and TeachingTask.remark are auxiliary. They can be recorded in detail messages for human review ' +
+        'but CANNOT override the classGroup hard rule for HC6.',
+      fiveClassScheme: [
+        'AUTOMOTIVE_ONLY',
+        'NON_AUTOMOTIVE_ONLY',
+        'MIXED_AUTOMOTIVE_AND_NON_AUTOMOTIVE',
+        'NO_CLASSGROUP_AUX_AUTOMOTIVE_SIGNAL',
+        'UNKNOWN_NO_SIGNAL',
+      ],
+      mixedAutomotiveAndNonAutomotive: 'HC6_HARD_VIOLATION_IN_LINXIAO',
+      anySingleSignalTriggersAutomotive: false,
+      courseNameCannotOverrideClassGroup: true,
+      remarkCannotOverrideClassGroup: true,
+    },
     automotiveClassification: {
-      method: 'regex-based',
+      method: 'K22-F2A 5-class scheme',
       keywords: AUTOMOTIVE_KEYWORDS,
-      sources: ['ClassGroup.name', 'Course.name', 'TeachingTask.remark'],
-      defaultRule: 'any automotive signal triggers automotive classification',
+      sources: ['ClassGroup.name (PRIMARY)', 'Course.name (AUXILIARY)', 'TeachingTask.remark (AUXILIARY)'],
+      defaultRule:
+        'classGroup membership dominates. courseName / remark are auxiliary only and do not change HC6 hard rule.',
     },
     linxiaoRoomClassification: {
       method: 'regex-based',
@@ -784,6 +1020,31 @@ async function main() {
       dayOfWeekConvention: '1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat, 7=Sun',
       weekdayRange: [1, 2, 3, 4, 5],
       weekendRange: [6, 7],
+    },
+    correctionNote: {
+      stage: 'K22-F2A',
+      issue:
+        'K22-F2 originally said "any single signal triggers automotive" and "any automotive classGroup triggers automotive" — ' +
+        'both wrong. A mixed classGroup task (automotive + non-automotive students) should NOT be allowed in Linxiao, ' +
+        'because non-automotive students are forbidden from Linxiao.',
+      fix:
+        'K22-F2A unified the specialty classification into a 5-class scheme. ' +
+        'classGroup membership dominates; courseName / remark are auxiliary only and cannot override HC6. ' +
+        'MIXED classGroup in Linxiao now triggers HC6 hard penalty (-1000), not exempt.',
+      verified: {
+        'classificationPolicy.primaryHardSignal': 'classGroupMembership',
+        'anySingleSignalTriggersAutomotive': false,
+        'courseNameCannotOverrideClassGroup': true,
+        'remarkCannotOverrideClassGroup': true,
+        'MIXED-LINXIAO expectedHardScore': -1000,
+        'COURSE_NAME_AUTO-BUT-NON_AUTO_CLASS-LINXIAO expectedHardScore': -1000,
+        'REMARK_AUTO-BUT-NON_AUTO_CLASS-LINXIAO expectedHardScore': -1000,
+        'DELTA-MIXED-NON_LINXIAO-TO-LINXIAO expectedDeltaHard': -1000,
+      },
+      nextStageImplGuidance:
+        'K22-F3-SPECIALTY-CAMPUS-WEEKEND-CONSTRAINT-IMPL must use the K22-F2A 5-class classification. ' +
+        'Any future specialty modifications must preserve: (a) classGroup dominates, (b) MIXED in Linxiao triggers HC6, ' +
+        '(c) courseName / remark are auxiliary only.',
     },
     constraintDesign: constraints,
     mixedCaseDecisionTable: mixedCases,
