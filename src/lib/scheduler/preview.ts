@@ -4,6 +4,11 @@ import { loadSchedulingContext } from './data-loader'
 import { buildInitialState, solve } from './solver'
 import { calculateInitialScore, calculateScoreWithDetails } from './score'
 import { resolveSchedulerSemester, type ResolvedSemester } from '@/lib/semester'
+import {
+  buildScoreBreakdown,
+  buildWireBreakdown,
+  type ResultSnapshotScoreBreakdown,
+} from './score-breakdown'
 import type { SchedulingContext, ScheduleState, SlotWithRelations } from './types'
 
 // ── Types ──
@@ -53,6 +58,10 @@ export interface PreviewResult {
   semesterId: number
   semesterCode: string
   semesterName: string
+
+  // K22-L2: additive score breakdown (HC1-HC6, SC1-SC10, MIN_PERT)
+  // embedded in resultSnapshot.scoreBreakdown and echoed back for live preview.
+  scoreBreakdown: ResultSnapshotScoreBreakdown
 }
 
 // ── Helpers ──
@@ -238,6 +247,11 @@ export async function createSchedulerPreview(
     softScore: solveResult.bestScore.softScore,
   }
 
+  // K22-L2: compute structured score breakdown for UI
+  const beforeBreakdown = buildScoreBreakdown('BEFORE', initialDetails)
+  const afterBreakdown = buildScoreBreakdown('AFTER', bestDetails)
+  const scoreBreakdown = buildWireBreakdown(beforeBreakdown, afterBreakdown)
+
   // 6. Build proposed changes
   const proposedChanges = buildProposedChanges(ctx, solveResult.bestState, ctx.slots)
   const changedSlotCount = proposedChanges.length
@@ -260,6 +274,7 @@ export async function createSchedulerPreview(
 
   // 8. Build result snapshot for SchedulingRun.resultSnapshot
   // K21-FIX-F: add config sub-object with resolved config (source: CONFIG/INLINE/DEFAULT/MIXED)
+  // K22-L2: add scoreBreakdown sub-object (HC1-HC6, SC1-SC10, MIN_PERT)
   const resultSnapshot = JSON.stringify({
     scoreBefore,
     scoreAfter,
@@ -273,6 +288,7 @@ export async function createSchedulerPreview(
     semesterId: semester.id,
     semesterCode: semester.code,
     semesterName: semester.name,
+    scoreBreakdown,
     config: options.resolvedConfigSnapshot ?? {
       configId: null,
       name: null,
@@ -372,5 +388,6 @@ export async function createSchedulerPreview(
     semesterId: semester.id,
     semesterCode: semester.code,
     semesterName: semester.name,
+    scoreBreakdown,
   }
 }

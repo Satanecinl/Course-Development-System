@@ -38,8 +38,10 @@ import {
 } from '@/components/ui/dialog'
 import { SolverConfigPanel } from '@/components/scheduler-config-panel'
 import { ResolvedConfigDisplay } from '@/components/resolved-config-display'
+import { ScoreBreakdownDisplay } from '@/components/score-breakdown-display'
 import { toFriendlyError } from '@/lib/scheduler-config-errors'
 import type { ResolvedConfigSnapshot } from '@/types/scheduling-config'
+import type { ResultSnapshotScoreBreakdown } from '@/lib/scheduler/score-breakdown'
 
 // ── Types ──
 
@@ -99,6 +101,8 @@ interface PreviewResponse {
   semesterName?: string
   // K21-FIX-F: resolved config sub-object written into resultSnapshot.config
   config?: ResolvedConfigSnapshot
+  // K22-L2: score breakdown (HC1-HC6, SC1-SC10, MIN_PERT)
+  scoreBreakdown?: ResultSnapshotScoreBreakdown
   error?: string
 }
 
@@ -1059,6 +1063,17 @@ export default function SchedulerContent() {
                   ))}
                 </ul>
               </div>
+            </div>
+          )}
+
+          {/* K22-L2: Score Breakdown */}
+          {previewData.scoreBreakdown && (
+            <div className="px-4 pb-4">
+              <ScoreBreakdownDisplay
+                breakdown={previewData.scoreBreakdown}
+                defaultSide="AFTER"
+                title="质量 Breakdown (HC1-HC6 / SC1-SC10 / MIN_PERT)"
+              />
             </div>
           )}
 

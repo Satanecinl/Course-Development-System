@@ -28,7 +28,9 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ResolvedConfigDisplay } from '@/components/resolved-config-display'
+import { ScoreBreakdownDisplay } from '@/components/score-breakdown-display'
 import type { ResolvedConfigSnapshot } from '@/types/scheduling-config'
+import type { ResultSnapshotScoreBreakdown } from '@/lib/scheduler/score-breakdown'
 import Link from 'next/link'
 
 // ── Types ──
@@ -97,6 +99,8 @@ interface RunDetailData {
     semesterId?: number | null
     semesterCode?: string | null
     semesterName?: string | null
+    // K22-L2: optional score breakdown (HC1-HC6, SC1-SC10, MIN_PERT)
+    scoreBreakdown?: ResultSnapshotScoreBreakdown | null
   }
   changes: ChangeDetail[]
 }
@@ -559,6 +563,13 @@ function RunDetailView({ data }: { data: RunDetailData }) {
         <ScoreCard title="优化前" hard={run.hardScoreBefore} soft={run.softScoreBefore} hc1={run.hc1Before} hc2={run.hc2Before} hc3={run.hc3Before} hc4={run.hc4Before} />
         <ScoreCard title="优化后" hard={run.hardScoreAfter} soft={run.softScoreAfter} hc1={run.hc1After} hc2={run.hc2After} hc3={run.hc3After} hc4={run.hc4After} />
       </div>
+
+      {/* K22-L2: Score Breakdown (HC1-HC6, SC1-SC10, MIN_PERT) */}
+      <ScoreBreakdownDisplay
+        breakdown={run.scoreBreakdown ?? null}
+        defaultSide="AFTER"
+        title="质量 Breakdown (HC1-HC6 / SC1-SC10 / MIN_PERT)"
+      />
 
       {/* Fingerprint & Safety */}
       {run.databaseFingerprint && (

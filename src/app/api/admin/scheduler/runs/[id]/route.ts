@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requirePermission } from '@/lib/auth/require-permission'
+import { readSnapshotBreakdown } from '@/lib/scheduler/score-breakdown'
 
 // ── Types ──
 
@@ -59,6 +60,10 @@ interface RunDetail {
   semesterId: number | null
   semesterCode: string | null
   semesterName: string | null
+
+  // K22-L2: additive score breakdown (HC1-HC6, SC1-SC10, MIN_PERT)
+  // null for runs created before K22-L2 (no scoreBreakdown in resultSnapshot)
+  scoreBreakdown: import('@/lib/scheduler/score-breakdown').ResultSnapshotScoreBreakdown | null
 }
 
 interface ChangeDetail {
@@ -132,6 +137,7 @@ export async function GET(
     let lockedSlotIds: number[] = []
     let lockedSlotCount = 0
     let config: RunDetail['config'] = null
+    let scoreBreakdown: RunDetail['scoreBreakdown'] = null
     if (run.resultSnapshot) {
       try {
         const snapshot = JSON.parse(run.resultSnapshot)
@@ -154,6 +160,8 @@ export async function GET(
             }
           }
         }
+        // K22-L2: parse scoreBreakdown (additive, null for legacy runs)
+        scoreBreakdown = readSnapshotBreakdown(run.resultSnapshot)
       } catch {
         // Ignore parse errors — old resultSnapshot shapes
       }
@@ -196,6 +204,7 @@ export async function GET(
       semesterId: run.semesterId,
       semesterCode: run.semester?.code ?? null,
       semesterName: run.semester?.name ?? null,
+      scoreBreakdown,
     }
 
     const changes: ChangeDetail[] = run.changes.map((c) => ({
