@@ -90,6 +90,26 @@ export async function POST(request: NextRequest) {
       limit = Math.min(n, 20)
     }
 
+    // K24-A5: preferredDayOfWeek (optional). null/undefined = auto.
+    // Valid values: null or 1..5 (Mon..Fri). 6/7 (weekend) are
+    // rejected with 400 to keep semantics unambiguous.
+    let preferredDayOfWeek: number | null | undefined
+    if (body.preferredDayOfWeek == null) {
+      preferredDayOfWeek = null
+    } else {
+      const n = Number(body.preferredDayOfWeek)
+      if (!Number.isFinite(n) || n < 1 || n > 5 || !Number.isInteger(n)) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: 'preferredDayOfWeek 必须是 null 或 1-5 之间的整数 (周一..周五)',
+          },
+          { status: 400 },
+        )
+      }
+      preferredDayOfWeek = n
+    }
+
     const semesterId = body.semesterId != null ? Number(body.semesterId) : null
 
     const result = await findAdjustmentPlanRecommendations({
@@ -99,6 +119,7 @@ export async function POST(request: NextRequest) {
       includeWeekend,
       limit,
       semesterId,
+      preferredDayOfWeek,
     })
 
     return NextResponse.json({ ok: true, ...result })

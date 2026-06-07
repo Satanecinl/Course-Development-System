@@ -51,6 +51,13 @@ const MIN_PLANS = 2
 const DEFAULT_LIMIT = 5
 const MAX_LIMIT = 20
 
+// K24-A5: only Mon..Fri are valid preferred-day values. Weekend
+// days (6/7) are NOT accepted as preferred day; callers must not
+// set them. (We still allow includeWeekend=true to surface
+// weekend in the search space, but preferredDayOfWeek is
+// independently validated to 1..5 / null.)
+const VALID_PREFERRED_DAY_VALUES = [1, 2, 3, 4, 5] as const
+
 // ─── Public input / output shapes ────────────────────────
 
 export interface AdjustmentPlanRecommendationInput {
@@ -68,6 +75,12 @@ export interface AdjustmentPlanRecommendationInput {
   limit?: number
   /** Semester override. Defaults to slot's semester. */
   semesterId?: number | null
+  /** K24-A5: optional preferred day-of-week inside the preferred
+   *  week. null/undefined = automatic (any working day). 1..5 =
+   *  Mon..Fri. 6/7 (weekend) are NOT accepted; callers must validate
+   *  upstream. When set, plans on the (preferredWeek, preferredDay)
+   *  tuple are surfaced first. */
+  preferredDayOfWeek?: number | null
 }
 
 export interface AdjustmentPlanRecommendation {
@@ -84,6 +97,11 @@ export interface AdjustmentPlanRecommendation {
   /** K24-A3: true when targetWeek === preferredWeek. Added so the
    *  frontend can render "首选周" / "备选周" labels. */
   isPreferredWeek: boolean
+  /** K24-A5: true when targetWeek === preferredWeek AND
+   *  targetDayOfWeek === preferredDayOfWeek. Only meaningful when
+   *  the caller supplied a preferredDayOfWeek; otherwise
+   *  defaults to false. */
+  isPreferredDay: boolean
 }
 
 export interface AdjustmentPlanRejectedSummary {
@@ -112,6 +130,17 @@ export interface AdjustmentPlanSearched {
   preferredWeekPlanCount: number
   /** K24-A3: how many plans belong to fallback weeks. */
   fallbackPlanCount: number
+  /** K24-A5: the preferred day-of-week (1..5) or null when in
+   *  automatic mode. Echoed back so the frontend can render the
+   *  chosen day label without re-deriving. */
+  preferredDayOfWeek: number | null
+  /** K24-A5: how many plans belong to the (preferredWeek,
+   *  preferredDayOfWeek) bucket. 0 when preferredDayOfWeek is
+   *  null. */
+  preferredDayPlanCount: number
+  /** K24-A5: how many plans belong to the preferred week but on a
+   *  different day. 0 when preferredDayOfWeek is null. */
+  sameWeekOtherDayPlanCount: number
 }
 
 export interface AdjustmentPlanRecommendationResult {
@@ -124,6 +153,13 @@ export interface AdjustmentPlanRecommendationResult {
   preferredWeek: number
   /** K24-A3: true when at least one plan belongs to preferredWeek. */
   preferredWeekAvailable: boolean
+  /** K24-A5: the user's selected preferred day-of-week (1..5) or
+   *  null when in automatic mode. */
+  preferredDayOfWeek: number | null
+  /** K24-A5: true when at least one plan belongs to
+   *  (preferredWeek, preferredDayOfWeek). Always true (or omitted)
+   *  when preferredDayOfWeek is null. */
+  preferredDayAvailable: boolean
 }
 
 // ─── Internal helpers ────────────────────────────────────
@@ -237,7 +273,7 @@ export async function findAdjustmentPlanRecommendations(
     return emptyResult('ScheduleSlot 不存在', {
       teacherConflict: 0, classGroupConflict: 0, roomConflict: 0,
       capacity: 0, linxiaoPolicy: 0, weekend: 0, unavailable: 0, other: 1,
-    }, { weeks: [], days: [], slotIndexes: [], timeCandidateCount: 0, roomCandidateCount: 0, preferredWeek: input.preferredWeek ?? 1, preferredWeekPlanCount: 0, fallbackPlanCount: 0 })
+    }, { weeks: [], days: [], slotIndexes: [], timeCandidateCount: 0, roomCandidateCount: 0, preferredWeek: input.preferredWeek ?? 1, preferredWeekPlanCount: 0, fallbackPlanCount: 0, preferredDayOfWeek: input.preferredDayOfWeek ?? null, preferredDayPlanCount: 0, sameWeekOtherDayPlanCount: 0 })
   }
 
   // 3. Determine preferredWeek.
@@ -440,34 +476,73 @@ export async function findAdjustmentPlanRecommendations(
             reasons,
             warnings,
             isPreferredWeek: targetWeek === centerWeek,
+            // K24-A5: tentatively set to false; the bucketing loop
+            // later overrides for (preferredWeek, preferredDay)
+            // matches once preferredDayOfWeek is resolved.
+            isPreferredDay: false,
           })
         }
       }
     }
   }
 
-  // 6. K24-A3: preferredWeek-first bucketed sorting.
+  // 6. K24-A3 + K24-A5: bucketed sorting.
+  //
+  // K24-A3 introduced preferredWeek-first (preferred vs fallback).
+  // K24-A5 extends this to three buckets when preferredDayOfWeek is
+  // set: (preferredWeek, preferredDay) > (preferredWeek, otherDay)
+  // > (fallbackWeek, *). When preferredDayOfWeek is null, the
+  // legacy two-bucket behavior is preserved.
   //
   // Rationale: The previous implementation sorted all plans by score
   // globally then sliced to limit. When preferredWeek had usable
   // plans but lower scores than fallback weeks, those preferred-week
   // plans were pushed out of the top-N by higher-scored fallback
   // plans. Users who explicitly selected "优先调课至第 13 周" would
-  // see weeks 12/15 in the list instead.
-  //
-  // The fix separates plans into preferred and fallback buckets,
-  // sorts each by score desc independently, then composites:
-  //   preferred first, then fallback, capped by limit.
-  // This guarantees preferred-week plans are never pushed out.
+  // see weeks 12/15 in the list instead. K24-A5 adds day-level
+  // bucketing so users who also pick "周一" never see 周二/周三 in
+  // the lead slot.
 
-  // Mark each plan with isPreferredWeek before sorting.
+  // K24-A5: Resolve preferredDayOfWeek (defensive validation: only
+  // null/1..5 accepted; 6/7 already excluded by the days list).
+  const preferredDayOfWeek =
+    input.preferredDayOfWeek == null
+      ? null
+      : (VALID_PREFERRED_DAY_VALUES as readonly number[]).includes(
+            input.preferredDayOfWeek,
+          )
+        ? input.preferredDayOfWeek
+        : null
+
+  // Mark each plan with isPreferredWeek and isPreferredDay before
+  // sorting.
   for (const p of plans) {
-    (p as AdjustmentPlanRecommendation & { isPreferredWeek: boolean }).isPreferredWeek =
-      p.targetWeek === centerWeek
+    p.isPreferredWeek = p.targetWeek === centerWeek
+    p.isPreferredDay =
+      preferredDayOfWeek != null &&
+      p.targetWeek === centerWeek &&
+      p.targetDayOfWeek === preferredDayOfWeek
   }
 
-  const preferredPlans = plans.filter((p) => p.targetWeek === centerWeek)
-  const fallbackPlans = plans.filter((p) => p.targetWeek !== centerWeek)
+  // Three-bucket partition when preferredDayOfWeek is set; otherwise
+  // the legacy two-bucket partition.
+  let preferredDayPlans: AdjustmentPlanRecommendation[] = []
+  let sameWeekOtherDayPlans: AdjustmentPlanRecommendation[] = []
+  let fallbackPlans: AdjustmentPlanRecommendation[] = []
+
+  if (preferredDayOfWeek != null) {
+    preferredDayPlans = plans.filter(
+      (p) => p.targetWeek === centerWeek && p.targetDayOfWeek === preferredDayOfWeek,
+    )
+    sameWeekOtherDayPlans = plans.filter(
+      (p) => p.targetWeek === centerWeek && p.targetDayOfWeek !== preferredDayOfWeek,
+    )
+    fallbackPlans = plans.filter((p) => p.targetWeek !== centerWeek)
+  } else {
+    preferredDayPlans = [] // unused
+    sameWeekOtherDayPlans = plans.filter((p) => p.targetWeek === centerWeek)
+    fallbackPlans = plans.filter((p) => p.targetWeek !== centerWeek)
+  }
 
   const sortByScore = (a: AdjustmentPlanRecommendation, b: AdjustmentPlanRecommendation) => {
     if (b.score !== a.score) return b.score - a.score
@@ -475,20 +550,37 @@ export async function findAdjustmentPlanRecommendations(
     if (a.targetSlotIndex !== b.targetSlotIndex) return a.targetSlotIndex - b.targetSlotIndex
     return a.roomId - b.roomId
   }
-  preferredPlans.sort(sortByScore)
+  preferredDayPlans.sort(sortByScore)
+  sameWeekOtherDayPlans.sort(sortByScore)
   fallbackPlans.sort(sortByScore)
 
-  // Composite: preferred first, then fallback, capped at limit.
-  const top = [...preferredPlans, ...fallbackPlans].slice(0, limit)
+  // Composite: preferredDay > sameWeekOtherDay > fallback, capped at limit.
+  const top = [
+    ...preferredDayPlans,
+    ...sameWeekOtherDayPlans,
+    ...fallbackPlans,
+  ].slice(0, limit)
 
-  const preferredWeekAvailable = preferredPlans.length > 0
-  const preferredWeekPlanCount = Math.min(preferredPlans.length, limit)
-  const fallbackPlanCount = Math.max(0, top.length - preferredWeekPlanCount)
+  const preferredWeekAvailable = preferredDayPlans.length + sameWeekOtherDayPlans.length > 0
+  const preferredDayAvailable = preferredDayOfWeek == null || preferredDayPlans.length > 0
+  const preferredWeekPlanCount = Math.min(
+    preferredDayPlans.length + sameWeekOtherDayPlans.length,
+    limit,
+  )
+  const preferredDayPlanCount = Math.min(preferredDayPlans.length, limit)
+  const sameWeekOtherDayPlanCount = Math.max(
+    0,
+    Math.min(preferredDayPlans.length + sameWeekOtherDayPlans.length, limit) -
+      preferredDayPlanCount,
+  )
+  const fallbackPlanCount = Math.max(0, top.length - preferredDayPlanCount - sameWeekOtherDayPlanCount)
 
   // 7. Compose message.
   let message: string | undefined
   if (top.length === 0) {
     message = '当前没有可推荐的调课方案，请尝试调整首选周次或扩大搜索范围'
+  } else if (preferredDayOfWeek != null && !preferredDayAvailable) {
+    message = `第 ${centerWeek} 周${dayOfWeekLabel(preferredDayOfWeek)}暂无可用方案，以下为同周其他日期 / 邻近周备选方案`
   } else if (!preferredWeekAvailable) {
     message = `第 ${centerWeek} 周暂无可用方案，以下为邻近周备选方案`
   } else if (top.length < MIN_PLANS) {
@@ -508,11 +600,25 @@ export async function findAdjustmentPlanRecommendations(
       preferredWeek: centerWeek,
       preferredWeekPlanCount,
       fallbackPlanCount,
+      preferredDayOfWeek,
+      preferredDayPlanCount,
+      sameWeekOtherDayPlanCount,
     },
     message,
     preferredWeek: centerWeek,
     preferredWeekAvailable,
+    preferredDayOfWeek,
+    preferredDayAvailable,
   }
+}
+
+/** Map 1..5 → "周一" / "周二" / … "周五" for human-readable
+ *  messages. */
+function dayOfWeekLabel(day: number): string {
+  const labels: Record<number, string> = {
+    1: '周一', 2: '周二', 3: '周三', 4: '周四', 5: '周五',
+  }
+  return labels[day] ?? `周${day}`
 }
 
 // ─── Internal utility ────────────────────────────────────
@@ -530,6 +636,8 @@ function emptyResult(
     message,
     preferredWeek: searched.preferredWeek,
     preferredWeekAvailable: false,
+    preferredDayOfWeek: searched.preferredDayOfWeek,
+    preferredDayAvailable: false,
   }
 }
 

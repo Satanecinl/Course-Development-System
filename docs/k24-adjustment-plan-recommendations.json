@@ -244,5 +244,24 @@
     "noK24ABusinessCodeModified": true,
     "noK23AHelperOrApiModified": true,
     "noScoreOrSolverOrSchemaModified": true
+  },
+  "k24a5PreferredDayFix": {
+    "stage": "K24-A5-PLAN-RECOMMENDATION-PREFERRED-DAY-PRIORITY",
+    "date": "2026-06-07",
+    "requirement": "一键推荐调课方案优先设置区增加'优先星期'选择 (自动匹配 / 周一..周五)",
+    "defaultBehavior": "preferredDayOfWeek=null = 自动匹配 (K24-A3 行为 100% 保留)",
+    "dayPriorityBehavior": "preferredWeek + preferredDay > preferredWeek + otherDay > fallbackWeek (3-bucket)",
+    "fix": "helper 3-bucket 分桶; API 校验 1..5 / null; 客户端 forward preferredDayOfWeek; 前端 新增 preferredPlanDay 控件 + 三级分组",
+    "preservesK23a": true,
+    "preservesK24a1": true,
+    "preservesK24a2": true,
+    "preservesK24a3AutoMode": true,
+    "preservesK24a4": true,
+    "k24aVerifyAfterFix": "179/179 PASS",
+    "k24a5Verify": "60/60 PASS",
+    "k23aVerifyAfterFix": "66/66 PASS",
+    "k22cAfterFix": "73/0/0/0",
+    "pausesK24Closeout": true,
+    "requiresReManualVerification": true
   }
 }

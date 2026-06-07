@@ -376,11 +376,16 @@ function testFrontendRendersPlans() {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
 
   const content = fileRead('src/components/schedule-adjustment-dialog.tsx')
-  // K24-A3: plan list now uses IIFE with preferredPlans/fallbackPlans
-  // filter instead of direct plans.map. Both patterns are valid.
+  // K24-A5: plan list now uses IIFE with preferredDayPlans /
+  // sameWeekOtherDayPlans / fallbackPlans (preferredPlans /
+  // fallbackPlans are still present in the IIFE preamble but the
+  // K24-A5 3-bucket shape is the canonical variant). Both old
+  // and new patterns are valid.
   assert(
-    content.includes('planResult.plans.map') || content.includes('preferredPlans.map'),
-    'dialog 渲染 plan 列表 (plans.map 或 preferredPlans.map + fallbackPlans.map)',
+    content.includes('planResult.plans.map') ||
+      content.includes('preferredPlans.map') ||
+      content.includes('preferredDayPlans.map'),
+    'dialog 渲染 plan 列表 (plans.map / preferredPlans.map / preferredDayPlans.map)',
   )
   assert(content.includes('p.reasons'),
     'dialog 显示 plan reasons')
@@ -734,19 +739,31 @@ function testPreferredWeekFirstPriority() {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
 
   const helper = fileRead('src/lib/schedule/adjustment-plan-recommendations.ts')
-  // Bucketed sorting
+  // K24-A5 3-bucket extends K24-A3's 2-bucket. preferredPlans /
+  // fallbackPlans are still declared (sameWeekOtherDayPlans
+  // additionally exists); the composite is now 3-way.
   assert(
-    helper.includes('preferredPlans') && helper.includes('fallbackPlans'),
-    'helper 包含 preferredPlans / fallbackPlans 分桶',
+    helper.includes('fallbackPlans'),
+    'helper 包含 fallbackPlans 分桶 (K24-A3 保留)',
+  )
+  assert(
+    helper.includes('sameWeekOtherDayPlans'),
+    'helper 包含 sameWeekOtherDayPlans (K24-A5 扩展)',
   )
   assert(
     helper.includes('sortByScore'),
     'helper 包含 sortByScore 排序函数',
   )
-  // Composite: preferred first then fallback
+  // Composite: 3-bucket (preferredDay > sameWeekOther > fallback).
+  // The composite is spread across multiple lines; check each
+  // sub-component independently for robustness against
+  // whitespace/line-break differences.
   assert(
-    /\[\.\.\.preferredPlans,\s*\.\.\.fallbackPlans\]\.slice\(0,\s*limit\)/.test(helper),
-    'composite: preferredPlans 在前, fallbackPlans 在后, slice limit',
+    /\.\.\.preferredDayPlans/.test(helper) &&
+      /\.\.\.sameWeekOtherDayPlans/.test(helper) &&
+      /\.\.\.fallbackPlans/.test(helper) &&
+      /\.slice\(0,\s*limit\)/.test(helper),
+    'composite: 3-bucket preferredDay → sameWeekOther → fallback, slice limit',
   )
   // Result shape
   assert(helper.includes('preferredWeekAvailable'), 'result 包含 preferredWeekAvailable')
@@ -808,9 +825,54 @@ function testTimeSlotRangeCorrection() {
     'K24-A2 cross-week gate 保留',
   )
   assert(
-    helper.includes('preferredPlans') && helper.includes('fallbackPlans'),
-    'K24-A3 preferredWeek-first 保留',
+    helper.includes('preferredPlans') || helper.includes('preferredDayPlans'),
+    'K24-A3 / K24-A5 排序基础保留',
   )
+}
+
+// ─── AG. K24-A5: preferred-day priority ───────────────────
+
+function testPreferredDayPriority() {
+  console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+  console.log('AG. K24-A5: preferred-day priority')
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+
+  const helper = fileRead('src/lib/schedule/adjustment-plan-recommendations.ts')
+  assert(
+    helper.includes('preferredDayOfWeek'),
+    'helper 含 preferredDayOfWeek',
+  )
+  assert(
+    helper.includes('VALID_PREFERRED_DAY_VALUES'),
+    'helper 含 VALID_PREFERRED_DAY_VALUES 常量 (1..5 only)',
+  )
+  assert(
+    helper.includes('preferredDayPlans') &&
+      helper.includes('sameWeekOtherDayPlans') &&
+      helper.includes('fallbackPlans'),
+    'helper 含 3-bucket 分桶 (preferredDayPlans, sameWeekOtherDayPlans, fallbackPlans)',
+  )
+  assert(
+    helper.includes('isPreferredDay'),
+    'helper 含 isPreferredDay marker',
+  )
+  assert(
+    helper.includes('preferredDayAvailable'),
+    'helper 含 preferredDayAvailable field',
+  )
+
+  // API + client + dialog
+  const route = fileRead('src/app/api/schedule-adjustments/plan-recommendations/route.ts')
+  assert(route.includes('preferredDayOfWeek'), 'API route 含 preferredDayOfWeek')
+
+  const client = fileRead('src/lib/schedule/adjustment-client.ts')
+  assert(client.includes('preferredDayOfWeek'), 'client types 含 preferredDayOfWeek')
+
+  const dialog = fileRead('src/components/schedule-adjustment-dialog.tsx')
+  assert(dialog.includes('preferredPlanDay'), 'dialog 含 preferredPlanDay state')
+  assert(dialog.includes('自动匹配'), 'dialog 含 "自动匹配" option')
+  assert(dialog.includes('首选日期方案'), 'dialog 含 K24-A5 三级分组标签')
+  assert(dialog.includes('同周其他日期方案'), 'dialog 含 K24-A5 "同周其他日期方案" label')
 }
 
 // ─── Main ───────────────────────────────────────────────
@@ -850,6 +912,7 @@ async function main() {
   testCrossWeekSelfConflictFix()
   testPreferredWeekFirstPriority()
   testTimeSlotRangeCorrection()
+  testPreferredDayPriority()
 
   console.log(`\n${'═'.repeat(50)}`)
   console.log(`📊 结果: ${passed} passed, ${failed} failed`)

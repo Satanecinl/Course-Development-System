@@ -1,0 +1,91 @@
+{
+  "stage": "K24-A5-PLAN-RECOMMENDATION-PREFERRED-DAY-PRIORITY",
+  "date": "2026-06-07",
+  "k24CloseoutBaselineCommit": "5d90921",
+  "status": "FIXED",
+  "requiresReVerification": true,
+  "pausesK24Closeout": true,
+  "bug": null,
+  "requirement": {
+    "description": "一键推荐调课方案的优先设置区增加'优先星期'选择 (周一..周五 + 自动匹配)",
+    "defaultBehavior": "preferredDayOfWeek=null = 自动匹配 (K24-A3 行为保留)",
+    "dayPriorityBehavior": "preferredWeek + preferredDay > preferredWeek + otherDay > fallbackWeek (3-bucket)"
+  },
+  "fix": {
+    "sharedHelper": {
+      "file": "src/lib/schedule/adjustment-plan-recommendations.ts",
+      "input": "preferredDayOfWeek?: number | null (1..5 or null; 6/7 拒绝)",
+      "planAdditiveFields": [
+        "isPreferredDay: boolean"
+      ],
+      "resultAdditiveFields": [
+        "preferredDayOfWeek: number | null",
+        "preferredDayAvailable: boolean"
+      ],
+      "searchedAdditiveFields": [
+        "preferredDayOfWeek: number | null",
+        "preferredDayPlanCount: number",
+        "sameWeekOtherDayPlanCount: number"
+      ],
+      "sorting": "3-bucket (preferredDay > sameWeekOtherDay > fallback), composite, slice(0, limit)"
+    },
+    "apiRoute": {
+      "file": "src/app/api/schedule-adjustments/plan-recommendations/route.ts",
+      "validation": "preferredDayOfWeek 必须是 null 或 1-5 整数 (周一..周五); 6/7 / 非整数 / null+非1-5 全部 400"
+    },
+    "clientTypes": {
+      "file": "src/lib/schedule/adjustment-client.ts",
+      "request": "preferredDayOfWeek?: number | null (in AdjustmentPlanRecommendationRequest)",
+      "response": "preferredDayOfWeek / preferredDayAvailable parsed in result"
+    },
+    "dialogUI": {
+      "file": "src/components/schedule-adjustment-dialog.tsx",
+      "newState": "preferredPlanDay (number | null, default null)",
+      "control": "<select> 自动匹配 + 周一..周五 (6 options)",
+      "grouping": "3-bucket (首选日期方案 / 同周其他日期方案 / 备选周方案)"
+    }
+  },
+  "preservation": {
+    "k23aRoomHelper": "NOT modified (66/66)",
+    "k24a1PreferredPlanWeek": "preserved",
+    "k24a1ShowAdvancedTools": "preserved",
+    "k24a1OverflowYAuto": "preserved",
+    "k24a1UsePlanButton": "preserved",
+    "k24a2CrossWeekGate": "preserved (taskActiveInTargetWeek + isTaskActiveInWeek intact)",
+    "k24a3PreferredWeekFirst": "extended (auto mode preserved 100%; 3-bucket only when preferredDayOfWeek set)",
+    "k24a4TimeSlots": "preserved (VALID_TEACHING_SLOT_INDEXES = [1..5] intact)",
+    "k24a4ApiDefensiveCheck": "preserved (targetSlotIndex > 5 → 400)",
+    "manualSelect": "preserved",
+    "rbacPermissionModel": "preserved",
+    "scoreTsNotModified": true,
+    "schemaNotModified": true,
+    "dbNotWritten": true
+  },
+  "verification": {
+    "k24a5VerifyScript": "scripts/verify-plan-recommendation-preferred-day-k24-a5.ts",
+    "k24a5VerifyResult": "60/60 PASS",
+    "k24aVerifyAfterFix": "179/179 PASS",
+    "k23aVerifyAfterFix": "66/66 PASS",
+    "k22cAfterFix": "73/0/0/0",
+    "integrationTest": {
+      "autoMode": "preferredDayOfWeek=null, all plans isPreferredDay=false",
+      "dayMode": "preferredDayOfWeek=1, isPreferredDay plans (week, day)=(preferredWeek, 1) come first"
+    }
+  },
+  "unmodified": [
+    "src/lib/scheduler/score.ts",
+    "solver algorithm",
+    "prisma/schema.prisma, prisma/migrations/*",
+    "prisma/dev.db (NOT written)",
+    "src/lib/schedule/room-recommendations.ts (K23-A 66/66 helper)",
+    "src/lib/schedule/time-slots.ts (K24-A4 共享 helper)",
+    "K24-A2 cross-week self-conflict gate (taskActiveInTargetWeek)",
+    "K24-A1 UX (showAdvancedTools, planListOpen, selectedPlanKey, 使用该方案)",
+    "RBAC permission model",
+    "调课 submit 语义"
+  ],
+  "blocking": false,
+  "requiresReManualVerification": true,
+  "pausesK24Closeout": true,
+  "recommendedNextStage": "重新人工验证 K24 一键推荐 → 重新进入 K24-PLAN-RECOMMENDATION-ACCEPTANCE-CLOSEOUT (使用最新 HEAD)"
+}

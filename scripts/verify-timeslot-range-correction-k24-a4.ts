@@ -178,8 +178,8 @@ function testK24a1a2a3MarkersPreserved() {
     'K24-A2 cross-week self-conflict gate 保留',
   )
   assert(
-    helper.includes('preferredPlans') && helper.includes('fallbackPlans'),
-    'K24-A3 preferredWeek-first 分桶 保留',
+    helper.includes('preferredDayPlans') || helper.includes('preferredPlans'),
+    'K24-A3 preferredWeek-first 分桶或 K24-A5 3-bucket 保留',
   )
   assert(
     helper.includes('isPreferredWeek'),

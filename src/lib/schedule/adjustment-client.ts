@@ -75,6 +75,10 @@ export interface AdjustmentPlanRecommendation {
   warnings: string[]
   /** K24-A3: true when targetWeek === preferredWeek. */
   isPreferredWeek: boolean
+  /** K24-A5: true when targetWeek === preferredWeek AND
+   *  targetDayOfWeek === preferredDayOfWeek. False in automatic
+   *  mode. */
+  isPreferredDay: boolean
 }
 
 export interface AdjustmentPlanRejectedSummary {
@@ -100,6 +104,14 @@ export interface AdjustmentPlanSearched {
   preferredWeekPlanCount: number
   /** K24-A3: how many plans belong to fallback weeks. */
   fallbackPlanCount: number
+  /** K24-A5: the preferred day-of-week (1..5) or null in auto. */
+  preferredDayOfWeek: number | null
+  /** K24-A5: how many plans belong to (preferredWeek,
+   *  preferredDayOfWeek). 0 in auto mode. */
+  preferredDayPlanCount: number
+  /** K24-A5: how many plans belong to the preferred week but on a
+   *  different day. 0 in auto mode. */
+  sameWeekOtherDayPlanCount: number
 }
 
 export interface AdjustmentPlanRecommendationResult {
@@ -112,6 +124,12 @@ export interface AdjustmentPlanRecommendationResult {
   preferredWeek: number
   /** K24-A3: true when at least one plan belongs to preferredWeek. */
   preferredWeekAvailable: boolean
+  /** K24-A5: the user's selected preferred day-of-week (1..5) or
+   *  null in auto mode. */
+  preferredDayOfWeek: number | null
+  /** K24-A5: true when at least one plan belongs to
+   *  (preferredWeek, preferredDayOfWeek). Always true in auto. */
+  preferredDayAvailable: boolean
 }
 
 export interface AdjustmentPlanRecommendationRequest {
@@ -121,6 +139,9 @@ export interface AdjustmentPlanRecommendationRequest {
   includeWeekend?: boolean
   limit?: number
   semesterId?: number | null
+  /** K24-A5: preferred day-of-week inside the preferred week. null
+   *  (default) = automatic (any working day). 1..5 = Mon..Fri. */
+  preferredDayOfWeek?: number | null
 }
 
 export async function fetchPlanRecommendations(
@@ -146,10 +167,15 @@ export async function fetchPlanRecommendations(
       weeks: [], days: [], slotIndexes: [],
       timeCandidateCount: 0, roomCandidateCount: 0,
       preferredWeek: 1, preferredWeekPlanCount: 0, fallbackPlanCount: 0,
+      preferredDayOfWeek: null, preferredDayPlanCount: 0,
+      sameWeekOtherDayPlanCount: 0,
     },
     message: data.message,
     preferredWeek: data.preferredWeek ?? data.searched?.preferredWeek ?? 1,
     preferredWeekAvailable: data.preferredWeekAvailable ?? false,
+    preferredDayOfWeek:
+      data.preferredDayOfWeek ?? data.searched?.preferredDayOfWeek ?? null,
+    preferredDayAvailable: data.preferredDayAvailable ?? true,
   }
 }
 

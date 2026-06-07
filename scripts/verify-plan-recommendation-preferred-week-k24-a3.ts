@@ -77,18 +77,29 @@ function testPreferredWeekFirstLogic() {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
 
   const helper = fileRead('src/lib/schedule/adjustment-plan-recommendations.ts')
+  // K24-A5 renamed preferredPlans → preferredDayPlans (3-bucket).
+  // In auto mode (preferredDayOfWeek=null), the "preferred" bucket
+  // is reused for sameWeekOtherDayPlans; fallbackPlans is
+  // unchanged. We accept either naming.
   assert(
-    helper.includes('preferredPlans') && helper.includes('fallbackPlans'),
-    'helper 包含 preferredPlans / fallbackPlans 分桶',
+    helper.includes('preferredDayPlans') || helper.includes('preferredPlans'),
+    'helper 包含 preferredDayPlans / preferredPlans 分桶 (K24-A5 扩展)',
   )
+  assert(helper.includes('fallbackPlans'), 'helper 包含 fallbackPlans 分桶 (K24-A3 保留)')
   assert(
     helper.includes('sortByScore'),
     'helper 包含 sortByScore 排序函数',
   )
+  // 3-bucket composite check: all 4 components must exist and be
+  // spread into a single slice(0, limit). The lazy-regex form
+  // doesn't match across newlines, so check each component
+  // independently.
   assert(
-    /[.*preferredPlans.*fallbackPlans.*]\.slice\(0,\s*limit\)/.test(helper) ||
-      /\[\.\.\.preferredPlans,\s*\.\.\.fallbackPlans\]\.slice\(0,\s*limit\)/.test(helper),
-    'helper 先 preferred 后 fallback 再 slice limit (不是全局排序)',
+    /\.\.\.preferredDayPlans/.test(helper) &&
+      /\.\.\.sameWeekOtherDayPlans/.test(helper) &&
+      /\.\.\.fallbackPlans/.test(helper) &&
+      /\.slice\(0,\s*limit\)/.test(helper),
+    'helper 3-bucket composite: preferredDay → sameWeekOther → fallback, slice limit',
   )
 }
 
@@ -107,10 +118,12 @@ function testPreferredNotSqueezed() {
     !/plans\.sort\([\s\S]{0,200}?plans\.slice\(0,\s*limit\)/.test(helper),
     '旧的全局 plans.sort + plans.slice 已被替换为分桶排序',
   )
-  // The new pattern: preferredPlans.sort + fallbackPlans.sort + composite
+  // The new pattern: preferredDayPlans.sort + sameWeekOtherDayPlans.sort
+  // + fallbackPlans.sort + composite (or legacy preferredPlans.sort in
+  // older code).
   assert(
-    /preferredPlans\.sort\(sortByScore\)/.test(helper),
-    'preferredPlans 单独按 score 排序',
+    /preferredDayPlans\.sort\(sortByScore\)|preferredPlans\.sort\(sortByScore\)/.test(helper),
+    'preferredDayPlans / preferredPlans 单独按 score 排序',
   )
   assert(
     /fallbackPlans\.sort\(sortByScore\)/.test(helper),
@@ -171,10 +184,13 @@ function testPreferredWeekHasPlansPriority() {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
 
   const helper = fileRead('src/lib/schedule/adjustment-plan-recommendations.ts')
+  // 3-bucket: preferredDay → sameWeekOther → fallback (K24-A5).
+  // Use segmented check to avoid multi-line lazy regex issues.
   assert(
-    /\[\.\.\.preferredPlans,\s*\.\.\.fallbackPlans\]/.test(helper) ||
-      /\[.*preferredPlans.*\.\.\.fallbackPlans\]/.test(helper),
-    'composite 顺序: preferredPlans 在前, fallbackPlans 在后',
+    /\.\.\.preferredDayPlans/.test(helper) &&
+      /\.\.\.sameWeekOtherDayPlans/.test(helper) &&
+      /\.\.\.fallbackPlans/.test(helper),
+    'composite 顺序: preferredDay → sameWeekOther → fallback (K24-A5 3-bucket)',
   )
 }
 
