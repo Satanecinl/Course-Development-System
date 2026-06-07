@@ -1,0 +1,483 @@
+{
+  "stage": "K25-B-MULTI-SEMESTER-SCHEMA-PLAN",
+  "status": "PLAN_COMPLETE",
+  "date": "2026-06-07",
+  "sourceAudit": {
+    "stage": "K25-A-MULTI-SEMESTER-COURSE-SCOPING-AUDIT",
+    "commit": "60db8e2",
+    "overallReadiness": "PARTIAL",
+    "highRiskCount": 2,
+    "mediumRiskCount": 10,
+    "lowRiskCount": 0,
+    "infoCount": 1,
+    "blocking": false
+  },
+  "currentDbSnapshot": {
+    "dbTotals": {
+      "teachingTask": {
+        "total": 308,
+        "nullSemester": 0
+      },
+      "scheduleSlot": {
+        "total": 440,
+        "nullSemester": 0
+      },
+      "scheduleAdjustment": {
+        "total": 57,
+        "nullSemester": 0
+      },
+      "schedulingRun": {
+        "total": 77,
+        "nullSemester": 0
+      },
+      "importBatch": {
+        "total": 37,
+        "nullSemester": 36
+      },
+      "classGroup": {
+        "total": 36,
+        "nullSemester": 0
+      }
+    },
+    "activeSemesterCount": 1,
+    "activeSemesters": [
+      {
+        "id": 1,
+        "code": "LEGACY-DEFAULT",
+        "name": "既有数据默认学期"
+      }
+    ],
+    "allSemesterCount": 1
+  },
+  "modelClassification": [
+    {
+      "model": "Course",
+      "category": "A_GLOBAL_MASTER",
+      "currentSemesterId": "none",
+      "proposedAction": "保持不加 semesterId (跨学期主数据)",
+      "reason": "课程主数据, 跨学期复用. 当前 @unique name 已足够."
+    },
+    {
+      "model": "Teacher",
+      "category": "A_GLOBAL_MASTER",
+      "currentSemesterId": "none",
+      "proposedAction": "保持不加 semesterId",
+      "reason": "教师主数据, 跨学期复用."
+    },
+    {
+      "model": "Room",
+      "category": "A_GLOBAL_MASTER",
+      "currentSemesterId": "none",
+      "proposedAction": "保持不加 semesterId",
+      "reason": "教室主数据, 跨学期复用."
+    },
+    {
+      "model": "User",
+      "category": "A_GLOBAL_MASTER",
+      "currentSemesterId": "none",
+      "proposedAction": "保持不加 semesterId (RBAC 全局)",
+      "reason": "用户/认证是全局. RBAC 学期化属于 K25-C+ 后续."
+    },
+    {
+      "model": "Role",
+      "category": "A_GLOBAL_MASTER",
+      "currentSemesterId": "none",
+      "proposedAction": "保持不加 semesterId",
+      "reason": "RBAC 全局."
+    },
+    {
+      "model": "Permission",
+      "category": "A_GLOBAL_MASTER",
+      "currentSemesterId": "none",
+      "proposedAction": "保持不加 semesterId",
+      "reason": "权限主数据, 静态字符串."
+    },
+    {
+      "model": "Session",
+      "category": "A_GLOBAL_MASTER",
+      "currentSemesterId": "none",
+      "proposedAction": "保持不加 semesterId",
+      "reason": "会话全局."
+    },
+    {
+      "model": "Semester",
+      "category": "A_GLOBAL_MASTER",
+      "currentSemesterId": "none",
+      "proposedAction": "保持为顶层 master (root)",
+      "reason": "Semester 自身是根表, 不需要自身 semesterId."
+    },
+    {
+      "model": "ClassGroup",
+      "category": "B_SEMESTER_SCOPED_REQUIRED",
+      "currentSemesterId": "nullable",
+      "proposedAction": "semesterId Int (NOT NULL) + relation required",
+      "reason": "当前 36 行 null=0. 行政班是某学期的, 应强制绑定. @@unique([semesterId, name]) 已存在, 改 NOT NULL 是 schema 一致性."
+    },
+    {
+      "model": "TeachingTask",
+      "category": "B_SEMESTER_SCOPED_REQUIRED",
+      "currentSemesterId": "nullable",
+      "proposedAction": "semesterId Int (NOT NULL) + relation required",
+      "reason": "当前 308 行 null=0. 开课任务是某学期的, 应强制绑定. ScheduleSlot 关联 TeachingTask, 两者 semesterId 必须一致."
+    },
+    {
+      "model": "ScheduleSlot",
+      "category": "B_SEMESTER_SCOPED_REQUIRED",
+      "currentSemesterId": "nullable",
+      "proposedAction": "semesterId Int (NOT NULL) + relation required",
+      "reason": "当前 440 行 null=0. 排课结果是某学期的, 应强制绑定. Consistency check: slot.semesterId === slot.teachingTask.semesterId."
+    },
+    {
+      "model": "ScheduleAdjustment",
+      "category": "B_SEMESTER_SCOPED_REQUIRED",
+      "currentSemesterId": "nullable",
+      "proposedAction": "semesterId Int (NOT NULL) + relation required",
+      "reason": "当前 57 行 null=0. 调课是某学期的, 应强制绑定. 不允许跨学期调课."
+    },
+    {
+      "model": "SchedulingRun",
+      "category": "B_SEMESTER_SCOPED_REQUIRED",
+      "currentSemesterId": "nullable",
+      "proposedAction": "semesterId Int (NOT NULL) + relation required",
+      "reason": "当前 77 行 null=0. 调度运行是某学期的, 应强制绑定. resultSnapshot 应包含 semesterId."
+    },
+    {
+      "model": "SchedulingConfig",
+      "category": "B_SEMESTER_SCOPED_REQUIRED",
+      "currentSemesterId": "nullable",
+      "proposedAction": "semesterId Int (NOT NULL) + relation required",
+      "reason": "调度配置是某学期的, 每学期可有不同 LAHC 参数. 需配 SchedulingConfig.semesterId required."
+    },
+    {
+      "model": "ImportBatch",
+      "category": "B_SEMESTER_SCOPED_REQUIRED",
+      "currentSemesterId": "nullable",
+      "proposedAction": "semesterId Int (NOT NULL) + relation required",
+      "reason": "当前 37 行 null=36. **36/37 历史 null 必须 backfill**. 导入批次是某学期的."
+    },
+    {
+      "model": "TeachingTaskClass",
+      "category": "C_JOIN_DETAIL",
+      "currentSemesterId": "none",
+      "proposedAction": "不加 semesterId; 通过 parent (teachingTask / classGroup) 继承",
+      "reason": "join 表, 学期信息冗余; 加 NOT NULL 需 consistency check (teachingTask.semesterId === classGroup.semesterId)."
+    },
+    {
+      "model": "SchedulerRunChange",
+      "category": "C_JOIN_DETAIL",
+      "currentSemesterId": "none",
+      "proposedAction": "不加 semesterId; 通过 run.semesterId 继承",
+      "reason": "join 表, run.semesterId 已 required. consistency check: SchedulerRunChange.run.semesterId."
+    },
+    {
+      "model": "RoomAvailability",
+      "category": "C_JOIN_DETAIL",
+      "currentSemesterId": "none",
+      "proposedAction": "不加 semesterId; 通过 room 继承 (跨学期共享)",
+      "reason": "教室可用性表; 当前 Room 是 global master. 未来如需学期化再迁移."
+    },
+    {
+      "model": "ScheduleChangeLog",
+      "category": "D_LEGACY_RISK",
+      "currentSemesterId": "none",
+      "proposedAction": "暂不加 semesterId, 标记为 legacy",
+      "reason": "legacy log 表, 实际不被使用. 本轮不直接处理. 后续 K25-LEGACY-CLEANUP 阶段统一处理."
+    }
+  ],
+  "proposedNotNullChanges": [
+    {
+      "model": "ClassGroup",
+      "current": "semesterId Int? (nullable)",
+      "proposed": "semesterId Int (NOT NULL) + relation required",
+      "backfillRequired": false,
+      "nullCount": 0,
+      "total": 36,
+      "risk": "LOW (0 null, schema-only)"
+    },
+    {
+      "model": "TeachingTask",
+      "current": "semesterId Int? (nullable)",
+      "proposed": "semesterId Int (NOT NULL) + relation required",
+      "backfillRequired": false,
+      "nullCount": 0,
+      "total": 308,
+      "risk": "LOW (0 null, schema-only)"
+    },
+    {
+      "model": "ScheduleSlot",
+      "current": "semesterId Int? (nullable)",
+      "proposed": "semesterId Int (NOT NULL) + relation required",
+      "backfillRequired": false,
+      "nullCount": 0,
+      "total": 440,
+      "risk": "LOW (0 null, schema-only)"
+    },
+    {
+      "model": "ScheduleAdjustment",
+      "current": "semesterId Int? (nullable)",
+      "proposed": "semesterId Int (NOT NULL) + relation required",
+      "backfillRequired": false,
+      "nullCount": 0,
+      "total": 57,
+      "risk": "LOW (0 null, schema-only)"
+    },
+    {
+      "model": "SchedulingRun",
+      "current": "semesterId Int? (nullable)",
+      "proposed": "semesterId Int (NOT NULL) + relation required",
+      "backfillRequired": false,
+      "nullCount": 0,
+      "total": 77,
+      "risk": "LOW (0 null, schema-only)"
+    },
+    {
+      "model": "SchedulingConfig",
+      "current": "semesterId Int? (nullable)",
+      "proposed": "semesterId Int (NOT NULL) + relation required",
+      "backfillRequired": false,
+      "nullCount": 0,
+      "total": 0,
+      "risk": "LOW (0 null, schema-only)"
+    },
+    {
+      "model": "ImportBatch",
+      "current": "semesterId Int? (nullable)",
+      "proposed": "semesterId Int (NOT NULL) + relation required",
+      "backfillRequired": true,
+      "nullCount": 36,
+      "total": 37,
+      "risk": "HIGH (36/37 null)"
+    }
+  ],
+  "backfillPlan": {
+    "activeSemesterDetection": {
+      "strategy": "findMany where isActive=true, expect exactly 1",
+      "found": 1,
+      "semesters": [
+        {
+          "id": 1,
+          "code": "LEGACY-DEFAULT",
+          "name": "既有数据默认学期"
+        }
+      ],
+      "abortIfNotExactlyOne": true
+    },
+    "importBatch": {
+      "rowsToBackfill": 36,
+      "targetSemesterId": 1,
+      "strategy": "UPDATE ImportBatch SET semesterId = <active> WHERE semesterId IS NULL",
+      "prerequisites": [
+        "exactly one active semester",
+        "no in-flight parse/confirm",
+        "DB backup taken"
+      ],
+      "dryRunRecommended": true,
+      "abortIfMultipleActive": true,
+      "abortIfNoActive": true
+    },
+    "scopedModelsNullCheck": {
+      "checkPerModel": {
+        "teachingTask": {
+          "total": 308,
+          "null": 0,
+          "action": "OK: 0 null, safe to set NOT NULL"
+        },
+        "scheduleSlot": {
+          "total": 440,
+          "null": 0,
+          "action": "OK: 0 null, safe to set NOT NULL"
+        },
+        "scheduleAdjustment": {
+          "total": 57,
+          "null": 0,
+          "action": "OK: 0 null, safe to set NOT NULL"
+        },
+        "schedulingRun": {
+          "total": 77,
+          "null": 0,
+          "action": "OK: 0 null, safe to set NOT NULL"
+        },
+        "classGroup": {
+          "total": 36,
+          "null": 0,
+          "action": "OK: 0 null, safe to set NOT NULL"
+        }
+      }
+    }
+  },
+  "migrationPlan": [
+    {
+      "step": 1,
+      "name": "Preflight",
+      "details": [
+        "DB backup: cp prisma/dev.db prisma/dev.db.backup-$(date +%Y%m%d%H%M%S)",
+        "Verify exactly one active semester (resolveSchedulerSemester-style check)",
+        "Count null semesterId per model",
+        "Verify cross-semester consistency (no mixed records in current dev.db)"
+      ],
+      "canAbort": true
+    },
+    {
+      "step": 2,
+      "name": "Backfill (ImportBatch)",
+      "details": [
+        "UPDATE ImportBatch SET semesterId = <activeId> WHERE semesterId IS NULL",
+        "Re-verify: SELECT COUNT(*) FROM ImportBatch WHERE semesterId IS NULL → expect 0",
+        "No DELETE / destructive ops"
+      ],
+      "canAbort": true
+    },
+    {
+      "step": 3,
+      "name": "Backfill (other scoped models)",
+      "details": [
+        "For each scoped model with null > 0: same UPDATE as ImportBatch",
+        "Abort if any null found in production (require human review)",
+        "For dev.db, backfill to LEGACY-DEFAULT"
+      ],
+      "canAbort": true
+    },
+    {
+      "step": 4,
+      "name": "Prisma schema change",
+      "details": [
+        "For each of 7 models: semesterId Int → semesterId Int (NOT NULL)",
+        "Semester? relation → Semester relation (required)",
+        "No destructive schema operation",
+        "Run npx prisma migrate dev --name k25-b-multi-semester-not-null"
+      ],
+      "canAbort": false
+    },
+    {
+      "step": 5,
+      "name": "Migration application",
+      "details": [
+        "Apply migration to dev.db (no reset)",
+        "Prisma generate client"
+      ],
+      "canAbort": false
+    },
+    {
+      "step": 6,
+      "name": "Post-migration validation",
+      "details": [
+        "npx prisma validate",
+        "npm run build",
+        "K25-A audit rerun (sanity check: 36/37 → 0/37 ImportBatch null)",
+        "K24-A / K23-A / K22-C verify rerun (regression check)",
+        "auth-foundation 53/1 pre-existing (no regression)"
+      ],
+      "canAbort": false
+    }
+  ],
+  "consistencyValidationPlan": {
+    "teachingTask": [
+      "TeachingTask.semesterId NOT NULL",
+      "TeachingTask.classGroup (via TeachingTaskClass) all in same semester"
+    ],
+    "scheduleSlot": [
+      "ScheduleSlot.semesterId NOT NULL",
+      "ScheduleSlot.semesterId === ScheduleSlot.teachingTask.semesterId"
+    ],
+    "scheduleAdjustment": [
+      "ScheduleAdjustment.semesterId NOT NULL",
+      "ScheduleAdjustment.originalSlot.semesterId === ScheduleAdjustment.semesterId",
+      "ScheduleAdjustment.targetSemesterId === ScheduleAdjustment.semesterId (no cross-semester)"
+    ],
+    "schedulingRun": [
+      "SchedulingRun.semesterId NOT NULL",
+      "SchedulingRun.config.semesterId === SchedulingRun.semesterId (optional, configs can be shared)",
+      "SchedulerRunChange.run.semesterId consistent"
+    ],
+    "schedulingConfig": [
+      "SchedulingConfig.semesterId NOT NULL",
+      "At least one config per active semester (recommend, not required)"
+    ],
+    "importBatch": [
+      "ImportBatch.semesterId NOT NULL",
+      "ImportBatch.teachingTasks all have same semesterId as ImportBatch",
+      "ImportBatch.scheduleSlots all have same semesterId as ImportBatch"
+    ]
+  },
+  "rollbackPlan": {
+    "strategy": "Backup-based rollback (preferred) + reverse migration (fallback)",
+    "backupBased": [
+      "cp prisma/dev.db.backup-<timestamp> prisma/dev.db",
+      "Or: psql/copy db from backup"
+    ],
+    "reverseMigration": [
+      "npx prisma migrate dev --name k25-b-rollback-not-null-to-nullable",
+      "UPDATE ImportBatch SET semesterId = NULL (only if absolutely needed)"
+    ],
+    "noResetPolicy": [
+      "NEVER run prisma migrate reset",
+      "NEVER run prisma db push --force-reset",
+      "NEVER delete prisma/dev.db"
+    ],
+    "restoreOrder": [
+      "1. Stop dev server",
+      "2. Restore DB from backup",
+      "3. If migration applied: reverse migration OR restore from pre-migration DB",
+      "4. Re-run K25-A audit to confirm status",
+      "5. Re-run K24-A / K23-A / K22-C regression"
+    ]
+  },
+  "recommendedNextStages": [
+    {
+      "stage": "K25-C-MULTI-SEMESTER-SCHEMA-IMPLEMENTATION",
+      "scope": [
+        "Execute K25-B plan (preflight, backfill, schema change, migration, post-validation)",
+        "No UI / API changes"
+      ],
+      "rationale": "Cannot fully isolate multi-semester data without NOT NULL constraints."
+    },
+    {
+      "stage": "K25-D-SEMESTER-SCOPING-API-GAP-FIX",
+      "scope": [
+        "data/teaching-tasks GET list: require ?semesterId=",
+        "schedule GET list: require ?semesterId=",
+        "Mutation endpoints: validate resource.semesterId consistency"
+      ],
+      "rationale": "K25-A flagged 2 HIGH API risks; K25-D addresses them after K25-C."
+    },
+    {
+      "stage": "K25-E-SEMESTER-SELECTOR-UX",
+      "scope": [
+        "Global / admin-scoped semester selector",
+        "API requests carry X-Semester-Id or ?semesterId=",
+        "Page labels show current semester"
+      ],
+      "rationale": "Last step; UX without schema/plan is incomplete."
+    }
+  ],
+  "blocking": false,
+  "recommendedNextStage": "K25-C-MULTI-SEMESTER-SCHEMA-IMPLEMENTATION",
+  "recommendedNotNullCount": 7,
+  "backfillRequiredCount": 1,
+  "verification": {
+    "planScriptExit": 0,
+    "prismaValidate": "schema valid",
+    "build": "PASS",
+    "lint": "0 new error",
+    "authFoundation": "53 passed / 1 pre-existing failure",
+    "k25aAuditRerun": "not executed (avoid unrelated drift)",
+    "k24a5VerifyPreserved": "60/60 (NOT re-run)",
+    "k24aVerifyPreserved": "179/179 (NOT re-run)",
+    "k23aVerifyPreserved": "66/66 (NOT re-run)",
+    "k22cPreserved": "73/0/0/0 (NOT re-run)"
+  },
+  "unmodifiedScope": {
+    "prismaSchema": "NOT modified",
+    "migrations": "NOT modified",
+    "devDb": "NOT written (plan is read-only)",
+    "apiBusinessLogic": "NOT modified",
+    "frontendBusinessLogic": "NOT modified",
+    "schedulerScoreSolver": "NOT modified",
+    "importerParser": "NOT modified",
+    "rbac": "NOT modified",
+    "seed": "NOT run",
+    "prismaDbPush": "NOT run",
+    "prismaMigrate": "NOT run",
+    "prismaReset": "NOT run"
+  }
+}
