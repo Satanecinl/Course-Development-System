@@ -1,0 +1,90 @@
+{
+  "stage": "K24-A4-TIMESLOT-RANGE-CORRECTION",
+  "date": "2026-06-07",
+  "k24a3BaselineCommit": "ebdc18c",
+  "status": "FIXED",
+  "requiresReVerification": true,
+  "bug": {
+    "description": "一键推荐 / 调课相关 UI / 搜索范围仍出现 11-12 节 (slotIndex=6) 和 中午 (slotIndex=7)。实际业务只到 9-10 节。",
+    "rootCause": "K24-A plan helper 硬编码 DEFAULT_SLOT_INDEXES = [1..6]; K23-A API 防御校验 targetSlotIndex > 6; 调课弹窗节次下拉使用完整 TIME_SLOTS (1..7)"
+  },
+  "fix": {
+    "sharedHelper": {
+      "path": "src/lib/schedule/time-slots.ts",
+      "constant": "VALID_TEACHING_SLOT_INDEXES = [1, 2, 3, 4, 5]",
+      "exports": [
+        "VALID_TEACHING_SLOT_INDEXES",
+        "getValidTeachingSlotIndexes()",
+        "isValidTeachingSlotIndex(slotIndex)",
+        "formatTeachingSlotLabel(slotIndex)",
+        "getTeachingSlotLabelOptions()",
+        "getMaxValidTeachingSlotIndex()"
+      ]
+    },
+    "k24aPlanHelper": {
+      "file": "src/lib/schedule/adjustment-plan-recommendations.ts",
+      "change": "DEFAULT_SLOT_INDEXES 改用 getValidTeachingSlotIndexes()",
+      "searched.slotIndexes": "仅 [1..5]",
+      "plans[*].targetSlotIndex": "仅 [1..5]"
+    },
+    "k23aApiDefensiveCheck": {
+      "file": "src/app/api/schedule-adjustments/room-recommendations/route.ts",
+      "change": "targetSlotIndex > 5 → 400 (原本 > 6)",
+      "errorMessage": "'targetSlotIndex 必须在 1-5 之间 (1-2节 .. 9-10节)'"
+    },
+    "dialogUI": {
+      "file": "src/components/schedule-adjustment-dialog.tsx",
+      "change": "\"新节次\" select 使用 getTeachingSlotLabelOptions() 替代 TIME_SLOTS.map",
+      "legacyCompatibility": "TIME_SLOTS 仍用于显示历史 item / 推荐 plan (slotIndex 6 不会在新选择中出现)"
+    }
+  },
+  "historicalData": {
+    "foundSlotIndexEquals6": 2,
+    "foundSlotIndexEquals7": 0,
+    "totalScheduleSlots": 440,
+    "action": "不修改业务数据；记录为 data cleanup candidate (建议 K24-A5 或 K24-FutureDataCleanup)",
+    "appliedThisStage": false
+  },
+  "preservation": {
+    "k23a66Of66": true,
+    "k23aHelperNotModified": true,
+    "k24a1PreferredPlanWeek": true,
+    "k24a1ShowAdvancedTools": true,
+    "k24a1ScrollableList": true,
+    "k24a2CrossWeekGate": true,
+    "k24a3PreferredWeekFirst": true,
+    "k24a3IsPreferredWeek": true,
+    "manualSelectPreserved": true,
+    "rbacNotModified": true,
+    "scoreTsNotModified": true,
+    "schemaNotModified": true,
+    "dbNotWritten": true
+  },
+  "verification": {
+    "k24a4VerifyScript": "scripts/verify-timeslot-range-correction-k24-a4.ts",
+    "k24a4VerifyResult": "42/42 PASS",
+    "k24aVerifyAfterFix": "167/167 PASS",
+    "integrationTest": {
+      "approach": "real DB read-only: searched.slotIndexes = [1..5], plans[*].targetSlotIndex ∈ [1..5]"
+    }
+  },
+  "unmodified": [
+    "src/lib/scheduler/score.ts",
+    "solver algorithm",
+    "prisma/schema.prisma, prisma/migrations/*",
+    "prisma/dev.db (NOT written; 2 historical slotIndex=6 records preserved)",
+    "src/lib/schedule/room-recommendations.ts (K23-A helper, 66/66 preserved)",
+    "K24-A2 cross-week self-conflict gate",
+    "K24-A3 preferredWeek-first logic",
+    "K24-A1 UX (preferredPlanWeek, showAdvancedTools, overflow-y-auto, 使用该方案)",
+    "RBAC permission model",
+    "调课 submit 语义"
+  ],
+  "k24a3VerifyAfterFix": "50/50 PASS",
+  "k24a2VerifyAfterFix": "32/32 PASS",
+  "k23aVerifyAfterFix": "66/66 PASS",
+  "k22cAfterFix": "73/0/0/0",
+  "blocking": false,
+  "requiresReManualVerification": true,
+  "recommendedNextStage": "K24-B-PLAN-RECOMMENDATION-E2E-MANUAL-TRIAL (re-verify after fix)"
+}

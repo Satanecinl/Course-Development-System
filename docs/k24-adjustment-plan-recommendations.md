@@ -618,3 +618,50 @@ const top = [...preferredPlans, ...fallbackPlans].slice(0, limit)
 修复后 **需要重新做前端人工验证**。建议进入 K24-B-E2E-MANUAL-TRIAL。
 
 ---
+
+## 21. K24-A4 Time-Slot Range Correction
+
+> 本节由 K24-A4 (`K24-A4-TIMESLOT-RANGE-CORRECTION`) 阶段追加。
+
+### 21.1 背景
+
+实际教学安排只到 9-10 节 (slotIndex 1-5)，但一键推荐 / 调课相关 UI / 搜索范围仍出现 11-12 节 (slotIndex=6)。
+
+### 21.2 根因
+
+- K24-A plan helper `DEFAULT_SLOT_INDEXES = [1..6]`
+- K23-A API 防御校验允许 `targetSlotIndex ≤ 6`
+- 调课弹窗节次下拉使用完整 `TIME_SLOTS` (1-7)
+
+### 21.3 修复
+
+- 新增 `src/lib/schedule/time-slots.ts`: `VALID_TEACHING_SLOT_INDEXES = [1, 2, 3, 4, 5]`
+- K24-A plan helper 改用 `getValidTeachingSlotIndexes()`
+- K23-A API 防御校验 `targetSlotIndex > 5` → 400
+- 调课弹窗"新节次"下拉用 `getTeachingSlotLabelOptions()`
+
+### 21.4 历史数据
+
+dev.db 中有 2 个 `slotIndex=6` 记录 (440 个中)。**本阶段不修改**。建议 K24-A5 / K24-FutureDataCleanup 处理。
+
+### 21.5 影响范围
+
+| 项 | 状态 |
+|----|------|
+| 新 helper | ✅ 新增 `src/lib/schedule/time-slots.ts` |
+| K24-A plan helper | ✅ 修改 (DEFAULT_SLOT_INDEXES) |
+| K23-A API route | ✅ 修改 (defensive check 5 vs 6) |
+| K23-A helper | ❌ 未改 (66/66 保持) |
+| 调课弹窗 | ✅ 修改 (新节次 select) |
+| K24-A1/A2/A3 | ❌ 未改 |
+| score.ts / schema / DB | ❌ 未改 |
+| K24-A4 verify | 42/42 PASS |
+| K24-A verify | 167/167 PASS (从 159 升 8) |
+| K23-A verify | 66/66 PASS |
+| K22-C | 73/0/0/0 |
+
+### 21.6 后续
+
+修复后 **需要重新做前端人工验证**，重点确认不会出现 11-12 节。
+
+---

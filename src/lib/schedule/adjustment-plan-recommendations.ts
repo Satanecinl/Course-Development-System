@@ -18,7 +18,7 @@
  *   - weeks:        preferredWeek ± weekWindow (default ±1, must be in 1..20)
  *   - days:         1..5 (working days) by default; 6..7 only if
  *                   includeWeekend=true
- *   - slotIndex:    1..6 (exclude slotIndex 7 "中午" for adjustment)
+ *   - slotIndex:    1..5 (K24-A4 — exclude 11-12节 and 中午)
  *   - rooms:        all non-zero rooms (filtered by helper)
  *
  * K23-A compatibility:
@@ -33,6 +33,7 @@ import { prisma } from '@/lib/prisma'
 import { resolveSchedulerSemester } from '@/lib/semester'
 import { findAdjustmentRoomRecommendations } from './room-recommendations'
 import type { RoomRecommendationResult } from './room-recommendations'
+import { getValidTeachingSlotIndexes } from './time-slots'
 // ─── Constants for the search space ──────────────────────
 
 const DEFAULT_WEEK_WINDOW = 1
@@ -41,8 +42,10 @@ const MAX_WEEK = 20
 
 const DEFAULT_DAYS_WORKING = [1, 2, 3, 4, 5] as const
 const WEEKEND_DAYS = [6, 7] as const
-// Exclude slotIndex 7 ("中午" lunch break) for adjustment planning.
-const DEFAULT_SLOT_INDEXES = [1, 2, 3, 4, 5, 6] as const
+// K24-A4: only 1..5 (1-2节 to 9-10节) are valid teaching slots.
+// 11-12节 (slotIndex=6) and "中午" (slotIndex=7) are not valid for
+// new recommendations. Historical data is not modified.
+const DEFAULT_SLOT_INDEXES = getValidTeachingSlotIndexes() as readonly number[]
 
 const MIN_PLANS = 2
 const DEFAULT_LIMIT = 5

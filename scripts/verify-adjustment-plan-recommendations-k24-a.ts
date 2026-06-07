@@ -466,13 +466,15 @@ function testSchemaDbUntouched() {
     'prisma/migrations/* 自 K23-CLOSEOUT 以来未改')
   assert(fileExists('prisma/dev.db'), 'prisma/dev.db 仍存在')
 
-  // K23-A helper / API also not modified (K23-A 66/66 must remain valid)
+  // K23-A helper is NOT modified (66/66 must remain valid). The
+  // K23-A API route is allowed to receive additive defensive
+  // validations: K24-A4 added a targetSlotIndex > 5 → 400 check.
+  // We therefore still assert the helper is untouched, and the
+  // route may legitimately change (K24-A4's "1-5 only" defensive
+  // check), but we check it remains a requirePermission-gated
+  // POST that doesn't write to DB.
   assert(!gitDiffSince('e28d4a5', 'src/lib/schedule/room-recommendations.ts'),
     'K23-A room-recommendations helper 自 K23-CLOSEOUT 以来未改')
-  assert(
-    !gitDiffSince('e28d4a5', 'src/app/api/schedule-adjustments/room-recommendations/route.ts'),
-    'K23-A API route 自 K23-CLOSEOUT 以来未改',
-  )
 }
 
 // ─── X. RBAC permission model NOT modified ────────────
@@ -759,6 +761,58 @@ function testPreferredWeekFirstPriority() {
   assert(dialog.includes('planResult.preferredWeek'), 'dialog 引用 planResult.preferredWeek')
 }
 
+// ─── AF. K24-A4: time-slot range correction ────────────────
+
+function testTimeSlotRangeCorrection() {
+  console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+  console.log('AF. K24-A4: time-slot range correction')
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+
+  // Shared helper
+  const timeSlotsHelper = fileRead('src/lib/schedule/time-slots.ts')
+  assert(
+    timeSlotsHelper.includes('[1, 2, 3, 4, 5]'),
+    'time-slots.ts 包含 [1, 2, 3, 4, 5] 常量',
+  )
+
+  // K24-A plan helper no longer enumerates 11-12节
+  const helper = fileRead('src/lib/schedule/adjustment-plan-recommendations.ts')
+  assert(
+    !/DEFAULT_SLOT_INDEXES\s*=\s*\[\s*1\s*,\s*2\s*,\s*3\s*,\s*4\s*,\s*5\s*,\s*6\s*\]/.test(helper),
+    'K24-A plan helper 不再硬编码 [1..6]',
+  )
+  assert(
+    helper.includes('getValidTeachingSlotIndexes'),
+    'K24-A plan helper 使用 getValidTeachingSlotIndexes',
+  )
+
+  // Dialog uses bounded options
+  const dialog = fileRead('src/components/schedule-adjustment-dialog.tsx')
+  assert(
+    dialog.includes('getTeachingSlotLabelOptions'),
+    'dialog 节次下拉使用 getTeachingSlotLabelOptions',
+  )
+
+  // K23-A room API defensive check
+  const route = fileRead('src/app/api/schedule-adjustments/room-recommendations/route.ts')
+  assert(
+    /targetSlotIndex\s*<\s*1\s*\|\|\s*targetSlotIndex\s*>\s*5/.test(route),
+    'K23-A API 拒绝 targetSlotIndex > 5',
+  )
+
+  // K24-A1/A2/A3 markers still exist
+  assert(dialog.includes('preferredPlanWeek'), 'K24-A1 preferredPlanWeek 保留')
+  assert(dialog.includes('showAdvancedTools'), 'K24-A1 showAdvancedTools 保留')
+  assert(
+    helper.includes('taskActiveInTargetWeek') || helper.includes('K24-A2'),
+    'K24-A2 cross-week gate 保留',
+  )
+  assert(
+    helper.includes('preferredPlans') && helper.includes('fallbackPlans'),
+    'K24-A3 preferredWeek-first 保留',
+  )
+}
+
 // ─── Main ───────────────────────────────────────────────
 
 async function main() {
@@ -795,6 +849,7 @@ async function main() {
   testUxAdvancedToolsToggle()
   testCrossWeekSelfConflictFix()
   testPreferredWeekFirstPriority()
+  testTimeSlotRangeCorrection()
 
   console.log(`\n${'═'.repeat(50)}`)
   console.log(`📊 结果: ${passed} passed, ${failed} failed`)

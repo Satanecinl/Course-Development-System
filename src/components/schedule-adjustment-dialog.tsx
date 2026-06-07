@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { DAYS, TIME_SLOTS } from '@/types/schedule'
+import { getTeachingSlotLabelOptions } from '@/lib/schedule/time-slots'
 import type { ScheduleViewData } from '@/types/schedule'
 import type { EntityOption } from '@/components/combobox'
 import type { ScheduleAdjustmentDryRunResult } from '@/types/schedule-adjustment'
@@ -388,7 +389,8 @@ export function ScheduleAdjustmentDialog({
                   }}
                   className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg bg-white"
                 >
-                  {TIME_SLOTS.map((t) => (
+                  {/* K24-A4: only valid teaching slots 1-5 (1-2 .. 9-10节). 11-12节 hidden. */}
+                  {getTeachingSlotLabelOptions().map((t) => (
                     <option key={t.index} value={t.index}>{t.label}</option>
                   ))}
                 </select>

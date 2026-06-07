@@ -10,7 +10,7 @@
  *     scheduleSlotId: number          // required
  *     targetWeek: number              // required
  *     targetDayOfWeek: number         // 1-7, required
- *     targetSlotIndex: number         // 1-6, required
+ *     targetSlotIndex: number         // 1-5 (K24-A4: only 1-2..9-10节), required
  *     limit?: number                  // default 5
  *     semesterId?: number             // optional override
  *   }
@@ -64,9 +64,10 @@ export async function POST(request: NextRequest) {
     }
 
     const targetSlotIndex = Number(body.targetSlotIndex)
-    if (!Number.isFinite(targetSlotIndex) || targetSlotIndex < 1 || targetSlotIndex > 6) {
+    // K24-A4: business only has 1-5 (1-2节 .. 9-10节). Reject 6 (11-12节) and 7 (中午).
+    if (!Number.isFinite(targetSlotIndex) || targetSlotIndex < 1 || targetSlotIndex > 5) {
       return NextResponse.json(
-        { success: false, error: 'targetSlotIndex 必须在 1-6 之间' },
+        { success: false, error: 'targetSlotIndex 必须在 1-5 之间 (1-2节 .. 9-10节)' },
         { status: 400 },
       )
     }

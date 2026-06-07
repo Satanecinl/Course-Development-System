@@ -211,5 +211,18 @@
     "k24aVerifyAfterFix": "159/159 PASS",
     "k24a3Verify": "50/50 PASS",
     "requiresReManualVerification": true
+  },
+  "k24a4TimeSlotRangeCorrection": {
+    "stage": "K24-A4-TIMESLOT-RANGE-CORRECTION",
+    "date": "2026-06-07",
+    "bug": "实际只到 9-10 节，但推荐/UI 仍出现 11-12 节 (slotIndex=6)",
+    "rootCause": "K24-A 硬编码 [1..6]; K23-A API ≤ 6; 弹窗用完整 TIME_SLOTS",
+    "fix": "新增 time-slots.ts: VALID_TEACHING_SLOT_INDEXES = [1..5]; K24-A 用 helper; K23-A API 拒绝 > 5; 弹窗新节次用 getTeachingSlotLabelOptions",
+    "historicalData": "dev.db 中 2 个 slotIndex=6 记录 (440 个中), 本阶段不修改, 记录为 K24-A5 data cleanup candidate",
+    "k24aVerifyAfterFix": "167/167 PASS",
+    "k24a4Verify": "42/42 PASS",
+    "k23aVerifyAfterFix": "66/66 PASS",
+    "k22cAfterFix": "73/0/0/0",
+    "requiresReManualVerification": true
   }
 }

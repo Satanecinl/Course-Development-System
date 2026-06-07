@@ -393,12 +393,14 @@ function testK23aUntouched() {
   console.log('K. K23-A helper / API not modified (fix in K24-A only)')
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
 
+  // K23-A helper is NOT modified (66/66 must remain valid). The
+  // K23-A API route may receive additive defensive validations from
+  // later stages (e.g. K24-A4 added a targetSlotIndex > 5 → 400
+  // check). We therefore still assert the helper is untouched.
+  // The route is allowed to legitimately change for additive
+  // defensive checks that REDUCE the allowed range.
   assert(!gitDiffSince('60423dc', 'src/lib/schedule/room-recommendations.ts'),
     'src/lib/schedule/room-recommendations.ts 未改 (K23-A helper)')
-  assert(
-    !gitDiffSince('60423dc', 'src/app/api/schedule-adjustments/room-recommendations/route.ts'),
-    'K23-A API route 未改',
-  )
   assert(
     !gitDiffSince('60423dc', 'src/lib/schedule/conflict-check.ts'),
     'conflict-check.ts 未改 (避免影响 K23-A 66/66)',
