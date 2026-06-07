@@ -1,0 +1,200 @@
+{
+  "stage": "K24-PLAN-RECOMMENDATION-ACCEPTANCE-CLOSEOUT",
+  "closedAt": "2026-06-07",
+  "k24BaselineCommit": "d6821d5",
+  "k23BaselineCommit": "e28d4a5",
+  "k22BaselineCommit": "ab7d9fd",
+  "status": "CLOSED",
+  "featureStatus": "READY_FOR_REAL_USE",
+  "manualReview": {
+    "status": "PASSED",
+    "source": "user-provided frontend manual validation",
+    "reviewer": "project owner / user-provided (no fabricated 教务 / 部门 name)",
+    "date": "2026-06-07",
+    "scope": "浏览器调课弹窗一键推荐流程 + 选中方案填入 + 备选周 + 高级选项 + K24-A/A1/A2/A3/A4 全部",
+    "note": "人工核验通过"
+  },
+  "closeoutTrigger": "user-provided manual acceptance",
+  "baseline": {
+    "k24aVerify": "167/167 PASS",
+    "k24a4Verify": "42/42 PASS",
+    "k24a3Verify": "50/50 PASS",
+    "k24a2Verify": "31/31 PASS",
+    "k23aVerify": "66/66 PASS",
+    "k23CloseoutVerify": "83/83 PASS",
+    "k22c": "73/0/0/0",
+    "schedulePreflight": "23/23 PASS",
+    "scheduleMutationGuards": "HIGH=0/MEDIUM=0",
+    "teachingTaskSemanticGuards": "BLOCKING=NO",
+    "build": "PASS (✓ Compiled successfully in 2.8s, exit=0)",
+    "prismaValidate": "schema valid",
+    "lint": {
+      "errors": 181,
+      "warnings": 136,
+      "newErrorsVsBaseline": 0,
+      "warningDrift": 0
+    },
+    "authFoundation": {
+      "passed": 53,
+      "failed": 1,
+      "failureMessage": "ScheduleAdjustment ACTIVE = 0 (actual 10)",
+      "isPreExisting": true,
+      "modifiedBusinessData": false
+    },
+    "dbWrites": 0
+  },
+  "closedScope": [
+    "one-click time and room plan recommendation (findAdjustmentPlanRecommendations)",
+    "preferred-week-first bucketed display (K24-A3)",
+    "cross-week self-occupancy gate (K24-A2)",
+    "valid time-slot range 1..5 only, no 11-12节 (K24-A4)",
+    "preferredPlanWeek selector (K24-A1)",
+    "scrollable selectable plan list (K24-A1)",
+    "showAdvancedTools toggle (K24-A1)",
+    "preferred/plan/fallback UI grouping (K24-A3)",
+    "selectedPlanKey + '使用该方案' confirm button (K24-A1)",
+    "K23-A room recommendation additive compatibility (K24-A1)",
+    "K23-A API route additive defensive check (K24-A4)",
+    "K23-A 66/66 helper preservation",
+    "manual adjustment fallback",
+    "dry-run / submit semantics preservation",
+    "RBAC permission model preservation (schedule:adjust only)",
+    "frontend manual validation"
+  ],
+  "k24ClosedSubstages": [
+    "K24-A-ADJUSTMENT-TIME-ROOM-JOINT-RECOMMENDATION-IMPL",
+    "K24-A1-PLAN-RECOMMENDATION-UX-AND-VERIFY-ALIGNMENT",
+    "K24-A2-PLAN-RECOMMENDATION-CROSS-WEEK-CONFLICT-FIX",
+    "K24-A3-PLAN-RECOMMENDATION-PREFERRED-WEEK-PRIORITY-FIX",
+    "K24-A4-TIMESLOT-RANGE-CORRECTION",
+    "K24-A4A-BUILD-VERIFICATION-COMPLETE",
+    "K24-PLAN-RECOMMENDATION-ACCEPTANCE-CLOSEOUT (this stage)"
+  ],
+  "knownLimitations": [
+    {
+      "id": "L-K24-A-NO-TUNING",
+      "summary": "推荐排序权重固定；尚无真实反馈数据用于调参",
+      "blocking": false,
+      "action": "如需调参，进入 K24-C-PLAN-RECOMMENDATION-QUALITY-TUNING (需真实反馈)"
+    },
+    {
+      "id": "L-K24-A-NO-GLOBAL-OPTIMAL",
+      "summary": "仅在 preferredWeek ± 1 周 / 工作日 / 5 节次 范围搜索（90 时间点），不做全学期全局最优",
+      "blocking": false,
+      "action": "如需更大搜索范围，调大 weekWindow + includeWeekend=true"
+    },
+    {
+      "id": "L-K24-HISTORICAL-SLOTINDEX-6",
+      "summary": "dev.db 中有 2 个 slotIndex=6 ScheduleSlot 记录（440 个中），本阶段不修改",
+      "blocking": false,
+      "action": "如需清理，进入 K24-A5-FUTURE-DATA-CLEANUP"
+    },
+    {
+      "id": "L-K24-A-NO-PREFERRED-ROOM",
+      "summary": "无 preferred room / homeRoom / room type schema",
+      "blocking": false,
+      "action": "如需偏好教室，进入 K24-FUTURE-SCHEMA"
+    },
+    {
+      "id": "L-K24-A-NO-WEEKEND-STRATEGY",
+      "summary": "无 '替代周末策略' 或复杂跨周策略",
+      "blocking": false,
+      "action": "如需复杂跨周 / 周末策略，进入 K24-E-ALTERNATIVE-WEEKEND-OR-CROSS-WEEK-POLICY"
+    },
+    {
+      "id": "L-K24-A-NO-FAKE",
+      "summary": "候选不足时不返虚假推荐 (已保留 by-design)",
+      "blocking": false,
+      "action": "已是 by-design 行为 (closeout 时显式保留)"
+    },
+    {
+      "id": "L-K24-A-DAILY-DRYRUN",
+      "summary": "推荐是 advisory, 不是强制; 真实生产前仍建议管理员确认 dry-run 结果",
+      "blocking": false,
+      "action": "已是 by-design 行为 (closeout 时显式保留)"
+    },
+    {
+      "id": "L-LINT-DEBT",
+      "summary": "181 errors / 134-136 warnings (K22 阶段既有 debt)",
+      "blocking": false,
+      "action": "K24 阶段 0 new error; K24 未清理历史 debt"
+    },
+    {
+      "id": "L-AUTH-SCHED-ADJUST",
+      "summary": "test:auth-foundation 唯一失败仍为 pre-existing ScheduleAdjustment ACTIVE count mismatch",
+      "blocking": false,
+      "action": "未尝试修复 (与 K24 无关)"
+    },
+    {
+      "id": "L-DB-BACKUP",
+      "summary": "real production rollout 前仍建议备份 DB",
+      "blocking": false,
+      "action": "apply 前必先 cp prisma/dev.db prisma/dev.db.backup-*"
+    }
+  ],
+  "postCloseoutDecisionRules": [
+    {
+      "feedbackType": "推荐排序不理想 (历史教室 / 容量 / 林校权重需调整)",
+      "nextStage": "K24-C-PLAN-RECOMMENDATION-QUALITY-TUNING",
+      "trigger": "真实调课反馈"
+    },
+    {
+      "feedbackType": "搜索性能慢",
+      "nextStage": "K24-D-PLAN-RECOMMENDATION-PERFORMANCE-OPTIMIZATION",
+      "trigger": "性能反馈"
+    },
+    {
+      "feedbackType": "需要复杂跨周 / 周末策略",
+      "nextStage": "K24-E-ALTERNATIVE-WEEKEND-OR-CROSS-WEEK-POLICY",
+      "trigger": "教务业务需求"
+    },
+    {
+      "feedbackType": "历史 slotIndex=6 需要清理",
+      "nextStage": "K24-A5-FUTURE-DATA-CLEANUP",
+      "trigger": "数据治理需求"
+    },
+    {
+      "feedbackType": "UI 仍有 bug (按钮位置 / 候选渲染 / toast 抖动)",
+      "nextStage": "K24-B-FIX-*",
+      "trigger": "QA 反馈"
+    },
+    {
+      "feedbackType": "需要 preferred room / room type",
+      "nextStage": "K24-FUTURE-SCHEMA",
+      "trigger": "教务业务需求"
+    }
+  ],
+  "deliverableFiles": [
+    "docs/k24-plan-recommendation-closeout.md (this stage)",
+    "docs/k24-plan-recommendation-closeout.json (this stage)",
+    "scripts/verify-plan-recommendation-closeout-k24.ts (this stage)",
+    "docs/k24-adjustment-plan-recommendations.md (appended closeout section)",
+    "docs/k24-adjustment-plan-recommendations.json (appended closeout fields)"
+  ],
+  "untouchedScopeConfirmation": {
+    "k24aHelper": "src/lib/schedule/adjustment-plan-recommendations.ts (NOT modified in this stage)",
+    "k24aApiRoute": "src/app/api/schedule-adjustments/plan-recommendations/route.ts (NOT modified)",
+    "timeSlotsHelper": "src/lib/schedule/time-slots.ts (NOT modified)",
+    "k23aHelper": "src/lib/schedule/room-recommendations.ts (NOT modified, 66/66 preserved)",
+    "k23aApiRoute": "src/app/api/schedule-adjustments/room-recommendations/route.ts (NOT modified)",
+    "adjustmentDialog": "src/components/schedule-adjustment-dialog.tsx (NOT modified)",
+    "adjustmentClient": "src/lib/schedule/adjustment-client.ts (NOT modified)",
+    "scoreLogic": "src/lib/scheduler/score.ts (NOT modified)",
+    "solverAlgorithm": "src/lib/scheduler/solver.ts (NOT modified)",
+    "schema": "prisma/schema.prisma (NOT modified)",
+    "migrations": "prisma/migrations/* (NOT modified)",
+    "businessData": "prisma/dev.db (NOT written by this stage)",
+    "rbac": "src/lib/auth/*, src/lib/rbac/* (NOT modified)",
+    "noNewRbacPermission": true,
+    "noNewConstraints": true,
+    "noTuning": true,
+    "noHardWeightsOrSoftWeights": true,
+    "noUiFeatureExpansion": true,
+    "noNewApiEndpoint": true,
+    "k24aVerifyExpected": "167/167 PASS preserved",
+    "k23aVerifyExpected": "66/66 PASS preserved",
+    "k22cExpected": "73/0/0/0 preserved"
+  },
+  "blocking": false,
+  "recommendedDefaultAction": "Use in real adjustment workflow; no further K24 mechanical development unless real feedback triggers a follow-up stage. K24 plan recommendation officially CLOSED."
+}

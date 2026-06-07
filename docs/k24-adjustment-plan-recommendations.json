@@ -224,5 +224,25 @@
     "k23aVerifyAfterFix": "66/66 PASS",
     "k22cAfterFix": "73/0/0/0",
     "requiresReManualVerification": true
+  },
+  "k24Closeout": {
+    "stage": "K24-PLAN-RECOMMENDATION-ACCEPTANCE-CLOSEOUT",
+    "date": "2026-06-07",
+    "status": "CLOSED",
+    "featureStatus": "READY_FOR_REAL_USE",
+    "manualFrontendValidation": {
+      "status": "PASSED",
+      "source": "user-provided frontend manual validation",
+      "date": "2026-06-07",
+      "note": "人工核验通过"
+    },
+    "closeoutStage": "K24-PLAN-RECOMMENDATION-ACCEPTANCE-CLOSEOUT",
+    "k24BaselineCommit": "d6821d5",
+    "k23BaselineCommit": "e28d4a5",
+    "k22BaselineCommit": "ab7d9fd",
+    "build": "PASS",
+    "noK24ABusinessCodeModified": true,
+    "noK23AHelperOrApiModified": true,
+    "noScoreOrSolverOrSchemaModified": true
   }
 }
