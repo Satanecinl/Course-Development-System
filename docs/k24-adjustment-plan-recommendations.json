@@ -133,5 +133,61 @@
     }
   },
   "blocking": false,
-  "recommendedNextStage": "K24-B-PLAN-RECOMMENDATION-E2E-MANUAL-TRIAL"
+  "recommendedNextStage": "K24-B-PLAN-RECOMMENDATION-E2E-MANUAL-TRIAL",
+  "k24a1VerifyAlignment": {
+    "stage": "K24-A1-PLAN-RECOMMENDATION-VERIFY-ALIGNMENT",
+    "date": "2026-06-07",
+    "reason": "K24-A additive 修改 dialog/adjustment-client 触发 K23 closeout verify 旧版 no-diff check 误报",
+    "fix": "verify-room-recommendation-closeout-k23.ts G 节拆分为 G1 strict untouched (K23-A 后端 / score / schema) + G2 additive-compatible marker check (dialog / client)",
+    "k23CloseoutVerifyAfterAlignment": "84/84 PASS (从原 75/75 升, 拆 G 节 + 加 9 个 K23-A marker check)",
+    "k23aVerifyPreserved": "66/66 PASS",
+    "k24aVerifyPreserved": "118/118 PASS",
+    "noBusinessCodeModified": true,
+    "noK23aOrK24aHelperOrApiModified": true,
+    "noRankingOrUiOrApiSemanticModified": true
+  },
+  "k24a1UxFix": {
+    "stage": "K24-A1-PLAN-RECOMMENDATION-UX-AND-VERIFY-ALIGNMENT",
+    "date": "2026-06-07",
+    "triggers": [
+      "一键推荐无独立 preferredWeek 控件",
+      "plan 列表无法滚动浏览",
+      "检查冲突 / 推荐教室 按钮默认平铺干扰一键推荐"
+    ],
+    "fixes": {
+      "explicitPreferredWeekSelector": {
+        "state": "preferredPlanWeek",
+        "decoupledFrom": "targetWeek (manual)",
+        "ui": "紫色 一键推荐调课方案 入口区, <select> 1-20 周, 默认 = 当前 week",
+        "apiCallUses": "preferredWeek: preferredPlanWeek"
+      },
+      "scrollableCollapsiblePlanList": {
+        "containerClass": "max-h-64 overflow-y-auto",
+        "collapseState": "planListOpen (default true after search, toggleable)",
+        "selectState": "selectedPlanKey (点击列表项 = 选中)",
+        "confirmButton": "使用该方案 (disabled when no selection)",
+        "stillNoAutoSubmit": true
+      },
+      "advancedToolsToggle": {
+        "state": "showAdvancedTools",
+        "defaultValue": false,
+        "ui": "高级选项 checkbox (高级选项 / 显示手动检查 / 单时间推荐教室)",
+        "gatedButtons": ["检查冲突", "推荐教室 (K23-A)"],
+        "alwaysVisibleButton": "一键推荐调课方案"
+      }
+    },
+    "preserved": {
+      "k23aHandler": "handleRecommendRooms (K23-A 入口保留)",
+      "k23aBluePanel": "完整保留",
+      "manualSelect": "周次 / 星期 / 节次 / 教室 下拉完整",
+      "dryRunFlow": "完整保留",
+      "submitFlow": "完整保留"
+    },
+    "k24aVerifyAfterUxFix": "145/145 PASS (从 118 升 27)",
+    "k23CloseoutVerifyAfter": "84/84 PASS (K24-A1 verify alignment)",
+    "noBusinessCodeModified": true,
+    "noK23aOrK24aHelperOrApiModified": true,
+    "noRankingModified": true,
+    "noApiSemanticModified": true
+  }
 }

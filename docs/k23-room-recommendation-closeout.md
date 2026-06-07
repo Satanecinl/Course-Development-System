@@ -228,3 +228,39 @@ K23 调课自动推荐教室功能主线已正式完成。
 ---
 
 **报告结束。K23 调课自动推荐教室小主线正式关闭。系统进入真实调课使用 / 维护模式。**
+
+---
+
+## 8. Post-Closeout Additive Compatibility (added by K24-A1)
+
+> 本节由 K24-A1 (`K24-A1-PLAN-RECOMMENDATION-VERIFY-ALIGNMENT`) 阶段追加；不改 K23 closeout 主体关闭结论。
+>
+> 适用对象: 任何在 K23 closeout 之后、与 K23 共享 UI / client 文件的 additive 阶段。
+
+### 8.1 背景
+
+K23 closeout 验证脚本 (`scripts/verify-room-recommendation-closeout-k23.ts`) 最初对**所有**未改过的源码文件使用 `git diff since K23-A baseline (8332c60)` no-diff 检查。
+
+K24-A 是 additive 阶段，目标是在 K23 共享的 `src/components/schedule-adjustment-dialog.tsx` 与 `src/lib/schedule/adjustment-client.ts` 上引入"一键推荐调课方案"。这导致 K23 closeout verify 在 K24-A HEAD 上误报 2 个 failure（73/75）。
+
+### 8.2 K24-A1 修正
+
+verify 脚本的 G 节已升级为:
+
+- **G1. Strict untouched** — K23-A 核心后端 (`room-recommendations.ts` + API route) / `score.ts` / `prisma/schema.prisma` / `prisma/migrations/*` 仍按 no-diff 检查
+- **G2. Additive-compatible** — `src/components/schedule-adjustment-dialog.tsx` / `src/lib/schedule/adjustment-client.ts` 改为 marker-based compatibility check。K23-A markers 仍必须存在 (e.g. `fetchRoomRecommendations` / `推荐教室` / `<option value="">不变</option>` / `pickCandidate`)，K24-A additive markers 可共存
+
+K23 closeout verify 升级后 K24-A HEAD 上结果为 **84/84 PASS** (从 75 升)。
+
+### 8.3 后续 additive 阶段规则
+
+> 任何在 K23 closeout 之后、与 K23 共享 UI / client 文件的 additive 阶段，**应使用 compatibility check 而非 no-diff check** 验证这些共享文件。
+>
+> K23-A 业务能力 (K23-A verify 66/66, K23-A helper/API source intact, K23-A UI markers) 仍由独立 K23-A verify 与 K23 closeout verify §H 共同保证。
+
+### 8.4 K23 closeout 关闭结论未改变
+
+- K23 room recommendation: **CLOSED** (不变)
+- Feature status: **READY_FOR_REAL_USE** (不变)
+- Manual frontend validation: **PASSED** (不变)
+- K23-A 业务能力 (helper / API / dialog 推荐教室入口 / 手动选择): **完整** (intact, 由 K24-A1 兼容性检查保证)

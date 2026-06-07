@@ -591,6 +591,102 @@ async function testDbIntegration() {
   assert(!result.searched.days.includes(7), 'searched.days 不含周日 (工作日优先)')
 }
 
+// ─── AA. K24-A1-UX: explicit preferred-week selector ───
+
+function testUxPreferredWeekSelector() {
+  console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+  console.log('AA. K24-A1-UX: explicit preferred-week selector')
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+
+  const content = fileRead('src/components/schedule-adjustment-dialog.tsx')
+  assert(/preferredPlanWeek/.test(content),
+    'dialog 包含 preferredPlanWeek state')
+  assert(content.includes('setPreferredPlanWeek('),
+    'dialog 包含 setPreferredPlanWeek setter')
+  assert(content.includes('优先调课'),
+    'dialog UI 包含 "优先调课" 文案')
+  assert(content.includes('preferredWeek: preferredPlanWeek'),
+    'fetchPlanRecommendations 使用 preferredPlanWeek 作为 preferredWeek')
+  // 1-20 weeks
+  assert(/Array\.from\(\{ length: 20 \}/.test(content) && /preferredPlanWeek/.test(content),
+    '优先调课周次 select 包含 1-20 周选项')
+  // default = current week
+  assert(/useState\(week\)/.test(content) && /preferredPlanWeek/.test(content),
+    'preferredPlanWeek 初始值 = 当前 week')
+  // Manually changing targetWeek should NOT touch preferredPlanWeek
+  // (the two are independent — no useEffect sync is asserted)
+}
+
+// ─── AB. K24-A1-UX: scrollable / collapsible plan list ─
+
+function testUxScrollableCollapsiblePlanList() {
+  console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+  console.log('AB. K24-A1-UX: scrollable / collapsible plan list')
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+
+  const content = fileRead('src/components/schedule-adjustment-dialog.tsx')
+  assert(content.includes('planListOpen'),
+    'dialog 包含 planListOpen state')
+  assert(content.includes('setPlanListOpen('),
+    'dialog 包含 setPlanListOpen setter')
+  assert(/overflow-y-auto/.test(content),
+    'plan 列表容器使用 overflow-y-auto (可滚动)')
+  assert(/max-h-/.test(content),
+    'plan 列表容器使用 max-h-* (限定最大高度)')
+  assert(/点击展开|展开选择|收起/.test(content),
+    'plan 列表有展开/收起按钮文案')
+  // 选中机制
+  assert(content.includes('selectedPlanKey'),
+    'dialog 包含 selectedPlanKey state')
+  assert(content.includes('setSelectedPlanKey('),
+    'dialog 包含 setSelectedPlanKey setter')
+  assert(/applySelectedPlan/.test(content),
+    'dialog 包含 applySelectedPlan handler')
+  assert(content.includes('使用该方案'),
+    'dialog 包含 "使用该方案" 确认按钮文案')
+  // "use this plan" 按钮应仅在 selectedPlanKey 非空时启用
+  assert(/disabled=\{!selectedPlanKey\}/.test(content),
+    '"使用该方案" 按钮未选中时 disabled')
+}
+
+// ─── AC. K24-A1-UX: advanced tools toggle (K23-A 默认隐藏) ──
+
+function testUxAdvancedToolsToggle() {
+  console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+  console.log('AC. K24-A1-UX: advanced tools toggle')
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+
+  const content = fileRead('src/components/schedule-adjustment-dialog.tsx')
+  // Toggle exists
+  assert(content.includes('showAdvancedTools'),
+    'dialog 包含 showAdvancedTools state')
+  assert(content.includes('setShowAdvancedTools('),
+    'dialog 包含 setShowAdvancedTools setter')
+  assert(/useState\(false\)/.test(content) && /showAdvancedTools/.test(content),
+    'showAdvancedTools 初始值 = false (默认隐藏)')
+  // K23-A buttons gated by showAdvancedTools
+  assert(/\{showAdvancedTools\s*&&/.test(content),
+    'K23-A 按钮由 showAdvancedTools 控制 (条件渲染)')
+  // K23-A 推荐教室 handler still exists (so the button still works when toggled)
+  assert(content.includes('handleRecommendRooms'),
+    'K23-A handleRecommendRooms 仍存在 (K23-A 入口保留)')
+  assert(content.includes('推荐教室'),
+    'K23-A "推荐教室" 文案仍存在 (K23-A 入口保留)')
+  // 检查冲突 handler still exists
+  assert(content.includes('handleDryRun'),
+    'handleDryRun 仍存在 (检查冲突流程保留)')
+  assert(content.includes('检查冲突'),
+    '"检查冲突" 文案仍存在 (流程保留)')
+  // "一键推荐调课方案" 按钮 is the primary entry — must remain visible
+  assert(content.includes('一键推荐调课方案'),
+    '"一键推荐调课方案" 按钮始终存在')
+  assert(/data-testid="k24-plan-button"/.test(content),
+    '"一键推荐调课方案" 按钮可见 (不依赖 showAdvancedTools)')
+  // 高级选项开关 UI 文案
+  assert(/高级选项/.test(content),
+    '高级选项开关 UI 文案存在')
+}
+
 // ─── Main ───────────────────────────────────────────────
 
 async function main() {
@@ -622,6 +718,9 @@ async function main() {
   testRbacUntouched()
   testBuildImports()
   await testDbIntegration()
+  testUxPreferredWeekSelector()
+  testUxScrollableCollapsiblePlanList()
+  testUxAdvancedToolsToggle()
 
   console.log(`\n${'═'.repeat(50)}`)
   console.log(`📊 结果: ${passed} passed, ${failed} failed`)

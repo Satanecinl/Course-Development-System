@@ -169,5 +169,16 @@
     "k23aVerifyExpected": "66/66 PASS preserved"
   },
   "blocking": false,
-  "recommendedDefaultAction": "Use in real adjustment workflow; no further K23 mechanical development unless real feedback triggers a follow-up stage. K23 room recommendation officially CLOSED."
+  "recommendedDefaultAction": "Use in real adjustment workflow; no further K23 mechanical development unless real feedback triggers a follow-up stage. K23 room recommendation officially CLOSED.",
+  "k24a1VerifyAlignment": {
+    "stage": "K24-A1-PLAN-RECOMMENDATION-VERIFY-ALIGNMENT",
+    "date": "2026-06-07",
+    "summary": "K23 closeout verify 已升级为 K24-aware compatibility check。G 节拆分 G1 (strict untouched) + G2 (additive-compatible marker check)，K24-A additive 共享文件 (dialog / client) 不再被 no-diff 误报。",
+    "k23CloseoutVerifyAfter": "84/84 PASS (升级后)",
+    "k23aVerifyPreserved": "66/66 PASS",
+    "k23aSourceIntact": true,
+    "k23CloseoutStatusUnchanged": "CLOSED",
+    "featureStatusUnchanged": "READY_FOR_REAL_USE",
+    "manualValidationUnchanged": "PASSED"
+  }
 }

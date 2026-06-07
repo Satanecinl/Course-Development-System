@@ -55,6 +55,22 @@ export function ScheduleAdjustmentDialog({
   const [planLoading, setPlanLoading] = useState(false)
   const [planResult, setPlanResult] = useState<AdjustmentPlanRecommendationResult | null>(null)
   const [planError, setPlanError] = useState<string | null>(null)
+  // K24-A1-UX: explicit preferred-week selector for one-click plan
+  // recommendation. Defaults to current targetWeek (or item's week
+  // when item first loads). Independent of the manual targetWeek so
+  // the user can pick a different center for the search without
+  // committing the form to that week.
+  const [preferredPlanWeek, setPreferredPlanWeek] = useState(week)
+  // K24-A1-UX: which plan the user has selected from the collapsed
+  // list (used for highlighting + the explicit "使用该方案" button).
+  const [selectedPlanKey, setSelectedPlanKey] = useState<string | null>(null)
+  // K24-A1-UX: collapsed/expanded state for the plan list. Closed by
+  // default so the dialog stays compact.
+  const [planListOpen, setPlanListOpen] = useState(false)
+  // K24-A1-UX: "show advanced tools" toggle. When false, the K23-A
+  // 推荐教室 button and the 检查冲突 button are hidden. The
+  // one-click plan flow remains the primary entry point.
+  const [showAdvancedTools, setShowAdvancedTools] = useState(false)
   // Display-side minimum (must match the helper's MIN_CANDIDATES = 2).
   // We don't import the helper constant to keep the bundle split clean.
   const MIN_RECOMMEND_DISPLAY = 2
@@ -81,6 +97,11 @@ export function ScheduleAdjustmentDialog({
       // K24-A: clear plan recommendation state on item change
       setPlanResult(null)
       setPlanError(null)
+      setSelectedPlanKey(null)
+      setPlanListOpen(false)
+      // K24-A1-UX: align the explicit preferred-week selector with
+      // the current source week.
+      setPreferredPlanWeek(week)
     }
   }, [item, week])
 
@@ -174,12 +195,15 @@ export function ScheduleAdjustmentDialog({
     }
     setPlanLoading(true)
     setPlanError(null)
+    setSelectedPlanKey(null)
+    setPlanListOpen(true)
     try {
       const data = await fetchPlanRecommendations({
         scheduleSlotId: item.slotId,
-        // Use current targetWeek as the search center so the user
-        // can narrow the window by selecting a week first.
-        preferredWeek: targetWeek,
+        // K24-A1-UX: use the explicit preferred-week selector so the
+        // user can pick a different search center without changing
+        // the form's manual targetWeek.
+        preferredWeek: preferredPlanWeek,
         weekWindow: 1,
         includeWeekend: false,
         limit: 5,
@@ -203,6 +227,35 @@ export function ScheduleAdjustmentDialog({
     }
   }
 
+  // K24-A1-UX: stable key for a plan so React identity is consistent
+  // even when the same plan is re-emitted by the backend.
+  function planKey(p: {
+    targetWeek: number
+    targetDayOfWeek: number
+    targetSlotIndex: number
+    roomId: number
+  }) {
+    return `${p.targetWeek}|${p.targetDayOfWeek}|${p.targetSlotIndex}|${p.roomId}`
+  }
+
+  // K24-A1-UX: explicit "use this plan" action. Clicking a list item
+  // only selects it; the user then confirms via this button or via
+  // the existing 检查冲突 / 确认调课 flow.
+  function applySelectedPlan() {
+    if (!planResult || !selectedPlanKey) return
+    const plan = planResult.plans.find(
+      (p) =>
+        planKey({
+          targetWeek: p.targetWeek,
+          targetDayOfWeek: p.targetDayOfWeek,
+          targetSlotIndex: p.targetSlotIndex,
+          roomId: p.roomId,
+        }) === selectedPlanKey,
+    )
+    if (!plan) return
+    pickPlan(plan)
+  }
+
   function pickPlan(plan: {
     targetWeek: number
     targetDayOfWeek: number
@@ -215,6 +268,7 @@ export function ScheduleAdjustmentDialog({
     setNewDayOfWeek(plan.targetDayOfWeek)
     setNewSlotIndex(plan.targetSlotIndex)
     setNewRoomId(plan.roomId)
+    setSelectedPlanKey(planKey(plan))
     // K23-A room recommendation results are no longer relevant once
     // the user picks a plan. Clearing avoids stale mismatched state.
     setRecommendResult(null)
@@ -363,32 +417,51 @@ export function ScheduleAdjustmentDialog({
               />
             </div>
 
+            {/* K24-A1-UX: 高级选项开关（默认隐藏 K23-A 推荐教室 + 检查冲突） */}
+            <div className="flex items-center gap-2">
+              <label className="flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={showAdvancedTools}
+                  onChange={(e) => setShowAdvancedTools(e.target.checked)}
+                  className="rounded border-gray-300"
+                  data-testid="k24-advanced-toggle"
+                />
+                高级选项（显示手动检查 / 单时间推荐教室）
+              </label>
+            </div>
+
             {/* 操作按钮 */}
             <div className="flex items-center gap-2">
+              {showAdvancedTools && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDryRun}
+                  disabled={!canAdjust || dryRunLoading || confirmLoading || isSamePosition}
+                  title={canAdjust ? undefined : '当前账号没有调课权限'}
+                >
+                  {dryRunLoading ? '检查中...' : '检查冲突'}
+                </Button>
+              )}
+              {showAdvancedTools && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRecommendRooms}
+                  disabled={!canAdjust || recommendLoading || confirmLoading}
+                  title={canAdjust ? undefined : '当前账号没有调课权限'}
+                >
+                  {recommendLoading ? '推荐中...' : '推荐教室'}
+                </Button>
+              )}
               <Button
-                variant="outline"
-                size="sm"
-                onClick={handleDryRun}
-                disabled={!canAdjust || dryRunLoading || confirmLoading || isSamePosition}
-                title={canAdjust ? undefined : '当前账号没有调课权限'}
-              >
-                {dryRunLoading ? '检查中...' : '检查冲突'}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRecommendRooms}
-                disabled={!canAdjust || recommendLoading || confirmLoading}
-                title={canAdjust ? undefined : '当前账号没有调课权限'}
-              >
-                {recommendLoading ? '推荐中...' : '推荐教室'}
-              </Button>
-              <Button
-                variant="outline"
+                variant="default"
                 size="sm"
                 onClick={handleRecommendPlans}
                 disabled={!canAdjust || planLoading || confirmLoading}
                 title={canAdjust ? undefined : '当前账号没有调课权限'}
+                data-testid="k24-plan-button"
               >
                 {planLoading ? '搜索方案中...' : '一键推荐调课方案'}
               </Button>
@@ -406,6 +479,33 @@ export function ScheduleAdjustmentDialog({
               >
                 确认调课
               </Button>
+            </div>
+
+            {/* K24-A1-UX: 优先调课周次 + 一键推荐入口区。
+                始终显示在主操作按钮之上方, 让用户先选定优先调课周次。 */}
+            <div
+              className="rounded-lg p-3 space-y-2 bg-purple-50 border border-purple-200"
+              data-testid="k24-plan-entry"
+            >
+              <p className="text-sm font-medium text-purple-800">一键推荐调课方案</p>
+              <p className="text-xs text-gray-600">
+                系统会在该周 ±1 周内自动配对时间 + 教室（工作日优先）。点击方案可填入表单，仍需手动确认调课。
+              </p>
+              <div className="flex items-center gap-2">
+                <Label className="text-xs whitespace-nowrap">优先调课至</Label>
+                <select
+                  value={preferredPlanWeek}
+                  onChange={(e) => setPreferredPlanWeek(parseInt(e.target.value, 10))}
+                  className="w-24 px-2 py-1 text-sm border border-gray-200 rounded-lg bg-white"
+                  data-testid="k24-preferred-week"
+                  aria-label="优先调课周次"
+                >
+                  {Array.from({ length: 20 }, (_, i) => i + 1).map((w) => (
+                    <option key={w} value={w}>第 {w} 周</option>
+                  ))}
+                </select>
+                <span className="text-xs text-gray-500">（当前：第 {preferredPlanWeek} 周）</span>
+              </div>
             </div>
 
             {/* K23-A: room recommendation results */}
@@ -489,17 +589,33 @@ export function ScheduleAdjustmentDialog({
               </div>
             )}
 
-            {/* K24-A: joint time + room plan recommendation results */}
+            {/* K24-A1-UX: joint time + room plan recommendation results.
+                折叠式下拉: summary 行 + 展开按钮 + max-height 滚动列表 + 使用该方案. */}
             {(planResult || planError) && (
-              <div className="rounded-lg p-3 space-y-2 bg-purple-50 border border-purple-200">
-                <p className="text-sm font-medium text-purple-800">
-                  一键推荐调课方案
-                  {planResult
-                    ? planResult.minimumSatisfied
-                      ? `（${planResult.plans.length} 个方案，已满足至少 ${MIN_RECOMMEND_DISPLAY} 个）`
-                      : `（仅 ${planResult.plans.length} 个方案，少于 ${MIN_RECOMMEND_DISPLAY} 个）`
-                    : '（请求失败）'}
-                </p>
+              <div
+                className="rounded-lg p-3 space-y-2 bg-purple-50 border border-purple-200"
+                data-testid="k24-plan-panel"
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium text-purple-800">
+                    一键推荐调课方案
+                    {planResult
+                      ? planResult.minimumSatisfied
+                        ? `（已推荐 ${planResult.plans.length} 个方案，已满足至少 ${MIN_RECOMMEND_DISPLAY} 个）`
+                        : `（仅 ${planResult.plans.length} 个方案，少于 ${MIN_RECOMMEND_DISPLAY} 个）`
+                      : '（请求失败）'}
+                  </p>
+                  {planResult && planResult.plans.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setPlanListOpen((v) => !v)}
+                      className="text-xs text-purple-700 underline"
+                      data-testid="k24-plan-toggle"
+                    >
+                      {planListOpen ? '收起' : '点击展开选择'}
+                    </button>
+                  )}
+                </div>
                 {planError && (
                   <p className="text-sm text-red-700">
                     推荐方案 API 调用失败：{planError}。可继续手动调课。
@@ -521,51 +637,72 @@ export function ScheduleAdjustmentDialog({
                     {planResult.message ?? `可推荐方案少于 ${MIN_RECOMMEND_DISPLAY} 个，请检查拒绝原因或继续手动选择。`}
                   </p>
                 )}
-                {planResult && planResult.plans.length > 0 && (
-                  <ul className="space-y-1.5">
-                    {planResult.plans.map((p, i) => {
-                      const isPicked =
-                        newRoomId === p.roomId &&
-                        newDayOfWeek === p.targetDayOfWeek &&
-                        newSlotIndex === p.targetSlotIndex &&
-                        targetWeek === p.targetWeek
-                      return (
-                        <li
-                          key={`${p.targetWeek}-${p.targetDayOfWeek}-${p.targetSlotIndex}-${p.roomId}-${i}`}
-                          className={`text-sm rounded-md border px-2 py-1.5 cursor-pointer hover:bg-purple-100 ${
-                            isPicked ? 'border-purple-500 bg-purple-100' : 'border-purple-200 bg-white'
-                          }`}
-                          onClick={() => pickPlan(p)}
-                          title="点击填入周次 / 星期 / 节次 / 教室"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium">
-                              第 {p.targetWeek} 周 · {DAYS.find((d) => d.value === p.targetDayOfWeek)?.label} · {TIME_SLOTS.find((t) => t.index === p.targetSlotIndex)?.label ?? `${p.targetSlotIndex}`} · {p.roomName}
-                              {p.building ? `（${p.building}）` : ''}
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              容量 {p.capacity} · 评分 {p.score}
-                            </span>
-                          </div>
-                          {p.reasons.length > 0 && (
-                            <ul className="text-xs text-green-700 list-disc list-inside mt-0.5">
-                              {p.reasons.map((r, idx) => (
-                                <li key={idx}>{r}</li>
-                              ))}
-                            </ul>
-                          )}
-                          {p.warnings.length > 0 && (
-                            <ul className="text-xs text-amber-700 list-disc list-inside mt-0.5">
-                              {p.warnings.map((w, idx) => (
-                                <li key={idx}>{w}</li>
-                              ))}
-                            </ul>
-                          )}
-                        </li>
-                      )
-                    })}
-                  </ul>
+
+                {/* K24-A1-UX: 可滚动 / 可展开下拉式列表 */}
+                {planResult && planResult.plans.length > 0 && planListOpen && (
+                  <div className="space-y-2">
+                    <ul
+                      className="space-y-1.5 max-h-64 overflow-y-auto pr-1"
+                      data-testid="k24-plan-list"
+                    >
+                      {planResult.plans.map((p) => {
+                        const k = planKey(p)
+                        const isSelected = selectedPlanKey === k
+                        return (
+                          <li
+                            key={k}
+                            className={`text-sm rounded-md border px-2 py-1.5 cursor-pointer hover:bg-purple-100 ${
+                              isSelected ? 'border-purple-500 bg-purple-100' : 'border-purple-200 bg-white'
+                            }`}
+                            onClick={() => setSelectedPlanKey(k)}
+                            title="点击选中此方案"
+                            data-testid="k24-plan-item"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium">
+                                第 {p.targetWeek} 周 · {DAYS.find((d) => d.value === p.targetDayOfWeek)?.label} · {TIME_SLOTS.find((t) => t.index === p.targetSlotIndex)?.label ?? `${p.targetSlotIndex}`} · {p.roomName}
+                                {p.building ? `（${p.building}）` : ''}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                容量 {p.capacity} · 评分 {p.score}
+                              </span>
+                            </div>
+                            {p.reasons.length > 0 && (
+                              <ul className="text-xs text-green-700 list-disc list-inside mt-0.5">
+                                {p.reasons.map((r, idx) => (
+                                  <li key={idx}>{r}</li>
+                                ))}
+                              </ul>
+                            )}
+                            {p.warnings.length > 0 && (
+                              <ul className="text-xs text-amber-700 list-disc list-inside mt-0.5">
+                                {p.warnings.map((w, idx) => (
+                                  <li key={idx}>{w}</li>
+                                ))}
+                              </ul>
+                            )}
+                          </li>
+                        )
+                      })}
+                    </ul>
+                    <div className="flex items-center gap-2 pt-1">
+                      <Button
+                        size="sm"
+                        onClick={applySelectedPlan}
+                        disabled={!selectedPlanKey}
+                        data-testid="k24-plan-apply"
+                      >
+                        使用该方案
+                      </Button>
+                      <span className="text-xs text-gray-500">
+                        {selectedPlanKey
+                          ? '已选中方案，可点击"使用该方案"填入表单'
+                          : '先点击列表中的方案以选中'}
+                      </span>
+                    </div>
+                  </div>
                 )}
+
                 {planResult && !planResult.minimumSatisfied && (
                   <div className="text-xs text-gray-600">
                     拒绝原因汇总（已合并自时间层 + 教室层）：

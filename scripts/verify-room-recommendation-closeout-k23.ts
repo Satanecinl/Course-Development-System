@@ -306,45 +306,58 @@ function testK23AVerifyScriptExists() {
   )
 }
 
-// ─── G. Untouched scope since K23-A commit ──────────────
+// ─── G. Strict untouched + additive-compatible (K24-A-aware) ───
+//
+// History:
+//   Originally this section used `git diff since K23-A baseline
+//   (8332c60)` for both K23-A core backend (helper, API route) AND
+//   shared UI/client files (dialog, adjustment-client). K24-A is an
+//   additive feature that — by design — extends the same dialog and
+//   adjustment-client with a "一键推荐调课方案" flow. The original
+//   no-diff check on dialog/client therefore fired false positives
+//   under K24-A without indicating any real K23-A regression.
+//
+//   K24-A1 (this stage) splits the check into two halves:
+//     G1. Strict untouched — files that MUST NOT have any business
+//         change since K23 closeout: K23-A core backend helper, K23-A
+//         API route, score.ts, schema, migrations, dev.db.
+//     G2. Additive-compatible — files that K24-A legitimately
+//         extends. Diff is allowed; K23-A core capability is
+//         guaranteed by marker-based compatibility checks (K23-A
+//         markers must still be present, K24-A markers may also
+//         exist, K23-A markers must not have been removed).
+//
+//   K23-A verify (66/66) and K23-A source intact (section H) remain
+//   the source of truth for the K23-A capability itself.
 
 function testUntouchedScope() {
   console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-  console.log('G. Untouched scope since K23-A (no source / schema / DB mutations)')
+  console.log('G1. Strict untouched (K23-A core backend, score, schema)')
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
 
-  // Files that closeout must NOT have touched
+  // Files that must remain strictly untouched since K23-A baseline.
+  // K24-A is forbidden from touching any of these.
   assertEqual(gitDiffSince('8332c60', 'src/lib/schedule/room-recommendations.ts'), false,
-    'src/lib/schedule/room-recommendations.ts 自 K23-A 以来未改')
+    'src/lib/schedule/room-recommendations.ts 自 K23-A 以来未改 (K23-A helper strict)')
   assertEqual(
     gitDiffSince('8332c60', 'src/app/api/schedule-adjustments/room-recommendations/route.ts'),
     false,
-    'API route 自 K23-A 以来未改',
-  )
-  assertEqual(
-    gitDiffSince('8332c60', 'src/components/schedule-adjustment-dialog.tsx'),
-    false,
-    '调课弹窗 UI 自 K23-A 以来未改',
-  )
-  assertEqual(
-    gitDiffSince('8332c60', 'src/lib/schedule/adjustment-client.ts'),
-    false,
-    'adjustment-client 自 K23-A 以来未改',
+    'K23-A API route 自 K23-A 以来未改 (strict)',
   )
   assertEqual(
     gitDiffSince('8332c60', 'src/lib/scheduler/score.ts'),
     false,
-    'src/lib/scheduler/score.ts 自 K23-A 以来未改',
+    'src/lib/scheduler/score.ts 自 K23-A 以来未改 (strict)',
   )
   assertEqual(
     gitDiffSince('8332c60', 'prisma/schema.prisma'),
     false,
-    'prisma/schema.prisma 自 K23-A 以来未改',
+    'prisma/schema.prisma 自 K23-A 以来未改 (strict)',
   )
   assertEqual(
     gitDiffSince('8332c60', 'prisma/migrations'),
     false,
-    'prisma/migrations/* 自 K23-A 以来未改',
+    'prisma/migrations/* 自 K23-A 以来未改 (strict)',
   )
 
   // No `prisma db push / migrate / reset / seed` should appear in
@@ -354,6 +367,50 @@ function testUntouchedScope() {
     !/prisma\.db\.push|prisma\.migrate|prisma\.reset|seed\(|prisma\.seed/.test(verifyScript),
     'closeout verify 脚本无 prisma db write / seed 调用',
   )
+
+  console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+  console.log('G2. Additive-compatible (shared dialog / client — K24-A may extend)')
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+
+  // K24-A legitimately extends these two files. The no-diff check
+  // is replaced with marker-based compatibility: K23-A core
+  // capability must remain (markers still present), and any
+  // removal of K23-A markers would fail this section.
+
+  // G2.a adjustment-client.ts — K23-A surface intact
+  const client = fileRead('src/lib/schedule/adjustment-client.ts')
+  assert(client.includes('fetchRoomRecommendations'),
+    'adjustment-client 仍导出 fetchRoomRecommendations (K23-A)')
+  assert(client.includes('RoomRecommendationCandidate'),
+    'adjustment-client 仍导出 RoomRecommendationCandidate (K23-A type)')
+  assert(client.includes('RoomRecommendationResult'),
+    'adjustment-client 仍导出 RoomRecommendationResult (K23-A type)')
+  assert(client.includes('RoomRecommendationRejectedSummary'),
+    'adjustment-client 仍导出 RoomRecommendationRejectedSummary (K23-A type)')
+  // The K23-A endpoint is unchanged; K24-A may add new endpoints but
+  // must not redirect room-recommendations traffic to plan-recommendations.
+  assert(client.includes('/api/schedule-adjustments/room-recommendations'),
+    'adjustment-client 仍 POST /api/schedule-adjustments/room-recommendations (K23-A endpoint unchanged)')
+  assert(!client.includes('/api/schedule-adjustments/room-recommendations/plan'),
+    'adjustment-client 未把 room-recommendations 端点改向 plan-recommendations')
+  // K24-A additive markers are allowed to coexist (we don't assert
+  // their presence here — K24-A may be reverted independently; what
+  // matters is K23-A is intact).
+
+  // G2.b schedule-adjustment-dialog.tsx — K23-A room recommendation
+  // capability intact in the UI.
+  const dialog = fileRead('src/components/schedule-adjustment-dialog.tsx')
+  assert(dialog.includes('handleRecommendRooms'),
+    'dialog 仍含 handleRecommendRooms (K23-A handler)')
+  assert(dialog.includes('推荐教室'),
+    'dialog UI 仍含 "推荐教室" 按钮 (K23-A)')
+  assert(dialog.includes('fetchRoomRecommendations'),
+    'dialog 仍调用 fetchRoomRecommendations (K23-A client)')
+  assert(dialog.includes('setNewRoomId(c.roomId)') || dialog.includes('setNewRoomId(roomId)'),
+    'dialog 点击 room candidate 仍 setNewRoomId (K23-A pickCandidate)')
+  assert(dialog.includes('<option value="">不变</option>'),
+    'dialog 手动选择 "不变" option 仍存在 (K23-A 入口保留)')
+  // K24-A UI may coexist; we only assert K23-A markers.
 }
 
 // ─── H. K23-A implementation source is intact (K22 / K23 verify expected preserved) ───
@@ -409,6 +466,9 @@ function main() {
   console.log('   Feature status: READY_FOR_REAL_USE。')
   console.log('   Manual frontend validation: PASSED。')
   console.log('   下一步: 进入真实调课使用 / 维护模式。')
+  console.log('   K24-A1: G 节已升级为 K24-aware compatibility check。')
+  console.log('     G1 = strict untouched (K23-A 核心后端, score, schema, migrations)')
+  console.log('     G2 = additive-compatible (dialog / client, K23-A markers intact)')
 }
 
 main()

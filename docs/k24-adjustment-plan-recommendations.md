@@ -380,3 +380,151 @@ UI 显示：
 ---
 
 **报告结束。K24-A 处于 READY_FOR_TRIAL 状态。**
+
+---
+
+## 17. K24-A1 Verify Alignment (added by `K24-A1-PLAN-RECOMMENDATION-VERIFY-ALIGNMENT`)
+
+> 本节由 K24-A1 阶段追加；不改 K24-A 实现说明 / 验证结果。
+
+### 17.1 背景
+
+K24-A 在 K23 closeout (`e28d4a5`) 之后引入，对**共享**的 `src/components/schedule-adjustment-dialog.tsx` 和 `src/lib/schedule/adjustment-client.ts` 做了 additive 修改（新增"一键推荐调课方案"按钮、紫色 plan 面板、`fetchPlanRecommendations` 等）。
+
+K23 closeout verify 原本在这两个文件上做 `git diff since K23-A baseline (8332c60)` no-diff 检查。K24-A 累加修改后，这两项 fail，导致 closeout verify 在 K24-A HEAD 上从 75/75 退化为 73/75。
+
+这**不是** K23-A 业务回归，而是 K23 closeout verify 的"关闭后不可修改"口径与后续 additive 扩展的预期冲突。
+
+### 17.2 K24-A1 修正
+
+`scripts/verify-room-recommendation-closeout-k23.ts` 的 G 节拆分为：
+
+- **G1. Strict untouched**: K23-A 核心后端 (`room-recommendations.ts` + API route) / `score.ts` / `prisma/schema.prisma` / `prisma/migrations/*` — 仍按 no-diff 检查。K24-A 严格不允许触碰这些文件。
+- **G2. Additive-compatible**: `src/components/schedule-adjustment-dialog.tsx` / `src/lib/schedule/adjustment-client.ts` — 改为 marker-based compatibility check。
+  - 检查 K23-A markers 仍存在（`fetchRoomRecommendations` / `RoomRecommendationCandidate` / `handleRecommendRooms` / "推荐教室" / `pickCandidate` / `<option value="">不变</option>` 等）
+  - 检查 K23-A endpoint `/api/schedule-adjustments/room-recommendations` 仍存在且未改向 plan endpoint
+  - K24-A markers 可以共存（不强求存在；K24-A 可独立 revert）
+
+### 17.3 K23-A 业务能力保证
+
+- K23-A verify 仍 **66/66 PASS**（独立来源）
+- K23-A helper / API source intact（K23 closeout verify §H 已保留）
+- K23-A room recommendation 端点未改向
+- K23-A "推荐教室" 按钮 / 蓝色 panel / `pickCandidate` 行为完整
+- 手动 room select (`<option value="">不变</option>`) 完整
+
+### 17.4 K24-A UI 共存
+
+- K24-A "一键推荐调课方案" 按钮 / 紫色 plan 面板 / `pickPlan` 允许存在
+- **不**替代 K23-A 入口
+- **不**删除 K23-A "推荐教室" 按钮
+
+### 17.5 验证结果
+
+- K23 closeout verify 升级后: **84/84 PASS** (K24-A HEAD 上 75→84, 拆 G 节 + 加 9 个 marker check)
+- K24-A verify: **118/118 PASS** (K24-A 自身 verify 仍严格 K24-A 边界)
+- K23-A verify: **66/66 PASS**
+- K22-C: **73/0/0/0**
+- Prisma validate / build / lint / auth-foundation 全绿
+
+### 17.6 影响范围
+
+- 仅修改 `scripts/verify-room-recommendation-closeout-k23.ts` 一处
+- 业务代码 0 修改（K23-A / K24-A 均 untouched）
+- score / solver / schema / dev.db / RBAC 0 修改
+- 推荐排序 / UI / API 业务语义 0 修改
+- K22 / K23 / K24 verify expected 0 修改
+
+### 17.7 后续 additive 阶段规则
+
+> 任何在已 closeout 主线上的 additive 阶段，应使用 compatibility check 而非 no-diff check 验证共享 UI / client 文件。
+>
+> 仅当一个文件被多主线 / 多数 additive 阶段共享且仍要求业务级不变时，保留 strict no-diff 检查。
+
+---
+
+## 18. K24-A1-UX 修复 (added by `K24-A1-PLAN-RECOMMENDATION-UX-AND-VERIFY-ALIGNMENT`)
+
+> 本节由 K24-A1-UX 阶段追加；不改 K24-A 实现说明 / 验证结果核心。
+
+### 18.1 背景
+
+K24-A 上线后，UX 反馈指出三项阻塞级交互问题（在前端人工验证前发现）：
+
+1. 一键推荐无独立"优先周次"控件，直接借用表单 `targetWeek`，语义模糊。
+2. 一键推荐结果平铺成大块列表，无法滚动浏览，候选多时无法选择。
+3. 调课弹窗默认把"检查冲突"和"推荐教室"按钮平铺，对常用一键推荐流干扰大。
+
+本阶段在不改 solver / score / schema / DB / 业务逻辑的前提下修正 UX。
+
+### 18.2 修复 #1：优先调课周次选择控件
+
+- 新增独立 state `preferredPlanWeek`，与表单 `targetWeek` **解耦**（不影响手动选择）。
+- 在主操作按钮之上增加紫色"一键推荐调课方案"入口区，含：
+  - 文案说明
+  - `<select>` 1-20 周（默认值 = 当前 `week`，与 `targetWeek` 互不干扰）
+  - 当前选中提示
+- `handleRecommendPlans` 使用 `preferredPlanWeek` 作为 `preferredWeek` 传给后端。
+- 后端 `weekWindow=1` 仍生效（搜索 ±1 周）。
+
+### 18.3 修复 #2：可滚动 / 可展开下拉式方案列表
+
+- 紫色 plan panel 改为**折叠式 summary + 展开按钮 + 滚动列表 + 显式"使用该方案"按钮**：
+  - summary 行: `已推荐 N 个方案，点击展开选择` / `收起` 切换
+  - 滚动列表: `<ul class="max-h-64 overflow-y-auto">` 容器
+  - 选中机制: 点击列表项 `setSelectedPlanKey(k)`，高亮 + 边框变色
+  - 显式确认: 独立 `使用该方案` 按钮 (未选中时 disabled)，调 `applySelectedPlan` → `pickPlan` 一次性填 4 字段
+- 保留: fewer-than-two warning, 0 候选 message, rejected summary, loading, API error
+- 仍不自动 submit / dry-run
+
+### 18.4 修复 #3：高级选项 / `showAdvancedTools`
+
+- 新增 state `showAdvancedTools = false` (默认隐藏)
+- 紫色"高级选项"小开关：勾选后显示：
+  - "检查冲突" 按钮 (K14-FIX-A 检查流程)
+  - K23-A "推荐教室" 按钮 (K23-A 单时间推荐)
+- "一键推荐调课方案"按钮**始终显示**（主入口）
+- 手动 select (targetWeek / day / slot / room) 始终保留
+- dry-run / submit 流程**未删**，仅在 `showAdvancedTools=false` 时入口被遮蔽
+
+### 18.5 保留能力
+
+- K23-A `推荐教室` handler / 蓝色 panel / `pickCandidate` 完整
+- 手动选择周次 / 星期 / 节次 / 教室下拉完整
+- dry-run / 确认调课 / void 调课流程不变
+- 一键推荐只填表，不自动 submit
+- K24-A 后端 helper / API / 搜索逻辑**未改**
+- K23-A 后端 helper / API **未改**
+- K23-A verify 66/66 + K22-C 73/0/0/0 保持
+
+### 18.6 K24-A verify 升级
+
+`scripts/verify-adjustment-plan-recommendations-k24-a.ts` 追加 3 节 / 27 case:
+
+- AA. 优先调课周次选择控件 (5 case)
+- AB. 可滚动 / 可展开下拉式方案列表 (10 case)
+- AC. 高级选项 / `showAdvancedTools` (11 case)
+
+K24-A verify 升级后: **145/145 PASS** (从 118 升 27)
+
+### 18.7 K23 closeout verify
+
+未触发新的 fail。K24-A1 已升级的 G1 strict untouched + G2 additive-compatible 仍 PASS。K23 closeout verify: **84/84 PASS**。
+
+### 18.8 业务代码 0 修改
+
+- K24-A helper / API / 搜索逻辑 0 修改
+- K23-A helper / API 0 修改
+- score.ts / solver / schema / migrations / dev.db 0 修改
+- RBAC permission model 0 修改
+- 推荐排序核心逻辑 0 修改
+- 调课 submit 语义 0 修改
+
+仅修改:
+- `src/components/schedule-adjustment-dialog.tsx` (UI 增强, additive)
+- `scripts/verify-adjustment-plan-recommendations-k24-a.ts` (UX 检查)
+- `docs/k24-adjustment-plan-recommendations.{md,json}` (本文档 + JSON)
+- `scripts/verify-room-recommendation-closeout-k23.ts` (verify alignment, K24-A1 阶段)
+- `docs/k23-room-recommendation-closeout.{md,json}` (verify alignment 说明)
+
+---
