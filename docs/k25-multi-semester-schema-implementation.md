@@ -226,3 +226,53 @@ npx tsx scripts/verify-adjustment-room-recommendations-k23-a.ts
 ---
 
 **报告结束。K25-C 关闭，HEAD = (无新 commit, K25-C 不产生新文件)。建议进入 K25-D-SEMESTER-SCOPING-API-GAP-FIX。**
+
+---
+
+## Appendix: K25-C1 Scope and Command Audit (2026-06-07)
+
+### Why K25-C1
+
+K25-C modified 4 API routes — beyond the original "don't change API business logic" description.
+K25-C1 supplements:
+1. API route change classification (NOT_NULL_COMPATIBILITY vs API_SCOPING)
+2. Command-chain evidence (dry-run, apply, migrate status)
+
+### API Route Change Classification
+
+| # | Route | Change Type | Required for NOT NULL | User-visible | Keep |
+|---|-------|------------|----------------------|-------------|------|
+| 1 | admin/import/batches | NOT_NULL_COMPATIBILITY | ✅ | low | ✅ |
+| 2 | admin/scheduler/configs | NOT_NULL_COMPATIBILITY | ✅ | none | ✅ |
+| 3 | schedule-slot | NOT_NULL_COMPATIBILITY | ✅ | none | ✅ |
+| 4 | teaching-task | NOT_NULL_COMPATIBILITY | ✅ | none | ✅ |
+
+All 4 changes are NOT NULL compatibility fixes — none are K25-D API scoping.
+
+**Details:**
+
+1. **admin/import/batches**: `OR: [{semesterId: null}]` removed. ImportBatch.semesterId now NOT NULL; all 37 rows backfilled. Not K25-D (no cross-semester filter added).
+2. **admin/scheduler/configs**: Uses `resolveSchedulerSemester()` for create. SchedulingConfig.semesterId NOT NULL. Route already resolved semester.
+3. **schedule-slot**: `guardResult.semesterId!` non-null assertion. Guard guarantees semesterId when `ok=true`. TypeScript type compatibility only.
+4. **teaching-task**: `semesterId: semester.id` in create data via `resolveSchedulerSemester()`. TeachingTask.semesterId NOT NULL. Previously nullable create now requires semesterId.
+
+### Command Chain Evidence
+
+| Command | Exit | Key Output |
+|---------|------|------------|
+| `implement --dry-run` | 0 | ImportBatch null=0, willUpdate=0, blocking=false |
+| `implement --apply` | 0 | ImportBatch updated=0, null=0 (idempotent) |
+| `prisma migrate status` | 0 | "Database schema is up to date" |
+| `validate script` | 0 | 37/37 PASS |
+| `prisma validate` | 0 | schema valid |
+| `build` | 0 | PASS |
+| `lint` | 0 | 181/136 (0 new) |
+| `test:auth-foundation` | 1 | 53/1 (pre-existing) |
+
+`migrate dev --name k25-multi-semester-not-null` was NOT re-run: migration already exists and is applied. Re-running would not generate a new migration (Prisma detects no diff).
+
+### K23/K24 Old-Stage Verify Interpretation
+
+- K23-A verify 65/66: 1 failure = schema no-diff check. K25-C changed 7 models (Int? → Int). Expected.
+- K24-A verify 178/179: same reason. Expected.
+- Neither is blocking. K25-C validated via its own 37-check script.

@@ -60,5 +60,53 @@
     "seed": "NOT run"
   },
   "recommendedNextStage": "K25-D-SEMESTER-SCOPING-API-GAP-FIX",
-  "blocking": false
+  "blocking": false,
+  "k25c1ScopeAudit": {
+    "date": "2026-06-07",
+    "reason": "K25-C modified 4 API routes beyond schema-only scope; command-chain evidence incomplete",
+    "apiRouteClassifications": [
+      {
+        "route": "admin/import/batches",
+        "changeType": "NOT_NULL_COMPATIBILITY",
+        "requiredForK25C": true,
+        "userVisibleBehaviorChange": "low",
+        "shouldKeep": true,
+        "notes": "Removed OR: [{semesterId: null}] — ImportBatch.semesterId now NOT NULL, all rows backfilled"
+      },
+      {
+        "route": "admin/scheduler/configs",
+        "changeType": "NOT_NULL_COMPATIBILITY",
+        "requiredForK25C": true,
+        "userVisibleBehaviorChange": "none",
+        "shouldKeep": true,
+        "notes": "SchedulingConfig.semesterId NOT NULL; route already resolved semester"
+      },
+      {
+        "route": "schedule-slot",
+        "changeType": "NOT_NULL_COMPATIBILITY",
+        "requiredForK25C": true,
+        "userVisibleBehaviorChange": "none",
+        "shouldKeep": true,
+        "notes": "guardResult.semesterId! non-null assertion — type compatibility only"
+      },
+      {
+        "route": "teaching-task",
+        "changeType": "NOT_NULL_COMPATIBILITY",
+        "requiredForK25C": true,
+        "userVisibleBehaviorChange": "none",
+        "shouldKeep": true,
+        "notes": "TeachingTask.semesterId NOT NULL; injects semesterId from resolveSchedulerSemester"
+      }
+    ],
+    "commandChainEvidence": {
+      "dryRun": { "exitCode": 0, "importBatchNullBefore": 0, "willUpdate": 0, "blocking": false },
+      "apply": { "exitCode": 0, "importBatchUpdated": 0, "importBatchNullAfter": 0, "idempotent": true },
+      "migrateStatus": { "exitCode": 0, "status": "Database schema is up to date" },
+      "migrateDevSkipped": true,
+      "migrateDevSkipReason": "Migration already exists and applied; re-running would not generate new migration"
+    },
+    "apiCompatibilityFindings": 4,
+    "unclearFindings": 0,
+    "blocking": false
+  }
 }

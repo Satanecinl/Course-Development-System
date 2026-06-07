@@ -1,0 +1,112 @@
+{
+  "stage": "K25-C1-SCHEMA-IMPLEMENTATION-SCOPE-AND-COMMAND-AUDIT",
+  "status": "AUDIT_COMPLETE",
+  "date": "2026-06-07",
+  "k25cCommit": "669ae4f",
+  "apiRouteClassifications": [
+    {
+      "route": "admin/import/batches",
+      "changeType": "NOT_NULL_COMPATIBILITY",
+      "requiredForK25C": true,
+      "userVisibleBehaviorChange": "low",
+      "shouldKeep": true,
+      "verification": [
+        "PASS: null filter removed",
+        "PASS: uses semester.id filter",
+        "PASS: resolves semester"
+      ],
+      "notes": "ImportBatch.semesterId now NOT NULL. Removed OR: [{semesterId: null}] because all rows backfilled. Not K25-D scoping."
+    },
+    {
+      "route": "admin/scheduler/configs",
+      "changeType": "NOT_NULL_COMPATIBILITY",
+      "requiredForK25C": true,
+      "userVisibleBehaviorChange": "none",
+      "shouldKeep": true,
+      "verification": [
+        "PASS: resolves semester via resolveSchedulerSemester",
+        "PASS: semesterId included in create data"
+      ],
+      "notes": "SchedulingConfig.semesterId NOT NULL. Route already resolved semester."
+    },
+    {
+      "route": "schedule-slot",
+      "changeType": "NOT_NULL_COMPATIBILITY",
+      "requiredForK25C": true,
+      "userVisibleBehaviorChange": "none",
+      "shouldKeep": true,
+      "verification": [
+        "PASS: uses non-null assertion on guardResult.semesterId",
+        "PASS: has K25-C comment explaining change"
+      ],
+      "notes": "guardResult.semesterId! non-null assertion. Guard guarantees semesterId when ok=true. Type compatibility only."
+    },
+    {
+      "route": "teaching-task",
+      "changeType": "NOT_NULL_COMPATIBILITY",
+      "requiredForK25C": true,
+      "userVisibleBehaviorChange": "none",
+      "shouldKeep": true,
+      "verification": [
+        "PASS: resolves semester via resolveSchedulerSemester",
+        "PASS: semesterId: semester.id in create data",
+        "PASS: has K25-C comment"
+      ],
+      "notes": "TeachingTask.semesterId NOT NULL. Injects semesterId from resolveSchedulerSemester. Previously nullable create."
+    }
+  ],
+  "commandEvidence": {
+    "dryRun": {
+      "exitCode": 0,
+      "importBatchNullBefore": 0,
+      "willUpdate": 0,
+      "blocking": false,
+      "note": "Idempotent: all nulls already backfilled in K25-C"
+    },
+    "apply": {
+      "exitCode": 0,
+      "importBatchUpdated": 0,
+      "importBatchNullAfter": 0,
+      "idempotent": true,
+      "note": "0 updates — all nulls already resolved"
+    },
+    "migrateStatus": {
+      "exitCode": 0,
+      "status": "Database schema is up to date",
+      "migrationCount": 7
+    },
+    "migrateDevSkipped": true,
+    "migrateDevSkipReason": "Migration 20260607000000_k25_multi_semester_not_null already exists and is applied. Re-running would not generate new migration."
+  },
+  "oldStageVerifyInterpretation": {
+    "k23aVerify": {
+      "result": "65/66",
+      "expectedFailures": 1,
+      "reason": "Schema no-diff check fails because K25-C changed 7 models (semesterId Int? to Int)",
+      "blocking": false
+    },
+    "k24aVerify": {
+      "result": "178/179",
+      "expectedFailures": 1,
+      "reason": "Same — schema modified since K24-CLOSEOUT",
+      "blocking": false
+    },
+    "resolution": "K23/K24 expected NOT modified. K25-C validated via validate-multi-semester-schema-k25-c.ts (37/37 PASS)."
+  },
+  "k25cFilesExist": {
+    "total": 6,
+    "found": 6,
+    "missing": 0
+  },
+  "schemaNotNullMarkers": {
+    "total": 7,
+    "pass": 7,
+    "fail": 0
+  },
+  "apiCompatibilityFindings": 4,
+  "unclearFindings": 0,
+  "behaviorChangesMediumHigh": 0,
+  "commandEvidenceIncomplete": false,
+  "blocking": false,
+  "recommendedNextStage": "K25-D-SEMESTER-SCOPING-API-GAP-FIX"
+}
