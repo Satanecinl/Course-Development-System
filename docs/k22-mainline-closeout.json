@@ -1,0 +1,271 @@
+{
+  "stage": "K22-REAL-USAGE-ACCEPTANCE-CLOSEOUT",
+  "closedAt": "2026-06-07",
+  "baselineCommit": "5d83152",
+  "status": "CLOSED",
+  "schedulerStatus": "READY_FOR_REAL_OPERATIONAL_USE",
+  "manualReview": {
+    "status": "PASSED",
+    "source": "user-provided manual acceptance",
+    "reviewer": "project owner / user-provided (no fabricated 教务 name)",
+    "date": "2026-06-07",
+    "note": "人工审核通过"
+  },
+  "mainlineCloseout": {
+    "status": "CLOSED",
+    "stage": "K22-REAL-USAGE-ACCEPTANCE-CLOSEOUT",
+    "nextDefaultAction": "no further mechanical K22 development; use system in real workflow and collect feedback"
+  },
+  "baseline": {
+    "k22c": "73/0/0/0",
+    "k22cDetails": {
+      "pass": 73,
+      "knownFail": 0,
+      "fail": 0,
+      "info": 0,
+      "total": 73,
+      "blocking": "NO"
+    },
+    "realSolver": {
+      "initialHardScore": -1000,
+      "finalHardScore": 0,
+      "initialSoftScore": -1577,
+      "finalSoftScore": -1281,
+      "hardScoreImprovement": 1000,
+      "softScoreImprovement": 296,
+      "allHardResolved": true,
+      "readOnly": true,
+      "writesDb": false,
+      "writesScheduleSlot": false,
+      "writesSchedulingRun": false,
+      "iterations": 10000,
+      "lahcWindowSize": 500,
+      "randomSeed": 42,
+      "solverVersion": "lahc-hard-first-v3"
+    },
+    "ui": {
+      "scoreBreakdown": true,
+      "constraintCoverage": "HC1-HC6/SC1-SC10/MIN_PERT (16 constraints; SC5 in business cards only)",
+      "businessCards": 8,
+      "topIssues": true,
+      "beforeAfterTabs": true,
+      "legacyFallback": true,
+      "l2Verify": "186/186 PASS",
+      "readinessVerify": "62/62 PASS"
+    },
+    "fWrappers": {
+      "F3": "16/16 PASS",
+      "F4": "13/13 PASS",
+      "F6": "12/12 PASS",
+      "F8": "11/11 PASS",
+      "F11": "13/13 PASS"
+    },
+    "build": "PASS",
+    "lint": {
+      "errors": 181,
+      "warnings": 134,
+      "newErrorsVsBaseline": 0,
+      "warningDrift": 0
+    },
+    "authFoundation": {
+      "passed": 53,
+      "failed": 1,
+      "failureMessage": "ScheduleAdjustment ACTIVE = 0 (actual 10)",
+      "isPreExisting": true,
+      "modifiedBusinessData": false
+    }
+  },
+  "closedScope": {
+    "scoreConstraints": [
+      "HC1_ROOM_CONFLICT",
+      "HC2_TEACHER_CONFLICT",
+      "HC3_CLASS_CONFLICT",
+      "HC4_CAPACITY",
+      "HC5_ROOM_UNAVAILABLE",
+      "HC6_NON_AUTOMOTIVE_FORBID_LINXIAO",
+      "SC1_CROSS_BUILDING_BACK_TO_BACK",
+      "SC2_SAME_DAY",
+      "SC3_EXTREME_TIME_SLOT",
+      "SC4_CROSS_CAMPUS",
+      "SC5_TEACHER_DAY_BALANCE",
+      "SC6_AUTOMOTIVE_PREFERS_LINXIAO",
+      "SC7_WEEKEND_AVOIDANCE",
+      "SC8_CLASS_GAP",
+      "SC9_TEACHING_TASK_ROOM_STABILITY",
+      "SC10_ROOM_CAPACITY_UTILIZATION",
+      "MINIMUM_PERTURBATION"
+    ],
+    "harness": [
+      "K22-C (score regression, 73 cases, stable since K22-D SC1 delta fix)",
+      "F3 specialty / campus / weekend",
+      "F4 teacher day balance",
+      "F6 class gap reduction",
+      "F8 classroom stability",
+      "F11 capacity preference"
+    ],
+    "realSolverEvaluation": [
+      "scripts/evaluate-real-solver-quality-k22-l1.ts",
+      "read-only, no DB writes",
+      "docs/k22-real-solver-quality-evaluation.{md,json}"
+    ],
+    "ui": [
+      "src/lib/scheduler/score-breakdown.ts (helper, 16-constraint registry)",
+      "src/components/score-breakdown-display.tsx (UI)",
+      "live preview integration (scheduler-content.tsx)",
+      "history integration (history-content.tsx)",
+      "API: runs/[id]/route.ts (readSnapshotBreakdown)",
+      "preview.ts: writes scoreBreakdown sub-object to resultSnapshot"
+    ],
+    "trialReadiness": [
+      "docs/k22-real-usage-trial-plan.md",
+      "docs/k22-real-usage-trial-checklist.md",
+      "docs/k22-real-usage-trial-feedback-template.md",
+      "docs/k22-real-usage-trial-status.json",
+      "scripts/verify-real-usage-trial-readiness-k22.ts (62 cases)",
+      "scripts/verify-scheduler-breakdown-ui-k22-l2.ts (186 cases)"
+    ],
+    "acceptanceEvidence": [
+      "K22-PAUSE-A complete 8-step verification chain",
+      "User-provided manual acceptance (人工审核通过)",
+      "All harnesses stable, build green, schema valid"
+    ]
+  },
+  "knownLimitations": [
+    {
+      "id": "L-AUTH-SCHED-ADJUST",
+      "summary": "test:auth-foundation 仍有 pre-existing ScheduleAdjustment ACTIVE count mismatch",
+      "blocking": false,
+      "action": "未尝试修复 (历史数据问题, 与 K22 调度器无关)"
+    },
+    {
+      "id": "L-LINT-DEBT",
+      "summary": "181 lint errors / 134 warnings (历史 debt)",
+      "blocking": false,
+      "action": "K22 阶段 0 new error, 但未清理历史 debt"
+    },
+    {
+      "id": "L-ROOM-TYPE-MISSING",
+      "summary": "Room.type / Course.type 不足以支撑实训课 / 机房课硬规则",
+      "blocking": false,
+      "action": "如需硬规则, 进入 K22-FutureSchema"
+    },
+    {
+      "id": "L-PREFERRED-ROOM-MISSING",
+      "summary": "无 preferred room / homeRoom 字段",
+      "blocking": false,
+      "action": "如需 fixed room, 进入 K22-FutureSchema"
+    },
+    {
+      "id": "L-NO-WEIGHT-CONFIG",
+      "summary": "weights 尚不可配置 (hardWeights / softWeights 未引入)",
+      "blocking": false,
+      "action": "如需可配置权重, 进入 K22-I-SCORE-WEIGHTS-IMPLEMENTATION-PLAN"
+    },
+    {
+      "id": "L-NO-TOP-ISSUE-LINKS",
+      "summary": "Top Issues 尚未支持点击跳转到具体 slot / teacher / classGroup",
+      "blocking": false,
+      "action": "如需定位能力, 进入 K22-L3-SCHEDULER-RESULT-QUALITY-ACTIONS"
+    },
+    {
+      "id": "L-NO-MULTI-P1-P2",
+      "summary": "无多 P1/P2 约束层级",
+      "blocking": false,
+      "action": "如需层级, 进入 K22-FutureSchema 或 K22-FutureConstraint"
+    },
+    {
+      "id": "L-DB-BACKUP",
+      "summary": "real production rollout 前仍建议备份 DB",
+      "blocking": false,
+      "action": "apply 前必先 cp prisma/dev.db prisma/dev.db.backup-*"
+    },
+    {
+      "id": "L-DATA-QUALITY",
+      "summary": "当前 trial 通过不代表所有未来导入数据都无需数据质量检查",
+      "blocking": false,
+      "action": "新学期导入时先跑 importer 验证"
+    },
+    {
+      "id": "L-ALGORITHM-SCALE",
+      "summary": "LAHC v3 在当前数据规模 (440 slots) 下 ~21 秒可接受; 大规模 (10000+ tasks) 未测试",
+      "blocking": false,
+      "action": "如需更大规模, 进入 K22-Algorithm-NextGen"
+    }
+  ],
+  "postCloseoutDecisionRules": [
+    {
+      "feedbackType": "UI 不好定位问题 (Top Issues 缺跳转)",
+      "nextStage": "K22-L3-SCHEDULER-RESULT-QUALITY-ACTIONS",
+      "trigger": "教务试用反馈"
+    },
+    {
+      "feedbackType": "软质量不满意 (SC8 太多空洞 / SC9 太多多教室)",
+      "nextStage": "K22-L1B-SOFT-WEIGHT-TUNING",
+      "trigger": "教务试用反馈"
+    },
+    {
+      "feedbackType": "管理员需要可配置权重",
+      "nextStage": "K22-I-SCORE-WEIGHTS-IMPLEMENTATION-PLAN",
+      "trigger": "管理员明确要求"
+    },
+    {
+      "feedbackType": "缺 Room.type / preferred room 能力",
+      "nextStage": "K22-FutureSchema",
+      "trigger": "教务业务需求"
+    },
+    {
+      "feedbackType": "真实数据 bug (合并班级 / 解析问题)",
+      "nextStage": "K22-DataQuality",
+      "trigger": "数据异常"
+    },
+    {
+      "feedbackType": "算法能力不足 (LAHC 收敛慢 / 解质量差)",
+      "nextStage": "K22-Algorithm-NextGen",
+      "trigger": "性能或质量问题"
+    },
+    {
+      "feedbackType": "缺新约束 (e.g. 实验课优先机房)",
+      "nextStage": "K22-FutureConstraint",
+      "trigger": "教务业务需求"
+    },
+    {
+      "feedbackType": "真实导入数据有冲突 (parser / importer)",
+      "nextStage": "K22-ImportPipeline",
+      "trigger": "新学期导入"
+    }
+  ],
+  "deliverableFiles": [
+    "docs/k22-mainline-closeout.md (this stage)",
+    "docs/k22-mainline-closeout.json (this stage)",
+    "scripts/verify-k22-mainline-closeout.ts (this stage)",
+    "docs/k22-real-usage-trial-status.json (updated: manualReview + mainlineCloseout)"
+  ],
+  "untouchedScopeConfirmation": {
+    "scoreLogic": "src/lib/scheduler/score.ts (NOT modified in this stage)",
+    "solverAlgorithm": "src/lib/scheduler/solver.ts (NOT modified)",
+    "types": "src/lib/scheduler/types.ts (NOT modified)",
+    "dataLoader": "src/lib/scheduler/data-loader.ts (NOT modified)",
+    "applyRollback": "src/lib/scheduler/apply.ts, rollback.ts (NOT modified)",
+    "config": "src/lib/scheduler/config.ts (NOT modified)",
+    "preview": "src/lib/scheduler/preview.ts (NOT modified)",
+    "breakdownHelper": "src/lib/scheduler/score-breakdown.ts (NOT modified)",
+    "uiComponent": "src/components/score-breakdown-display.tsx (NOT modified)",
+    "pages": "history-content.tsx, scheduler-content.tsx (NOT modified)",
+    "api": "runs/[id]/route.ts (NOT modified)",
+    "schema": "prisma/schema.prisma (NOT modified)",
+    "migrations": "prisma/migrations/* (NOT modified)",
+    "businessData": "prisma/dev.db (NOT written by this stage)",
+    "importer": "src/lib/import/* (NOT modified)",
+    "parser": "src/lib/conflict.ts (NOT modified)",
+    "rbac": "src/lib/auth/*, src/lib/rbac/* (NOT modified)",
+    "noNewConstraints": true,
+    "noTuning": true,
+    "noHardWeightsOrSoftWeights": true,
+    "noUiFeatureExpansion": true,
+    "noTopIssueLinks": true,
+    "noSchemaExtension": true,
+    "noNewConstraintsInK22": true
+  },
+  "blocking": false,
+  "recommendedDefaultAction": "Use in real workflow; no further K22 mechanical development unless feedback triggers a follow-up stage. K22 mainline officially CLOSED."
+}

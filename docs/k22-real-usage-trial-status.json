@@ -1,5 +1,23 @@
 {
   "stage": "K22-PAUSE-REAL-USAGE-TRIAL",
+  "manualReview": {
+    "status": "PASSED",
+    "source": "user-provided manual acceptance",
+    "reviewer": "project owner / user-provided (no fabricated 教务 name)",
+    "date": "2026-06-07",
+    "note": "人工审核通过"
+  },
+  "mainlineCloseout": {
+    "status": "CLOSED",
+    "stage": "K22-REAL-USAGE-ACCEPTANCE-CLOSEOUT",
+    "closedAt": "2026-06-07",
+    "baselineCommit": "5d83152",
+    "schedulerStatus": "READY_FOR_REAL_OPERATIONAL_USE",
+    "nextDefaultAction": "no further mechanical K22 development; use system in real workflow and collect feedback",
+    "closeoutDoc": "docs/k22-mainline-closeout.md",
+    "closeoutJson": "docs/k22-mainline-closeout.json",
+    "closeoutVerifyScript": "scripts/verify-k22-mainline-closeout.ts"
+  },
   "snapshotAt": "2026-06-07",
   "baselineCommit": "4353b53",
   "purpose": "固化 K22 当前功能状态供真实使用 / 人工验收参考",
