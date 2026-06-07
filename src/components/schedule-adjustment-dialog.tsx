@@ -16,7 +16,7 @@ import { DAYS, TIME_SLOTS } from '@/types/schedule'
 import type { ScheduleViewData } from '@/types/schedule'
 import type { EntityOption } from '@/components/combobox'
 import type { ScheduleAdjustmentDryRunResult } from '@/types/schedule-adjustment'
-import { dryRunScheduleAdjustment, createScheduleAdjustment } from '@/lib/schedule/adjustment-client'
+import { dryRunScheduleAdjustment, createScheduleAdjustment, fetchRoomRecommendations, type RoomRecommendationResult } from '@/lib/schedule/adjustment-client'
 import { useHasPermission } from '@/components/layout/current-user-context'
 
 interface ScheduleAdjustmentDialogProps {
@@ -47,6 +47,13 @@ export function ScheduleAdjustmentDialog({
   const [confirmLoading, setConfirmLoading] = useState(false)
   const [confirmError, setConfirmError] = useState<string | null>(null)
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
+  // K23-A: room recommendation state. Additive; manual selection is unchanged.
+  const [recommendLoading, setRecommendLoading] = useState(false)
+  const [recommendResult, setRecommendResult] = useState<RoomRecommendationResult | null>(null)
+  const [recommendError, setRecommendError] = useState<string | null>(null)
+  // Display-side minimum (must match the helper's MIN_CANDIDATES = 2).
+  // We don't import the helper constant to keep the bundle split clean.
+  const MIN_RECOMMEND_DISPLAY = 2
   // K14-FIX-A: schedule:adjust gates the real "create adjustment" submit
   // and the void submit (in dashboard-content). Server-side
   // requirePermission('schedule:adjust') on /api/schedule-adjustments and
@@ -64,6 +71,9 @@ export function ScheduleAdjustmentDialog({
       setDryRunResult(null)
       setConfirmError(null)
       setConfirmDialogOpen(false)
+      // K23-A: clear recommendation state on item change
+      setRecommendResult(null)
+      setRecommendError(null)
     }
   }, [item, week])
 
@@ -101,6 +111,50 @@ export function ScheduleAdjustmentDialog({
     } finally {
       setDryRunLoading(false)
     }
+  }
+
+  // K23-A: room recommendation handler. Read-only call; results are
+  // advisory and do not auto-submit the adjustment.
+  async function handleRecommendRooms() {
+    if (!item) return
+    if (!canAdjust) {
+      toast.error('没有调课权限', { description: '当前账号没有调课权限' })
+      return
+    }
+    setRecommendLoading(true)
+    setRecommendError(null)
+    try {
+      const data = await fetchRoomRecommendations({
+        scheduleSlotId: item.slotId,
+        targetWeek,
+        targetDayOfWeek: newDayOfWeek,
+        targetSlotIndex: newSlotIndex,
+        limit: 5,
+      })
+      setRecommendResult(data)
+      if (data.candidates.length === 0) {
+        toast.warning('没有可用教室', {
+          description: data.message ?? '请尝试其他时间段',
+        })
+      } else if (!data.minimumSatisfied) {
+        toast.warning(`可用教室不足 ${MIN_RECOMMEND_DISPLAY} 个`, {
+          description: data.message ?? '请检查拒绝原因后手动选择',
+        })
+      }
+    } catch (e) {
+      const msg = String(e)
+      setRecommendError(msg)
+      // API failure does NOT block manual adjustment.
+      toast.error('推荐失败', { description: msg + '。请手动选择教室。' })
+    } finally {
+      setRecommendLoading(false)
+    }
+  }
+
+  function pickCandidate(roomId: number) {
+    setNewRoomId(roomId)
+    // Re-running dry-run after a click is the user's decision; we just
+    // fill the form. The existing 确认调课 button still gates submit.
   }
 
   async function handleConfirm() {
@@ -175,6 +229,7 @@ export function ScheduleAdjustmentDialog({
                   onChange={(e) => {
                     setTargetWeek(parseInt(e.target.value, 10))
                     setDryRunResult(null)
+                    setRecommendResult(null)
                   }}
                   className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg bg-white"
                 >
@@ -191,7 +246,10 @@ export function ScheduleAdjustmentDialog({
                 <Label>新星期</Label>
                 <select
                   value={newDayOfWeek}
-                  onChange={(e) => setNewDayOfWeek(parseInt(e.target.value, 10))}
+                  onChange={(e) => {
+                    setNewDayOfWeek(parseInt(e.target.value, 10))
+                    setRecommendResult(null)
+                  }}
                   className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg bg-white"
                 >
                   {DAYS.map((d) => (
@@ -203,7 +261,10 @@ export function ScheduleAdjustmentDialog({
                 <Label>新节次</Label>
                 <select
                   value={newSlotIndex}
-                  onChange={(e) => setNewSlotIndex(parseInt(e.target.value, 10))}
+                  onChange={(e) => {
+                    setNewSlotIndex(parseInt(e.target.value, 10))
+                    setRecommendResult(null)
+                  }}
                   className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg bg-white"
                 >
                   {TIME_SLOTS.map((t) => (
@@ -247,6 +308,15 @@ export function ScheduleAdjustmentDialog({
                 {dryRunLoading ? '检查中...' : '检查冲突'}
               </Button>
               <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRecommendRooms}
+                disabled={!canAdjust || recommendLoading || confirmLoading}
+                title={canAdjust ? undefined : '当前账号没有调课权限'}
+              >
+                {recommendLoading ? '推荐中...' : '推荐教室'}
+              </Button>
+              <Button
                 size="sm"
                 onClick={() => {
                   if (!canAdjust) {
@@ -261,6 +331,87 @@ export function ScheduleAdjustmentDialog({
                 确认调课
               </Button>
             </div>
+
+            {/* K23-A: room recommendation results */}
+            {(recommendResult || recommendError) && (
+              <div className="rounded-lg p-3 space-y-2 bg-blue-50 border border-blue-200">
+                <p className="text-sm font-medium text-blue-800">
+                  推荐教室
+                  {recommendResult
+                    ? recommendResult.minimumSatisfied
+                      ? `（${recommendResult.candidates.length} 个候选，已满足至少 ${MIN_RECOMMEND_DISPLAY} 个）`
+                      : `（仅 ${recommendResult.candidates.length} 个候选，少于 ${MIN_RECOMMEND_DISPLAY} 个）`
+                    : '（请求失败）'}
+                </p>
+                {recommendError && (
+                  <p className="text-sm text-red-700">
+                    推荐 API 调用失败：{recommendError}。可继续手动选择教室。
+                  </p>
+                )}
+                {recommendResult && recommendResult.candidates.length === 0 && (
+                  <p className="text-sm text-amber-800">
+                    {recommendResult.message ?? '当前时间段没有可用教室，请尝试其他时段。'}
+                  </p>
+                )}
+                {recommendResult && !recommendResult.minimumSatisfied && recommendResult.candidates.length > 0 && (
+                  <p className="text-sm text-amber-800">
+                    {recommendResult.message ?? `可用教室少于 ${MIN_RECOMMEND_DISPLAY} 个，请检查拒绝原因或继续手动选择。`}
+                  </p>
+                )}
+                {recommendResult && recommendResult.candidates.length > 0 && (
+                  <ul className="space-y-1.5">
+                    {recommendResult.candidates.map((c) => (
+                      <li
+                        key={c.roomId}
+                        className={`text-sm rounded-md border px-2 py-1.5 cursor-pointer hover:bg-blue-100 ${
+                          newRoomId === c.roomId ? 'border-blue-500 bg-blue-100' : 'border-blue-200 bg-white'
+                        }`}
+                        onClick={() => pickCandidate(c.roomId)}
+                        title="点击填入新教室"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">
+                            {c.roomName}
+                            {c.building ? `（${c.building}）` : ''}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            容量 {c.capacity} · 评分 {c.score}
+                          </span>
+                        </div>
+                        {c.reasons.length > 0 && (
+                          <ul className="text-xs text-green-700 list-disc list-inside mt-0.5">
+                            {c.reasons.map((r, i) => (
+                              <li key={i}>{r}</li>
+                            ))}
+                          </ul>
+                        )}
+                        {c.warnings.length > 0 && (
+                          <ul className="text-xs text-amber-700 list-disc list-inside mt-0.5">
+                            {c.warnings.map((w, i) => (
+                              <li key={i}>{w}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {recommendResult && !recommendResult.minimumSatisfied && (
+                  <div className="text-xs text-gray-600">
+                    拒绝原因汇总：
+                    {[
+                      recommendResult.rejectedSummary.conflict > 0 && `冲突 ${recommendResult.rejectedSummary.conflict}`,
+                      recommendResult.rejectedSummary.capacity > 0 && `容量 ${recommendResult.rejectedSummary.capacity}`,
+                      recommendResult.rejectedSummary.linxiaoPolicy > 0 && `林校规则 ${recommendResult.rejectedSummary.linxiaoPolicy}`,
+                      recommendResult.rejectedSummary.unavailable > 0 && `不可用 ${recommendResult.rejectedSummary.unavailable}`,
+                      recommendResult.rejectedSummary.other > 0 && `其他 ${recommendResult.rejectedSummary.other}`,
+                    ]
+                      .filter(Boolean)
+                      .join('、') || '无'}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Dry-run 结果 */}
             {dryRunResult && (

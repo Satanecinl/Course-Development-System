@@ -1,0 +1,127 @@
+{
+  "stage": "K23-A-ADJUSTMENT-AUTO-ROOM-RECOMMENDATION-IMPL",
+  "closedAt": "2026-06-07",
+  "k22BaselineCommit": "ab7d9fd",
+  "status": "READY_FOR_TRIAL",
+  "api": {
+    "path": "/api/schedule-adjustments/room-recommendations",
+    "method": "POST",
+    "permission": "schedule:adjust",
+    "writesDb": false,
+    "requestShape": {
+      "scheduleSlotId": "number (required, > 0)",
+      "targetWeek": "number (required, 1-20)",
+      "targetDayOfWeek": "number (required, 1-7)",
+      "targetSlotIndex": "number (required, 1-6)",
+      "limit": "number (optional, 1-20, default 5)",
+      "semesterId": "number (optional, default from slot)"
+    },
+    "responseShape": {
+      "success": "true",
+      "minimumSatisfied": "boolean",
+      "candidates": "RoomRecommendationCandidate[]",
+      "rejectedSummary": "RoomRecommendationRejectedSummary",
+      "message": "string | undefined"
+    }
+  },
+  "helper": {
+    "path": "src/lib/schedule/room-recommendations.ts",
+    "entry": "findAdjustmentRoomRecommendations(input): Promise<RoomRecommendationResult>",
+    "defaultLimit": 5,
+    "minCandidates": 2,
+    "filtersOrder": [
+      "linxiao-policy (K22-F2A verbatim copy)",
+      "capacity (sum studentCount > room.capacity)",
+      "conflict (room/teacher/classGroup with week overlap, via checkScheduleConflicts)"
+    ],
+    "rankingScore": {
+      "base": 100,
+      "bonuses": {
+        "historicalRoom": 20,
+        "automotiveLinxiao": 15,
+        "utilizationReasonable_0.30_to_0.90": 10,
+        "utilizationTight_gt_0.90": 5,
+        "sameBuilding": 5
+      },
+      "penalties": {
+        "utilizationWaste_lt_0.30": -10
+      },
+      "sortBy": ["score desc", "roomId asc"]
+    },
+    "reuses": {
+      "checkScheduleConflicts": "src/lib/schedule/conflict-check.ts",
+      "getTaskStudentCount": "src/lib/scheduler/capacity.ts (formula only)",
+      "specialtyClassification_K22_F2A": "verbatim copy from score.ts (NOT modified)"
+    }
+  },
+  "frontend": {
+    "file": "src/components/schedule-adjustment-dialog.tsx",
+    "additions": [
+      "recommendLoading / recommendResult / recommendError state",
+      "推荐教室 button next to 检查冲突",
+      "candidate list panel with reasons / warnings",
+      "click candidate -> setNewRoomId",
+      "rejected summary when minimumSatisfied=false",
+      "clear recommend on item / targetWeek / dayOfWeek / slotIndex change"
+    ],
+    "preserved": [
+      "manual room select with 不变 option",
+      "dry-run flow",
+      "submit flow",
+      "permission gate (useHasPermission('schedule:adjust'))"
+    ]
+  },
+  "recommendationRules": {
+    "linxiaoAutomotive": {
+      "rule": "汽车专业任务可入林校；非汽车 / 混合 / 未知 任务禁止入林校",
+      "source": "K22-F2A (5-class classification)",
+      "enforcement": "hard filter (before ranking)",
+      "countedIn": "rejectedSummary.linxiaoPolicy"
+    },
+    "capacity": {
+      "rule": "room.capacity >= studentCount",
+      "studentCountFormula": "sum(classGroup.studentCount ?? 50)",
+      "countedIn": "rejectedSummary.capacity"
+    },
+    "conflict": {
+      "rule": "room / teacher / classGroup 在 target week / day / slot 不可有 overlap",
+      "ruleKernel": "src/lib/schedule/conflict-check.ts:checkScheduleConflicts",
+      "countedIn": "rejectedSummary.conflict"
+    },
+    "unavailable": {
+      "rule": "(reserved) RoomAvailability.available=false",
+      "countedIn": "rejectedSummary.unavailable"
+    }
+  },
+  "filters": [
+    "linxiao-policy",
+    "capacity",
+    "conflict (room/teacher/classGroup)"
+  ],
+  "ranking": [
+    "score desc",
+    "roomId asc"
+  ],
+  "fallbacks": {
+    "fewerThanTwoCandidates": "minimumSatisfied=false, message 提示, rejectedSummary 仍返回",
+    "zeroCandidates": "minimumSatisfied=false, message='当前时间段没有可用教室', rejectedSummary 仍返回",
+    "apiFailure": "UI 显示 toast + inline error，不阻塞手动选择",
+    "manualSelection": "始终可用，与推荐结果互不干扰"
+  },
+  "verification": {
+    "verifyScript": "scripts/verify-adjustment-room-recommendations-k23-a.ts",
+    "sections": 17,
+    "cases": 30,
+    "dbIntegration": "read-only, real slot in dev.db",
+    "scope": {
+      "scoreTsModified": false,
+      "schemaModified": false,
+      "migrationsModified": false,
+      "devDbWritten": false,
+      "rbacPermissionModelModified": false,
+      "rbacPermissionsAdded": false
+    }
+  },
+  "blocking": false,
+  "recommendedNextStage": "K23-B-ROOM-RECOMMENDATION-E2E-MANUAL-TRIAL"
+}
