@@ -1,0 +1,173 @@
+{
+  "stage": "K23-ROOM-RECOMMENDATION-ACCEPTANCE-CLOSEOUT",
+  "closedAt": "2026-06-07",
+  "k23aBaselineCommit": "8332c60",
+  "k22BaselineCommit": "ab7d9fd",
+  "status": "CLOSED",
+  "featureStatus": "READY_FOR_REAL_USE",
+  "manualReview": {
+    "status": "PASSED",
+    "source": "user-provided frontend manual validation",
+    "reviewer": "project owner / user-provided (no fabricated 教务 / 部门 name)",
+    "date": "2026-06-07",
+    "scope": "浏览器调课弹窗 (推荐按钮 / 候选列表 / 点击填入 / rejected summary / 手动选择 fallback)",
+    "note": "前端人工验证通过"
+  },
+  "closeoutTrigger": "user-provided manual acceptance",
+  "baseline": {
+    "k23aVerify": "66/66 PASS",
+    "k22c": "73/0/0/0",
+    "schedulePreflight": "23/23 PASS",
+    "scheduleMutationGuards": "HIGH=0/MEDIUM=0",
+    "teachingTaskSemanticGuards": "BLOCKING=NO",
+    "build": "PASS",
+    "lint": {
+      "errors": 181,
+      "warnings": 136,
+      "newErrorsVsBaseline": 0,
+      "warningDrift": 2,
+      "warningDriftNote": "warning drift 来自 K22 阶段既有 lint debt (preview.ts ResolvedSemester, solver.ts allRoomIds/bestIteration)，与 K23 无关"
+    },
+    "authFoundation": {
+      "passed": 53,
+      "failed": 1,
+      "failureMessage": "ScheduleAdjustment ACTIVE = 0 (actual 10)",
+      "isPreExisting": true,
+      "modifiedBusinessData": false
+    },
+    "prismaValidate": "schema valid",
+    "trialReadiness": "61/62 (1 expected: K23-A 新增文件导致 working tree 不空)",
+    "dbWrites": 0,
+    "apiDbWrites": 0
+  },
+  "closedScope": [
+    "src/lib/schedule/room-recommendations.ts (helper, ~310 lines)",
+    "src/app/api/schedule-adjustments/room-recommendations/route.ts (POST API, ~120 lines)",
+    "src/lib/schedule/adjustment-client.ts (fetchRoomRecommendations + types, additive ~75 lines)",
+    "src/components/schedule-adjustment-dialog.tsx (推荐按钮 + 候选列表 + 点击填入, additive ~150 lines)",
+    "rules: room/teacher/classGroup conflict (via checkScheduleConflicts)",
+    "rules: capacity filter (sum studentCount)",
+    "rules: K22-F2A Linxiao/automotive 5-class specialty classification (verbatim copy)",
+    "rules: room=0 placeholder exclusion",
+    "rules: rejectedSummary (conflict / capacity / linxiaoPolicy / unavailable / other)",
+    "rules: minimumSatisfied semantics (< 2 candidates => false + message)",
+    "ranking: score = 100 + 历史教室 +20 + 汽车林校 +15 + util [0.30, 0.90] +10 + util>0.90 +5 + 同楼栋 +5 + util<0.30 -10",
+    "frontend: candidate list with reasons / warnings",
+    "frontend: rejected summary panel when minimumSatisfied=false",
+    "frontend: API failure fallback to manual select",
+    "frontend: clear recommend on item / targetWeek / day / slot change",
+    "manual selection preserved (roomOptions <select> with 不变 option)",
+    "frontend manual validation PASSED"
+  ],
+  "knownLimitations": [
+    {
+      "id": "L-K23-A-NO-TUNING",
+      "summary": "推荐 ranking 权重固定；尚无真实反馈用于调参",
+      "blocking": false,
+      "action": "如需调参，进入 K23-C-ROOM-RECOMMENDATION-QUALITY-TUNING (需真实反馈)"
+    },
+    {
+      "id": "L-K23-A-NO-SHARED-SPECIALTY",
+      "summary": "K22-F2A specialty 分类当前 verbatim copy 在 helper 内部",
+      "blocking": false,
+      "action": "如需统一维护，进入 K23-D-SHARED-SPECIALTY-CAMPUS-POLICY-HELPER"
+    },
+    {
+      "id": "L-K23-A-NO-PREFERRED-ROOM",
+      "summary": "无 preferred room / homeRoom / room type schema",
+      "blocking": false,
+      "action": "如需偏好教室，进入 K23-E-PREFERRED-ROOM-RULES-PLAN"
+    },
+    {
+      "id": "L-K23-A-NO-TIME-ALTERNATIVE",
+      "summary": "仅推荐目标时间下可用教室，不推荐可替代时间",
+      "blocking": false,
+      "action": "如需时间替代，进入 K23-F-ROOM-OR-TIME-ALTERNATIVE-RECOMMENDATION"
+    },
+    {
+      "id": "L-K23-A-NO-MULTI-WEEK",
+      "summary": "候选仅评估 targetWeek 单周；多周调课按 dry-run 单独判定",
+      "blocking": false,
+      "action": "如需多周评估，扩展 helper (K23-C / K23-F 范畴)"
+    },
+    {
+      "id": "L-K23-A-NO-FAKE",
+      "summary": "候选不足 2 个时不返虚假推荐",
+      "blocking": false,
+      "action": "已是 by-design 行为 (closeout 时显式保留)"
+    },
+    {
+      "id": "L-LINT-DEBT",
+      "summary": "181 errors / 134-136 warnings (K22 阶段既有 debt)",
+      "blocking": false,
+      "action": "K23-A 0 new error；K23 未清理历史 debt"
+    },
+    {
+      "id": "L-AUTH-SCHED-ADJUST",
+      "summary": "test:auth-foundation 唯一失败仍为 pre-existing ScheduleAdjustment ACTIVE count mismatch",
+      "blocking": false,
+      "action": "未尝试修复 (与 K23 无关)"
+    },
+    {
+      "id": "L-DB-BACKUP",
+      "summary": "real production rollout 前仍建议备份 DB",
+      "blocking": false,
+      "action": "apply 前必先 cp prisma/dev.db prisma/dev.db.backup-*"
+    }
+  ],
+  "postCloseoutDecisionRules": [
+    {
+      "feedbackType": "推荐顺序不理想 (历史教室 / 容量 / 林校权重需调整)",
+      "nextStage": "K23-C-ROOM-RECOMMENDATION-QUALITY-TUNING",
+      "trigger": "真实调课反馈"
+    },
+    {
+      "feedbackType": "林校 / 汽车规则需要统一维护 (避免 K22 / K23 复制)",
+      "nextStage": "K23-D-SHARED-SPECIALTY-CAMPUS-POLICY-HELPER",
+      "trigger": "维护成本上升"
+    },
+    {
+      "feedbackType": "需要指定偏好教室 / 专业教室 / room type",
+      "nextStage": "K23-E-PREFERRED-ROOM-RULES-PLAN",
+      "trigger": "教务业务需求"
+    },
+    {
+      "feedbackType": "候选不足时希望推荐可替代时间",
+      "nextStage": "K23-F-ROOM-OR-TIME-ALTERNATIVE-RECOMMENDATION",
+      "trigger": "用户反馈"
+    },
+    {
+      "feedbackType": "浏览器流程发现 UX bug (按钮位置 / 候选渲染 / toast 抖动)",
+      "nextStage": "K23-B-FIX-*",
+      "trigger": "QA 反馈"
+    }
+  ],
+  "deliverableFiles": [
+    "docs/k23-room-recommendation-closeout.md (this stage)",
+    "docs/k23-room-recommendation-closeout.json (this stage)",
+    "scripts/verify-room-recommendation-closeout-k23.ts (this stage)",
+    "docs/k23-adjustment-room-recommendations.md (appended manualFrontendValidation/closeoutStage/featureStatus)",
+    "docs/k23-adjustment-room-recommendations.json (appended same fields)"
+  ],
+  "untouchedScopeConfirmation": {
+    "roomRecommendationsHelper": "src/lib/schedule/room-recommendations.ts (NOT modified in this stage)",
+    "apiRoute": "src/app/api/schedule-adjustments/room-recommendations/route.ts (NOT modified)",
+    "adjustmentDialog": "src/components/schedule-adjustment-dialog.tsx (NOT modified)",
+    "adjustmentClient": "src/lib/schedule/adjustment-client.ts (NOT modified)",
+    "scoreLogic": "src/lib/scheduler/score.ts (NOT modified)",
+    "solverAlgorithm": "src/lib/scheduler/solver.ts (NOT modified)",
+    "schema": "prisma/schema.prisma (NOT modified)",
+    "migrations": "prisma/migrations/* (NOT modified)",
+    "businessData": "prisma/dev.db (NOT written by this stage)",
+    "rbac": "src/lib/auth/*, src/lib/rbac/* (NOT modified)",
+    "noNewRbacPermission": true,
+    "noNewConstraints": true,
+    "noTuning": true,
+    "noHardWeightsOrSoftWeights": true,
+    "noUiFeatureExpansion": true,
+    "noNewApiEndpoint": true,
+    "k23aVerifyExpected": "66/66 PASS preserved"
+  },
+  "blocking": false,
+  "recommendedDefaultAction": "Use in real adjustment workflow; no further K23 mechanical development unless real feedback triggers a follow-up stage. K23 room recommendation officially CLOSED."
+}

@@ -123,5 +123,13 @@
     }
   },
   "blocking": false,
-  "recommendedNextStage": "K23-B-ROOM-RECOMMENDATION-E2E-MANUAL-TRIAL"
+  "recommendedNextStage": "K23-B-ROOM-RECOMMENDATION-E2E-MANUAL-TRIAL",
+  "manualFrontendValidation": {
+    "status": "PASSED",
+    "source": "user-provided frontend manual validation",
+    "date": "2026-06-07",
+    "note": "前端人工验证通过"
+  },
+  "closeoutStage": "K23-ROOM-RECOMMENDATION-ACCEPTANCE-CLOSEOUT",
+  "featureStatus": "READY_FOR_REAL_USE"
 }

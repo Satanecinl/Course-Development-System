@@ -342,3 +342,20 @@ UI 显示：
 ---
 
 **报告结束。K23-A 处于 READY_FOR_TRIAL 状态。**
+
+---
+
+## 15. K23 Closeout Reference (added by `K23-ROOM-RECOMMENDATION-ACCEPTANCE-CLOSEOUT`)
+
+> 本节由 K23 closeout 阶段追加；不改 K23-A 实现说明 / 验证结果。
+
+- **manualFrontendValidation**: `PASSED` (user-provided)
+- **closeoutStage**: `K23-ROOM-RECOMMENDATION-ACCEPTANCE-CLOSEOUT`
+- **featureStatus**: `READY_FOR_REAL_USE`
+- **Source**: user-provided frontend manual validation
+- **Date**: 2026-06-07
+- **Note**: 前端人工验证通过
+- **Closeout 文档**: [`docs/k23-room-recommendation-closeout.md`](./k23-room-recommendation-closeout.md) + [`docs/k23-room-recommendation-closeout.json`](./k23-room-recommendation-closeout.json)
+- **Closeout verify**: `scripts/verify-room-recommendation-closeout-k23.ts` (K23-A 文档 + 实现 + closeout 字段一并校验)
+- **本节不修改**: K23-A 实现说明 / scoring / API shape / 验证结果（仍为 K23-A 提交时内容）
+- **后续**: 任何调参 / UI 改进 / 偏好教室 / 可替代时间推荐均需真实反馈触发 (`K23-C` / `K23-D` / `K23-E` / `K23-F`)
