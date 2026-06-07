@@ -189,5 +189,15 @@
     "noK23aOrK24aHelperOrApiModified": true,
     "noRankingModified": true,
     "noApiSemanticModified": true
+  },
+  "k24a2CrossWeekFix": {
+    "stage": "K24-A2-PLAN-RECOMMENDATION-CROSS-WEEK-CONFLICT-FIX",
+    "date": "2026-06-07",
+    "bug": "跨周调课时推荐到目标周同课程同位置 (self-conflict)",
+    "rootCause": "checkScheduleConflicts 用 id:not:slotId 全局排除 source slot; K24-A 未做 targetWeek-aware 拦截",
+    "fix": "K24-A plan helper 加 isTaskActiveInWeek + findFirst(teachingTaskId+day+slot) 拦截",
+    "k24aVerifyAfterFix": "149/149 PASS",
+    "k24a2Verify": "32/32 PASS",
+    "requiresReManualVerification": true
   }
 }

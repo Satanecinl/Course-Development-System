@@ -33,7 +33,6 @@ import { prisma } from '@/lib/prisma'
 import { resolveSchedulerSemester } from '@/lib/semester'
 import { findAdjustmentRoomRecommendations } from './room-recommendations'
 import type { RoomRecommendationResult } from './room-recommendations'
-
 // ─── Constants for the search space ──────────────────────
 
 const DEFAULT_WEEK_WINDOW = 1
@@ -314,6 +313,65 @@ export async function findAdjustmentPlanRecommendations(
           continue
         }
 
+        // K24-A2: cross-week recurring-slot self-occupancy gate.
+        //
+        // The K23-A room helper invokes checkScheduleConflicts with
+        // `scheduleSlotId` excluded globally — i.e. the source
+        // ScheduleSlot is removed from the day/slot conflict scan
+        // across ALL weeks. That is correct for same-week moves, but
+        // for cross-week moves the SAME recurring slot is still
+        // occupying the target week (the source occurrence is being
+        // moved FROM sourceWeek, not from targetWeek). Without this
+        // gate, a recommendation would happily propose
+        //   "第 13 周 · 同一 day/slot/room"
+        // which is in fact a hard self-conflict.
+        //
+        // dryRunScheduleAdjustment handles this correctly (see
+        // adjustments.ts:289 — the `targetWeek === sourceWeek`
+        // guard on self-exclusion), but the recommendation layer
+        // never reached dry-run. We add a focused week-aware check
+        // here instead, matching the semantic dry-run enforces.
+        //
+        // In the current schema, base ScheduleSlot rows are
+        // placeholders for the recurrence — the "is the task active
+        // in targetWeek" answer comes from teachingTask.weekType /
+        // startWeek / endWeek, not from the row itself. So:
+        //   cross-week self-occupancy holds iff
+        //     (a) the task is active in targetWeek, AND
+        //     (b) the task has any base ScheduleSlot at the same
+        //         (dayOfWeek, slotIndex) as the target.
+        //
+        // We do NOT exclude input.scheduleSlotId here: the source
+        // slot's own (day, slot) IS the source occurrence, and we
+        // want to detect its target-week recurrence. The outer-loop
+        // "skip same week + same (day, slot)" filter already
+        // prevents the trivial "原地不动" case from getting here.
+        const taskActiveInTargetWeek = isTaskActiveInWeek(
+          slot.teachingTask.weekType,
+          slot.teachingTask.startWeek ?? 1,
+          slot.teachingTask.endWeek ?? 16,
+          targetWeek,
+        )
+        if (taskActiveInTargetWeek) {
+          const selfRow = await prisma.scheduleSlot.findFirst({
+            where: {
+              semesterId,
+              teachingTaskId: slot.teachingTaskId,
+              dayOfWeek: targetDayOfWeek,
+              slotIndex: targetSlotIndex,
+            },
+            select: { id: true },
+          })
+          if (selfRow) {
+            // The same recurring course occupies this time on the
+            // target week. Treat as a hard self-conflict at the
+            // time layer; skip this time candidate entirely
+            // (regardless of which room was offered).
+            rejected.teacherConflict += 1
+            continue
+          }
+        }
+
         for (const rc of roomResult.candidates) {
           seenRoomIds.add(rc.roomId)
 
@@ -420,6 +478,29 @@ function emptyResult(
     searched,
     message,
   }
+}
+
+/**
+ * Pure helper: is the given teaching task active in `week`?
+ * Mirrors `isScheduleItemActiveInWeek` semantics in
+ * src/lib/schedule/week-filter.ts, but is local to this module to
+ * avoid a circular import (week-filter.ts pulls in ScheduleViewData
+ * from types/schedule, which would in turn pull schedule types into
+ * the recommendation layer for a single week-arithmetic question).
+ */
+function isTaskActiveInWeek(
+  weekType: string | null,
+  startWeek: number,
+  endWeek: number,
+  week: number,
+): boolean {
+  if (week < startWeek || week > endWeek) return false
+  const t = (weekType ?? 'ALL').toUpperCase()
+  if (t === 'ALL') return true
+  if (t === 'ODD') return week % 2 === 1
+  if (t === 'EVEN') return week % 2 === 0
+  // Unknown weekType: treat as ALL to remain forward-compatible.
+  return true
 }
 
 // Re-export the K23-A helper types so callers that import from this

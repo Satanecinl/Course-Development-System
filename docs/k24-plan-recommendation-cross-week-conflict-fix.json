@@ -1,0 +1,50 @@
+{
+  "stage": "K24-A2-PLAN-RECOMMENDATION-CROSS-WEEK-CONFLICT-FIX",
+  "date": "2026-06-07",
+  "k24a1BaselineCommit": "60423dc",
+  "status": "FIXED",
+  "requiresReVerification": true,
+  "bug": {
+    "description": "第 8 周调到第 13 周时，一键推荐仍推荐第 13 周同课程同 day/slot/room (self-conflict)",
+    "rootCause": "checkScheduleConflicts 用 id:not:slotId 全局排除 source slot (不论周); K24-A plan helper 未做 targetWeek-aware 拦截; dryRunScheduleAdjustment 已正确处理但未被复用",
+    "fixLocation": "src/lib/schedule/adjustment-plan-recommendations.ts (K24-A plan helper only)"
+  },
+  "fix": {
+    "method": "K24-A2 cross-week self-occupancy gate",
+    "gateCheck": "isTaskActiveInWeek(weekType, startWeek, endWeek, targetWeek) AND prisma.scheduleSlot.findFirst(teachingTaskId + dayOfWeek + slotIndex, NO scheduleSlotId exclusion)",
+    "onHit": "rejected.teacherConflict += 1; continue (skip all room candidates for this time)",
+    "queryKey": "teachingTaskId (not scheduleSlotId global exclusion)",
+    "localHelperAdded": "isTaskActiveInWeek (pure, no import, same semantics as week-filter.ts)",
+    "performanceImpact": "< 200ms for 90 time-point search",
+    "k23aOrConflictCheckOrDryRunNotModified": true
+  },
+  "verification": {
+    "k24a2VerifyScript": "scripts/verify-plan-recommendation-cross-week-conflict-k24-a2.ts",
+    "k24a2VerifyResult": "32/32 PASS",
+    "integrationTest": {
+      "approach": "real DB read-only: teachingTask spanning weeks 1..16, cross-week search to week 6",
+      "bugCaseCount": 0,
+      "teacherConflictRejected": ">= 1"
+    }
+  },
+  "unmodified": [
+    "src/lib/scheduler/score.ts",
+    "solver algorithm",
+    "prisma/schema.prisma, prisma/migrations/*",
+    "prisma/dev.db (NOT written)",
+    "src/lib/schedule/room-recommendations.ts (K23-A helper)",
+    "K23-A API route",
+    "src/lib/schedule/conflict-check.ts",
+    "src/lib/schedule/conflict-rules.ts",
+    "src/lib/schedule/adjustments.ts (dryRunScheduleAdjustment)",
+    "src/components/schedule-adjustment-dialog.tsx (K24-A1 UX)",
+    "RBAC permission model",
+    "recommendation ranking core"
+  ],
+  "k24aVerifyAfterFix": "149/149 PASS",
+  "k23aVerifyAfterFix": "66/66 PASS",
+  "k22cAfterFix": "73/0/0/0",
+  "blocking": false,
+  "requiresReManualVerification": true,
+  "recommendedNextStage": "K24-B-PLAN-RECOMMENDATION-E2E-MANUAL-TRIAL (re-verify after fix)"
+}

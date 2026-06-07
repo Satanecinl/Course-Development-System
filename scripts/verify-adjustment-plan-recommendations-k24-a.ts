@@ -687,6 +687,39 @@ function testUxAdvancedToolsToggle() {
     '高级选项开关 UI 文案存在')
 }
 
+// ─── AD. K24-A2: cross-week self-conflict fix ─────────────
+
+function testCrossWeekSelfConflictFix() {
+  console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+  console.log('AD. K24-A2: cross-week self-conflict fix')
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+
+  const helper = fileRead('src/lib/schedule/adjustment-plan-recommendations.ts')
+  // The cross-week gate must exist
+  assert(
+    helper.includes('taskActiveInTargetWeek') ||
+      helper.includes('crossWeekSelfOccupancy') ||
+      helper.includes('K24-A2'),
+    'helper 包含 K24-A2 cross-week 拦截 marker',
+  )
+  assert(
+    helper.includes('isTaskActiveInWeek'),
+    'helper 包含 isTaskActiveInWeek 纯 helper',
+  )
+  // The gate must NOT use id: { not: input.scheduleSlotId } —
+  // that would globally mask the source slot's target-week
+  // occurrence.
+  assert(
+    /prisma\.scheduleSlot\.findFirst[\s\S]{0,800}?teachingTaskId:\s*slot\.teachingTaskId/.test(helper),
+    'cross-week gate 按 teachingTaskId 查找 (not global scheduleSlotId exclusion)',
+  )
+  // The gate must reject into teacherConflict bucket
+  assert(
+    /taskActiveInTargetWeek[\s\S]{0,3000}?rejected\.teacherConflict[\s\S]{0,300}?continue/.test(helper),
+    'cross-week gate 命中时 rejected.teacherConflict += 1 并 continue',
+  )
+}
+
 // ─── Main ───────────────────────────────────────────────
 
 async function main() {
@@ -721,6 +754,7 @@ async function main() {
   testUxPreferredWeekSelector()
   testUxScrollableCollapsiblePlanList()
   testUxAdvancedToolsToggle()
+  testCrossWeekSelfConflictFix()
 
   console.log(`\n${'═'.repeat(50)}`)
   console.log(`📊 结果: ${passed} passed, ${failed} failed`)

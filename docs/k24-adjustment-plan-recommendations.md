@@ -528,3 +528,44 @@ K24-A verify 升级后: **145/145 PASS** (从 118 升 27)
 - `docs/k23-room-recommendation-closeout.{md,json}` (verify alignment 说明)
 
 ---
+
+## 19. K24-A2 Cross-Week Self-Conflict Fix
+
+> 本节由 K24-A2 (`K24-A2-PLAN-RECOMMENDATION-CROSS-WEEK-CONFLICT-FIX`) 阶段追加。
+
+### 19.1 背景
+
+前端人工验证发现阻塞级 bug: 将第 8 周的课调到第 13 周时，一键推荐会推荐第 13 周同课程、同星期、同节次、同教室的方案——但该课程在目标周本来就在同位置有课，这是 self-conflict。
+
+### 19.2 根因
+
+`checkScheduleConflicts` 用 `id: { not: slotId }` **全局**排除 source ScheduleSlot，不区分源周/目标周。K24-A plan helper 直接委托 K23-A room helper，后者再调 conflict check，targetWeek 不参与。K24-A **未复用** `dryRunScheduleAdjustment`（其已正确处理跨周排除）。
+
+### 19.3 修复
+
+在 K24-A plan helper 内部，对每个 `(targetWeek, day, slot)` 枚举后，增加 week-aware self-occupancy gate：
+
+- `isTaskActiveInWeek(weekType, startWeek, endWeek, targetWeek)` — task 是否在 targetWeek active
+- 若 active：`prisma.scheduleSlot.findFirst({ teachingTaskId + dayOfWeek + slotIndex })` — task 在该 (day, slot) 是否有 base slot
+- 若有：`rejected.teacherConflict += 1; continue` — 跳过该时间所有 room candidates
+
+**查询用 `teachingTaskId` 而非 `id: { not: sourceSlotId }`** — 不全局排除。
+
+### 19.4 影响范围
+
+| 项 | 状态 |
+|----|------|
+| K24-A plan helper (`adjustment-plan-recommendations.ts`) | ✅ 修改 (加 cross-week gate) |
+| K23-A helper / API / conflict-check / dry-run | ❌ 未改 |
+| score.ts / solver / schema / DB | ❌ 未改 |
+| K24-A1 UX | ❌ 未改 |
+| K24-A verify | 149/149 PASS (从 145 升 4) |
+| K23-A verify | 66/66 PASS |
+| K23 closeout verify | 84/84 PASS |
+| K22-C | 73/0/0/0 |
+
+### 19.5 后续
+
+修复后 **需要重新做前端人工验证**。建议进入 K24-B-E2E-MANUAL-TRIAL。
+
+---
