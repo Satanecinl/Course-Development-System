@@ -376,8 +376,12 @@ function testFrontendRendersPlans() {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
 
   const content = fileRead('src/components/schedule-adjustment-dialog.tsx')
-  assert(content.includes('planResult.plans.map'),
-    'dialog 渲染 plan 列表 (plans.map)')
+  // K24-A3: plan list now uses IIFE with preferredPlans/fallbackPlans
+  // filter instead of direct plans.map. Both patterns are valid.
+  assert(
+    content.includes('planResult.plans.map') || content.includes('preferredPlans.map'),
+    'dialog 渲染 plan 列表 (plans.map 或 preferredPlans.map + fallbackPlans.map)',
+  )
   assert(content.includes('p.reasons'),
     'dialog 显示 plan reasons')
   assert(content.includes('p.warnings'),
@@ -720,6 +724,41 @@ function testCrossWeekSelfConflictFix() {
   )
 }
 
+// ─── AE. K24-A3: preferredWeek-first priority ────────────
+
+function testPreferredWeekFirstPriority() {
+  console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+  console.log('AE. K24-A3: preferredWeek-first priority')
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+
+  const helper = fileRead('src/lib/schedule/adjustment-plan-recommendations.ts')
+  // Bucketed sorting
+  assert(
+    helper.includes('preferredPlans') && helper.includes('fallbackPlans'),
+    'helper 包含 preferredPlans / fallbackPlans 分桶',
+  )
+  assert(
+    helper.includes('sortByScore'),
+    'helper 包含 sortByScore 排序函数',
+  )
+  // Composite: preferred first then fallback
+  assert(
+    /\[\.\.\.preferredPlans,\s*\.\.\.fallbackPlans\]\.slice\(0,\s*limit\)/.test(helper),
+    'composite: preferredPlans 在前, fallbackPlans 在后, slice limit',
+  )
+  // Result shape
+  assert(helper.includes('preferredWeekAvailable'), 'result 包含 preferredWeekAvailable')
+  assert(helper.includes('preferredWeekPlanCount'), 'searched 包含 preferredWeekPlanCount')
+  assert(helper.includes('fallbackPlanCount'), 'searched 包含 fallbackPlanCount')
+  assert(helper.includes('isPreferredWeek'), 'plan 包含 isPreferredWeek')
+
+  // Frontend
+  const dialog = fileRead('src/components/schedule-adjustment-dialog.tsx')
+  assert(dialog.includes('首选周方案'), 'dialog 包含 "首选周方案" 分组标签')
+  assert(dialog.includes('备选周方案'), 'dialog 包含 "备选周方案" 分组标签')
+  assert(dialog.includes('planResult.preferredWeek'), 'dialog 引用 planResult.preferredWeek')
+}
+
 // ─── Main ───────────────────────────────────────────────
 
 async function main() {
@@ -755,6 +794,7 @@ async function main() {
   testUxScrollableCollapsiblePlanList()
   testUxAdvancedToolsToggle()
   testCrossWeekSelfConflictFix()
+  testPreferredWeekFirstPriority()
 
   console.log(`\n${'═'.repeat(50)}`)
   console.log(`📊 结果: ${passed} passed, ${failed} failed`)

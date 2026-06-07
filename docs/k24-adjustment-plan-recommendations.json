@@ -199,5 +199,17 @@
     "k24aVerifyAfterFix": "149/149 PASS",
     "k24a2Verify": "32/32 PASS",
     "requiresReManualVerification": true
+  },
+  "k24a3PreferredWeekFix": {
+    "stage": "K24-A3-PLAN-RECOMMENDATION-PREFERRED-WEEK-PRIORITY-FIX",
+    "date": "2026-06-07",
+    "bug": "选择优先第 13 周后，第 12/15 周方案排在前面，第 13 周方案被 limit=5 截断",
+    "rootCause": "全局 score-desc 排序 + limit 截断；preferredWeek 未参与排序优先级",
+    "fix": "preferredWeek-first 分桶排序 (preferredPlans 在前, fallbackPlans 在后, 各自按 score 排序, composite 后 slice limit)",
+    "additiveResponse": "plan.isPreferredWeek + result.preferredWeek + result.preferredWeekAvailable + searched.preferredWeekPlanCount/fallbackPlanCount",
+    "frontend": "首选周方案 / 备选周方案 分组展示",
+    "k24aVerifyAfterFix": "159/159 PASS",
+    "k24a3Verify": "50/50 PASS",
+    "requiresReManualVerification": true
   }
 }

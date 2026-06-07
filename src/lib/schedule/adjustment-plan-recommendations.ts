@@ -78,6 +78,9 @@ export interface AdjustmentPlanRecommendation {
   score: number
   reasons: string[]
   warnings: string[]
+  /** K24-A3: true when targetWeek === preferredWeek. Added so the
+   *  frontend can render "首选周" / "备选周" labels. */
+  isPreferredWeek: boolean
 }
 
 export interface AdjustmentPlanRejectedSummary {
@@ -100,6 +103,12 @@ export interface AdjustmentPlanSearched {
   /** Number of distinct rooms offered by the room layer that were
    *  used to build plans. */
   roomCandidateCount: number
+  /** K24-A3: the preferred week (the user's selected target). */
+  preferredWeek: number
+  /** K24-A3: how many plans belong to the preferred week. */
+  preferredWeekPlanCount: number
+  /** K24-A3: how many plans belong to fallback weeks. */
+  fallbackPlanCount: number
 }
 
 export interface AdjustmentPlanRecommendationResult {
@@ -108,6 +117,10 @@ export interface AdjustmentPlanRecommendationResult {
   rejectedSummary: AdjustmentPlanRejectedSummary
   searched: AdjustmentPlanSearched
   message?: string
+  /** K24-A3: the user's selected preferred week. */
+  preferredWeek: number
+  /** K24-A3: true when at least one plan belongs to preferredWeek. */
+  preferredWeekAvailable: boolean
 }
 
 // ─── Internal helpers ────────────────────────────────────
@@ -221,7 +234,7 @@ export async function findAdjustmentPlanRecommendations(
     return emptyResult('ScheduleSlot 不存在', {
       teacherConflict: 0, classGroupConflict: 0, roomConflict: 0,
       capacity: 0, linxiaoPolicy: 0, weekend: 0, unavailable: 0, other: 1,
-    }, { weeks: [], days: [], slotIndexes: [], timeCandidateCount: 0, roomCandidateCount: 0 })
+    }, { weeks: [], days: [], slotIndexes: [], timeCandidateCount: 0, roomCandidateCount: 0, preferredWeek: input.preferredWeek ?? 1, preferredWeekPlanCount: 0, fallbackPlanCount: 0 })
   }
 
   // 3. Determine preferredWeek.
@@ -423,28 +436,58 @@ export async function findAdjustmentPlanRecommendations(
             score,
             reasons,
             warnings,
+            isPreferredWeek: targetWeek === centerWeek,
           })
         }
       }
     }
   }
 
-  // 6. Sort: score desc, then (targetWeek, targetDayOfWeek,
-  //    targetSlotIndex, roomId) asc for determinism.
-  plans.sort((a, b) => {
+  // 6. K24-A3: preferredWeek-first bucketed sorting.
+  //
+  // Rationale: The previous implementation sorted all plans by score
+  // globally then sliced to limit. When preferredWeek had usable
+  // plans but lower scores than fallback weeks, those preferred-week
+  // plans were pushed out of the top-N by higher-scored fallback
+  // plans. Users who explicitly selected "优先调课至第 13 周" would
+  // see weeks 12/15 in the list instead.
+  //
+  // The fix separates plans into preferred and fallback buckets,
+  // sorts each by score desc independently, then composites:
+  //   preferred first, then fallback, capped by limit.
+  // This guarantees preferred-week plans are never pushed out.
+
+  // Mark each plan with isPreferredWeek before sorting.
+  for (const p of plans) {
+    (p as AdjustmentPlanRecommendation & { isPreferredWeek: boolean }).isPreferredWeek =
+      p.targetWeek === centerWeek
+  }
+
+  const preferredPlans = plans.filter((p) => p.targetWeek === centerWeek)
+  const fallbackPlans = plans.filter((p) => p.targetWeek !== centerWeek)
+
+  const sortByScore = (a: AdjustmentPlanRecommendation, b: AdjustmentPlanRecommendation) => {
     if (b.score !== a.score) return b.score - a.score
-    if (a.targetWeek !== b.targetWeek) return a.targetWeek - b.targetWeek
     if (a.targetDayOfWeek !== b.targetDayOfWeek) return a.targetDayOfWeek - b.targetDayOfWeek
     if (a.targetSlotIndex !== b.targetSlotIndex) return a.targetSlotIndex - b.targetSlotIndex
     return a.roomId - b.roomId
-  })
+  }
+  preferredPlans.sort(sortByScore)
+  fallbackPlans.sort(sortByScore)
 
-  const top = plans.slice(0, limit)
+  // Composite: preferred first, then fallback, capped at limit.
+  const top = [...preferredPlans, ...fallbackPlans].slice(0, limit)
+
+  const preferredWeekAvailable = preferredPlans.length > 0
+  const preferredWeekPlanCount = Math.min(preferredPlans.length, limit)
+  const fallbackPlanCount = Math.max(0, top.length - preferredWeekPlanCount)
 
   // 7. Compose message.
   let message: string | undefined
   if (top.length === 0) {
     message = '当前没有可推荐的调课方案，请尝试调整首选周次或扩大搜索范围'
+  } else if (!preferredWeekAvailable) {
+    message = `第 ${centerWeek} 周暂无可用方案，以下为邻近周备选方案`
   } else if (top.length < MIN_PLANS) {
     message = `当前可推荐调课方案少于 ${MIN_PLANS} 个`
   }
@@ -459,8 +502,13 @@ export async function findAdjustmentPlanRecommendations(
       slotIndexes,
       timeCandidateCount,
       roomCandidateCount: seenRoomIds.size,
+      preferredWeek: centerWeek,
+      preferredWeekPlanCount,
+      fallbackPlanCount,
     },
     message,
+    preferredWeek: centerWeek,
+    preferredWeekAvailable,
   }
 }
 
@@ -477,6 +525,8 @@ function emptyResult(
     rejectedSummary,
     searched,
     message,
+    preferredWeek: searched.preferredWeek,
+    preferredWeekAvailable: false,
   }
 }
 

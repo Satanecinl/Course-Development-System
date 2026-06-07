@@ -630,60 +630,132 @@ export function ScheduleAdjustmentDialog({
                   <p className="text-xs text-gray-600">
                     搜索范围：周次 [{planResult.searched.weeks.join(', ')}] · 星期 [{planResult.searched.days.join(', ')}] · 节次 [{planResult.searched.slotIndexes.join(', ')}]
                     （共枚举 {planResult.searched.timeCandidateCount} 个时间点，已用 {planResult.searched.roomCandidateCount} 间教室）
+                    {planResult.searched.preferredWeekPlanCount > 0 && ` · 首选周 ${planResult.searched.preferredWeekPlanCount} 个，备选周 ${planResult.searched.fallbackPlanCount} 个`}
                   </p>
                 )}
-                {planResult && !planResult.minimumSatisfied && planResult.plans.length > 0 && (
+                {/* K24-A3: preferredWeek unavailable message */}
+                {planResult && !planResult.preferredWeekAvailable && planResult.plans.length > 0 && (
+                  <p className="text-sm text-amber-800">
+                    第 {planResult.preferredWeek} 周暂无可用方案，以下为邻近周备选方案
+                  </p>
+                )}
+                {planResult && !planResult.minimumSatisfied && planResult.plans.length > 0 && planResult.preferredWeekAvailable && (
                   <p className="text-sm text-amber-800">
                     {planResult.message ?? `可推荐方案少于 ${MIN_RECOMMEND_DISPLAY} 个，请检查拒绝原因或继续手动选择。`}
                   </p>
                 )}
 
-                {/* K24-A1-UX: 可滚动 / 可展开下拉式列表 */}
+                {/* K24-A1-UX + K24-A3: 可滚动 / 可展开下拉式列表，分首选周 / 备选周 */}
                 {planResult && planResult.plans.length > 0 && planListOpen && (
                   <div className="space-y-2">
                     <ul
                       className="space-y-1.5 max-h-64 overflow-y-auto pr-1"
                       data-testid="k24-plan-list"
                     >
-                      {planResult.plans.map((p) => {
-                        const k = planKey(p)
-                        const isSelected = selectedPlanKey === k
-                        return (
-                          <li
-                            key={k}
-                            className={`text-sm rounded-md border px-2 py-1.5 cursor-pointer hover:bg-purple-100 ${
-                              isSelected ? 'border-purple-500 bg-purple-100' : 'border-purple-200 bg-white'
-                            }`}
-                            onClick={() => setSelectedPlanKey(k)}
-                            title="点击选中此方案"
-                            data-testid="k24-plan-item"
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className="font-medium">
-                                第 {p.targetWeek} 周 · {DAYS.find((d) => d.value === p.targetDayOfWeek)?.label} · {TIME_SLOTS.find((t) => t.index === p.targetSlotIndex)?.label ?? `${p.targetSlotIndex}`} · {p.roomName}
-                                {p.building ? `（${p.building}）` : ''}
-                              </span>
-                              <span className="text-xs text-gray-500">
-                                容量 {p.capacity} · 评分 {p.score}
-                              </span>
-                            </div>
-                            {p.reasons.length > 0 && (
-                              <ul className="text-xs text-green-700 list-disc list-inside mt-0.5">
-                                {p.reasons.map((r, idx) => (
-                                  <li key={idx}>{r}</li>
-                                ))}
-                              </ul>
-                            )}
-                            {p.warnings.length > 0 && (
-                              <ul className="text-xs text-amber-700 list-disc list-inside mt-0.5">
-                                {p.warnings.map((w, idx) => (
-                                  <li key={idx}>{w}</li>
-                                ))}
-                              </ul>
-                            )}
-                          </li>
+                      {(() => {
+                        // K24-A3: Group plans by preferred / fallback.
+                        // preferred plans are already at the front of
+                        // planResult.plans (bucketed by the helper).
+                        const preferredPlans = planResult.plans.filter(
+                          (p) => p.targetWeek === planResult.preferredWeek,
                         )
-                      })}
+                        const fallbackPlans = planResult.plans.filter(
+                          (p) => p.targetWeek !== planResult.preferredWeek,
+                        )
+                        const weekLabel = `第 ${planResult.preferredWeek} 周`
+                        return (
+                          <>
+                            {preferredPlans.length > 0 && (
+                              <li className="text-xs font-medium text-purple-700 pt-1 pb-0.5 border-b border-purple-200">
+                                首选周方案（{weekLabel}，{preferredPlans.length} 个）
+                              </li>
+                            )}
+                            {preferredPlans.map((p) => {
+                              const k = planKey(p)
+                              const isSelected = selectedPlanKey === k
+                              return (
+                                <li
+                                  key={k}
+                                  className={`text-sm rounded-md border px-2 py-1.5 cursor-pointer hover:bg-purple-100 ${
+                                    isSelected ? 'border-purple-500 bg-purple-100' : 'border-purple-200 bg-white'
+                                  }`}
+                                  onClick={() => setSelectedPlanKey(k)}
+                                  title="点击选中此方案"
+                                  data-testid="k24-plan-item"
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <span className="font-medium">
+                                      第 {p.targetWeek} 周 · {DAYS.find((d) => d.value === p.targetDayOfWeek)?.label} · {TIME_SLOTS.find((t) => t.index === p.targetSlotIndex)?.label ?? `${p.targetSlotIndex}`} · {p.roomName}
+                                      {p.building ? `（${p.building}）` : ''}
+                                    </span>
+                                    <span className="text-xs text-gray-500">
+                                      容量 {p.capacity} · 评分 {p.score}
+                                    </span>
+                                  </div>
+                                  {p.reasons.length > 0 && (
+                                    <ul className="text-xs text-green-700 list-disc list-inside mt-0.5">
+                                      {p.reasons.map((r, idx) => (
+                                        <li key={idx}>{r}</li>
+                                      ))}
+                                    </ul>
+                                  )}
+                                  {p.warnings.length > 0 && (
+                                    <ul className="text-xs text-amber-700 list-disc list-inside mt-0.5">
+                                      {p.warnings.map((w, idx) => (
+                                        <li key={idx}>{w}</li>
+                                      ))}
+                                    </ul>
+                                  )}
+                                </li>
+                              )
+                            })}
+                            {fallbackPlans.length > 0 && (
+                              <li className="text-xs font-medium text-gray-500 pt-2 pb-0.5 border-b border-gray-200">
+                                备选周方案（{fallbackPlans.length} 个）
+                              </li>
+                            )}
+                            {fallbackPlans.map((p) => {
+                              const k = planKey(p)
+                              const isSelected = selectedPlanKey === k
+                              return (
+                                <li
+                                  key={k}
+                                  className={`text-sm rounded-md border px-2 py-1.5 cursor-pointer hover:bg-purple-100 ${
+                                    isSelected ? 'border-purple-500 bg-purple-100' : 'border-purple-200 bg-white'
+                                  }`}
+                                  onClick={() => setSelectedPlanKey(k)}
+                                  title="点击选中此方案"
+                                  data-testid="k24-plan-item"
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <span className="font-medium">
+                                      第 {p.targetWeek} 周 · {DAYS.find((d) => d.value === p.targetDayOfWeek)?.label} · {TIME_SLOTS.find((t) => t.index === p.targetSlotIndex)?.label ?? `${p.targetSlotIndex}`} · {p.roomName}
+                                      {p.building ? `（${p.building}）` : ''}
+                                    </span>
+                                    <span className="text-xs text-gray-500">
+                                      容量 {p.capacity} · 评分 {p.score}
+                                    </span>
+                                  </div>
+                                  {p.reasons.length > 0 && (
+                                    <ul className="text-xs text-green-700 list-disc list-inside mt-0.5">
+                                      {p.reasons.map((r, idx) => (
+                                        <li key={idx}>{r}</li>
+                                      ))}
+                                    </ul>
+                                  )}
+                                  {p.warnings.length > 0 && (
+                                    <ul className="text-xs text-amber-700 list-disc list-inside mt-0.5">
+                                      {p.warnings.map((w, idx) => (
+                                        <li key={idx}>{w}</li>
+                                      ))}
+                                    </ul>
+                                  )}
+                                </li>
+                              )
+                            })}
+                          </>
+                        )
+                      })()}
                     </ul>
                     <div className="flex items-center gap-2 pt-1">
                       <Button

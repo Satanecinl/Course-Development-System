@@ -1,0 +1,66 @@
+{
+  "stage": "K24-A3-PLAN-RECOMMENDATION-PREFERRED-WEEK-PRIORITY-FIX",
+  "date": "2026-06-07",
+  "k24a2BaselineCommit": "3a832fd",
+  "status": "FIXED",
+  "requiresReVerification": true,
+  "bug": {
+    "description": "选择优先第 13 周后，推荐结果列表中第 12/15 周方案排在前面，第 13 周方案被 limit=5 截断",
+    "rootCause": "全局 score-desc 排序 + limit 截断；preferredWeek 未参与排序优先级；前端无分组展示"
+  },
+  "fix": {
+    "method": "preferredWeek-first bucketed sorting",
+    "implementation": {
+      "bucketing": "preferredPlans = plans.filter(week === centerWeek), fallbackPlans = plans.filter(week !== centerWeek)",
+      "sorting": "preferredPlans.sort(sortByScore) + fallbackPlans.sort(sortByScore)",
+      "compositing": "[...preferredPlans, ...fallbackPlans].slice(0, limit)",
+      "limitSemantics": "limit 先填 preferred 再填 fallback，不全局 slice"
+    },
+    "additiveResponseShape": {
+      "plan.isPreferredWeek": "boolean (targetWeek === preferredWeek)",
+      "result.preferredWeek": "number",
+      "result.preferredWeekAvailable": "boolean",
+      "result.searched.preferredWeek": "number",
+      "result.searched.preferredWeekPlanCount": "number",
+      "result.searched.fallbackPlanCount": "number"
+    },
+    "frontend": {
+      "groupedDisplay": "首选周方案 / 备选周方案 分组标签",
+      "preferredUnavailableMessage": "第 X 周暂无可用方案，以下为邻近周备选方案",
+      "scrollableList": "保留 max-h-64 overflow-y-auto"
+    },
+    "k24a2CrossWeekGateNotModified": true,
+    "k24a1UxNotModified": true
+  },
+  "verification": {
+    "k24a3VerifyScript": "scripts/verify-plan-recommendation-preferred-week-k24-a3.ts",
+    "k24a3VerifyResult": "50/50 PASS",
+    "integrationTest": {
+      "approach": "real DB read-only: preferredWeek = startWeek + 5, weekWindow = 1, limit = 5",
+      "preferredPlansBeforeFallback": true,
+      "isPreferredWeekMarkerCorrect": true
+    }
+  },
+  "unmodified": [
+    "src/lib/scheduler/score.ts",
+    "solver algorithm",
+    "prisma/schema.prisma, prisma/migrations/*",
+    "prisma/dev.db (NOT written)",
+    "src/lib/schedule/room-recommendations.ts (K23-A helper)",
+    "K23-A API route",
+    "src/lib/schedule/conflict-check.ts",
+    "src/lib/schedule/conflict-rules.ts",
+    "src/lib/schedule/adjustments.ts (dryRunScheduleAdjustment)",
+    "RBAC permission model",
+    "K24-A2 cross-week self-conflict gate",
+    "recommendation ranking core"
+  ],
+  "k24aVerifyAfterFix": "159/159 PASS",
+  "k24a3Verify": "50/50 PASS",
+  "k24a2VerifyAfterFix": "32/32 PASS",
+  "k23aVerifyAfterFix": "66/66 PASS",
+  "k22cAfterFix": "73/0/0/0",
+  "blocking": false,
+  "requiresReManualVerification": true,
+  "recommendedNextStage": "K24-B-PLAN-RECOMMENDATION-E2E-MANUAL-TRIAL (re-verify after fix)"
+}

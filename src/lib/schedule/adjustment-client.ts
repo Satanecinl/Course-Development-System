@@ -73,6 +73,8 @@ export interface AdjustmentPlanRecommendation {
   score: number
   reasons: string[]
   warnings: string[]
+  /** K24-A3: true when targetWeek === preferredWeek. */
+  isPreferredWeek: boolean
 }
 
 export interface AdjustmentPlanRejectedSummary {
@@ -92,6 +94,12 @@ export interface AdjustmentPlanSearched {
   slotIndexes: number[]
   timeCandidateCount: number
   roomCandidateCount: number
+  /** K24-A3: the user's selected preferred week. */
+  preferredWeek: number
+  /** K24-A3: how many plans belong to the preferred week. */
+  preferredWeekPlanCount: number
+  /** K24-A3: how many plans belong to fallback weeks. */
+  fallbackPlanCount: number
 }
 
 export interface AdjustmentPlanRecommendationResult {
@@ -100,6 +108,10 @@ export interface AdjustmentPlanRecommendationResult {
   rejectedSummary: AdjustmentPlanRejectedSummary
   searched: AdjustmentPlanSearched
   message?: string
+  /** K24-A3: the user's selected preferred week. */
+  preferredWeek: number
+  /** K24-A3: true when at least one plan belongs to preferredWeek. */
+  preferredWeekAvailable: boolean
 }
 
 export interface AdjustmentPlanRecommendationRequest {
@@ -133,8 +145,11 @@ export async function fetchPlanRecommendations(
     searched: data.searched ?? {
       weeks: [], days: [], slotIndexes: [],
       timeCandidateCount: 0, roomCandidateCount: 0,
+      preferredWeek: 1, preferredWeekPlanCount: 0, fallbackPlanCount: 0,
     },
     message: data.message,
+    preferredWeek: data.preferredWeek ?? data.searched?.preferredWeek ?? 1,
+    preferredWeekAvailable: data.preferredWeekAvailable ?? false,
   }
 }
 

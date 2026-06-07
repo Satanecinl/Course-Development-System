@@ -569,3 +569,52 @@ K24-A verify 升级后: **145/145 PASS** (从 118 升 27)
 修复后 **需要重新做前端人工验证**。建议进入 K24-B-E2E-MANUAL-TRIAL。
 
 ---
+
+## 20. K24-A3 Preferred-Week-First Priority Fix
+
+> 本节由 K24-A3 (`K24-A3-PLAN-RECOMMENDATION-PREFERRED-WEEK-PRIORITY-FIX`) 阶段追加。
+
+### 20.1 背景
+
+前端人工验证发现：选择"优先调课至第 13 周"后，推荐结果列表中第 12/15 周方案排在前面，第 13 周方案被 `limit=5` 截断。
+
+### 20.2 根因
+
+K24-A helper 将所有周次方案混合后按 score 全局排序，`limit=5` 截断时 score 更高的 fallback 周可挤掉 preferredWeek 方案。`preferredWeek` 仅作搜索中心，排序中无优先级。前端无分组展示。
+
+### 20.3 修复
+
+**分桶排序**：
+
+```ts
+const preferredPlans = plans.filter(week === centerWeek)
+const fallbackPlans = plans.filter(week !== centerWeek)
+preferredPlans.sort(sortByScore)
+fallbackPlans.sort(sortByScore)
+const top = [...preferredPlans, ...fallbackPlans].slice(0, limit)
+```
+
+**Additive response shape**：每个 plan 新增 `isPreferredWeek`；result 新增 `preferredWeek` / `preferredWeekAvailable`；searched 新增 `preferredWeekPlanCount` / `fallbackPlanCount`。
+
+**前端分组**：列表按"首选周方案" / "备选周方案"分组渲染。preferredWeek 无方案时显示 amber 提示"第 X 周暂无可用方案，以下为邻近周备选方案"。
+
+### 20.4 影响范围
+
+| 项 | 状态 |
+|----|------|
+| K24-A plan helper | ✅ 修改 (分桶排序 + additive types) |
+| K24-A API route | ❌ 未改 (透传已有) |
+| adjustment-client | ✅ 修改 (types 扩展) |
+| adjustment dialog | ✅ 修改 (分组展示) |
+| K24-A2 cross-week gate | ❌ 未改 |
+| score.ts / solver / schema / DB | ❌ 未改 |
+| K24-A verify | 159/159 PASS (从 149 升 10) |
+| K24-A3 专项 verify | 50/50 PASS |
+| K23-A verify | 66/66 PASS |
+| K22-C | 73/0/0/0 |
+
+### 20.5 后续
+
+修复后 **需要重新做前端人工验证**。建议进入 K24-B-E2E-MANUAL-TRIAL。
+
+---
