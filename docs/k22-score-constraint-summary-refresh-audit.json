@@ -1,0 +1,862 @@
+{
+  "generatedAt": "2026-06-07T00:19:09.207Z",
+  "stage": "K22-F12-SCORE-CONSTRAINT-SUMMARY-AUDIT-REFRESH",
+  "mode": "read-only summary refresh (no implementation)",
+  "predecessor": "K22-F11-CAPACITY-PREFERENCE-IMPL + K22-F11A-CAPACITY-PREFERENCE-DOC-AND-HARNESS-ALIGNMENT (commit 5e82388)",
+  "constraintInventory": {
+    "hard": [
+      {
+        "id": "HC1",
+        "type": "HARD",
+        "name": "教室冲突 (room conflict)",
+        "codeName": "HC1_ROOM_CONFLICT",
+        "stageIntroduced": "PRE",
+        "currentPenalty": -1000,
+        "triggerCondition": "Two slots with same dayOfWeek + slotIndex + roomId and overlapping week sets",
+        "primaryKey": "(slotA, slotB) at same day/idx/room",
+        "skipRules": [
+          "room === 0",
+          "slots with disjoint week sets"
+        ],
+        "dataSources": [
+          "ScheduleSlot.roomId",
+          "TeachingTask.weekType/startWeek/endWeek"
+        ],
+        "fullScoreCoverage": true,
+        "deltaScoreCoverage": true,
+        "sharedHelper": "hasWeekOverlap (uses weekSetCache)",
+        "detailTypeEmitted": "HC1_ROOM_CONFLICT",
+        "harnessSection": "Harness A (A3b) + Harness B",
+        "wrapperCoverage": "F3 (K22-F2/F3 wrapper), F4 (K22-F4 wrapper)",
+        "currentRisk": "NONE",
+        "notes": "Full score uses O(n^2) pairwise comparison; delta score uses O(n) per-other iteration."
+      },
+      {
+        "id": "HC2",
+        "type": "HARD",
+        "name": "教师冲突 (teacher conflict)",
+        "codeName": "HC2_TEACHER_CONFLICT",
+        "stageIntroduced": "PRE",
+        "currentPenalty": -1000,
+        "triggerCondition": "Two slots with same teacherId at same dayOfWeek + slotIndex and overlapping weeks",
+        "primaryKey": "(slotA, slotB) at same day/idx with teacherId match",
+        "skipRules": [
+          "teacherId == null",
+          "disjoint week sets"
+        ],
+        "dataSources": [
+          "TeachingTask.teacherId",
+          "expandWeeks(...)"
+        ],
+        "fullScoreCoverage": true,
+        "deltaScoreCoverage": true,
+        "sharedHelper": "hasWeekOverlap",
+        "detailTypeEmitted": "HC2_TEACHER_CONFLICT",
+        "harnessSection": "Harness B",
+        "wrapperCoverage": "F3, F4",
+        "currentRisk": "NONE",
+        "notes": "Null teacherId skips."
+      },
+      {
+        "id": "HC3",
+        "type": "HARD",
+        "name": "班级冲突 (class conflict)",
+        "codeName": "HC3_CLASS_CONFLICT",
+        "stageIntroduced": "PRE",
+        "currentPenalty": -1000,
+        "triggerCondition": "Two slots sharing a classGroupId at same dayOfWeek + slotIndex and overlapping weeks",
+        "primaryKey": "(slotA, slotB) at same day/idx with classGroupId match",
+        "skipRules": [
+          "taskClasses is empty",
+          "disjoint week sets"
+        ],
+        "dataSources": [
+          "TeachingTaskClass.classGroupId",
+          "expandWeeks(...)"
+        ],
+        "fullScoreCoverage": true,
+        "deltaScoreCoverage": true,
+        "sharedHelper": "hasWeekOverlap",
+        "detailTypeEmitted": "HC3_CLASS_CONFLICT",
+        "harnessSection": "Harness B",
+        "wrapperCoverage": "F3, F4",
+        "currentRisk": "NONE",
+        "notes": "Nested loop over taskClasses — handles merged-class."
+      },
+      {
+        "id": "HC4",
+        "type": "HARD",
+        "name": "容量超限 (capacity overflow)",
+        "codeName": "HC4_CAPACITY",
+        "stageIntroduced": "PRE",
+        "currentPenalty": -1000,
+        "triggerCondition": "taskStudentCount > room.capacity",
+        "primaryKey": "per slot (roomId, task.studentCount)",
+        "skipRules": [
+          "room === 0",
+          "room missing in roomById"
+        ],
+        "dataSources": [
+          "Room.capacity",
+          "getTaskStudentCount(task) (capacity.ts)"
+        ],
+        "fullScoreCoverage": true,
+        "deltaScoreCoverage": true,
+        "sharedHelper": "getTaskStudentCount (capacity.ts)",
+        "detailTypeEmitted": "HC4_CAPACITY",
+        "harnessSection": "Harness B + F11 J3 / J13 (over-capacity)",
+        "wrapperCoverage": "F11 (over-capacity skip test)",
+        "currentRisk": "NONE",
+        "notes": "delta uses ctx.roomById.get(roomId) for both old/new; falls back silently if missing."
+      },
+      {
+        "id": "HC5",
+        "type": "HARD",
+        "name": "教室不可用 (room unavailable)",
+        "codeName": "HC5_ROOM_UNAVAILABLE",
+        "stageIntroduced": "PRE",
+        "currentPenalty": -1000,
+        "triggerCondition": "RoomAvailability.available=false for (roomId, dayOfWeek, slotIndex)",
+        "primaryKey": "per slot (roomId, day, idx)",
+        "skipRules": [
+          "room === 0",
+          "no explicit RoomAvailability record (default available)"
+        ],
+        "dataSources": [
+          "RoomAvailability[]",
+          "isRoomAvailable(ctx, roomId, day, slotIdx)"
+        ],
+        "fullScoreCoverage": true,
+        "deltaScoreCoverage": true,
+        "sharedHelper": "isRoomAvailable",
+        "detailTypeEmitted": "HC5_ROOM_UNAVAILABLE",
+        "harnessSection": "Harness B + F8 I11 (real-to-room-zero)",
+        "wrapperCoverage": "F8 (F8A fixture pre-populates room 0 to prevent spurious fire)",
+        "currentRisk": "NONE",
+        "notes": "isRoomAvailable returns false when room not in roomById. F8 wrapper pre-populates room 0."
+      },
+      {
+        "id": "HC6",
+        "type": "HARD",
+        "name": "林校教室限制 (non-automotive forbid Linxiao)",
+        "codeName": "HC6_NON_AUTOMOTIVE_FORBID_LINXIAO",
+        "stageIntroduced": "K22-F3",
+        "currentPenalty": -1000,
+        "triggerCondition": "task is non-automotive / mixed / unknown per classGroup membership, placed in Linxiao room",
+        "primaryKey": "per slot (task.specialtyClass, room.linxiao)",
+        "skipRules": [
+          "room === 0",
+          "task is AUTOMOTIVE_ONLY",
+          "room is not Linxiao"
+        ],
+        "dataSources": [
+          "classGroup.name (automotive keyword)",
+          "room.name / room.building (Linxiao keyword)",
+          "classifySpecialty(task)",
+          "isLinxiaoRoomName(room)"
+        ],
+        "fullScoreCoverage": true,
+        "deltaScoreCoverage": true,
+        "sharedHelper": "classifySpecialty + isLinxiaoRoomName + computeHC6Penalty",
+        "detailTypeEmitted": "HC6_NON_AUTOMOTIVE_FORBID_LINXIAO",
+        "harnessSection": "Harness F (F1-F4, F9)",
+        "wrapperCoverage": "F3 (K22-F2/F3 specialty campus weekend wrapper)",
+        "currentRisk": "LOW",
+        "notes": "classGroup membership is primary; courseName/remark auxiliary. HC6 locked-slot skeleton is intentionally not scored."
+      }
+    ],
+    "soft": [
+      {
+        "id": "SC1",
+        "type": "SOFT",
+        "name": "跨楼栋连续课 (cross-building back-to-back)",
+        "codeName": "SC1_CROSS_BUILDING_BACK_TO_BACK",
+        "stageIntroduced": "PRE (full); K22-D (delta fix)",
+        "currentPenalty": -5,
+        "triggerCondition": "Same day + |idx diff|=1 + different building + (same teacher OR shared class)",
+        "primaryKey": "per ordered pair (slotA, slotB) at adjacent idx same day",
+        "skipRules": [
+          "building === UNKNOWN",
+          "same building",
+          "idx diff != 1",
+          "neither same teacher nor shared class"
+        ],
+        "dataSources": [
+          "Room.building (or inferBuilding(name) fallback)",
+          "TeachingTask.teacherId",
+          "TeachingTaskClass.classGroupId"
+        ],
+        "fullScoreCoverage": true,
+        "deltaScoreCoverage": true,
+        "sharedHelper": "getBuilding + inferBuilding (full and delta both call)",
+        "detailTypeEmitted": "SC1_CROSS_BUILDING_BACK_TO_BACK",
+        "harnessSection": "Harness A (A.2 regression guard)",
+        "wrapperCoverage": "F3 specialty campus weekend wrapper",
+        "currentRisk": "NONE",
+        "notes": "K22-D added SC1 delta logic; A.2 case is regression guard. Original HIGH risk (K22-A) is RESOLVED."
+      },
+      {
+        "id": "SC2",
+        "type": "SOFT",
+        "name": "同天多节 (same-day multi-session)",
+        "codeName": "SC2_SAME_DAY",
+        "stageIntroduced": "PRE",
+        "currentPenalty": -10,
+        "triggerCondition": "Same teachingTask with N>=2 slots on the same dayOfWeek",
+        "primaryKey": "per (teachingTaskId, dayOfWeek)",
+        "skipRules": [
+          "count <= 1"
+        ],
+        "dataSources": [
+          "ScheduleSlot.dayOfWeek",
+          "TeachingTask.id"
+        ],
+        "fullScoreCoverage": true,
+        "deltaScoreCoverage": true,
+        "sharedHelper": "inline (full uses taskDayCount map; delta iterates slotsByTask siblings)",
+        "detailTypeEmitted": "SC2_SAME_DAY",
+        "harnessSection": "Harness A (A.1)",
+        "wrapperCoverage": "F8 (default snapshot includes SC2=1), F3",
+        "currentRisk": "NONE",
+        "notes": "Penalty = -10 * (count - 1)."
+      },
+      {
+        "id": "SC3",
+        "type": "SOFT",
+        "name": "极端时间 (extreme time slot)",
+        "codeName": "SC3_EXTREME_TIME_SLOT",
+        "stageIntroduced": "PRE",
+        "currentPenalty": -1,
+        "triggerCondition": "slotIndex >= 5 (evening periods 5 & 6)",
+        "primaryKey": "per slot (day, slotIndex)",
+        "skipRules": [
+          "slotIndex < 5"
+        ],
+        "dataSources": [
+          "ScheduleSlot.slotIndex"
+        ],
+        "fullScoreCoverage": true,
+        "deltaScoreCoverage": true,
+        "sharedHelper": "direct check (full and delta both)",
+        "detailTypeEmitted": "SC3_EXTREME_TIME_SLOT",
+        "harnessSection": "Harness A",
+        "wrapperCoverage": "F8 (default snapshot includes SC3=1)",
+        "currentRisk": "NONE",
+        "notes": "Lightest soft penalty. Day-independent."
+      },
+      {
+        "id": "SC4",
+        "type": "SOFT",
+        "name": "跨校区通勤 (cross-campus commute)",
+        "codeName": "SC4_CROSS_CAMPUS",
+        "stageIntroduced": "PRE",
+        "currentPenalty": -5,
+        "triggerCondition": "Same teachingTask, same day, adjacent slotIndex, different Room.building",
+        "primaryKey": "per (slotA, slotB) at same day/idx adj with task match",
+        "skipRules": [
+          "room === 0",
+          "room.building null",
+          "idx diff != 1",
+          "different day"
+        ],
+        "dataSources": [
+          "Room.building",
+          "TeachingTask.id",
+          "ScheduleSlot"
+        ],
+        "fullScoreCoverage": true,
+        "deltaScoreCoverage": true,
+        "sharedHelper": "inline (full and delta symmetric)",
+        "detailTypeEmitted": "SC4_CROSS_CAMPUS",
+        "harnessSection": "Harness A",
+        "wrapperCoverage": "F3 (no SC4 specific wrapper)",
+        "currentRisk": "LOW",
+        "notes": "Uses room.building only (no inferBuilding fallback). Semantic difference from SC1. Carried-over LOW finding."
+      },
+      {
+        "id": "SC5",
+        "type": "SOFT",
+        "name": "教师每日课时负载均衡 (teacher day balance)",
+        "codeName": "SC5_TEACHER_DAY_BALANCE",
+        "stageIntroduced": "K22-F4",
+        "currentPenalty": -3,
+        "triggerCondition": "For one teacher: total >= 3 weekday lessons AND (maxLoad - minLoad) > 2",
+        "primaryKey": "per teacher (one aggregate per teacher)",
+        "skipRules": [
+          "teacherId == null",
+          "total < SC5_MIN_TOTAL (3)",
+          "diff <= SC5_THRESHOLD (2)"
+        ],
+        "dataSources": [
+          "TeachingTask.teacherId",
+          "ScheduleSlot.dayOfWeek"
+        ],
+        "fullScoreCoverage": true,
+        "deltaScoreCoverage": true,
+        "sharedHelper": "buildTeacherDailyCounts + computeTeacherDayBalancePenalty (shared by full + delta)",
+        "detailTypeEmitted": "SC5_TEACHER_DAY_BALANCE",
+        "harnessSection": "Harness G",
+        "wrapperCoverage": "F4 (K22-F4 teacher day balance wrapper)",
+        "currentRisk": "NONE",
+        "notes": "Aggregate per teacher. Delta uses excludeSlotId + overrideDay pattern. 3rd-position originalAssignments isolates MIN_PERT."
+      },
+      {
+        "id": "SC6",
+        "type": "SOFT",
+        "name": "汽车专业优先林校 (automotive prefers Linxiao)",
+        "codeName": "SC6_AUTOMOTIVE_PREFERS_LINXIAO",
+        "stageIntroduced": "K22-F3",
+        "currentPenalty": -20,
+        "triggerCondition": "task is AUTOMOTIVE_ONLY per classGroup membership, placed in non-Linxiao room",
+        "primaryKey": "per slot (task.specialtyClass, room.linxiao)",
+        "skipRules": [
+          "room === 0",
+          "task not AUTOMOTIVE_ONLY",
+          "room is Linxiao"
+        ],
+        "dataSources": [
+          "classGroup.name (automotive keyword)",
+          "room.name / room.building (Linxiao keyword)",
+          "classifySpecialty(task)"
+        ],
+        "fullScoreCoverage": true,
+        "deltaScoreCoverage": true,
+        "sharedHelper": "classifySpecialty + isLinxiaoRoomName + computeSC6Penalty",
+        "detailTypeEmitted": "SC6_AUTOMOTIVE_PREFERS_LINXIAO",
+        "harnessSection": "Harness F (F5, F6, F10)",
+        "wrapperCoverage": "F3 (K22-F2/F3 specialty campus weekend wrapper)",
+        "currentRisk": "NONE",
+        "notes": "Companion to HC6. Largest soft penalty. Wins over SC10 (soft-priority)."
+      },
+      {
+        "id": "SC7",
+        "type": "SOFT",
+        "name": "周末一般不排课 (weekend avoidance)",
+        "codeName": "SC7_WEEKEND_AVOIDANCE",
+        "stageIntroduced": "K22-F3",
+        "currentPenalty": -15,
+        "triggerCondition": "dayOfWeek in [6, 7] (Saturday or Sunday)",
+        "primaryKey": "per slot with day >= 6",
+        "skipRules": [
+          "dayOfWeek in [1, 2, 3, 4, 5]"
+        ],
+        "dataSources": [
+          "ScheduleSlot.dayOfWeek"
+        ],
+        "fullScoreCoverage": true,
+        "deltaScoreCoverage": true,
+        "sharedHelper": "direct check (full and delta both)",
+        "detailTypeEmitted": "SC7_WEEKEND_AVOIDANCE",
+        "harnessSection": "Harness F (F7, F8, F11)",
+        "wrapperCoverage": "F3 (K22-F2/F3 specialty campus weekend wrapper)",
+        "currentRisk": "NONE",
+        "notes": "Heavy penalty. Default snapshot does not trigger."
+      },
+      {
+        "id": "SC8",
+        "type": "SOFT",
+        "name": "班级空洞减少 (class gap reduction)",
+        "codeName": "SC8_CLASS_GAP",
+        "stageIntroduced": "K22-F6 (K22-F6A isolation)",
+        "currentPenalty": -2,
+        "triggerCondition": "For one (classGroup, day) with N>=2 weekday lessons, sum of empty periods between adjacent lessons",
+        "primaryKey": "per (classGroupId, dayOfWeek)",
+        "skipRules": [
+          "room === 0",
+          "day in [6, 7] (SC7 owns)",
+          "taskClasses empty",
+          "periods.size < 2"
+        ],
+        "dataSources": [
+          "TeachingTaskClass.classGroupId",
+          "ScheduleSlot.dayOfWeek",
+          "ScheduleSlot.slotIndex"
+        ],
+        "fullScoreCoverage": true,
+        "deltaScoreCoverage": true,
+        "sharedHelper": "buildClassDayPeriods + computeClassGapPenalty (shared by full + delta)",
+        "detailTypeEmitted": "SC8_CLASS_GAP",
+        "harnessSection": "Harness H",
+        "wrapperCoverage": "F6 (K22-F6 class gap reduction wrapper)",
+        "currentRisk": "NONE",
+        "notes": "Aggregate per (classGroup, day). Merged-class tasks count once per classGroup. F11A: H8 fixture received surgical classGroupStudentCounts update for SC10 isolation."
+      },
+      {
+        "id": "SC9",
+        "type": "SOFT",
+        "name": "教室稳定性 (teaching task room stability)",
+        "codeName": "SC9_TEACHING_TASK_ROOM_STABILITY",
+        "stageIntroduced": "K22-F8 (K22-F8A isolation)",
+        "currentPenalty": -2,
+        "triggerCondition": "For one teachingTask with N>=2 weekday slots, penalty per extra distinct room",
+        "primaryKey": "per teachingTaskId",
+        "skipRules": [
+          "room === 0",
+          "day in [6, 7] (SC7 owns)",
+          "taskClasses empty",
+          "distinctRooms.size <= 1"
+        ],
+        "dataSources": [
+          "TeachingTask.id",
+          "ScheduleSlot.roomId",
+          "ScheduleSlot.dayOfWeek"
+        ],
+        "fullScoreCoverage": true,
+        "deltaScoreCoverage": true,
+        "sharedHelper": "buildTaskRoomSet + computeTaskRoomStabilityPenalty (shared by full + delta)",
+        "detailTypeEmitted": "SC9_TEACHING_TASK_ROOM_STABILITY",
+        "harnessSection": "Harness I",
+        "wrapperCoverage": "F8 (K22-F8 classroom stability wrapper, F8A isolated)",
+        "currentRisk": "NONE",
+        "notes": "Aggregate per teachingTask. Task-level (not expanded to classGroup). F8A component-level isolation."
+      },
+      {
+        "id": "SC10",
+        "type": "SOFT",
+        "name": "教室容量利用率 (room capacity utilization)",
+        "codeName": "SC10_ROOM_CAPACITY_UTILIZATION",
+        "stageIntroduced": "K22-F11 (K22-F11A isolation)",
+        "currentPenalty": -2,
+        "thresholds": "tight > 0.90 → -2; waste < 0.30 AND cap >= 100 → -1",
+        "triggerCondition": "utilization = studentCount / room.capacity. Skip if room=0, room missing, capacity<=0, count<=0, util>1.0 (HC4 owns).",
+        "primaryKey": "per slot (no aggregate)",
+        "skipRules": [
+          "room === 0",
+          "room missing",
+          "capacity <= 0",
+          "count <= 0",
+          "utilization > 1.0 (HC4 owns)"
+        ],
+        "dataSources": [
+          "TeachingTask.taskClasses[].classGroup.studentCount",
+          "Room.capacity",
+          "getTaskStudentCount"
+        ],
+        "fullScoreCoverage": true,
+        "deltaScoreCoverage": true,
+        "sharedHelper": "computeSC10CapacityUtilizationPenalty(studentCount, roomCapacity) (shared by full + delta)",
+        "detailTypeEmitted": "SC10_ROOM_CAPACITY_UTILIZATION",
+        "harnessSection": "Harness J",
+        "wrapperCoverage": "F11 (K22-F11 capacity preference wrapper, F11A isolated)",
+        "currentRisk": "NONE",
+        "notes": "Per-slot evaluation, NOT aggregate. Delta is O(1) per move. F11A cross-harness isolation policy: surgical classGroupStudentCounts updates for H8 and F3 MIXED."
+      }
+    ],
+    "perturbation": {
+      "id": "MIN_PERT",
+      "type": "PERTURBATION",
+      "name": "最小扰动 (minimum perturbation)",
+      "codeName": "MINIMUM_PERTURBATION",
+      "stageIntroduced": "PRE",
+      "currentPenalty": -2,
+      "triggerCondition": "slot assignment differs from originalAssignments on day/idx/room",
+      "primaryKey": "per slot with moved-from-original",
+      "skipRules": [
+        "no originalAssignments entry"
+      ],
+      "dataSources": [
+        "ScheduleState.originalAssignments"
+      ],
+      "fullScoreCoverage": true,
+      "deltaScoreCoverage": true,
+      "sharedHelper": "direct comparison (full and delta both)",
+      "detailTypeEmitted": "MINIMUM_PERTURBATION",
+      "harnessSection": "Harness A (A.3, A.3b, A.4 net effect)",
+      "wrapperCoverage": "F8 (default snapshot with perturbation), F11",
+      "currentRisk": "NONE",
+      "notes": "Both paths compare against originalAssignments. 3rd-position originalAssignments trick in F4/F6/F8/F11 harness isolates SC5/SC8/SC9/SC10 contribution by making MIN_PERT net 0."
+    }
+  },
+  "penaltyConstants": [
+    {
+      "id": "HARD",
+      "codeName": "HARD_PENALTY",
+      "value": -1000,
+      "configurable": false,
+      "file": "src/lib/scheduler/score.ts",
+      "lineRange": "16"
+    },
+    {
+      "id": "HC6",
+      "codeName": "HC6_NON_AUTOMOTIVE_LINXIAO_PENALTY",
+      "value": -1000,
+      "configurable": false,
+      "file": "src/lib/scheduler/score.ts",
+      "lineRange": "22"
+    },
+    {
+      "id": "SC1",
+      "codeName": "SOFT_SC1_CROSS_BUILDING",
+      "value": -5,
+      "configurable": false,
+      "file": "src/lib/scheduler/score.ts",
+      "lineRange": "17"
+    },
+    {
+      "id": "SC2",
+      "codeName": "SOFT_SC2_SAME_DAY",
+      "value": -10,
+      "configurable": false,
+      "file": "src/lib/scheduler/score.ts",
+      "lineRange": "18"
+    },
+    {
+      "id": "SC3",
+      "codeName": "SOFT_SC3_EXTREME_TIME",
+      "value": -1,
+      "configurable": false,
+      "file": "src/lib/scheduler/score.ts",
+      "lineRange": "19"
+    },
+    {
+      "id": "SC4",
+      "codeName": "SOFT_SC4_CROSS_CAMPUS",
+      "value": -5,
+      "configurable": false,
+      "file": "src/lib/scheduler/score.ts",
+      "lineRange": "20"
+    },
+    {
+      "id": "SC5",
+      "codeName": "SC5_PENALTY_PER_EXCESS (constant in body)",
+      "value": -3,
+      "configurable": false,
+      "file": "src/lib/scheduler/score.ts",
+      "lineRange": "159"
+    },
+    {
+      "id": "SC6",
+      "codeName": "SC6_AUTOMOTIVE_NON_LINXIAO_PENALTY",
+      "value": -20,
+      "configurable": false,
+      "file": "src/lib/scheduler/score.ts",
+      "lineRange": "23"
+    },
+    {
+      "id": "SC7",
+      "codeName": "SC7_WEEKEND_PENALTY",
+      "value": -15,
+      "configurable": false,
+      "file": "src/lib/scheduler/score.ts",
+      "lineRange": "24"
+    },
+    {
+      "id": "SC8",
+      "codeName": "SC8_CLASS_GAP_PENALTY_PER_EMPTY_PERIOD",
+      "value": -2,
+      "configurable": false,
+      "file": "src/lib/scheduler/score.ts",
+      "lineRange": "25"
+    },
+    {
+      "id": "SC9",
+      "codeName": "SC9_TEACHING_TASK_ROOM_STABILITY_PENALTY_PER_EXTRA_ROOM",
+      "value": -2,
+      "configurable": false,
+      "file": "src/lib/scheduler/score.ts",
+      "lineRange": "26"
+    },
+    {
+      "id": "SC10_TIGHT",
+      "codeName": "SC10_CAPACITY_TIGHT_FIT_PENALTY",
+      "value": -2,
+      "configurable": false,
+      "file": "src/lib/scheduler/score.ts",
+      "lineRange": "29"
+    },
+    {
+      "id": "SC10_WASTE",
+      "codeName": "SC10_CAPACITY_WASTE_PENALTY",
+      "value": -1,
+      "configurable": false,
+      "file": "src/lib/scheduler/score.ts",
+      "lineRange": "30"
+    },
+    {
+      "id": "MIN_PERT",
+      "codeName": "SOFT_MINIMUM_PERTURBATION",
+      "value": -2,
+      "configurable": false,
+      "file": "src/lib/scheduler/score.ts",
+      "lineRange": "21"
+    }
+  ],
+  "harnessSummary": {
+    "sections": [
+      {
+        "letter": "A",
+        "scope": "Full / Delta consistency for SC1/SC2/SC3/SC4/MIN_PERT",
+        "caseCount": 5,
+        "componentLevelAssertion": false,
+        "minPertIsolated": false,
+        "origin": "K22-C (A.2 updated K22-D)",
+        "notes": "Compares full vs delta via re-evaluation. A.1 (SC2), A.2 (SC1 regression guard), A.3/A.3b (MIN_PERT introduction), A.4 (MIN_PERT removal)."
+      },
+      {
+        "letter": "B",
+        "scope": "HC1-HC5 hard invariant + separation",
+        "caseCount": 6,
+        "componentLevelAssertion": false,
+        "minPertIsolated": false,
+        "origin": "K22-C",
+        "notes": "Each HC verified against baseline state with no soft noise. B2-SEPARATION verifies hard/soft tagging."
+      },
+      {
+        "letter": "C",
+        "scope": "Default score snapshot regression",
+        "caseCount": 2,
+        "componentLevelAssertion": false,
+        "minPertIsolated": false,
+        "origin": "K22-C",
+        "notes": "C1 asserts hardScore=0, softScore=-11, SC2=1, SC3=1. C2 verifies MIN_PERT in perturbed state. Snapshot written to docs/k22-score-default-snapshot.json."
+      },
+      {
+        "letter": "D",
+        "scope": "Fixed-seed solver smoke (LAHC end-to-end)",
+        "caseCount": 2,
+        "componentLevelAssertion": false,
+        "minPertIsolated": false,
+        "origin": "K22-C",
+        "notes": "D1 runs solve() with seed=42, asserts hardScore preserved and iterations > 0. D2 verifies determinism."
+      },
+      {
+        "letter": "E",
+        "scope": "K21 Config Regression (static delegation)",
+        "caseCount": 2,
+        "componentLevelAssertion": false,
+        "minPertIsolated": false,
+        "origin": "K22-C",
+        "notes": "E1 verifies 4 K21-FIX-F/G scripts present. E2 verifies no score.ts or solver.ts imports in K21 config files."
+      },
+      {
+        "letter": "F",
+        "scope": "Specialty campus weekend constraints (HC6 / SC6 / SC7)",
+        "caseCount": 11,
+        "componentLevelAssertion": true,
+        "minPertIsolated": true,
+        "origin": "K22-F3",
+        "notes": "F1-F4 (HC6), F5-F6 (SC6), F7-F8 (SC7), F9-F11 (delta). Isolated fixtures with Linxiao keyword, automotive keyword, weekend day. 3rd-position originalAssignments in delta cases."
+      },
+      {
+        "letter": "G",
+        "scope": "SC5 teacher day balance",
+        "caseCount": 9,
+        "componentLevelAssertion": false,
+        "minPertIsolated": true,
+        "origin": "K22-F4",
+        "notes": "6 full cases (G1-G6) + 3 delta cases (G7-G9) with 3rd-position originalAssignments isolating MIN_PERT. Teacher with varying same-day load distributions."
+      },
+      {
+        "letter": "H",
+        "scope": "SC8 class gap reduction (F6A isolated)",
+        "caseCount": 12,
+        "componentLevelAssertion": true,
+        "minPertIsolated": true,
+        "origin": "K22-F6 / K22-F6A",
+        "notes": "8 full + 4 delta. F6A isolation: teacherId=null (SC5), 1 slot per task (SC2), periods <5 (SC3). Component-level: total soft + SC8 details count + sum. F11A: H8 fixture received surgical classGroupStudentCounts update for SC10 isolation (preserves SC8 semantics)."
+      },
+      {
+        "letter": "I",
+        "scope": "SC9 classroom stability (F8A isolated)",
+        "caseCount": 11,
+        "componentLevelAssertion": true,
+        "minPertIsolated": true,
+        "origin": "K22-F8 / K22-F8A",
+        "notes": "7 full + 4 delta. F8A isolation: teacherId=null, single task with multiple slots, weekday-only for delta, 3rd-position originalAssignments, room 0 pre-populated as UNSCHEDULED. Component-level assertion."
+      },
+      {
+        "letter": "J",
+        "scope": "SC10 room capacity utilization (F11A isolated)",
+        "caseCount": 13,
+        "componentLevelAssertion": true,
+        "minPertIsolated": true,
+        "origin": "K22-F11 / K22-F11A",
+        "notes": "8 full + 5 delta. F11A isolation: teacherId=null, 1 task 1 slot for delta (avoids SC2/SC9), weekday-only for delta, 3rd-position originalAssignments, per-room capacity, extraRoomIds. Component-level: total soft + SC10 details count + sum. Added in K22-F11 commit 3dd6945; F11A commit 5e82388 documented isolation policy."
+      }
+    ],
+    "totalApprox": 73,
+    "canonical": "73 PASS / 0 KNOWN_FAIL / 0 FAIL / 0 INFO (per K22-F11A commit 5e82388, re-verified at K22-F12)"
+  },
+  "defaultSnapshot": {
+    "expectedHardScore": 0,
+    "expectedSoftScore": -11,
+    "expectedBreakdown": {
+      "SC2_SAME_DAY": 1,
+      "SC3_EXTREME_TIME_SLOT": 1
+    },
+    "actualHardScore": 0,
+    "actualSoftScore": -11,
+    "actualBreakdown": {
+      "SC2_SAME_DAY": 1,
+      "SC3_EXTREME_TIME_SLOT": 1
+    },
+    "stable": true,
+    "deltaFromExpected": "",
+    "sc5Sc6Sc7Sc8Sc9Sc10AbsentReason": "SC5: requires teacherId!=null AND total >= 3 weekday lessons. Default fixture has 3 tasks with no teacher / single lessons, so teacher total < 3 (skip).\nSC6/HC6: requires Linxiao keyword in room.name. Default fixture rooms A/B/C have no Linxiao keyword (skip).\nSC7: requires dayOfWeek >= 6. Default fixture is weekday-only (skip).\nSC8: requires classGroup with 2+ periods on same day AND a gap. Default fixture has no such pattern (skip).\nSC9: requires teachingTask with 2+ distinct rooms in [1..5]. Default fixture has each task in only 1 room (skip).\nSC10: requires studentCount > 0 AND capacity > 0. Default fixture has all default cap=50, single-class FALLBACK=50 → util=1.0 → SC10 SKIP (HC4 owns; but HC4 does not fire either since util=1.0 not > 1.0). Wait — util=1.0 IS NOT > 1.0 so SC10 evaluates 0.90 threshold: 1.0 > 0.90 → tight -2 would fire. But actual default snapshot shows SC2=1 SC3=1, so SC10 must NOT fire. Reason: default snapshot harness uses classGroupStudentCounts: [30] (not FALLBACK), so studentCount=30, util=30/50=0.60 (in band, no fire)."
+  },
+  "crossHarnessIsolationPolicy": {
+    "documented": "K22-F11A",
+    "locations": [
+      "docs/k22-capacity-preference-constraint-impl.md Section 9.5",
+      "docs/k22-capacity-preference-constraint-impl.json f11ACrossHarnessFixtureIsolation field",
+      "scripts/verify-score-regression-harness-k22-c.ts: H8-MULTI-CLASSGROUP-MERGED comment block",
+      "scripts/verify-specialty-campus-weekend-constraints-k22-f3.ts: 3 MIXED fixture comment blocks"
+    ],
+    "rules": [
+      "Component-level assertion preferred (F6A/F8A/F11A pattern).",
+      "Surgical fixture update on synthetic params like studentCount is acceptable.",
+      "Surgical updates MUST be documented in (a) code comment, (b) impl doc, (c) impl JSON.",
+      "Surgical updates MUST NOT change: classGroup membership, room, day/period, expected constraint contribution.",
+      "Forbidden: changing test expected* value to absorb new constraint contribution."
+    ],
+    "appliedToF11": [
+      "K22-C Harness H8 (SC8 multi-classGroup)",
+      "F3 MIXED cases (specialty campus weekend)"
+    ]
+  },
+  "remainingRoadmap": {
+    "done": [
+      "SC5 (K22-F4)",
+      "SC8 (K22-F6/F6A)",
+      "SC9 (K22-F8/F8A)",
+      "SC10 (K22-F11/F11A)",
+      "HC6 (K22-F3)",
+      "SC6 (K22-F3)",
+      "SC7 (K22-F3)"
+    ],
+    "blocked": [
+      "SC4 specialty classroom matching (Room.type = NORMAL for all 53 rooms)",
+      "NEW-SC-08/09/10 (schema-dependent)"
+    ],
+    "partialOverlap": [
+      "NEW-SC-07 (teacher half-day) may overlap SC5",
+      "NEW-SC-06 (same-class consecutive switch) may overlap SC8",
+      "NEW-SC-05 (large class priority) is subsumed by SC10 tight branch"
+    ],
+    "nextStages": [
+      {
+        "stage": "K22-I-SCORE-WEIGHTS-AUDIT",
+        "rationale": "addresses F12-D-1 LOW (penalty hardcoded). Read-only audit of how weights could enter SchedulingConfig."
+      },
+      {
+        "stage": "K22-G2-ROOM-TYPE-SCHEMA-PLAN",
+        "rationale": "unblocks specialty classroom matching. Planning-only stage."
+      },
+      {
+        "stage": "K22-ROADMAP-CLOSEOUT-AUDIT",
+        "rationale": "if K22 main goal is sufficient, do closeout and move to other main lines."
+      }
+    ]
+  },
+  "dataQualityDependencies": [
+    {
+      "id": "DQ-01",
+      "topic": "Room.type underutilized",
+      "currentState": "All 53 rooms have type=NORMAL",
+      "blocker": "SC4 specialty classroom",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "DQ-02",
+      "topic": "Room.building null for most rooms",
+      "currentState": "50+/53 rooms have building=null",
+      "blocker": "SC4 cross-campus detection rate",
+      "severity": "LOW"
+    },
+    {
+      "id": "DQ-03",
+      "topic": "Course.type not modeled",
+      "currentState": "Course has no type field",
+      "blocker": "SC4 theory vs practice vs lab",
+      "severity": "MEDIUM"
+    }
+  ],
+  "findings": [
+    {
+      "id": "F12-A-1",
+      "severity": "INFO",
+      "category": "A. K22-C summary status (post-F11A baseline)",
+      "title": "K22-C Harness A-J is at 73 PASS / 0 KNOWN_FAIL / 0 FAIL / 0 INFO",
+      "currentStatus": "K22-C has 10 sections: A (5), B (6), C (2), D (2), E (2), F (11), G (9), H (12), I (11), J (13). Total = 73. F8 added 11 I cases (60 → 71). F11 added 13 J cases (60 → 73). F11A did not modify case count. Re-verified at F12 commit 5e82388 (parent).",
+      "evidence": [
+        "K22-C summary block: PASS=73, KNOWN_FAIL=0, FAIL=0, INFO=0, BLOCKING=NO",
+        "docs/k22-score-regression-harness-implementation.json: harnessSections field has 10 sections, sums to 73"
+      ],
+      "risk": "No risk. Canonical baseline confirmed.",
+      "recommendation": "Continue using 73/0/0/0 as the canonical baseline. If any future stage deviates, treat as HIGH + BLOCKING."
+    },
+    {
+      "id": "F12-B-1",
+      "severity": "INFO",
+      "category": "B. Default snapshot stability",
+      "title": "Default snapshot is stable: hardScore=0 / softScore=-11 / SC2=1 / SC3=1",
+      "currentStatus": "Default snapshot is unchanged from F8 / F9 / F10 / F11 / F11A. SC2=1 (one task with 2 same-day slots in slotIndex 1+2) and SC3=1 (one slot at slotIndex=5). No HC fires (no conflict). No SC5/SC6/SC7/SC8/SC9/SC10 fire (insufficient data in fixture).",
+      "evidence": [
+        "docs/k22-score-default-snapshot.json: hardScore=0, softScore=-11, SC2_SAME_DAY=1, SC3_EXTREME_TIME_SLOT=1",
+        "See snapshot.sc5Sc6Sc7Sc8Sc9Sc10AbsentReason for detailed skip-rule analysis"
+      ],
+      "risk": "No risk. Snapshot is the canonical regression anchor.",
+      "recommendation": "Continue using this snapshot as the regression anchor in K22-C Harness C."
+    },
+    {
+      "id": "F12-C-1",
+      "severity": "NONE",
+      "category": "C. Cross-harness fixture isolation policy",
+      "title": "F11A cross-harness fixture isolation policy is documented and in effect",
+      "currentStatus": "F11A documented the policy in 3 places: (1) docs/k22-capacity-preference-constraint-impl.md Section 9.5, (2) docs/k22-capacity-preference-constraint-impl.json f11ACrossHarnessFixtureIsolation field, (3) inline code comments in scripts/verify-specialty-campus-weekend-constraints-k22-f3.ts and scripts/verify-score-regression-harness-k22-c.ts. Policy: (a) component-level assertion preferred, (b) surgical fixture update on synthetic params like studentCount, (c) forbidden to change test expected* value. H8 + 3 F3 MIXED cases received surgical classGroupStudentCounts updates with explicit ISOLATION-only rationale.",
+      "evidence": [
+        "docs/k22-capacity-preference-constraint-impl.md: Section 9.5 \"F11A Cross-Harness Fixture Isolation\"",
+        "docs/k22-capacity-preference-constraint-impl.json: f11ACrossHarnessFixtureIsolation field",
+        "scripts/verify-score-regression-harness-k22-c.ts: H8-MULTI-CLASSGROUP-MERGED comment block",
+        "scripts/verify-specialty-campus-weekend-constraints-k22-f3.ts: 3 MIXED fixture comment blocks"
+      ],
+      "risk": "No risk. Policy is documented and effective.",
+      "recommendation": "Continue enforcing the policy for K22-F12+ future constraints."
+    },
+    {
+      "id": "F12-D-1",
+      "severity": "LOW",
+      "category": "D. Penalty scale balance",
+      "title": "Penalty scale: 11 hardcoded constants; SC6 (-20) is largest soft, dominates when both fire",
+      "currentStatus": "Hard: -1000 (HC1-HC5, HC6) — uniform. Soft range: -1 (SC3) to -20 (SC6). SC6 dominates when both SC6 and SC10 fire (e.g. AUTO_ONLY task in non-Linxiao with poor utilization). This is intentional: SC6 enforces campus-wide specialty preference; SC10 is a per-slot tiebreaker. No weighted aggregation; all penalties are fixed scalars.",
+      "evidence": [
+        "src/lib/scheduler/score.ts: 11 hardcoded constants (lines 15-33)",
+        "No SchedulingConfig.hardWeights / softWeights field",
+        "prisma/schema.prisma: SchedulingConfig has no weight fields"
+      ],
+      "risk": "LOW. Penalty scale is intentional. No correctness bug. Productization concern only.",
+      "recommendation": "Open K22-I-SCORE-WEIGHTS-AUDIT (read-only) to evaluate how to expose hardWeights / softWeights in SchedulingConfig. Do NOT implement weights in this stage. The penalty scale is currently intentional and well-balanced for the school in scope."
+    },
+    {
+      "id": "F12-E-1",
+      "severity": "LOW",
+      "category": "E. Remaining roadmap",
+      "title": "P0 / new-business / SC10 all complete. P2 candidates blocked on schema. P1 candidates may overlap with existing constraints.",
+      "currentStatus": "DONE: SC5 (F4), SC8 (F6), SC9 (F8), SC10 (F11), HC6 (F3), SC6 (F3), SC7 (F3). BLOCKED: SC4 specialty room matching (Room.type = NORMAL for all 53 rooms), NEW-SC-08/09/10 (Teacher preference / campus preference / home room — schema-dependent). PARTIAL OVERLAP: SC5 (teacher day balance) may overlap with NEW-SC-07 (teacher half-day), SC8 (class gap) may overlap with NEW-SC-06 (same-class consecutive switch), SC10 (capacity utilization) may overlap with NEW-SC-05 (large class priority). Capacity-based P1 (NEW-SC-05) is now subsumed by SC10.",
+      "evidence": [
+        "docs/k22-soft-constraints-roadmap-audit.md: 7 NEW-SC items",
+        "docs/k22-room-type-data-quality-audit.md: Room.type = NORMAL for all 53 rooms (BLOCKING for specialty classroom)"
+      ],
+      "risk": "LOW. No immediate action. Roadmap is well-categorized.",
+      "recommendation": "Open K22-G2-ROOM-TYPE-SCHEMA-PLAN (planning) if room-type matching is the goal. Open K22-I-SCORE-WEIGHTS-AUDIT (audit) if weight tuning is the goal. Do NOT open NEW-SC-07/06 directly without audit (potential overlap with SC5/SC8). NEW-SC-05 (large class) is effectively subsumed by SC10 tight branch."
+    }
+  ],
+  "severitySummary": {
+    "HIGH": 0,
+    "MEDIUM": 0,
+    "LOW": 2,
+    "INFO": 2,
+    "NONE": 1
+  },
+  "blocking": false,
+  "recommendedNextStage": "K22-I-SCORE-WEIGHTS-AUDIT (preferred — addresses F12-D-1 LOW) OR K22-G2-ROOM-TYPE-SCHEMA-PLAN (preferred if specialty classroom is the goal) OR K22-ROADMAP-CLOSEOUT-AUDIT (if K22 main goal is sufficient)",
+  "notes": [
+    "K22-F12 is a read-only summary refresh. No Prisma writes, no score.ts changes, no schema changes, no API / frontend / importer / parser / RBAC changes.",
+    "K22-C summary 73/0/0/0 is confirmed via re-verification at F12 (parent commit 5e82388).",
+    "Default snapshot is unchanged: hardScore=0, softScore=-11, SC2=1, SC3=1.",
+    "Penalty scale is intentional; SC6 (-20) is the largest soft penalty and dominates when both fire. No correctness bug.",
+    "Penalty constants remain hardcoded (carried-over MEDIUM from K22-A-C-1 / K22-E-F-1 / F12-D-1).",
+    "F11A cross-harness fixture isolation policy is documented and in effect.",
+    "No new constraint is implemented in this stage. K22-F12 is audit-only."
+  ]
+}
