@@ -1,0 +1,281 @@
+{
+  "stage": "K22-PAUSE-REAL-USAGE-TRIAL",
+  "snapshotAt": "2026-06-07",
+  "baselineCommit": "4353b53",
+  "purpose": "固化 K22 当前功能状态供真实使用 / 人工验收参考",
+  "k22FeatureState": {
+    "score": {
+      "hardConstraints": ["HC1", "HC2", "HC3", "HC4", "HC5", "HC6"],
+      "softConstraints": ["SC1", "SC2", "SC3", "SC4", "SC6", "SC7", "SC8", "SC9", "SC10"],
+      "perturbation": ["MIN_PERT"],
+      "constraintCount": 16,
+      "missingFromK22Mainline": ["SC5 (教师均衡)"],
+      "sc5Note": "SC5 is shown in businessCards.teacherDayBalance but not as a row in CONSTRAINT_REGISTRY (it's a teacher-aggregated metric). Treated as a derived business card."
+    },
+    "solver": {
+      "algorithm": "LAHC",
+      "version": "lahc-hard-first-v3",
+      "defaultConfig": {
+        "maxIterations": 10000,
+        "lahcWindowSize": 500,
+        "randomSeed": null
+      },
+      "deterministic": true,
+      "convergenceAt": "iteration 9736 (bestHardScore) on K22-L1 baseline"
+    },
+    "dataPipeline": {
+      "loadSchedulingContext": "Reads TeachingTask, Room, ScheduleSlot (semester-scoped) + relations",
+      "calculateScoreWithDetails": "Returns ScoreWithDetails (Score + ScoreDetail[])",
+      "calculateDeltaScore": "O(ctx.slots) per-move delta",
+      "buildInitialState": "From current DB slot positions",
+      "preview": "preview.ts writes SchedulingRun with resultSnapshot",
+      "apply": "apply.ts writes ScheduleSlot in transaction"
+    },
+    "resultSnapshot": {
+      "fields": [
+        "scoreBefore", "scoreAfter",
+        "hcBefore", "hcAfter",
+        "proposedChanges", "blockReasons",
+        "solverMetrics", "lockedSlotIds", "lockedSlotCount",
+        "semesterId", "semesterCode", "semesterName",
+        "scoreBreakdown (K22-L2)",
+        "config (K21-FIX-F)"
+      ],
+      "versioningPolicy": "additive only; new sub-objects are versioned (scoreBreakdown version:1)"
+    },
+    "ui": {
+      "livePreview": "src/app/admin/scheduler/scheduler-content.tsx + ScoreBreakdownDisplay",
+      "history": "src/app/admin/scheduler/history/history-content.tsx + ScoreBreakdownDisplay",
+      "breakdownComponent": "src/components/score-breakdown-display.tsx",
+      "breakdownHelper": "src/lib/scheduler/score-breakdown.ts",
+      "backwardsCompat": "Old runs (no scoreBreakdown) show '旧运行无 breakdown 数据' fallback"
+    }
+  },
+  "regressionStatus": {
+    "k22C": {
+      "name": "score-regression-harness-k22-c",
+      "passed": 73,
+      "knownFail": 0,
+      "fail": 0,
+      "info": 0,
+      "stableSince": "K22-D SC1 delta fix"
+    },
+    "k22F3": { "name": "specialty-campus-weekend", "passed": 16, "total": 16 },
+    "k22F4": { "name": "teacher-day-balance", "passed": 13, "total": 13 },
+    "k22F6": { "name": "class-gap-reduction", "passed": 12, "total": 12 },
+    "k22F8": { "name": "classroom-stability", "passed": 11, "total": 11 },
+    "k22F11": { "name": "capacity-preference", "passed": 13, "total": 13 },
+    "k22L1Eval": {
+      "name": "real-solver-quality-evaluation",
+      "initialHardScore": -1000,
+      "initialSoftScore": -1577,
+      "finalHardScore": 0,
+      "finalSoftScore": -1281,
+      "allHardResolved": true,
+      "readOnly": true,
+      "scheduleSlotWrites": 0,
+      "schedulingRunWrites": 0
+    },
+    "k22L2Verify": {
+      "name": "scheduler-breakdown-ui",
+      "passed": 186,
+      "total": 186
+    }
+  },
+  "datasetSummary": {
+    "semester": "LEGACY-DEFAULT (id=1)",
+    "teachingTasks": 308,
+    "scheduleSlots": 440,
+    "rooms": 53,
+    "teachers": 84,
+    "courses": 104,
+    "classGroups": 36,
+    "linxiaoRooms": 10,
+    "slotsWithRoom": 404,
+    "slotsWithTeacher": 439,
+    "initialWeekendSlots": 21
+  },
+  "currentQualityBaseline": {
+    "hardScore": {
+      "value": 0,
+      "allConstraintsResolved": true,
+      "HC1": 0, "HC2": 0, "HC3": 0, "HC4": 0, "HC5": 0, "HC6": 0
+    },
+    "softScore": {
+      "value": -1281,
+      "breakdown": {
+        "MIN_PERT": -854,
+        "SC9_TEACHING_TASK_ROOM_STABILITY": -156,
+        "SC8_CLASS_GAP": -114,
+        "SC3_EXTREME_TIME_SLOT": -90,
+        "SC10_ROOM_CAPACITY_UTILIZATION": -49,
+        "SC1_CROSS_BUILDING_BACK_TO_BACK": -15,
+        "SC5_TEACHER_DAY_BALANCE": -3,
+        "SC2_SAME_DAY": 0,
+        "SC4_CROSS_CAMPUS": 0,
+        "SC6_AUTOMOTIVE_PREFERS_LINXIAO": 0,
+        "SC7_WEEKEND_AVOIDANCE": 0
+      }
+    },
+    "businessCards": {
+      "weekend": 0,
+      "linxiaoHC6": 0,
+      "automotiveSC6": 0,
+      "teacherDayBalance": 1,
+      "classGap": 48,
+      "roomStability": 76,
+      "capacityUtilization": 26,
+      "minPerturbation": 427
+    },
+    "utilizationDistribution": {
+      "<0.30": 41,
+      "0.30-0.60": 87,
+      "0.60-0.90": 288,
+      "0.90-1.00": 23,
+      ">1.00": 0
+    }
+  },
+  "knownLimitations": [
+    {
+      "id": "L-MIN-PERT-HIGH",
+      "summary": "MIN_PERT 移动率 97% (427/440 slot)",
+      "cause": "Initial schedule has 1 HC conflict that solver must resolve",
+      "decision": "NOT a tuning issue; structural result of conflict resolution",
+      "stage": null,
+      "action": "Document in trial feedback; do not adjust weight"
+    },
+    {
+      "id": "L-SC9-MULTI-ROOM",
+      "summary": "76 tasks use ≥2 rooms (2 use 3 rooms)",
+      "cause": "合班 tasks need split rooms to fit student count",
+      "decision": "Acceptable; matches合班 business logic",
+      "stage": null,
+      "action": "If product wants stricter stability, consider K22-L1B (raise SC9 to -3)"
+    },
+    {
+      "id": "L-SC8-GAPS",
+      "summary": "48 (classGroup, day) pairs have period gaps; max gap=2",
+      "cause": "Class schedules spread across 5 days with 1-period gaps",
+      "decision": "Acceptable; small gaps in 26.7% of class-day pairs",
+      "stage": null,
+      "action": "Optional K22-L1B (raise SC8 to -3) if教务 wants tighter clustering"
+    },
+    {
+      "id": "L-SC5-IMBALANCE",
+      "summary": "1 teacher (李媛) with daily load [3,2,1,4,4] (diff=3)",
+      "cause": "李媛 has 14 total slots; distribution inherently uneven",
+      "decision": "Acceptable; 1/84 teachers affected",
+      "stage": null,
+      "action": "None; do not adjust weight for single-teacher edge case"
+    },
+    {
+      "id": "L-NO-WEIGHT-CONFIG",
+      "summary": "No dynamic hardWeights / softWeights UI",
+      "cause": "Not implemented by design (K22-I is the future plan)",
+      "decision": "Defer until product request",
+      "stage": "K22-I (if requested)",
+      "action": "Document as known limitation; do not pre-implement"
+    },
+    {
+      "id": "L-NO-TOP-ISSUE-LINKS",
+      "summary": "Top Issues do not link to specific slot/teacher/classGroup",
+      "cause": "Not implemented (deferred)",
+      "decision": "Defer until product request",
+      "stage": "K22-L3 (if requested)",
+      "action": "Document as known limitation; do not pre-implement"
+    },
+    {
+      "id": "L-NO-SCHEMA-EXT",
+      "summary": "No Room.type / Course.type / preferred room / homeRoom",
+      "cause": "Not in current schema",
+      "decision": "Defer until product request",
+      "stage": "K22-FutureSchema (if requested)",
+      "action": "Document as known limitation; do not pre-implement"
+    },
+    {
+      "id": "L-NO-NEW-CONSTRAINTS",
+      "summary": "No SC11 or other new soft constraints",
+      "cause": "K22 mainline converged at 16 constraints",
+      "decision": "Defer until product request",
+      "stage": "K22-FutureConstraint (if requested)",
+      "action": "Document as known limitation; do not pre-implement"
+    }
+  ],
+  "trialPrerequisites": {
+    "gitStatusClean": true,
+    "buildPass": true,
+    "k22C_73_0_0_0": true,
+    "l1Evaluation_hardScore_zero": true,
+    "l1Evaluation_readOnly": true,
+    "l2Verify_186_186": true,
+    "f3_f4_f6_f8_f11_all_pass": true,
+    "prismaValidate": true,
+    "lintZeroNewErrors": true,
+    "authFoundation_53_1_preExistingOnly": true,
+    "allGatesGreen": true
+  },
+  "trialScope": {
+    "semester": "LEGACY-DEFAULT (id=1)",
+    "config": "DEFAULT_SOLVER_CONFIG (maxIterations=10000, lahc=500, randomSeed=42)",
+    "writesScheduleSlot": 0,
+    "writesSchedulingRun": "1 per preview (normal preview behavior; can be avoided by not clicking apply)",
+    "dataBackupRecommended": "cp prisma/dev.db prisma/dev.db.backup-before-trial-<timestamp>",
+    "scope": [
+      "Live preview at /admin/scheduler",
+      "History run detail at /admin/scheduler/history",
+      "Manual schedule inspection at /dashboard",
+      "Filter by class / teacher / room"
+    ]
+  },
+  "decisionRules": {
+    "goOutcome": "K22-L1 baseline reproduces; admins can interpret breakdown; soft quality acceptable",
+    "goNextStage": "K22-PAUSE-REAL-USAGE-TRIAL closes; proceed to real production use (or end of K22)",
+    "uiIssueOutcome": "K22-L3-SCHEDULER-RESULT-QUALITY-ACTIONS",
+    "weightImbalanceOutcome": "K22-L1B-SOFT-WEIGHT-TUNING",
+    "weightsConfigurableOutcome": "K22-I-SCORE-WEIGHTS-IMPLEMENTATION-PLAN",
+    "dataBugOutcome": "K22-DataQuality",
+    "algorithmLimitOutcome": "K22-Algorithm-NextGen",
+    "schemaMissingOutcome": "K22-FutureSchema",
+    "newConstraintOutcome": "K22-FutureConstraint",
+    "noGoOutcome": "Return to K22-L1A or K22-L1B for deeper investigation"
+  },
+  "unmodifiedScopeConfirmation": {
+    "scoreLogic": "src/lib/scheduler/score.ts (NOT modified in this stage)",
+    "solverAlgorithm": "src/lib/scheduler/solver.ts (NOT modified)",
+    "types": "src/lib/scheduler/types.ts (NOT modified)",
+    "dataLoader": "src/lib/scheduler/data-loader.ts (NOT modified)",
+    "applyRollback": "src/lib/scheduler/apply.ts, rollback.ts (NOT modified)",
+    "config": "src/lib/scheduler/config.ts (NOT modified)",
+    "preview": "src/lib/scheduler/preview.ts (NOT modified)",
+    "breakdownHelper": "src/lib/scheduler/score-breakdown.ts (NOT modified)",
+    "ui": "src/components/score-breakdown-display.tsx (NOT modified)",
+    "pages": "history-content.tsx, scheduler-content.tsx (NOT modified)",
+    "api": "runs/[id]/route.ts (NOT modified)",
+    "schema": "prisma/schema.prisma (NOT modified)",
+    "migrations": "prisma/migrations/* (NOT modified)",
+    "businessData": "prisma/dev.db (NOT written by this stage)",
+    "importer": "src/lib/import/* (NOT modified)",
+    "parser": "src/lib/conflict.ts (NOT modified)",
+    "rbac": "src/lib/auth/*, src/lib/rbac/* (NOT modified)",
+    "noNewConstraints": true,
+    "noTuning": true,
+    "noHardWeightsOrSoftWeights": true,
+    "noUiFeatureExpansion": true,
+    "noTopIssueLinks": true,
+    "noSchemaExtension": true
+  },
+  "deliverableFiles": [
+    "docs/k22-real-usage-trial-plan.md",
+    "docs/k22-real-usage-trial-checklist.md",
+    "docs/k22-real-usage-trial-feedback-template.md",
+    "docs/k22-real-usage-trial-status.json (this file)",
+    "scripts/verify-real-usage-trial-readiness-k22.ts"
+  ],
+  "blocking": false,
+  "stageClosure": {
+    "k22PauseRealUsageTrialClosed": true,
+    "trialReadyToStart": true,
+    "nextAction": "Trial operator runs scripts/verify-real-usage-trial-readiness-k22.ts, then proceeds to manual trial per docs/k22-real-usage-trial-plan.md and docs/k22-real-usage-trial-checklist.md, recording feedback in docs/k22-real-usage-trial-feedback-template.md"
+  },
+  "recommendedNextStage": "Run trial; based on feedback, follow decision rules in this status file. Default end-state: end of K22 mainline (real production use). Optional follow-ups: K22-L3, K22-L1B, K22-I, K22-FutureSchema, K22-FutureConstraint, K22-DataQuality, K22-Algorithm-NextGen."
+}
