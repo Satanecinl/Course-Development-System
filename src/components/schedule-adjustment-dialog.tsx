@@ -16,7 +16,7 @@ import { DAYS, TIME_SLOTS } from '@/types/schedule'
 import type { ScheduleViewData } from '@/types/schedule'
 import type { EntityOption } from '@/components/combobox'
 import type { ScheduleAdjustmentDryRunResult } from '@/types/schedule-adjustment'
-import { dryRunScheduleAdjustment, createScheduleAdjustment, fetchRoomRecommendations, type RoomRecommendationResult } from '@/lib/schedule/adjustment-client'
+import { dryRunScheduleAdjustment, createScheduleAdjustment, fetchRoomRecommendations, fetchPlanRecommendations, type RoomRecommendationResult, type AdjustmentPlanRecommendationResult } from '@/lib/schedule/adjustment-client'
 import { useHasPermission } from '@/components/layout/current-user-context'
 
 interface ScheduleAdjustmentDialogProps {
@@ -51,6 +51,10 @@ export function ScheduleAdjustmentDialog({
   const [recommendLoading, setRecommendLoading] = useState(false)
   const [recommendResult, setRecommendResult] = useState<RoomRecommendationResult | null>(null)
   const [recommendError, setRecommendError] = useState<string | null>(null)
+  // K24-A: joint time + room plan recommendation state. Additive.
+  const [planLoading, setPlanLoading] = useState(false)
+  const [planResult, setPlanResult] = useState<AdjustmentPlanRecommendationResult | null>(null)
+  const [planError, setPlanError] = useState<string | null>(null)
   // Display-side minimum (must match the helper's MIN_CANDIDATES = 2).
   // We don't import the helper constant to keep the bundle split clean.
   const MIN_RECOMMEND_DISPLAY = 2
@@ -74,6 +78,9 @@ export function ScheduleAdjustmentDialog({
       // K23-A: clear recommendation state on item change
       setRecommendResult(null)
       setRecommendError(null)
+      // K24-A: clear plan recommendation state on item change
+      setPlanResult(null)
+      setPlanError(null)
     }
   }, [item, week])
 
@@ -157,6 +164,63 @@ export function ScheduleAdjustmentDialog({
     // fill the form. The existing 确认调课 button still gates submit.
   }
 
+  // K24-A: plan recommendation handler. Read-only call; results are
+  // advisory and do not auto-submit the adjustment.
+  async function handleRecommendPlans() {
+    if (!item) return
+    if (!canAdjust) {
+      toast.error('没有调课权限', { description: '当前账号没有调课权限' })
+      return
+    }
+    setPlanLoading(true)
+    setPlanError(null)
+    try {
+      const data = await fetchPlanRecommendations({
+        scheduleSlotId: item.slotId,
+        // Use current targetWeek as the search center so the user
+        // can narrow the window by selecting a week first.
+        preferredWeek: targetWeek,
+        weekWindow: 1,
+        includeWeekend: false,
+        limit: 5,
+      })
+      setPlanResult(data)
+      if (data.plans.length === 0) {
+        toast.warning('没有可推荐方案', {
+          description: data.message ?? '请尝试其他首选周次或扩大搜索范围',
+        })
+      } else if (!data.minimumSatisfied) {
+        toast.warning(`可推荐方案不足 ${MIN_RECOMMEND_DISPLAY} 个`, {
+          description: data.message ?? '请检查拒绝原因或继续手动选择',
+        })
+      }
+    } catch (e) {
+      const msg = String(e)
+      setPlanError(msg)
+      toast.error('推荐方案失败', { description: msg + '。请手动调课。' })
+    } finally {
+      setPlanLoading(false)
+    }
+  }
+
+  function pickPlan(plan: {
+    targetWeek: number
+    targetDayOfWeek: number
+    targetSlotIndex: number
+    roomId: number
+  }) {
+    // Fill all four fields. The form is now in a state equivalent to
+    // a fresh manual selection; user still gates dry-run / submit.
+    setTargetWeek(plan.targetWeek)
+    setNewDayOfWeek(plan.targetDayOfWeek)
+    setNewSlotIndex(plan.targetSlotIndex)
+    setNewRoomId(plan.roomId)
+    // K23-A room recommendation results are no longer relevant once
+    // the user picks a plan. Clearing avoids stale mismatched state.
+    setRecommendResult(null)
+    setDryRunResult(null)
+  }
+
   async function handleConfirm() {
     if (!item) return
     if (!canAdjust) {
@@ -230,6 +294,7 @@ export function ScheduleAdjustmentDialog({
                     setTargetWeek(parseInt(e.target.value, 10))
                     setDryRunResult(null)
                     setRecommendResult(null)
+                    setPlanResult(null)
                   }}
                   className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg bg-white"
                 >
@@ -249,6 +314,7 @@ export function ScheduleAdjustmentDialog({
                   onChange={(e) => {
                     setNewDayOfWeek(parseInt(e.target.value, 10))
                     setRecommendResult(null)
+                    setPlanResult(null)
                   }}
                   className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg bg-white"
                 >
@@ -264,6 +330,7 @@ export function ScheduleAdjustmentDialog({
                   onChange={(e) => {
                     setNewSlotIndex(parseInt(e.target.value, 10))
                     setRecommendResult(null)
+                    setPlanResult(null)
                   }}
                   className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg bg-white"
                 >
@@ -315,6 +382,15 @@ export function ScheduleAdjustmentDialog({
                 title={canAdjust ? undefined : '当前账号没有调课权限'}
               >
                 {recommendLoading ? '推荐中...' : '推荐教室'}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRecommendPlans}
+                disabled={!canAdjust || planLoading || confirmLoading}
+                title={canAdjust ? undefined : '当前账号没有调课权限'}
+              >
+                {planLoading ? '搜索方案中...' : '一键推荐调课方案'}
               </Button>
               <Button
                 size="sm"
@@ -405,6 +481,103 @@ export function ScheduleAdjustmentDialog({
                       recommendResult.rejectedSummary.linxiaoPolicy > 0 && `林校规则 ${recommendResult.rejectedSummary.linxiaoPolicy}`,
                       recommendResult.rejectedSummary.unavailable > 0 && `不可用 ${recommendResult.rejectedSummary.unavailable}`,
                       recommendResult.rejectedSummary.other > 0 && `其他 ${recommendResult.rejectedSummary.other}`,
+                    ]
+                      .filter(Boolean)
+                      .join('、') || '无'}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* K24-A: joint time + room plan recommendation results */}
+            {(planResult || planError) && (
+              <div className="rounded-lg p-3 space-y-2 bg-purple-50 border border-purple-200">
+                <p className="text-sm font-medium text-purple-800">
+                  一键推荐调课方案
+                  {planResult
+                    ? planResult.minimumSatisfied
+                      ? `（${planResult.plans.length} 个方案，已满足至少 ${MIN_RECOMMEND_DISPLAY} 个）`
+                      : `（仅 ${planResult.plans.length} 个方案，少于 ${MIN_RECOMMEND_DISPLAY} 个）`
+                    : '（请求失败）'}
+                </p>
+                {planError && (
+                  <p className="text-sm text-red-700">
+                    推荐方案 API 调用失败：{planError}。可继续手动调课。
+                  </p>
+                )}
+                {planResult && planResult.plans.length === 0 && (
+                  <p className="text-sm text-amber-800">
+                    {planResult.message ?? '当前没有可推荐方案，请尝试调整首选周次或扩大搜索范围。'}
+                  </p>
+                )}
+                {planResult && planResult.searched && (
+                  <p className="text-xs text-gray-600">
+                    搜索范围：周次 [{planResult.searched.weeks.join(', ')}] · 星期 [{planResult.searched.days.join(', ')}] · 节次 [{planResult.searched.slotIndexes.join(', ')}]
+                    （共枚举 {planResult.searched.timeCandidateCount} 个时间点，已用 {planResult.searched.roomCandidateCount} 间教室）
+                  </p>
+                )}
+                {planResult && !planResult.minimumSatisfied && planResult.plans.length > 0 && (
+                  <p className="text-sm text-amber-800">
+                    {planResult.message ?? `可推荐方案少于 ${MIN_RECOMMEND_DISPLAY} 个，请检查拒绝原因或继续手动选择。`}
+                  </p>
+                )}
+                {planResult && planResult.plans.length > 0 && (
+                  <ul className="space-y-1.5">
+                    {planResult.plans.map((p, i) => {
+                      const isPicked =
+                        newRoomId === p.roomId &&
+                        newDayOfWeek === p.targetDayOfWeek &&
+                        newSlotIndex === p.targetSlotIndex &&
+                        targetWeek === p.targetWeek
+                      return (
+                        <li
+                          key={`${p.targetWeek}-${p.targetDayOfWeek}-${p.targetSlotIndex}-${p.roomId}-${i}`}
+                          className={`text-sm rounded-md border px-2 py-1.5 cursor-pointer hover:bg-purple-100 ${
+                            isPicked ? 'border-purple-500 bg-purple-100' : 'border-purple-200 bg-white'
+                          }`}
+                          onClick={() => pickPlan(p)}
+                          title="点击填入周次 / 星期 / 节次 / 教室"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium">
+                              第 {p.targetWeek} 周 · {DAYS.find((d) => d.value === p.targetDayOfWeek)?.label} · {TIME_SLOTS.find((t) => t.index === p.targetSlotIndex)?.label ?? `${p.targetSlotIndex}`} · {p.roomName}
+                              {p.building ? `（${p.building}）` : ''}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              容量 {p.capacity} · 评分 {p.score}
+                            </span>
+                          </div>
+                          {p.reasons.length > 0 && (
+                            <ul className="text-xs text-green-700 list-disc list-inside mt-0.5">
+                              {p.reasons.map((r, idx) => (
+                                <li key={idx}>{r}</li>
+                              ))}
+                            </ul>
+                          )}
+                          {p.warnings.length > 0 && (
+                            <ul className="text-xs text-amber-700 list-disc list-inside mt-0.5">
+                              {p.warnings.map((w, idx) => (
+                                <li key={idx}>{w}</li>
+                              ))}
+                            </ul>
+                          )}
+                        </li>
+                      )
+                    })}
+                  </ul>
+                )}
+                {planResult && !planResult.minimumSatisfied && (
+                  <div className="text-xs text-gray-600">
+                    拒绝原因汇总（已合并自时间层 + 教室层）：
+                    {[
+                      planResult.rejectedSummary.roomConflict > 0 && `房间冲突 ${planResult.rejectedSummary.roomConflict}`,
+                      planResult.rejectedSummary.capacity > 0 && `容量 ${planResult.rejectedSummary.capacity}`,
+                      planResult.rejectedSummary.linxiaoPolicy > 0 && `林校规则 ${planResult.rejectedSummary.linxiaoPolicy}`,
+                      planResult.rejectedSummary.weekend > 0 && `周末 ${planResult.rejectedSummary.weekend}`,
+                      planResult.rejectedSummary.unavailable > 0 && `不可用 ${planResult.rejectedSummary.unavailable}`,
+                      planResult.rejectedSummary.teacherConflict > 0 && `教师冲突 ${planResult.rejectedSummary.teacherConflict}`,
+                      planResult.rejectedSummary.classGroupConflict > 0 && `班级冲突 ${planResult.rejectedSummary.classGroupConflict}`,
+                      planResult.rejectedSummary.other > 0 && `其他 ${planResult.rejectedSummary.other}`,
                     ]
                       .filter(Boolean)
                       .join('、') || '无'}

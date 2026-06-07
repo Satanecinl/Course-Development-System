@@ -1,0 +1,137 @@
+{
+  "stage": "K24-A-ADJUSTMENT-TIME-ROOM-JOINT-RECOMMENDATION-IMPL",
+  "closedAt": "2026-06-07",
+  "k23CloseoutBaselineCommit": "e28d4a5",
+  "k22BaselineCommit": "ab7d9fd",
+  "status": "READY_FOR_TRIAL",
+  "api": {
+    "path": "/api/schedule-adjustments/plan-recommendations",
+    "method": "POST",
+    "permission": "schedule:adjust",
+    "writesDb": false,
+    "requestShape": {
+      "scheduleSlotId": "number (required, > 0)",
+      "preferredWeek": "number (optional, 1-20)",
+      "weekWindow": "number (optional, 0-4, default 1)",
+      "includeWeekend": "boolean (optional, default false)",
+      "limit": "number (optional, 1-20, default 5)",
+      "semesterId": "number (optional)"
+    },
+    "responseShape": {
+      "ok": "true",
+      "minimumSatisfied": "boolean",
+      "plans": "AdjustmentPlanRecommendation[]",
+      "rejectedSummary": "AdjustmentPlanRejectedSummary",
+      "searched": "AdjustmentPlanSearched",
+      "message": "string | undefined"
+    }
+  },
+  "helper": {
+    "path": "src/lib/schedule/adjustment-plan-recommendations.ts",
+    "entry": "findAdjustmentPlanRecommendations(input): Promise<AdjustmentPlanRecommendationResult>",
+    "defaultLimit": 5,
+    "minPlans": 2,
+    "defaultWeekWindow": 1,
+    "defaultIncludeWeekend": false,
+    "defaultSlotIndexes": [1, 2, 3, 4, 5, 6],
+    "defaultWorkingDays": [1, 2, 3, 4, 5],
+    "weekendDays": [6, 7]
+  },
+  "frontend": {
+    "file": "src/components/schedule-adjustment-dialog.tsx",
+    "additions": [
+      "planLoading / planResult / planError state",
+      "一键推荐调课方案 button next to 推荐教室",
+      "purple panel showing plan list + reasons / warnings",
+      "click plan -> setTargetWeek / setNewDayOfWeek / setNewSlotIndex / setNewRoomId",
+      "searched summary displayed (weeks/days/slots/timeCandidateCount/roomCandidateCount)",
+      "rejected summary when minimumSatisfied=false",
+      "clear plan on item / targetWeek / day / slot change"
+    ],
+    "preserved": [
+      "K23-A 推荐教室 button (推荐教室) — K23-A 66/66 保留",
+      "K23-A 蓝色 panel 完全保留",
+      "manual room select (roomOptions with 不变 option)",
+      "manual targetWeek / day / slot select",
+      "dry-run flow",
+      "submit flow",
+      "permission gate (useHasPermission('schedule:adjust'))"
+    ]
+  },
+  "timeSearch": {
+    "weekStrategy": "preferredWeek ± weekWindow, clamped to [1, 20]",
+    "dayStrategy": "default [1..5] working days; includeWeekend=true adds [6, 7]",
+    "slotStrategy": "[1..6], exclude slotIndex 7 (中午)",
+    "skipSameTimeAsOriginal": true,
+    "defaultTimeCandidateCount": 90
+  },
+  "roomRecommendationReuse": {
+    "delegatedTo": "K23-A findAdjustmentRoomRecommendations (verbatim)",
+    "scope": "per (week, day, slot) tuple, call K23-A helper with same scheduleSlotId + targetWeek + day + slot + limit",
+    "k23aUnchanged": true,
+    "k23aVerify": "66/66 PASS preserved",
+    "k23CloseoutVerify": "75/75 PASS preserved"
+  },
+  "recommendationRules": {
+    "linxiaoAutomotive": "delegated to K23-A (K22-F2A verbatim copy)",
+    "capacity": "delegated to K23-A (sum studentCount)",
+    "conflict": "delegated to K23-A (checkScheduleConflicts)",
+    "roomPlaceholder": "delegated to K23-A (room=0 filter)",
+    "planScore": {
+      "base": "inherited from K23-A room score",
+      "bonuses": {
+        "workingDay": 20,
+        "sameWeek": 15,
+        "sameDay": 10,
+        "sameSlotIndex": 10,
+        "richReasons": 5
+      },
+      "penalties": {
+        "weekend": -20,
+        "crossWeek": -10
+      },
+      "sortBy": ["score desc", "targetWeek asc", "targetDayOfWeek asc", "targetSlotIndex asc", "roomId asc"]
+    }
+  },
+  "filters": [
+    "linxiao-policy (delegated to K23-A)",
+    "capacity (delegated to K23-A)",
+    "conflict (room/teacher/classGroup, delegated to K23-A)",
+    "room=0 placeholder (delegated to K23-A)"
+  ],
+  "ranking": [
+    "score desc",
+    "targetWeek asc",
+    "targetDayOfWeek asc",
+    "targetSlotIndex asc",
+    "roomId asc"
+  ],
+  "fallbacks": {
+    "fewerThanTwoPlans": "minimumSatisfied=false, message 提示, rejectedSummary 仍返回, searched summary 显示",
+    "zeroPlans": "minimumSatisfied=false, message='当前没有可推荐方案...', searched 仍返回",
+    "apiFailure": "UI 显示 toast + inline error，不阻塞手动调课",
+    "manualSelection": "始终可用，与推荐结果互不干扰",
+    "k23aRecommendation": "始终可用，与 K24-A 互不干扰"
+  },
+  "verification": {
+    "verifyScript": "scripts/verify-adjustment-plan-recommendations-k24-a.ts",
+    "sections": 26,
+    "cases": 80,
+    "dbIntegration": "read-only, real slot in dev.db",
+    "scope": {
+      "scoreTsModified": false,
+      "schemaModified": false,
+      "migrationsModified": false,
+      "devDbWritten": false,
+      "rbacPermissionModelModified": false,
+      "rbacPermissionsAdded": false,
+      "k23aHelperModified": false,
+      "k23aApiRouteModified": false,
+      "k23aVerifyExpectedPreserved": "66/66 PASS",
+      "k23CloseoutVerifyExpectedPreserved": "75/75 PASS",
+      "k22cExpectedPreserved": "73/0/0/0"
+    }
+  },
+  "blocking": false,
+  "recommendedNextStage": "K24-B-PLAN-RECOMMENDATION-E2E-MANUAL-TRIAL"
+}

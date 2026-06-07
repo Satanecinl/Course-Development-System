@@ -60,6 +60,84 @@ export async function fetchRoomRecommendations(
   }
 }
 
+// ── K24-A: joint time + room plan recommendation client ──
+
+export interface AdjustmentPlanRecommendation {
+  targetWeek: number
+  targetDayOfWeek: number
+  targetSlotIndex: number
+  roomId: number
+  roomName: string
+  building: string | null
+  capacity: number
+  score: number
+  reasons: string[]
+  warnings: string[]
+}
+
+export interface AdjustmentPlanRejectedSummary {
+  teacherConflict: number
+  classGroupConflict: number
+  roomConflict: number
+  capacity: number
+  linxiaoPolicy: number
+  weekend: number
+  unavailable: number
+  other: number
+}
+
+export interface AdjustmentPlanSearched {
+  weeks: number[]
+  days: number[]
+  slotIndexes: number[]
+  timeCandidateCount: number
+  roomCandidateCount: number
+}
+
+export interface AdjustmentPlanRecommendationResult {
+  minimumSatisfied: boolean
+  plans: AdjustmentPlanRecommendation[]
+  rejectedSummary: AdjustmentPlanRejectedSummary
+  searched: AdjustmentPlanSearched
+  message?: string
+}
+
+export interface AdjustmentPlanRecommendationRequest {
+  scheduleSlotId: number
+  preferredWeek?: number
+  weekWindow?: number
+  includeWeekend?: boolean
+  limit?: number
+  semesterId?: number | null
+}
+
+export async function fetchPlanRecommendations(
+  input: AdjustmentPlanRecommendationRequest,
+): Promise<AdjustmentPlanRecommendationResult> {
+  const res = await fetch('/api/schedule-adjustments/plan-recommendations', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+  const data = await res.json()
+  if (!res.ok || !data.ok) {
+    throw new Error(data.error || `HTTP ${res.status}`)
+  }
+  return {
+    minimumSatisfied: data.minimumSatisfied,
+    plans: data.plans ?? [],
+    rejectedSummary: data.rejectedSummary ?? {
+      teacherConflict: 0, classGroupConflict: 0, roomConflict: 0,
+      capacity: 0, linxiaoPolicy: 0, weekend: 0, unavailable: 0, other: 0,
+    },
+    searched: data.searched ?? {
+      weeks: [], days: [], slotIndexes: [],
+      timeCandidateCount: 0, roomCandidateCount: 0,
+    },
+    message: data.message,
+  }
+}
+
 export async function dryRunScheduleAdjustment(
   input: ScheduleAdjustmentInput,
 ): Promise<{ success: true; dryRun: ScheduleAdjustmentDryRunResult }> {
