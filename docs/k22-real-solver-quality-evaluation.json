@@ -1,0 +1,813 @@
+{
+  "stage": "K22-L1-REAL-SOLVER-QUALITY-EVALUATION-AND-TUNING",
+  "timestamp": "2026-06-07T02:17:15.546Z",
+  "solverConfig": {
+    "maxIterations": 10000,
+    "lahcWindowSize": 500,
+    "randomSeed": 42,
+    "usedSeed": 42,
+    "semester": {
+      "id": 1,
+      "code": "LEGACY-DEFAULT",
+      "name": "既有数据默认学期"
+    },
+    "readOnly": true,
+    "writesDb": false,
+    "writesScheduleSlot": false,
+    "writesSchedulingRun": false
+  },
+  "datasetSummary": {
+    "taskCount": 308,
+    "slotCount": 440,
+    "roomCount": 53,
+    "teacherCount": 84,
+    "courseCount": 104,
+    "classGroupCount": 36,
+    "slotsWithRoom": 404,
+    "slotsWithTeacher": 439,
+    "weekendSlots": 21,
+    "semesterScoped": true
+  },
+  "baselineRun": {
+    "elapsedMs": 21618,
+    "iterations": 10000,
+    "initialHardScore": -1000,
+    "initialSoftScore": -1577,
+    "finalHardScore": 0,
+    "finalSoftScore": -1281,
+    "hardScoreImprovement": 1000,
+    "softScoreImprovement": 296,
+    "metrics": {
+      "attemptedMoves": 10000,
+      "acceptedMoves": 9450,
+      "rejectedHardWorseMoves": 0,
+      "rejectedIncompatibleMoves": 145350,
+      "noCandidateIterations": 0,
+      "roomOnlyMoves": 9450,
+      "timeOnlyMoves": 0,
+      "timeAndRoomMoves": 0,
+      "bestHardScoreIteration": 9736
+    }
+  },
+  "tunedRun": null,
+  "scoreBreakdown": [
+    {
+      "constraintId": "HC1",
+      "type": "HARD",
+      "description": "同一教室同一时段被两个任务占用",
+      "penalty": -1000,
+      "triggerCount": 0,
+      "totalPenalty": 0,
+      "averagePenalty": 0,
+      "topExamples": []
+    },
+    {
+      "constraintId": "HC2",
+      "type": "HARD",
+      "description": "同一教师同一时段被两个任务占用",
+      "penalty": -1000,
+      "triggerCount": 0,
+      "totalPenalty": 0,
+      "averagePenalty": 0,
+      "topExamples": []
+    },
+    {
+      "constraintId": "HC3",
+      "type": "HARD",
+      "description": "同一班级同一时段被两个任务占用",
+      "penalty": -1000,
+      "triggerCount": 0,
+      "totalPenalty": 0,
+      "averagePenalty": 0,
+      "topExamples": []
+    },
+    {
+      "constraintId": "HC4",
+      "type": "HARD",
+      "description": "学生人数超过教室容量",
+      "penalty": -1000,
+      "triggerCount": 0,
+      "totalPenalty": 0,
+      "averagePenalty": 0,
+      "topExamples": []
+    },
+    {
+      "constraintId": "HC5",
+      "type": "HARD",
+      "description": "教室在该时段被标记为不可用",
+      "penalty": -1000,
+      "triggerCount": 0,
+      "totalPenalty": 0,
+      "averagePenalty": 0,
+      "topExamples": []
+    },
+    {
+      "constraintId": "HC6",
+      "type": "HARD",
+      "description": "非汽车/混合/未知专业任务被安排在林校教室",
+      "penalty": -1000,
+      "triggerCount": 0,
+      "totalPenalty": 0,
+      "averagePenalty": 0,
+      "topExamples": []
+    },
+    {
+      "constraintId": "SC1",
+      "type": "SOFT",
+      "description": "同一教师或同班在相邻时段跨楼栋上课",
+      "penalty": -5,
+      "triggerCount": 3,
+      "totalPenalty": -15,
+      "averagePenalty": -5,
+      "topExamples": [
+        {
+          "slotId": 46,
+          "relatedSlotId": 51,
+          "message": "跨楼栋连续课: 11号楼→1号楼 (习近平新时代中国特色社会主义思想概论 与 金属材料与热处理)",
+          "penalty": -5
+        },
+        {
+          "slotId": 266,
+          "relatedSlotId": 279,
+          "message": "跨楼栋连续课: 1号楼→11号楼 (职业素养 与 冶金传输原理)",
+          "penalty": -5
+        },
+        {
+          "slotId": 414,
+          "relatedSlotId": 416,
+          "message": "跨楼栋连续课: 实训楼→11号楼 (经济林栽培 与 学生职业发展与就业指导)",
+          "penalty": -5
+        }
+      ]
+    },
+    {
+      "constraintId": "SC2",
+      "type": "SOFT",
+      "description": "同一任务在同一天有多个时段",
+      "penalty": -10,
+      "triggerCount": 0,
+      "totalPenalty": 0,
+      "averagePenalty": 0,
+      "topExamples": []
+    },
+    {
+      "constraintId": "SC3",
+      "type": "SOFT",
+      "description": "上课时间在第 5 节或更晚（偏晚）",
+      "penalty": -1,
+      "triggerCount": 90,
+      "totalPenalty": -90,
+      "averagePenalty": -1,
+      "topExamples": [
+        {
+          "slotId": 8,
+          "message": "极端时间: 创新创业教育 在第6节（偏晚）",
+          "penalty": -1
+        },
+        {
+          "slotId": 9,
+          "message": "极端时间: 形势与政策 在第5节（偏晚）",
+          "penalty": -1
+        },
+        {
+          "slotId": 12,
+          "message": "极端时间: 大学英语 在第6节（偏晚）",
+          "penalty": -1
+        },
+        {
+          "slotId": 13,
+          "message": "极端时间: 液压与气压传动（） 在第5节（偏晚）",
+          "penalty": -1
+        },
+        {
+          "slotId": 17,
+          "message": "极端时间: 习近平新时代中国特色社会主义思想概论 在第5节（偏晚）",
+          "penalty": -1
+        }
+      ]
+    },
+    {
+      "constraintId": "SC4",
+      "type": "SOFT",
+      "description": "同一任务同天相邻时段在不同楼栋",
+      "penalty": -5,
+      "triggerCount": 0,
+      "totalPenalty": 0,
+      "averagePenalty": 0,
+      "topExamples": []
+    },
+    {
+      "constraintId": "MIN_PERT",
+      "type": "SOFT",
+      "description": "任务从原始位置被移动",
+      "penalty": -2,
+      "triggerCount": 427,
+      "totalPenalty": -854,
+      "averagePenalty": -2,
+      "topExamples": [
+        {
+          "slotId": 1,
+          "message": "扰动: 心理健康教育 从原位置移动",
+          "penalty": -2
+        },
+        {
+          "slotId": 2,
+          "message": "扰动: 机械制图 从原位置移动",
+          "penalty": -2
+        },
+        {
+          "slotId": 3,
+          "message": "扰动: 金属材料与热处理 从原位置移动",
+          "penalty": -2
+        },
+        {
+          "slotId": 4,
+          "message": "扰动: 电工电子技术 从原位置移动",
+          "penalty": -2
+        },
+        {
+          "slotId": 5,
+          "message": "扰动: 液压与气压传动 从原位置移动",
+          "penalty": -2
+        }
+      ]
+    },
+    {
+      "constraintId": "SC6",
+      "type": "SOFT",
+      "description": "汽车专业任务未安排在林校教室",
+      "penalty": -20,
+      "triggerCount": 0,
+      "totalPenalty": 0,
+      "averagePenalty": 0,
+      "topExamples": []
+    },
+    {
+      "constraintId": "SC7",
+      "type": "SOFT",
+      "description": "任务被安排在周末（周六/周日）",
+      "penalty": -15,
+      "triggerCount": 0,
+      "totalPenalty": 0,
+      "averagePenalty": 0,
+      "topExamples": []
+    },
+    {
+      "constraintId": "SC8",
+      "type": "SOFT",
+      "description": "同一班级同天存在上课空洞（period gap）",
+      "penalty": -2,
+      "triggerCount": 48,
+      "totalPenalty": -114,
+      "averagePenalty": -2.375,
+      "topExamples": [
+        {
+          "message": "classGroup 1 day 2: 4 periods, penalty -2",
+          "penalty": -2
+        },
+        {
+          "message": "classGroup 2 day 2: 5 periods, penalty -2",
+          "penalty": -2
+        },
+        {
+          "message": "classGroup 3 day 5: 4 periods, penalty -2",
+          "penalty": -2
+        },
+        {
+          "message": "classGroup 3 day 4: 4 periods, penalty -2",
+          "penalty": -2
+        },
+        {
+          "message": "classGroup 17 day 4: 3 periods, penalty -4",
+          "penalty": -4
+        }
+      ]
+    },
+    {
+      "constraintId": "SC9",
+      "type": "SOFT",
+      "description": "同一任务在多个教室上课（缺稳定性）",
+      "penalty": -2,
+      "triggerCount": 76,
+      "totalPenalty": -156,
+      "averagePenalty": -2.0526315789473686,
+      "topExamples": [
+        {
+          "message": "task 6: 2 distinct rooms, penalty -2",
+          "penalty": -2
+        },
+        {
+          "message": "task 12: 2 distinct rooms, penalty -2",
+          "penalty": -2
+        },
+        {
+          "message": "task 21: 2 distinct rooms, penalty -2",
+          "penalty": -2
+        },
+        {
+          "message": "task 27: 2 distinct rooms, penalty -2",
+          "penalty": -2
+        },
+        {
+          "message": "task 29: 2 distinct rooms, penalty -2",
+          "penalty": -2
+        }
+      ]
+    },
+    {
+      "constraintId": "SC10",
+      "type": "SOFT",
+      "description": "教室容量利用率过紧(>90%)或过浪费(<30% 且容量>=100)",
+      "penalty": -2,
+      "triggerCount": 26,
+      "totalPenalty": -49,
+      "averagePenalty": -1.8846153846153846,
+      "topExamples": [
+        {
+          "slotId": 17,
+          "message": "容量利用率 24.5% (waste): 任务 16 49 人 (REAL_STUDENT_COUNT)，教室 1-142 容量 200",
+          "penalty": -1
+        },
+        {
+          "slotId": 34,
+          "message": "容量利用率 100.0% (tight): 任务 31 61 人 (REAL_STUDENT_COUNT)，教室 10-316 容量 61",
+          "penalty": -2
+        },
+        {
+          "slotId": 36,
+          "message": "容量利用率 92.7% (tight): 任务 33 38 人 (REAL_STUDENT_COUNT)，教室 11-208 或 12-201 容量 41",
+          "penalty": -2
+        },
+        {
+          "slotId": 45,
+          "message": "容量利用率 90.7% (tight): 任务 39 49 人 (REAL_STUDENT_COUNT)，教室 11-521 容量 54",
+          "penalty": -2
+        },
+        {
+          "slotId": 51,
+          "message": "容量利用率 90.7% (tight): 任务 45 49 人 (REAL_STUDENT_COUNT)，教室 1-232 容量 54",
+          "penalty": -2
+        }
+      ]
+    }
+  ],
+  "hardFeasibility": {
+    "initialHardScore": -1000,
+    "finalHardScore": 0,
+    "allHardResolved": true,
+    "byHard": {
+      "HC1": 0,
+      "HC2": 0,
+      "HC3": 0,
+      "HC4": 0,
+      "HC5": 0,
+      "HC6": 0
+    }
+  },
+  "weekendAnalysis": {
+    "initialWeekendSlots": 21,
+    "finalWeekendSlots": 0,
+    "finalWeekendTasks": [],
+    "finalWeekendTeachers": [],
+    "finalWeekendClasses": [],
+    "sc7Penalty": 0,
+    "sc7Count": 0,
+    "weekendByDay": {
+      "6": 0,
+      "7": 0
+    },
+    "finalWeekendTaskCount": 0,
+    "finalWeekendTeacherCount": 0,
+    "finalWeekendClassCount": 0
+  },
+  "linxiaoAutomotiveAnalysis": {
+    "hc6Count": 0,
+    "sc6Count": 0,
+    "hc6Penalty": 0,
+    "sc6Penalty": 0,
+    "linxiaoRoomIds": [
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      49
+    ],
+    "linxiaoRoomNames": [
+      "林校\n305",
+      "林校\n304",
+      "林校304",
+      "林校305",
+      "林校\n301",
+      "林校303",
+      "林校\n303",
+      "林校301",
+      "林校306",
+      "林校\n306"
+    ]
+  },
+  "teacherDayBalanceAnalysis": {
+    "sc5Count": 1,
+    "sc5Penalty": -3,
+    "worstTeacherDistributions": [
+      {
+        "teacherId": 5,
+        "teacherName": "李媛",
+        "distribution": [
+          3,
+          2,
+          1,
+          4,
+          4
+        ],
+        "diff": 3,
+        "penalty": -3
+      }
+    ],
+    "imbalancedTeacherCount": 1
+  },
+  "classGapAnalysis": {
+    "sc8Count": 48,
+    "sc8Penalty": -114,
+    "worstClassGaps": [
+      {
+        "classGroupId": 1,
+        "classGroupName": "2025级智能轧钢技术1班",
+        "day": 2,
+        "periods": [
+          2,
+          3,
+          5,
+          6
+        ],
+        "gap": 1,
+        "penalty": -2
+      },
+      {
+        "classGroupId": 2,
+        "classGroupName": "2025级智能轧钢技术2班",
+        "day": 2,
+        "periods": [
+          1,
+          2,
+          3,
+          5,
+          6
+        ],
+        "gap": 1,
+        "penalty": -2
+      },
+      {
+        "classGroupId": 3,
+        "classGroupName": "2025级钢铁智能冶金技术1班（高本贯通）",
+        "day": 5,
+        "periods": [
+          2,
+          3,
+          4,
+          6
+        ],
+        "gap": 1,
+        "penalty": -2
+      },
+      {
+        "classGroupId": 3,
+        "classGroupName": "2025级钢铁智能冶金技术1班（高本贯通）",
+        "day": 4,
+        "periods": [
+          1,
+          2,
+          3,
+          5
+        ],
+        "gap": 1,
+        "penalty": -2
+      },
+      {
+        "classGroupId": 17,
+        "classGroupName": "2025级森林草原防火技术1班",
+        "day": 5,
+        "periods": [
+          3,
+          4,
+          6
+        ],
+        "gap": 1,
+        "penalty": -2
+      },
+      {
+        "classGroupId": 6,
+        "classGroupName": "2025级机电一体化技术1班",
+        "day": 5,
+        "periods": [
+          1,
+          2,
+          3,
+          4,
+          6
+        ],
+        "gap": 1,
+        "penalty": -2
+      },
+      {
+        "classGroupId": 7,
+        "classGroupName": "2025级机电一体化技术2班",
+        "day": 5,
+        "periods": [
+          4,
+          6
+        ],
+        "gap": 1,
+        "penalty": -2
+      },
+      {
+        "classGroupId": 6,
+        "classGroupName": "2025级机电一体化技术1班",
+        "day": 4,
+        "periods": [
+          2,
+          3,
+          5,
+          6
+        ],
+        "gap": 1,
+        "penalty": -2
+      },
+      {
+        "classGroupId": 6,
+        "classGroupName": "2025级机电一体化技术1班",
+        "day": 3,
+        "periods": [
+          2,
+          3,
+          4,
+          6
+        ],
+        "gap": 1,
+        "penalty": -2
+      },
+      {
+        "classGroupId": 7,
+        "classGroupName": "2025级机电一体化技术2班",
+        "day": 1,
+        "periods": [
+          1,
+          3,
+          4,
+          5,
+          6
+        ],
+        "gap": 1,
+        "penalty": -2
+      },
+      {
+        "classGroupId": 9,
+        "classGroupName": "2025级机电一体化技术4班",
+        "day": 2,
+        "periods": [
+          1,
+          3,
+          4,
+          5
+        ],
+        "gap": 1,
+        "penalty": -2
+      },
+      {
+        "classGroupId": 8,
+        "classGroupName": "2025级机电一体化技术3班",
+        "day": 1,
+        "periods": [
+          1,
+          2,
+          4,
+          5,
+          6
+        ],
+        "gap": 1,
+        "penalty": -2
+      },
+      {
+        "classGroupId": 9,
+        "classGroupName": "2025级机电一体化技术4班",
+        "day": 1,
+        "periods": [
+          1,
+          2,
+          4,
+          5,
+          6
+        ],
+        "gap": 1,
+        "penalty": -2
+      },
+      {
+        "classGroupId": 8,
+        "classGroupName": "2025级机电一体化技术3班",
+        "day": 5,
+        "periods": [
+          1,
+          3,
+          4,
+          5
+        ],
+        "gap": 1,
+        "penalty": -2
+      },
+      {
+        "classGroupId": 9,
+        "classGroupName": "2025级机电一体化技术4班",
+        "day": 5,
+        "periods": [
+          1,
+          3
+        ],
+        "gap": 1,
+        "penalty": -2
+      }
+    ]
+  },
+  "roomStabilityAnalysis": {
+    "sc9Count": 76,
+    "sc9Penalty": -156,
+    "tasksWithMultipleRooms": 76,
+    "mostRooms": [
+      {
+        "taskId": 199,
+        "courseName": "大学英语",
+        "roomCount": 3,
+        "penalty": -4
+      },
+      {
+        "taskId": 200,
+        "courseName": "大学日语",
+        "roomCount": 3,
+        "penalty": -4
+      },
+      {
+        "taskId": 6,
+        "courseName": "无机化学",
+        "roomCount": 2,
+        "penalty": -2
+      },
+      {
+        "taskId": 12,
+        "courseName": "大学英语",
+        "roomCount": 2,
+        "penalty": -2
+      },
+      {
+        "taskId": 21,
+        "courseName": "无机化学",
+        "roomCount": 2,
+        "penalty": -2
+      },
+      {
+        "taskId": 27,
+        "courseName": "高等数学",
+        "roomCount": 2,
+        "penalty": -2
+      },
+      {
+        "taskId": 29,
+        "courseName": "线性代数",
+        "roomCount": 2,
+        "penalty": -2
+      },
+      {
+        "taskId": 43,
+        "courseName": "冶金热工基础",
+        "roomCount": 2,
+        "penalty": -2
+      },
+      {
+        "taskId": 71,
+        "courseName": "PLC技术与应用",
+        "roomCount": 2,
+        "penalty": -2
+      },
+      {
+        "taskId": 72,
+        "courseName": "电机与电气控制技术",
+        "roomCount": 2,
+        "penalty": -2
+      }
+    ]
+  },
+  "capacityUtilizationAnalysis": {
+    "sc10TightCount": 23,
+    "sc10WasteCount": 3,
+    "sc10Penalty": -49,
+    "utilizationDistribution": {
+      "<0.30": 41,
+      "0.30-0.60": 87,
+      "0.60-0.90": 288,
+      "0.90-1.00": 23,
+      ">1.00": 0
+    },
+    "sampleTight": [
+      {
+        "slotId": 34,
+        "message": "容量利用率 100.0% (tight): 任务 31 61 人 (REAL_STUDENT_COUNT)，教室 10-316 容量 61"
+      },
+      {
+        "slotId": 36,
+        "message": "容量利用率 92.7% (tight): 任务 33 38 人 (REAL_STUDENT_COUNT)，教室 11-208 或 12-201 容量 41"
+      },
+      {
+        "slotId": 45,
+        "message": "容量利用率 90.7% (tight): 任务 39 49 人 (REAL_STUDENT_COUNT)，教室 11-521 容量 54"
+      },
+      {
+        "slotId": 51,
+        "message": "容量利用率 90.7% (tight): 任务 45 49 人 (REAL_STUDENT_COUNT)，教室 1-232 容量 54"
+      }
+    ],
+    "sampleWaste": [
+      {
+        "slotId": 17,
+        "message": "容量利用率 24.5% (waste): 任务 16 49 人 (REAL_STUDENT_COUNT)，教室 1-142 容量 200"
+      }
+    ]
+  },
+  "oldConstraintsAnalysis": {
+    "sc1": {
+      "count": 3,
+      "penalty": -15
+    },
+    "sc2": {
+      "count": 0,
+      "penalty": 0
+    },
+    "sc3": {
+      "count": 90,
+      "penalty": -90
+    },
+    "sc4": {
+      "count": 0,
+      "penalty": 0
+    },
+    "minPert": {
+      "count": 427,
+      "penalty": -854,
+      "movedSlotCount": 427,
+      "totalSlots": 440
+    }
+  },
+  "topQualityIssues": [
+    {
+      "rank": 1,
+      "issue": "SC5 教师负载不均 1 个教师",
+      "severity": "MEDIUM",
+      "detail": "最严重: 李媛 [3,2,1,4,4] (diff=3, penalty=-3)"
+    },
+    {
+      "rank": 2,
+      "issue": "SC8 班级空洞 48 个 (classGroup, day) 对",
+      "severity": "MEDIUM",
+      "detail": "最严重: 2025级智能轧钢技术1班 星期2 periods=[2,3,5,6] gap=1"
+    },
+    {
+      "rank": 3,
+      "issue": "SC9 教室不稳定 76 个 task 使用 ≥2 教室",
+      "severity": "MEDIUM",
+      "detail": "最严重: 大学英语 使用 3 个不同教室"
+    },
+    {
+      "rank": 4,
+      "issue": "SC10 容量利用率问题 tight=23, waste=3",
+      "severity": "LOW",
+      "detail": "<0.30: 41, 0.30-0.60: 87, 0.60-0.90: 288, 0.90-1.00: 23, >1.00: 0"
+    },
+    {
+      "rank": 5,
+      "issue": "MIN_PERT 移动 427/440 slot (97.0%)",
+      "severity": "HIGH",
+      "detail": "扣分 -854；solver 在初始排课基础上做了较多调整。"
+    },
+    {
+      "rank": 6,
+      "issue": "SC1 跨楼栋连续 3 次",
+      "severity": "LOW",
+      "detail": "扣分 -15；是结构问题或不可避免。"
+    }
+  ],
+  "tuningDecision": {
+    "applied": false,
+    "reason": "baseline 分析先记录；如后续发现明显权重失衡，将在 K22-L1B 阶段调参。"
+  },
+  "verification": {
+    "k22c": "待运行 verify-score-regression-harness-k22-c.ts",
+    "f11": "待运行 verify-capacity-preference-constraint-k22-f11.ts",
+    "f8": "待运行 verify-classroom-stability-constraint-k22-f8.ts",
+    "f6": "待运行 verify-class-gap-reduction-constraint-k22-f6.ts",
+    "f4": "待运行 verify-teacher-day-balance-constraint-k22-f4.ts",
+    "f3": "待运行 verify-specialty-campus-weekend-constraints-k22-f3.ts"
+  },
+  "blocking": false,
+  "recommendedNextStage": "K22-L1B-SOFT-WEIGHT-TUNING"
+}
