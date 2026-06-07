@@ -1,0 +1,594 @@
+{
+  "stage": "K25-A-MULTI-SEMESTER-COURSE-SCOPING-AUDIT",
+  "status": "AUDIT_COMPLETE",
+  "date": "2026-06-07",
+  "baselineCommit": "4f3180d",
+  "summary": {
+    "overallReadiness": "PARTIAL",
+    "blocking": false,
+    "highRiskCount": 2,
+    "mediumRiskCount": 10,
+    "lowRiskCount": 0,
+    "infoCount": 1
+  },
+  "schemaAudit": [
+    {
+      "model": "Semester",
+      "hasSemesterId": false,
+      "semesterIdRequired": false,
+      "hasSemesterRelation": false
+    },
+    {
+      "model": "ClassGroup",
+      "hasSemesterId": true,
+      "semesterIdRequired": false,
+      "hasSemesterRelation": true
+    },
+    {
+      "model": "Teacher",
+      "hasSemesterId": false,
+      "semesterIdRequired": false,
+      "hasSemesterRelation": false
+    },
+    {
+      "model": "Course",
+      "hasSemesterId": false,
+      "semesterIdRequired": false,
+      "hasSemesterRelation": false
+    },
+    {
+      "model": "Room",
+      "hasSemesterId": false,
+      "semesterIdRequired": false,
+      "hasSemesterRelation": false
+    },
+    {
+      "model": "TeachingTask",
+      "hasSemesterId": true,
+      "semesterIdRequired": false,
+      "hasSemesterRelation": true
+    },
+    {
+      "model": "ScheduleSlot",
+      "hasSemesterId": true,
+      "semesterIdRequired": false,
+      "hasSemesterRelation": true
+    },
+    {
+      "model": "ScheduleAdjustment",
+      "hasSemesterId": true,
+      "semesterIdRequired": false,
+      "hasSemesterRelation": true
+    },
+    {
+      "model": "TeachingTaskClass",
+      "hasSemesterId": false,
+      "semesterIdRequired": false,
+      "hasSemesterRelation": false
+    },
+    {
+      "model": "ScheduleChangeLog",
+      "hasSemesterId": false,
+      "semesterIdRequired": false,
+      "hasSemesterRelation": false
+    },
+    {
+      "model": "SchedulingConfig",
+      "hasSemesterId": true,
+      "semesterIdRequired": false,
+      "hasSemesterRelation": true
+    },
+    {
+      "model": "SchedulingRun",
+      "hasSemesterId": true,
+      "semesterIdRequired": false,
+      "hasSemesterRelation": true
+    },
+    {
+      "model": "SchedulerRunChange",
+      "hasSemesterId": false,
+      "semesterIdRequired": false,
+      "hasSemesterRelation": false
+    },
+    {
+      "model": "RoomAvailability",
+      "hasSemesterId": false,
+      "semesterIdRequired": false,
+      "hasSemesterRelation": false
+    },
+    {
+      "model": "ImportBatch",
+      "hasSemesterId": true,
+      "semesterIdRequired": false,
+      "hasSemesterRelation": true
+    },
+    {
+      "model": "User",
+      "hasSemesterId": false,
+      "semesterIdRequired": false,
+      "hasSemesterRelation": false
+    },
+    {
+      "model": "Role",
+      "hasSemesterId": false,
+      "semesterIdRequired": false,
+      "hasSemesterRelation": false
+    },
+    {
+      "model": "Permission",
+      "hasSemesterId": false,
+      "semesterIdRequired": false,
+      "hasSemesterRelation": false
+    },
+    {
+      "model": "UserRole",
+      "hasSemesterId": false,
+      "semesterIdRequired": false,
+      "hasSemesterRelation": false
+    },
+    {
+      "model": "RolePermission",
+      "hasSemesterId": false,
+      "semesterIdRequired": false,
+      "hasSemesterRelation": false
+    },
+    {
+      "model": "Session",
+      "hasSemesterId": false,
+      "semesterIdRequired": false,
+      "hasSemesterRelation": false
+    }
+  ],
+  "dbSnapshot": {
+    "semesterCount": 1,
+    "activeSemesterCount": 1,
+    "semesters": [
+      {
+        "id": 1,
+        "code": "LEGACY-DEFAULT",
+        "name": "既有数据默认学期",
+        "isActive": true
+      }
+    ],
+    "totals": {
+      "teachingTask": {
+        "total": 308,
+        "nullSemester": 0
+      },
+      "scheduleSlot": {
+        "total": 440,
+        "nullSemester": 0
+      },
+      "scheduleAdjustment": {
+        "total": 57,
+        "nullSemester": 0
+      },
+      "schedulingRun": {
+        "total": 77,
+        "nullSemester": 0
+      },
+      "importBatch": {
+        "total": 37,
+        "nullSemester": 36
+      },
+      "classGroup": {
+        "total": 36,
+        "nullSemester": 0
+      },
+      "teacher": {
+        "total": 84,
+        "nullSemester": 0
+      },
+      "course": {
+        "total": 104,
+        "nullSemester": 0
+      },
+      "room": {
+        "total": 53,
+        "nullSemester": 0
+      }
+    },
+    "multiSemesterSampleInsufficient": true
+  },
+  "apiScopingFindings": [
+    {
+      "route": "admin/scheduler/preview/route.ts",
+      "readsSemester": true,
+      "writesSemester": true,
+      "hasFilter": true,
+      "risk": "INFO",
+      "detail": "readsSemester=true writesSemester=true"
+    },
+    {
+      "route": "admin/scheduler/apply/route.ts",
+      "readsSemester": false,
+      "writesSemester": false,
+      "hasFilter": false,
+      "risk": "LOW",
+      "detail": "readsSemester=false writesSemester=false"
+    },
+    {
+      "route": "admin/scheduler/rollback/route.ts",
+      "readsSemester": false,
+      "writesSemester": false,
+      "hasFilter": false,
+      "risk": "LOW",
+      "detail": "readsSemester=false writesSemester=false"
+    },
+    {
+      "route": "admin/scheduler/runs/[id]/route.ts",
+      "readsSemester": true,
+      "writesSemester": false,
+      "hasFilter": false,
+      "risk": "INFO",
+      "detail": "readsSemester=true writesSemester=false"
+    },
+    {
+      "route": "admin/scheduler/runs/route.ts",
+      "readsSemester": true,
+      "writesSemester": false,
+      "hasFilter": true,
+      "risk": "INFO",
+      "detail": "readsSemester=true writesSemester=false"
+    },
+    {
+      "route": "schedule-slot/[id]/route.ts",
+      "readsSemester": false,
+      "writesSemester": false,
+      "hasFilter": false,
+      "risk": "HIGH",
+      "detail": "mutation has no semesterId reference"
+    },
+    {
+      "route": "schedule-slot/route.ts",
+      "readsSemester": true,
+      "writesSemester": true,
+      "hasFilter": false,
+      "risk": "INFO",
+      "detail": "readsSemester=true writesSemester=true"
+    },
+    {
+      "route": "schedule-adjustments/route.ts",
+      "readsSemester": true,
+      "writesSemester": false,
+      "hasFilter": true,
+      "risk": "INFO",
+      "detail": "readsSemester=true writesSemester=false"
+    },
+    {
+      "route": "schedule-adjustments/route.ts",
+      "readsSemester": true,
+      "writesSemester": true,
+      "hasFilter": true,
+      "risk": "INFO",
+      "detail": "readsSemester=true writesSemester=true"
+    },
+    {
+      "route": "schedule-adjustments/dry-run/route.ts",
+      "readsSemester": true,
+      "writesSemester": false,
+      "hasFilter": false,
+      "risk": "INFO",
+      "detail": "readsSemester=true writesSemester=false"
+    },
+    {
+      "route": "schedule-adjustments/room-recommendations/route.ts",
+      "readsSemester": true,
+      "writesSemester": false,
+      "hasFilter": false,
+      "risk": "INFO",
+      "detail": "readsSemester=true writesSemester=false"
+    },
+    {
+      "route": "schedule-adjustments/plan-recommendations/route.ts",
+      "readsSemester": true,
+      "writesSemester": false,
+      "hasFilter": false,
+      "risk": "INFO",
+      "detail": "readsSemester=true writesSemester=false"
+    },
+    {
+      "route": "conflict-check/route.ts",
+      "readsSemester": true,
+      "writesSemester": false,
+      "hasFilter": true,
+      "risk": "INFO",
+      "detail": "readsSemester=true writesSemester=false"
+    },
+    {
+      "route": "teaching-task/route.ts",
+      "readsSemester": false,
+      "writesSemester": false,
+      "hasFilter": false,
+      "risk": "LOW",
+      "detail": "readsSemester=false writesSemester=false"
+    },
+    {
+      "route": "teaching-task/[id]/route.ts",
+      "readsSemester": false,
+      "writesSemester": false,
+      "hasFilter": false,
+      "risk": "HIGH",
+      "detail": "mutation has no semesterId reference"
+    },
+    {
+      "route": "courses/route.ts",
+      "readsSemester": false,
+      "writesSemester": false,
+      "hasFilter": false,
+      "risk": "LOW",
+      "detail": "readsSemester=false writesSemester=false"
+    },
+    {
+      "route": "teachers/route.ts",
+      "readsSemester": false,
+      "writesSemester": false,
+      "hasFilter": false,
+      "risk": "LOW",
+      "detail": "readsSemester=false writesSemester=false"
+    },
+    {
+      "route": "rooms/route.ts",
+      "readsSemester": false,
+      "writesSemester": false,
+      "hasFilter": false,
+      "risk": "MEDIUM",
+      "detail": "list endpoint no where filter (could mix semesters)"
+    },
+    {
+      "route": "class-groups/route.ts",
+      "readsSemester": true,
+      "writesSemester": false,
+      "hasFilter": true,
+      "risk": "INFO",
+      "detail": "readsSemester=true writesSemester=false"
+    },
+    {
+      "route": "schedule/route.ts",
+      "readsSemester": true,
+      "writesSemester": false,
+      "hasFilter": true,
+      "risk": "INFO",
+      "detail": "readsSemester=true writesSemester=false"
+    },
+    {
+      "route": "data/teaching-tasks/route.ts",
+      "readsSemester": true,
+      "writesSemester": false,
+      "hasFilter": true,
+      "risk": "INFO",
+      "detail": "readsSemester=true writesSemester=false"
+    },
+    {
+      "route": "data/schedule-slots/route.ts",
+      "readsSemester": true,
+      "writesSemester": false,
+      "hasFilter": true,
+      "risk": "INFO",
+      "detail": "readsSemester=true writesSemester=false"
+    },
+    {
+      "route": "admin/import/parse/route.ts",
+      "readsSemester": true,
+      "writesSemester": true,
+      "hasFilter": true,
+      "risk": "INFO",
+      "detail": "readsSemester=true writesSemester=true"
+    },
+    {
+      "route": "admin/import/confirm/route.ts",
+      "readsSemester": true,
+      "writesSemester": true,
+      "hasFilter": true,
+      "risk": "INFO",
+      "detail": "readsSemester=true writesSemester=true"
+    },
+    {
+      "route": "admin/import/batches/route.ts",
+      "readsSemester": true,
+      "writesSemester": false,
+      "hasFilter": true,
+      "risk": "INFO",
+      "detail": "readsSemester=true writesSemester=false"
+    },
+    {
+      "route": "admin/scheduler/configs/route.ts",
+      "readsSemester": true,
+      "writesSemester": false,
+      "hasFilter": true,
+      "risk": "INFO",
+      "detail": "readsSemester=true writesSemester=false"
+    },
+    {
+      "route": "admin/scheduler/configs/[id]/route.ts",
+      "readsSemester": true,
+      "writesSemester": false,
+      "hasFilter": true,
+      "risk": "INFO",
+      "detail": "readsSemester=true writesSemester=false"
+    }
+  ],
+  "frontendFindings": [
+    {
+      "area": "admin scheduler dashboard",
+      "risk": "MEDIUM",
+      "detail": "has semester references but no explicit selector — UI lacks explicit current-semester context"
+    },
+    {
+      "area": "admin scheduler history",
+      "risk": "MEDIUM",
+      "detail": "has semester references but no explicit selector — UI lacks explicit current-semester context"
+    },
+    {
+      "area": "schedule adjustment dialog",
+      "risk": "MEDIUM",
+      "detail": "no semester references — UI lacks explicit current-semester context — UI does not display any semester context"
+    },
+    {
+      "area": "dashboard / data pages",
+      "risk": "MEDIUM",
+      "detail": "no semester references — UI does not display any semester context"
+    },
+    {
+      "area": "data management pages",
+      "risk": "MEDIUM",
+      "detail": "no semester references — UI does not display any semester context"
+    },
+    {
+      "area": "schedule grid",
+      "risk": "MEDIUM",
+      "detail": "no semester references — UI does not display any semester context"
+    },
+    {
+      "area": "import page",
+      "risk": "MEDIUM",
+      "detail": "no semester references — UI does not display any semester context"
+    },
+    {
+      "area": "admin db",
+      "risk": "MEDIUM",
+      "detail": "no semester references — UI does not display any semester context"
+    }
+  ],
+  "importSemantics": {
+    "parseSemesterId": "accepts",
+    "confirmSemesterId": "accepts",
+    "courseUpsertStrategy": "uses upsert (likely cross-semester reuse)",
+    "recommendedSemantics": {
+      "Course": "global master data, cross-semester reuse (current: OK @unique name)",
+      "Teacher": "global master data, cross-semester reuse (current: OK @unique name)",
+      "Room": "global master data, cross-semester reuse (current: OK @unique name)",
+      "ClassGroup": "per-semester, semesterId NOT NULL (current: nullable)",
+      "TeachingTask": "per-semester, semesterId NOT NULL (current: nullable)",
+      "ScheduleSlot": "per-semester, semesterId NOT NULL (current: nullable)",
+      "ScheduleAdjustment": "per-semester, semesterId NOT NULL (current: nullable)",
+      "SchedulingRun": "per-semester, semesterId NOT NULL (current: nullable)",
+      "SchedulingConfig": "per-semester, semesterId NOT NULL (current: nullable)",
+      "ImportBatch": "per-semester, semesterId NOT NULL (current: nullable, 36/37 null in current DB)"
+    }
+  },
+  "schedulerAdjustmentSafety": {
+    "schedulerPreview": "resolveSchedulerSemester() at entry; semester-scoped DB queries",
+    "schedulerApply": "preflight validates slot.semesterId == run.semesterId",
+    "schedulerRollback": "runId cascade; per-run scope",
+    "dryRunAdjustment": "from originalSlot.semesterId; same-semester only",
+    "checkScheduleConflicts": "accepts semesterId; semester-scoped slot query",
+    "roomRecommendations": "from slot.semesterId; same-semester rooms/tasks/slots",
+    "planRecommendations": "from slot.semesterId; same-semester scope"
+  },
+  "knownGaps": [
+    "7 core tables (ClassGroup, TeachingTask, ScheduleSlot, ScheduleAdjustment, SchedulingRun, SchedulingConfig, ImportBatch) have nullable semesterId",
+    "36/37 ImportBatch rows are nullSemester (historical data)",
+    "No multi-semester sample in dev.db (only LEGACY-DEFAULT)",
+    "No global current-semester selector in frontend",
+    "Some GET list endpoints lack semester filter (data/teaching-tasks, schedule)",
+    "RBAC is global (no semester-scoped authorization)",
+    "importer confirm accepts semesterId but does not require it for new batches"
+  ],
+  "recommendedArchitecture": [
+    "Semester remains top-level master (already implemented)",
+    "Course / Teacher / Room stay global master (no change)",
+    "Make semesterId NOT NULL on 7 core tables (ClassGroup, TeachingTask, ScheduleSlot, ScheduleAdjustment, SchedulingRun, SchedulingConfig, ImportBatch)",
+    "Backfill historical rows: all to semesterId=1 (LEGACY-DEFAULT)",
+    "Add global current-semester selector in frontend (top nav bar)",
+    "API requests must carry X-Semester-Id or query/body semesterId",
+    "GET list endpoints must support ?semesterId= filter",
+    "Mutation endpoints must validate resource.semesterId consistency",
+    "Consider semester-scoped RBAC in K25-C (deferred)",
+    "Importer confirm must require semesterId; ImportBatch.semesterId must be NOT NULL"
+  ],
+  "recommendedNextStage": "K25-B-MULTI-SEMESTER-SCHEMA-PLAN",
+  "recommendedNextStageRationale": "Current biggest risk is data model + historical backfill (36/37 ImportBatch null + 7 nullable columns). Without schema plan, downstream UI/API scoping fixes cannot fully isolate multi-semester data.",
+  "verification": {
+    "auditScriptExit": 0,
+    "prismaValidate": "schema valid",
+    "build": "PASS",
+    "lint": "0 new error",
+    "authFoundation": "53 passed / 1 pre-existing failure (NOT modified)",
+    "k24a5Verify": "60/60 PASS (NOT re-run; baseline preserved)",
+    "k24aVerify": "179/179 PASS (NOT re-run; baseline preserved)",
+    "k23aVerify": "66/66 PASS (NOT re-run; baseline preserved)",
+    "k22c": "73/0/0/0 (NOT re-run; baseline preserved)"
+  },
+  "unmodifiedScope": {
+    "prismaSchema": "NOT modified",
+    "migrations": "NOT modified",
+    "devDb": "NOT written (audit is read-only)",
+    "apiBusinessLogic": "NOT modified",
+    "frontendBusinessLogic": "NOT modified",
+    "schedulerScoreSolver": "NOT modified",
+    "importerParser": "NOT modified",
+    "rbac": "NOT modified",
+    "seed": "NOT run",
+    "prismaDbPush": "NOT run",
+    "prismaMigrate": "NOT run",
+    "prismaReset": "NOT run"
+  },
+  "findings": [
+    {
+      "category": "ImportBatch null semester",
+      "detail": "36 of 37 ImportBatch rows have null semesterId (historical data; 1 has semesterId=1, 36 have nullSemester)",
+      "risk": "MEDIUM"
+    },
+    {
+      "category": "Course design",
+      "detail": "Course is a global master data model (no semesterId, @unique name). Intentional for cross-semester reuse.",
+      "risk": "INFO"
+    },
+    {
+      "category": "API src/app/api/schedule-slot/[id]/route.ts",
+      "detail": "[HIGH] mutation has no semesterId reference",
+      "risk": "HIGH"
+    },
+    {
+      "category": "API src/app/api/teaching-task/[id]/route.ts",
+      "detail": "[HIGH] mutation has no semesterId reference",
+      "risk": "HIGH"
+    },
+    {
+      "category": "API src/app/api/rooms/route.ts",
+      "detail": "[MEDIUM] list endpoint no where filter (could mix semesters)",
+      "risk": "MEDIUM"
+    },
+    {
+      "category": "Frontend admin scheduler dashboard",
+      "detail": "[MEDIUM] has semester references but no explicit selector — UI lacks explicit current-semester context",
+      "risk": "MEDIUM"
+    },
+    {
+      "category": "Frontend admin scheduler history",
+      "detail": "[MEDIUM] has semester references but no explicit selector — UI lacks explicit current-semester context",
+      "risk": "MEDIUM"
+    },
+    {
+      "category": "Frontend schedule adjustment dialog",
+      "detail": "[MEDIUM] no semester references — UI lacks explicit current-semester context — UI does not display any semester context",
+      "risk": "MEDIUM"
+    },
+    {
+      "category": "Frontend dashboard / data pages",
+      "detail": "[MEDIUM] no semester references — UI does not display any semester context",
+      "risk": "MEDIUM"
+    },
+    {
+      "category": "Frontend data management pages",
+      "detail": "[MEDIUM] no semester references — UI does not display any semester context",
+      "risk": "MEDIUM"
+    },
+    {
+      "category": "Frontend schedule grid",
+      "detail": "[MEDIUM] no semester references — UI does not display any semester context",
+      "risk": "MEDIUM"
+    },
+    {
+      "category": "Frontend import page",
+      "detail": "[MEDIUM] no semester references — UI does not display any semester context",
+      "risk": "MEDIUM"
+    },
+    {
+      "category": "Frontend admin db",
+      "detail": "[MEDIUM] no semester references — UI does not display any semester context",
+      "risk": "MEDIUM"
+    }
+  ]
+}
