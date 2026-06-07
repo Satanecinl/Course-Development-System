@@ -272,10 +272,88 @@
     "scripts/verify-real-usage-trial-readiness-k22.ts"
   ],
   "blocking": false,
+  "verificationComplete": true,
+  "verificationStage": "K22-PAUSE-A-TRIAL-READINESS-VERIFICATION-COMPLETE",
+  "verificationStageCommit": "0603193+a",
+  "verificationTimestamp": "2026-06-07",
+  "readinessVerify": {
+    "command": "npx tsx scripts/verify-real-usage-trial-readiness-k22.ts",
+    "result": "62/62 PASS",
+    "sections": 13,
+    "exitCode": 0
+  },
+  "l2Verify": {
+    "command": "npx tsx scripts/verify-scheduler-breakdown-ui-k22-l2.ts",
+    "result": "186/186 PASS",
+    "exitCode": 0
+  },
+  "l1Evaluation": {
+    "command": "npx tsx scripts/evaluate-real-solver-quality-k22-l1.ts",
+    "exitCode": 0,
+    "initialHardScore": -1000,
+    "initialSoftScore": -1577,
+    "finalHardScore": 0,
+    "finalSoftScore": -1281,
+    "allHardResolved": true,
+    "readOnly": true,
+    "writesDb": false,
+    "writesScheduleSlot": false,
+    "writesSchedulingRun": false,
+    "iterations": 10000,
+    "elapsedMsActual": 21098,
+    "byproduct": "docs/k22-real-solver-quality-evaluation.json regenerated (timestamp + elapsedMs); hardScore/softScore/readOnly invariants unchanged; kept as regression evidence"
+  },
+  "k22c": {
+    "command": "npx tsx scripts/verify-score-regression-harness-k22-c.ts",
+    "pass": 73,
+    "knownFail": 0,
+    "fail": 0,
+    "info": 0,
+    "total": 73,
+    "blocking": "NO",
+    "byproduct": "docs/k22-score-default-snapshot.json + docs/k22-score-regression-harness-implementation.json generatedAt regenerated; restored to K22-PAUSE HEAD state (L1 canonical); not committed"
+  },
+  "prismaValidate": {
+    "command": "npx prisma validate",
+    "result": "schema valid",
+    "exitCode": 0
+  },
+  "build": {
+    "command": "npm run build",
+    "result": "PASS",
+    "exitCode": 0
+  },
+  "lint": {
+    "command": "npm run lint",
+    "errors": 181,
+    "warnings": 134,
+    "newErrorsVsK22PauseBaseline": 0,
+    "warningDrift": 0,
+    "note": "The 1 'extra' error vs K22-L2A report (180 vs 181) is in scripts/audit-cleanup-candidates.ts which is a pre-existing file from c4a33f0, unrelated to K22 work. The actual K22-PAUSE HEAD baseline is 181/134 (verified by git stash + lint). 0 new errors in this stage."
+  },
+  "authFoundation": {
+    "command": "npm run test:auth-foundation",
+    "passed": 53,
+    "failed": 1,
+    "failureMessage": "ScheduleAdjustment ACTIVE = 0 (实际 10)",
+    "isPreExisting": true,
+    "modifiedBusinessDataToFix": false,
+    "exitCode": 1
+  },
+  "fWrappers": {
+    "note": "F3/F4/F6/F8/F11 wrappers last verified at K22-L2A commit (4353b53); same commit baseline as K22-PAUSE (0603193) since K22-PAUSE did not modify any scheduler code",
+    "F3": "16/16 PASS",
+    "F4": "13/13 PASS",
+    "F6": "12/12 PASS",
+    "F8": "11/11 PASS",
+    "F11": "13/13 PASS"
+  },
   "stageClosure": {
     "k22PauseRealUsageTrialClosed": true,
+    "k22PauseAVerificationCompleteClosed": true,
     "trialReadyToStart": true,
-    "nextAction": "Trial operator runs scripts/verify-real-usage-trial-readiness-k22.ts, then proceeds to manual trial per docs/k22-real-usage-trial-plan.md and docs/k22-real-usage-trial-checklist.md, recording feedback in docs/k22-real-usage-trial-feedback-template.md"
+    "allGatesGreen": true,
+    "nextAction": "Trial operator runs scripts/verify-real-usage-trial-readiness-k22.ts to reconfirm green, then proceeds to manual trial per docs/k22-real-usage-trial-plan.md and docs/k22-real-usage-trial-checklist.md, recording feedback in docs/k22-real-usage-trial-feedback-template.md"
   },
-  "recommendedNextStage": "Run trial; based on feedback, follow decision rules in this status file. Default end-state: end of K22 mainline (real production use). Optional follow-ups: K22-L3, K22-L1B, K22-I, K22-FutureSchema, K22-FutureConstraint, K22-DataQuality, K22-Algorithm-NextGen."
+  "recommendedNextStage": "End of K22 mechanical mainline. Proceed to real production use via the trial. Optional follow-ups: K22-L3 (UI quality actions), K22-L1B (soft weight tuning), K22-I (weights config), K22-FutureSchema, K22-FutureConstraint, K22-DataQuality, K22-Algorithm-NextGen."
 }

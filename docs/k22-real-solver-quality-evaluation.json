@@ -1,6 +1,6 @@
 {
   "stage": "K22-L1-REAL-SOLVER-QUALITY-EVALUATION-AND-TUNING",
-  "timestamp": "2026-06-07T02:58:49.511Z",
+  "timestamp": "2026-06-07T03:39:34.869Z",
   "solverConfig": {
     "maxIterations": 10000,
     "lahcWindowSize": 500,
@@ -29,7 +29,7 @@
     "semesterScoped": true
   },
   "baselineRun": {
-    "elapsedMs": 20901,
+    "elapsedMs": 21098,
     "iterations": 10000,
     "initialHardScore": -1000,
     "initialSoftScore": -1577,
