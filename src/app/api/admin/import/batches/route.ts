@@ -12,10 +12,7 @@ export async function GET(request: NextRequest) {
 
     const batches = await prisma.importBatch.findMany({
       where: {
-        OR: [
-          { semesterId: semester.id },
-          { semesterId: null },
-        ],
+        semesterId: semester.id,
       },
       orderBy: { createdAt: 'desc' },
       select: {

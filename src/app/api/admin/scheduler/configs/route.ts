@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requirePermission } from '@/lib/auth/require-permission'
+import { resolveSchedulerSemester } from '@/lib/semester'
 import {
   validateConfigPayload,
   mapConfigToDto,
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const semesterIdParam = searchParams.get('semesterId')
 
-    let where: { semesterId?: number | null } = {}
+    let where: { semesterId?: number } = {}
     if (semesterIdParam != null) {
       const sid = parseInt(semesterIdParam, 10)
       if (Number.isNaN(sid) || sid <= 0) {
@@ -76,7 +77,10 @@ export async function POST(request: NextRequest) {
     }
     const input = v.value
 
-    // semesterId must exist if provided
+    // K25-C: resolve semesterId. If user provided one, validate it;
+    // otherwise, use the resolved active semester (semesterId is
+    // now NOT NULL).
+    let semesterId: number
     if (input.semesterId != null) {
       const semester = await prisma.semester.findUnique({ where: { id: input.semesterId } })
       if (!semester) {
@@ -85,12 +89,16 @@ export async function POST(request: NextRequest) {
           { status: 400 },
         )
       }
+      semesterId = semester.id
+    } else {
+      const semester = await resolveSchedulerSemester()
+      semesterId = semester.id
     }
 
     const created = await prisma.schedulingConfig.create({
       data: {
         name: input.name,
-        semesterId: input.semesterId,
+        semesterId,
         maxIterations: input.maxIterations ?? 10000,
         lahcWindowSize: input.lahcWindowSize ?? 500,
         randomSeed: input.randomSeed ?? null,

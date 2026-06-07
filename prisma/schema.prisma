@@ -34,8 +34,10 @@ model ClassGroup {
   studentCount Int?
   advisorName  String?
   advisorPhone String?
-  semesterId   Int?
-  semester     Semester?           @relation(fields: [semesterId], references: [id])
+  // K25-C: NOT NULL (was Int?). Backfilled via
+  // scripts/implement-multi-semester-schema-k25-c.ts.
+  semesterId   Int
+  semester     Semester            @relation(fields: [semesterId], references: [id])
   taskClasses  TeachingTaskClass[]
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
@@ -87,8 +89,9 @@ model TeachingTask {
   crossCohortApprovalReason String?
   importBatchId Int?
   importBatch   ImportBatch?        @relation(fields: [importBatchId], references: [id])
-  semesterId    Int?
-  semester      Semester?           @relation(fields: [semesterId], references: [id])
+  // K25-C: NOT NULL (was Int?). Backfilled.
+  semesterId    Int
+  semester      Semester            @relation(fields: [semesterId], references: [id])
   scheduleSlots ScheduleSlot[]
   taskClasses   TeachingTaskClass[]
   createdAt     DateTime            @default(now())
@@ -107,8 +110,9 @@ model ScheduleSlot {
   slotIndex      Int
   importBatchId  Int?
   importBatch    ImportBatch?         @relation(fields: [importBatchId], references: [id])
-  semesterId     Int?
-  semester       Semester?            @relation(fields: [semesterId], references: [id])
+  // K25-C: NOT NULL (was Int?). Backfilled.
+  semesterId     Int
+  semester       Semester            @relation(fields: [semesterId], references: [id])
   adjustments    ScheduleAdjustment[]
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
@@ -127,8 +131,9 @@ model ScheduleAdjustment {
   newSlotIndex   Int?
   newRoomId      Int?
   newRoom        Room?        @relation(fields: [newRoomId], references: [id])
-  semesterId     Int?
-  semester       Semester?    @relation(fields: [semesterId], references: [id])
+  // K25-C: NOT NULL (was Int?). Backfilled.
+  semesterId     Int
+  semester       Semester    @relation(fields: [semesterId], references: [id])
   reason         String?
   status         String       @default("ACTIVE")
   createdAt      DateTime     @default(now())
@@ -172,8 +177,9 @@ model ScheduleChangeLog {
 model SchedulingConfig {
   id             Int             @id @default(autoincrement())
   name           String
-  semesterId     Int?
-  semester       Semester?       @relation(fields: [semesterId], references: [id])
+  // K25-C: NOT NULL (was Int?). Backfilled.
+  semesterId     Int
+  semester       Semester       @relation(fields: [semesterId], references: [id])
   maxIterations  Int             @default(10000)
   lahcWindowSize Int             @default(500)
   randomSeed     Int? // K21-FIX-F: optional seed for reproducibility; null → server generates per-run
@@ -193,8 +199,9 @@ model SchedulingRun {
   id                   Int              @id @default(autoincrement())
   configId             Int
   config               SchedulingConfig @relation(fields: [configId], references: [id])
-  semesterId           Int?
-  semester             Semester?        @relation(fields: [semesterId], references: [id])
+  // K25-C: NOT NULL (was Int?). Backfilled.
+  semesterId           Int
+  semester             Semester        @relation(fields: [semesterId], references: [id])
   mode                 String           @default("PREVIEW") // PREVIEW | APPLY | ROLLBACK
   status               String           @default("PENDING") // PENDING | PREVIEW | APPLYING | COMPLETED | FAILED | ROLLED_BACK
   operatorId           Int?
@@ -298,8 +305,9 @@ model ImportBatch {
   errorMessage     String?
   confirmedAt      DateTime?
   rolledBackAt     DateTime?
-  semesterId       Int?
-  semester         Semester? @relation(fields: [semesterId], references: [id])
+  // K25-C: NOT NULL (was Int?). Backfilled.
+  semesterId       Int
+  semester         Semester @relation(fields: [semesterId], references: [id])
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 

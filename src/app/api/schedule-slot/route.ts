@@ -45,7 +45,9 @@ export async function POST(request: NextRequest) {
         roomId: roomId ?? null,
         dayOfWeek,
         slotIndex,
-        semesterId: guardResult.semesterId,
+        // K25-C: semesterId is now NOT NULL; guardResult.semesterId
+        // is always present when guardResult.ok is true.
+        semesterId: guardResult.semesterId!,
       },
     })
 

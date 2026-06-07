@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requirePermission } from '@/lib/auth/require-permission'
+import { resolveSchedulerSemester } from '@/lib/semester'
 
 export async function POST(request: NextRequest) {
   try {
@@ -43,6 +44,8 @@ export async function POST(request: NextRequest) {
       : []
 
     const result = await prisma.$transaction(async (tx) => {
+      // K25-C: semesterId is now NOT NULL; resolve from active semester.
+      const semester = await resolveSchedulerSemester()
       // 1. Create TeachingTask
       const task = await tx.teachingTask.create({
         data: {
@@ -52,6 +55,7 @@ export async function POST(request: NextRequest) {
           startWeek,
           endWeek,
           remark: remark ?? null,
+          semesterId: semester.id,
         },
       })
 

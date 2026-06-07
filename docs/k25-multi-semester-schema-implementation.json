@@ -1,0 +1,64 @@
+{
+  "stage": "K25-C-MULTI-SEMESTER-SCHEMA-IMPLEMENTATION",
+  "status": "IMPLEMENTATION_COMPLETE",
+  "date": "2026-06-07",
+  "k25bBaselineCommit": "6a6da11",
+  "backup": {
+    "path": "prisma/dev.db.backup-before-k25c-20260607",
+    "size": 3571712,
+    "created": true,
+    "committed": false
+  },
+  "backfill": {
+    "activeSemesterId": 1,
+    "activeSemesterCode": "LEGACY-DEFAULT",
+    "importBatchNullBefore": 36,
+    "importBatchUpdated": 36,
+    "importBatchNullAfter": 0,
+    "otherScopedModelsAllZero": true
+  },
+  "schemaChanges": [
+    { "model": "ClassGroup", "before": "semesterId Int?", "after": "semesterId Int (NOT NULL)" },
+    { "model": "TeachingTask", "before": "semesterId Int?", "after": "semesterId Int (NOT NULL)" },
+    { "model": "ScheduleSlot", "before": "semesterId Int?", "after": "semesterId Int (NOT NULL)" },
+    { "model": "ScheduleAdjustment", "before": "semesterId Int?", "after": "semesterId Int (NOT NULL)" },
+    { "model": "SchedulingRun", "before": "semesterId Int?", "after": "semesterId Int (NOT NULL)" },
+    { "model": "SchedulingConfig", "before": "semesterId Int?", "after": "semesterId Int (NOT NULL)" },
+    { "model": "ImportBatch", "before": "semesterId Int?", "after": "semesterId Int (NOT NULL)" }
+  ],
+  "migration": {
+    "name": "20260607000000_k25_multi_semester_not_null",
+    "path": "prisma/migrations/20260607000000_k25_multi_semester_not_null/migration.sql",
+    "resetUsed": false,
+    "lineCount": 176,
+    "appliedVia": "prisma migrate resolve --applied (manual SQL applied to dev.db due to shadow DB historical migration failure)"
+  },
+  "validation": {
+    "exitCode": 0,
+    "schemaRequiredModels": "7/7 PASS",
+    "dbNullCounts": "7/7 PASS (all 0)",
+    "consistencyTeachingTaskClassSameSemester": "PASS",
+    "consistencyScheduleSlotSameSemester": "PASS",
+    "consistencyScheduleAdjustmentNonNull": "PASS",
+    "consistencyScheduleAdjustmentSameSlot": "PASS",
+    "consistencySchedulingRunNonNull": "PASS",
+    "consistencySchedulingConfigNonNull": "PASS",
+    "consistencyImportBatchNonNull": "PASS",
+    "migrationFileFound": true,
+    "totalCases": 37
+  },
+  "unmodifiedScope": {
+    "apiBusinessLogic": "NOT modified",
+    "frontendBusinessLogic": "NOT modified",
+    "schedulerScoreSolver": "NOT modified",
+    "importerParser": "NOT modified",
+    "rbacPermissionModel": "NOT modified",
+    "courseTeacherRoomGlobalSemantics": "NOT modified (preserved as global master data)",
+    "scheduleChangeLog": "NOT modified (deferred to future legacy cleanup)",
+    "prismaDbPush": "NOT run",
+    "prismaMigrateReset": "NOT run",
+    "seed": "NOT run"
+  },
+  "recommendedNextStage": "K25-D-SEMESTER-SCOPING-API-GAP-FIX",
+  "blocking": false
+}
