@@ -5,6 +5,101 @@
 **性质**: UI / result presentation (additive)
 **结论**: ✅ **建议关闭 K22-L2**
 
+> **K22-L2A 补齐 (2026-06-07)**: 新增 JSON 文档、跑 L1 evaluation 回归、处理 L2 commit
+> 中的 K22-C 自动产物、补充文档说明。详见 [§0 L2A 补齐记录](#0-l2a-补齐记录)。
+
+---
+
+## 0. L2A 补齐记录
+
+K22-L2A (`K22-L2A-BREAKDOWN-UI-DELIVERABLES-AND-ARTIFACT-CLEANUP`) 是 L2 的最小修正阶段，
+用于补齐 L2 的 3 个验收缺口：
+
+1. ✅ **新增 JSON 文档**: `docs/k22-scheduler-result-breakdown-ui.json`
+2. ✅ **运行 L1 evaluation 回归**: 仍 hardScore=0, softScore=-1281, exit 0
+3. ✅ **处理 K22-C 自动产物**: revert `docs/k22-score-default-snapshot.json` 与
+   `docs/k22-score-regression-harness-implementation.json` 回 L1 状态
+   (L2 commit 中这两个文件只有 `generatedAt` timestamp 漂移，是 K22-C harness
+   re-run 副产物，与 L2 scoreBreakdown UI 无关)
+
+### 0.1 实际 verify 脚本名
+
+```bash
+npx tsx scripts/verify-scheduler-breakdown-ui-k22-l2.ts
+# 9 sections / 186 cases / 全部 PASS
+```
+
+### 0.2 resultSnapshot additive 字段
+
+`SchedulingRun.resultSnapshot.scoreBreakdown` (K22-L2 新增，additive):
+
+```ts
+{
+  version: 1,
+  before: ScoreBreakdownWire,   // 优化前 score breakdown
+  after: ScoreBreakdownWire,    // 优化后 score breakdown
+}
+```
+
+每个 `ScoreBreakdownWire` 包含:
+
+- `hardScore`, `softScore`, `totalDetails` 计数
+- `constraints: ConstraintStat[]` — 16 个 (HC1-HC6 / SC1-SC4 / SC6-SC10 / MIN_PERT)
+- `topIssues: TopIssue[]` — 按 severity 排序的前 20 个问题
+- `businessCards: BusinessQualityCards` — 8 个业务卡片 (周末/林校HC6/汽车SC6/教师均衡/班级空洞/教室稳定/容量利用/最小扰动)
+
+### 0.3 preview.ts 持久化 scoreBreakdown 的边界
+
+| 项 | 行为 |
+|----|------|
+| 触发条件 | 每次 `POST /api/admin/scheduler/preview` 都会写入 |
+| 影响范围 | **仅新 run** — K22-L2 部署后创建的 run 才会有 `scoreBreakdown` 子对象 |
+| 旧 run 兼容 | ✓ 旧 run 缺 `scoreBreakdown` 子对象时，API 返回 `null`，UI 显示 fallback |
+| 不触碰 score.ts | ✓ preview.ts 只读取 `calculateScoreWithDetails()` 输出，**不修改任何 penalty / 约束逻辑** |
+| 不触碰 solver.ts | ✓ solver 内部完全未改 |
+| 不触碰 schema | ✓ scoreBreakdown 写入现有 `resultSnapshot` TEXT 字段 |
+| 不写业务数据 | ✓ ScheduleSlot 0 写，SchedulingRun 1 写/次（创建新 run，正常 preview 行为） |
+| 不写 historical run | ✓ 不会回填旧 run；旧 run 永久以 fallback 形式展示 |
+
+### 0.4 L1 evaluation 回归
+
+L2A 跑了一次 `npx tsx scripts/evaluate-real-solver-quality-k22-l1.ts` 确认 L2 不破坏 L1 baseline：
+
+| 指标 | L1 baseline | L2A 回归 |
+|------|-------------|----------|
+| exit code | 0 | 0 |
+| hardScore | 0 → 0 | 0 → 0 |
+| softScore | -1577 → -1281 | -1577 → -1281 |
+| allHardResolved | true | true |
+| 只读 | ✓ | ✓ |
+| 写 ScheduleSlot | 0 | 0 |
+| 写 SchedulingRun | 0 | 0 |
+| elapsedMs | 21618 | 20901 (实际测量，略有变化) |
+
+softScore 在 [−1577, −1281] 范围内确定性收敛 (randomSeed=42)，无回归。
+
+### 0.5 K22-C artifact 处理
+
+L2 commit `e8b9a58` 中包含两个 K22-C 文件的 diff：
+
+| 文件 | L1 → L2 diff | 原因 | L2A 处理 |
+|------|--------------|------|----------|
+| `docs/k22-score-default-snapshot.json` | 仅 `generatedAt` timestamp | K22-C harness re-run 副产物 | **Revert 回 L1** 状态 |
+| `docs/k22-score-regression-harness-implementation.json` | 仅 `generatedAt` timestamp | K22-C harness re-run 副产物 | **Revert 回 L1** 状态 |
+
+**处理依据**:
+
+- 两个 diff 都仅是 `generatedAt` 字段
+- 没有 `summary.passCount` / `summary.failCount` / `summary.fixtures` 变化
+- 与 L2 scoreBreakdown UI 完全无关 (K22-C 是 score regression harness，与 UI 无关)
+- L2A commit 中通过 `git checkout 396c9a8 -- <files>` revert
+- K22-C 仍为 73/0/0/0 (revert 不影响 harness 行为)
+
+**附加**: L2A 跑 L1 evaluation 时 `docs/k22-real-solver-quality-evaluation.json` 也被刷新
+(timestamp + elapsedMs 实际测量)。这**保留并提交**，因为它是 L2A 验证的回归证据：
+- hardScore 0 → 0 (无回归)
+- softScore -1577 → -1281 (与 L1 baseline 完全一致)
+
 ---
 
 ## 1. Executive Summary

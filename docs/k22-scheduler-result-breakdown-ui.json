@@ -1,0 +1,236 @@
+{
+  "stage": "K22-L2-SCHEDULER-RESULT-BREAKDOWN-UI",
+  "phase": "K22-L2A-BREAKDOWN-UI-DELIVERABLES-AND-ARTIFACT-CLEANUP",
+  "commit": "e8b9a58",
+  "deliveredAt": "2026-06-07",
+  "summary": "Surface real solver quality breakdown (HC1-HC6 / SC1-SC10 / MIN_PERT) to admin scheduler UI via additive scoreBreakdown sub-object in resultSnapshot, with full backwards compatibility for legacy runs.",
+  "resultSnapshotAnalysis": {
+    "scoreBreakdownPersisted": true,
+    "persistencePath": "SchedulingRun.resultSnapshot.scoreBreakdown",
+    "wireShape": "{ version: 1, before: ScoreBreakdownWire, after: ScoreBreakdownWire }",
+    "legacyFallback": true,
+    "snapshotField": "scoreBreakdown",
+    "oldRunBehavior": "scoreBreakdown=null; readSnapshotBreakdown returns null; UI shows '旧运行无 breakdown 数据' placeholder card; no crash, no warning toast",
+    "persistedBy": "src/lib/scheduler/preview.ts (createSchedulerPreview)",
+    "parsedBy": "src/app/api/admin/scheduler/runs/[id]/route.ts via readSnapshotBreakdown()",
+    "scope": "Only new preview runs created AFTER L2 deployment persist scoreBreakdown. Old runs (created before L2) keep their original resultSnapshot shape and render fallback."
+  },
+  "previewBoundaries": {
+    "whatIsPersisted": [
+      "Constraint stat array for 16 constraints (HC1-HC6, SC1-SC4, SC6-SC10, MIN_PERT)",
+      "Per-constraint topExamples (up to 5 message samples each)",
+      "Pre-computed top issues (max 20, sorted by severity then |penalty|)",
+      "Pre-computed business cards (8 categories)",
+      "hardScore / softScore / totalDetails counts for BEFORE and AFTER"
+    ],
+    "whatIsNotPersisted": [
+      "Solver internal metrics (already in resultSnapshot.solverMetrics)",
+      "Per-slot delta history (too large; would exceed TEXT field limits)",
+      "Original ScheduleSlot placements (already in SchedulerRunChange table)",
+      "Run creation metadata (already in SchedulingRun columns)"
+    ],
+    "persistenceTrigger": "createSchedulerPreview is called on every POST /api/admin/scheduler/preview; new runs auto-persist scoreBreakdown",
+    "size": "Approximately 5-15 KB per run depending on trigger counts"
+  },
+  "components": [
+    {
+      "path": "src/components/score-breakdown-display.tsx",
+      "purpose": "Render score summary, 8 business cards, constraint table, top issues with BEFORE/AFTER tab",
+      "props": {
+        "breakdown": "ResultSnapshotScoreBreakdown | null (null for legacy runs)",
+        "defaultSide": "'BEFORE' | 'AFTER'",
+        "title": "string (optional, default '质量 Breakdown')"
+      },
+      "fallbackBehavior": "null breakdown → '旧运行无 breakdown 数据' card; malformed wire → 'breakdown 数据格式异常' error card"
+    }
+  ],
+  "helpers": [
+    {
+      "path": "src/lib/scheduler/score-breakdown.ts",
+      "exports": [
+        "CONSTRAINT_REGISTRY",
+        "buildScoreBreakdown",
+        "buildBreakdownFromDetails",
+        "buildWireBreakdown",
+        "readPersistedBreakdown",
+        "readSnapshotBreakdown"
+      ],
+      "registrySize": 16,
+      "registryConstraints": [
+        "HC1", "HC2", "HC3", "HC4", "HC5", "HC6",
+        "SC1", "SC2", "SC3", "SC4",
+        "SC6", "SC7", "SC8", "SC9", "SC10",
+        "MIN_PERT"
+      ]
+    }
+  ],
+  "apiChanges": [
+    {
+      "path": "src/app/api/admin/scheduler/runs/[id]/route.ts",
+      "type": "additive",
+      "field": "scoreBreakdown",
+      "runDetailInterface": "scoreBreakdown: ResultSnapshotScoreBreakdown | null",
+      "behavior": "For old runs (no scoreBreakdown sub-object in resultSnapshot), readSnapshotBreakdown() returns null and the field is null in the response. UI tolerates this with fallback message."
+    }
+  ],
+  "uiIntegration": [
+    {
+      "path": "src/app/admin/scheduler/history/history-content.tsx",
+      "where": "Inside <RunDetailView> after the existing ScoreCard comparison row",
+      "dataSource": "run.scoreBreakdown from GET /api/admin/scheduler/runs/[id]"
+    },
+    {
+      "path": "src/app/admin/scheduler/scheduler-content.tsx",
+      "where": "Inside the live preview result panel after Block Reasons",
+      "dataSource": "previewData.scoreBreakdown from POST /api/admin/scheduler/preview response"
+    }
+  ],
+  "previewPipelineChanges": {
+    "path": "src/lib/scheduler/preview.ts",
+    "type": "additive",
+    "changes": [
+      "Imported buildScoreBreakdown / buildWireBreakdown from ./score-breakdown",
+      "Added ResultSnapshotScoreBreakdown field to PreviewResult interface",
+      "Computed beforeBreakdown / afterBreakdown right after bestDetails is calculated",
+      "Added scoreBreakdown sub-object to JSON.stringify({...}) for resultSnapshot",
+      "Added scoreBreakdown to PreviewResult return value"
+    ],
+    "doesNotTouch": [
+      "calculateScoreWithDetails logic",
+      "score.ts constraint definitions",
+      "solver.ts algorithm",
+      "SolverConfig defaults",
+      "ScheduleSlot persistence path"
+    ]
+  },
+  "constraintMapping": [
+    { "id": "HC1", "type": "HC1_ROOM_CONFLICT", "level": "HARD", "penalty": -1000, "category": "HARD" },
+    { "id": "HC2", "type": "HC2_TEACHER_CONFLICT", "level": "HARD", "penalty": -1000, "category": "HARD" },
+    { "id": "HC3", "type": "HC3_CLASS_CONFLICT", "level": "HARD", "penalty": -1000, "category": "HARD" },
+    { "id": "HC4", "type": "HC4_CAPACITY", "level": "HARD", "penalty": -1000, "category": "HARD" },
+    { "id": "HC5", "type": "HC5_ROOM_UNAVAILABLE", "level": "HARD", "penalty": -1000, "category": "HARD" },
+    { "id": "HC6", "type": "HC6_NON_AUTOMOTIVE_FORBID_LINXIAO", "level": "HARD", "penalty": -1000, "category": "HARD" },
+    { "id": "SC1", "type": "SC1_CROSS_BUILDING_BACK_TO_BACK", "level": "SOFT", "penalty": -5, "category": "SOFT" },
+    { "id": "SC2", "type": "SC2_SAME_DAY", "level": "SOFT", "penalty": -10, "category": "SOFT" },
+    { "id": "SC3", "type": "SC3_EXTREME_TIME_SLOT", "level": "SOFT", "penalty": -1, "category": "SOFT" },
+    { "id": "SC4", "type": "SC4_CROSS_CAMPUS", "level": "SOFT", "penalty": -5, "category": "SOFT" },
+    { "id": "SC6", "type": "SC6_AUTOMOTIVE_PREFERS_LINXIAO", "level": "SOFT", "penalty": -20, "category": "SOFT" },
+    { "id": "SC7", "type": "SC7_WEEKEND_AVOIDANCE", "level": "SOFT", "penalty": -15, "category": "SOFT" },
+    { "id": "SC8", "type": "SC8_CLASS_GAP", "level": "SOFT", "penalty": -2, "category": "SOFT" },
+    { "id": "SC9", "type": "SC9_TEACHING_TASK_ROOM_STABILITY", "level": "SOFT", "penalty": -2, "category": "SOFT" },
+    { "id": "SC10", "type": "SC10_ROOM_CAPACITY_UTILIZATION", "level": "SOFT", "penalty": -2, "category": "SOFT" },
+    { "id": "MIN_PERT", "type": "MINIMUM_PERTURBATION", "level": "SOFT", "penalty": -2, "category": "PERTURBATION" }
+  ],
+  "businessCards": [
+    { "id": "weekend", "constraintId": "SC7", "label": "周末排课", "unit": "次" },
+    { "id": "linxiaoHC6", "constraintId": "HC6", "label": "林校违规 HC6", "unit": "次" },
+    { "id": "automotiveSC6", "constraintId": "SC6", "label": "汽车未入林校 SC6", "unit": "次" },
+    { "id": "teacherDayBalance", "constraintId": "SC5", "label": "教师均衡 SC5", "unit": "个教师" },
+    { "id": "classGap", "constraintId": "SC8", "label": "班级空洞 SC8", "unit": "对" },
+    { "id": "roomStability", "constraintId": "SC9", "label": "教室稳定 SC9", "unit": "个 task" },
+    { "id": "capacityUtilization", "constraintId": "SC10", "label": "容量利用 SC10", "unit": "次" },
+    { "id": "minimalPerturbation", "constraintId": "MIN_PERT", "label": "最小扰动 MIN_PERT", "unit": "个 slot" }
+  ],
+  "severityThresholds": {
+    "HARD": "0=pass, >=1=block",
+    "SC6_SC7": "0=pass, 1-4=warn, >=5=block",
+    "SC5_SC8_SC9": "0=pass, 1-4=info, 5-19=warn, >=20=block",
+    "SC10": "0=pass, 1-19=info, >=20=warn",
+    "SC1_SC2_SC3_SC4_MIN_PERT": "0=pass, 1-9=info, >=10=warn"
+  },
+  "legacyFallback": {
+    "oldRunWithoutScoreBreakdown": "UI shows '旧运行无 breakdown 数据。该 run 在 K22-L2 实施前创建，未持久化每约束详情。' placeholder card; no crash, no error",
+    "invalidSnapshotJson": "readSnapshotBreakdown try-catch returns null; UI uses placeholder",
+    "nullSnapshot": "readSnapshotBreakdown returns null; UI uses placeholder",
+    "wireFieldTypeMismatch": "readPersistedBreakdown validates field types and returns null on mismatch; UI uses placeholder",
+    "scopeOfBackwardsCompat": "All SchedulingRun rows where resultSnapshot lacks scoreBreakdown sub-object, regardless of age or semester"
+  },
+  "verification": {
+    "script": "scripts/verify-scheduler-breakdown-ui-k22-l2.ts",
+    "sections": 9,
+    "cases": 186,
+    "passedAtL2Commit": 186,
+    "passedAtL2ACommit": 186,
+    "k22CRegression": {
+      "command": "npx tsx scripts/verify-score-regression-harness-k22-c.ts",
+      "result": "73 PASS / 0 KNOWN_FAIL / 0 FAIL / 0 INFO",
+      "unchanged": true
+    },
+    "f3F4F6F8F11Wrappers": {
+      "F3": "16/16 PASS",
+      "F4": "13/13 PASS",
+      "F6": "12/12 PASS",
+      "F8": "11/11 PASS",
+      "F11": "13/13 PASS"
+    },
+    "l1EvaluationRegression": {
+      "command": "npx tsx scripts/evaluate-real-solver-quality-k22-l1.ts",
+      "exitCode": 0,
+      "readOnly": true,
+      "hardScore": 0,
+      "softScore": -1281,
+      "allHardResolved": true,
+      "wroteScheduleSlot": false,
+      "wroteSchedulingRun": false
+    },
+    "prismaValidate": "PASS",
+    "nextBuild": "PASS",
+    "eslintErrors": 180,
+    "eslintWarnings": 134,
+    "eslintNewErrorsVsBaseline": 0,
+    "authFoundation": "53 passed / 1 failed (pre-existing ScheduleAdjustment ACTIVE count)"
+  },
+  "artifactHandling": {
+    "k22CSnapshotByproduct": {
+      "files": [
+        "docs/k22-score-default-snapshot.json",
+        "docs/k22-score-regression-harness-implementation.json"
+      ],
+      "inL2Commit": "K22-C harness was re-run during L2 verification, regenerated generatedAt timestamp in both files",
+      "inL2ACommit": "Reverted to L1 canonical state. K22-C harness re-runs are unrelated to L2 breakdown UI. The drift was pure byproduct (generatedAt only); reverting it removes non-essential K22-C artifact drift from the L2A commit.",
+      "stillK22C73_0_0_0": true
+    },
+    "l1EvaluationByproduct": {
+      "files": [
+        "docs/k22-real-solver-quality-evaluation.json"
+      ],
+      "inL2ACommit": "L1 evaluation was run as part of L2A verification (per L2A spec). Output JSON updated with new timestamp + new elapsedMs (real timing). This is the L2A regression evidence, kept and committed.",
+      "regeneratedHardScoreSoftScore": {
+        "hardScore": "0 (unchanged from L1 baseline)",
+        "softScore": "-1281 (unchanged from L1 baseline; deterministic with randomSeed=42)"
+      }
+    }
+  },
+  "blocking": false,
+  "stageClosure": {
+    "k22L2Closed": true,
+    "k22L2AClosed": true,
+    "k22L2FinalState": "scoreBreakdown UI shipped, fully verified, no outstanding gaps"
+  },
+  "recommendedNextStage": "K22-PAUSE-REAL-USAGE-TRIAL: stop further K22 mechanical stages; transition to real-world usage validation by the academic scheduling office. Optional follow-ups: K22-L3 (CI regression), K22-L1B (soft weight tuning), K22-I (weights config).",
+  "deliverableFiles": [
+    "src/lib/scheduler/score-breakdown.ts (helper, ~500 lines)",
+    "src/components/score-breakdown-display.tsx (UI component, ~430 lines)",
+    "scripts/verify-scheduler-breakdown-ui-k22-l2.ts (verification, 9 sections, 186 cases)",
+    "docs/k22-scheduler-result-breakdown-ui.md (markdown report)",
+    "docs/k22-scheduler-result-breakdown-ui.json (this file)"
+  ],
+  "untouchedScope": {
+    "scoreLogic": "src/lib/scheduler/score.ts (NOT modified)",
+    "solverAlgorithm": "src/lib/scheduler/solver.ts (NOT modified)",
+    "types": "src/lib/scheduler/types.ts (NOT modified)",
+    "dataLoader": "src/lib/scheduler/data-loader.ts (NOT modified)",
+    "applyRollback": "src/lib/scheduler/apply.ts, rollback.ts (NOT modified)",
+    "config": "src/lib/scheduler/config.ts (NOT modified)",
+    "schema": "prisma/schema.prisma (NOT modified)",
+    "migrations": "prisma/migrations/* (NOT modified)",
+    "businessData": "prisma/dev.db (NOT written by K22-L2)",
+    "importer": "src/lib/import/* (NOT modified)",
+    "parser": "src/lib/conflict.ts (NOT modified)",
+    "rbac": "src/lib/auth/*, src/lib/rbac/* (NOT modified)",
+    "noNewConstraints": true,
+    "noTuning": true,
+    "noHardWeightsOrSoftWeights": true,
+    "noUiFeatureExpansion": true
+  }
+}
