@@ -1,0 +1,242 @@
+{
+  "stage": "K26-E-WORKTIME-SCHEMA-PLAN",
+  "status": "PLAN_COMPLETE",
+  "gitHubSync": {
+    "branch": "master",
+    "remote": "origin",
+    "trackingBranch": "origin/master",
+    "localHeadBefore": "6482a8a",
+    "localHeadAfter": "",
+    "remoteHeadBefore": "6482a8a",
+    "remoteHeadAfter": "",
+    "aheadBehind": "up to date",
+    "fetched": true,
+    "pullRebase": false,
+    "pushed": false,
+    "forcePush": false
+  },
+  "currentState": {
+    "k26dActiveSlots": [1, 2, 3, 4, 5],
+    "k26dLegacySlots": [6, 7],
+    "k26dPreferredDays": [1, 2, 3, 4, 5],
+    "k26dWeekendDays": [6, 7],
+    "dbLegacySlotCount": 2,
+    "dbWeekendCount": 21,
+    "semesterModelExists": true,
+    "schedulingConfigSemesterScoped": true,
+    "scheduleSlotSemesterScoped": true,
+    "teachingTaskSemesterScoped": true,
+    "scheduleAdjustmentSemesterScoped": true,
+    "schedulingRunSemesterScoped": true,
+    "importBatchSemesterScoped": true,
+    "classGroupSemesterScoped": true,
+    "sc3Hardcode": "slotIndex >= 5 triggers -1",
+    "sc7Hardcode": "dayOfWeek >= 6 triggers -15",
+    "solverCandidateFilter": "none",
+    "k22Baseline": "fixed at K22-baseline; any score change breaks it"
+  },
+  "optionComparison": {
+    "A": {
+      "name": "Static helper only (K26-D 现状)",
+      "pros": ["zero DB change", "zero migration", "K22 expected 不变", "DB 历史全保留"],
+      "cons": ["无法 UI 编辑", "学期间不能不同", "需改代码才能改 helper"],
+      "k22Impact": "none",
+      "fit": "short-term safe baseline; insufficient for final user goal"
+    },
+    "B": {
+      "name": "SystemSetting JSON",
+      "pros": ["migration 极小", "可支持多类系统设置", "admin 可 UI 编辑"],
+      "cons": ["类型安全弱 (JSON)", "版本管理复杂", "不与 Semester 强耦合", "Zod schema 复用成本高"],
+      "k22Impact": "must update",
+      "fit": "general-purpose config; WorkTime 是结构化数据，强行 JSON 化 UI/solver 解析慢"
+    },
+    "C": {
+      "name": "WorkTime / TimeSlotConfig 独立表",
+      "pros": ["强类型", "per-semester 自然", "可版本化", "可快照到 SchedulingRun.resultSnapshot", "UI 可生成"],
+      "cons": ["migration 较大", "solver 需读 config", "K22 expected 必变 (K22-after-k26-j)"],
+      "k22Impact": "must update (only in K26-J)",
+      "fit": "最适合 WorkTime 结构化配置"
+    }
+  },
+  "recommendedOption": "hybrid (A baseline + C long-term)",
+  "recommendedSchemaCandidate": {
+    "WorkTimeConfig": {
+      "id": "Int @id @default(autoincrement())",
+      "semesterId": "Int (FK Semester, NOT NULL)",
+      "name": "String",
+      "isDefault": "Boolean @default(false)",
+      "allowWeekend": "Boolean @default(false)",
+      "lunchStart": "String? (\"12:00\")",
+      "lunchEnd": "String? (\"13:30\")",
+      "isActive": "Boolean @default(true)",
+      "version": "Int @default(1)",
+      "effectiveFrom": "DateTime?",
+      "notes": "String?",
+      "constraints": [
+        "@@unique([semesterId, name])",
+        "@@index([semesterId, isDefault])",
+        "@@index([semesterId, isActive])"
+      ]
+    },
+    "TimeSlotDefinition": {
+      "id": "Int @id @default(autoincrement())",
+      "workTimeConfigId": "Int (FK WorkTimeConfig, onDelete: Cascade)",
+      "slotIndex": "Int (1..7)",
+      "label": "String",
+      "startsAt": "String? (\"08:00\")",
+      "endsAt": "String? (\"09:50\")",
+      "isActive": "Boolean @default(true)",
+      "isTeachingSlot": "Boolean @default(true)",
+      "isLegacyDisplay": "Boolean @default(false)",
+      "sortOrder": "Int @default(0)",
+      "constraints": [
+        "@@unique([workTimeConfigId, slotIndex])",
+        "@@index([workTimeConfigId, isActive])"
+      ]
+    },
+    "SchedulingRunNewField": {
+      "workTimeConfigSnapshot": "String? (nullable; JSON snapshot at run creation)"
+    }
+  },
+  "semesterScopeAndDefaults": {
+    "scope": "per-semester",
+    "defaultPerSemester": 1,
+    "fallbackWhenNoConfig": "K26-D static helper (active 1-5, allowWeekend=false, legacy 6/7 display)",
+    "versioning": "version Int + effectiveFrom DateTime?",
+    "activeVersionPerSemester": "1 (latest) + history N"
+  },
+  "historicalCompatibility": {
+    "slotIndex6_11to12": {
+      "preserve": true,
+      "newCreatePath": "admin privilege only (ScheduleSlotDialog / admin-db-content)",
+      "inPlanRecommendation": false,
+      "inSolverCandidate": "K26-J future opt-in",
+      "inConflictCheck": "yes (read row data, no range assumption)",
+      "inScore": "SC3 only for slotIndex >= 5 (current hardcode); K26-J parameterize",
+      "uiDisplay": "formatTeachingSlotLabel(6) = '11-12节'"
+    },
+    "slotIndex7_zhongwu": {
+      "preserve": true,
+      "newCreatePath": "admin privilege only",
+      "inPlanRecommendation": false,
+      "inSolverCandidate": "K26-J future opt-in",
+      "inConflictCheck": "yes",
+      "inScore": "K26-J parameterize",
+      "uiDisplay": "formatTeachingSlotLabel(7) = '中午'"
+    },
+    "weekend_dayOfWeek67": {
+      "preserve": true,
+      "hiddenWhenAllowWeekendFalse": false,
+      "displayedAs": "周六 / 周日 (DAYS map)",
+      "inScore": "SC7 -15 if dayOfWeek >= 6; K26-J parameterize",
+      "adjustToWeekend": "default not recommended; opt-in via includeWeekend=true",
+      "solverCandidateFilter": "K26-J future"
+    }
+  },
+  "scoreSolverHarnessImpact": {
+    "SC3": {
+      "current": "slotIndex >= 5 hardcode triggers -1",
+      "futureConfigFields": ["WorkTimeConfig.lateSlotIndex (default=5)", "WorkTimeConfig.lateSlotPenalty (default=-1)"],
+      "migrationRisk": "MEDIUM",
+      "k22Impact": "HIGH (must version K22 expected)"
+    },
+    "SC7": {
+      "current": "dayOfWeek >= 6 hardcode triggers -15",
+      "futureConfigFields": ["WorkTimeConfig.allowWeekend (default=false)", "WorkTimeConfig.weekendPenalty (default=-15)"],
+      "migrationRisk": "MEDIUM",
+      "k22Impact": "HIGH"
+    },
+    "solverCandidateFilter": {
+      "current": "none (enumerate day=1..7, slot=1..6)",
+      "future": "K26-J: filter by isActive + isTeachingSlot + (allowWeekend? include weekend)",
+      "k22Impact": "HIGH (solver behavior change)"
+    },
+    "k22Versioning": {
+      "current": "K22-baseline (scripts/verify-score-regression-harness-k22-c.ts etc.)",
+      "K26-F_G_H": "K22-baseline unchanged",
+      "K26-I": "K22-baseline unchanged (recommendation uses helper-equivalent path)",
+      "K26-J": "K22-after-k26-j fixture added; switch via env var / script arg"
+    },
+    "scoreBreakdownImpact": {
+      "current": "score breakdown does not reference WorkTime config",
+      "k26j": "breakdown report SC3/SC7 lines will include resolved config id / version / snapshot reference",
+      "k26e": "documentation only; no implementation"
+    }
+  },
+  "apiPlan": {
+    "endpoints": [
+      { "method": "GET", "path": "/api/admin/worktime-configs", "permission": "schedule:adjust" },
+      { "method": "POST", "path": "/api/admin/worktime-configs", "permission": "schedule:adjust" },
+      { "method": "GET", "path": "/api/admin/worktime-configs/[id]", "permission": "schedule:adjust" },
+      { "method": "PUT", "path": "/api/admin/worktime-configs/[id]", "permission": "schedule:adjust", "note": "bumps version" },
+      { "method": "DELETE", "path": "/api/admin/worktime-configs/[id]", "permission": "schedule:adjust", "protection": "409 WORKTIME_CONFIG_IN_USE" },
+      { "method": "POST", "path": "/api/admin/worktime-configs/[id]/activate", "permission": "schedule:adjust" },
+      { "method": "POST", "path": "/api/admin/worktime-configs/[id]/set-default", "permission": "schedule:adjust" },
+      { "method": "GET", "path": "/api/admin/worktime-configs/resolved?semesterId=...", "permission": "schedule:read", "note": "returns helper fallback if no config" }
+    ],
+    "deleteProtection": "Check SchedulingRun.workTimeConfigSnapshot references; return 409 WORKTIME_CONFIG_IN_USE",
+    "semesterMismatch": "Enforced by @@unique([semesterId, name]); set-default scoped to single semester"
+  },
+  "uiPlan": {
+    "modulePath": "/admin/settings → 节次与作息设置 (status: planned, K26-H → ready)",
+    "sections": ["Header", "Info card", "Config list (table)", "Per-config dialog", "Legacy warning", "Delete protection", "Loading/error/empty", "testid markers (k26h-*)"],
+    "k26hNotes": "no solver integration; no SC3/SC7 hardcode change; no K22 expected change"
+  },
+  "migrationBackfillRollbackPlan": {
+    "pre": ["cp prisma/dev.db prisma/dev.db.backup-before-k26-f-<ts>"],
+    "migration": [
+      "prisma/migrations/<ts>_k26f_worktime_config/ add WorkTimeConfig + TimeSlotDefinition + SchedulingRun.workTimeConfigSnapshot"
+    ],
+    "backfill": "Per-semester default config with 7 slots (1-5 active, 6/7 legacy display, all isActive=true)",
+    "rollback": [
+      "Stop app",
+      "Restore DB from backup",
+      "npx prisma migrate resolve --rolled-back <migration-name>",
+      "Restart app; verify K26-D helper fallback"
+    ]
+  },
+  "nextStages": [
+    { "stage": "K26-E", "name": "WorkTime schema plan", "status": "current (this stage)" },
+    { "stage": "K26-F", "name": "WorkTime schema implementation", "scope": "migration + backfill + validation script", "k22Impact": "no" },
+    { "stage": "K26-G", "name": "WorkTime API implementation", "scope": "CRUD + resolved + delete protection", "k22Impact": "no" },
+    { "stage": "K26-H", "name": "WorkTime settings UI", "scope": "settings center panel", "k22Impact": "no" },
+    { "stage": "K26-I", "name": "Recommendation integration", "scope": "plan/room/preferred-day/调课 uses config", "k22Impact": "no (uses helper-equivalent path)" },
+    { "stage": "K26-J", "name": "Solver / score integration", "scope": "candidate filter + SC3/SC7 parameterize + snapshot", "k22Impact": "yes (K22-after-k26-j fixture)" },
+    { "stage": "K26-J1", "name": "Solver/score verification complete", "scope": "补齐 K26-J 验证链", "k22Impact": "n/a" }
+  ],
+  "nonGoals": [
+    "schema change (in this stage)",
+    "migration",
+    "DB data modification",
+    "API 业务语义",
+    "frontend UI 功能",
+    "solver algorithm",
+    "score.ts",
+    "scheduler preview/apply",
+    "adjustment recommendation",
+    "room recommendation",
+    "importer/parser",
+    "RBAC permission model",
+    "K22/K23/K24/K25 expected",
+    "WorkTime API",
+    "WorkTime UI",
+    "seed",
+    "业务数据"
+  ],
+  "verification": {
+    "k26ePlan": "TBD run",
+    "k26dVerify": "TBD run",
+    "k26cAudit": "TBD run",
+    "k26aVerify": "TBD run",
+    "k26bCloseoutVerify": "TBD run",
+    "k25CloseoutVerify": "TBD run",
+    "k25cValidation": "TBD run",
+    "prismaValidate": "TBD run",
+    "prismaMigrateStatus": "TBD run",
+    "build": "TBD run",
+    "lint": "TBD run (expected +0/+0 vs K26-D1 baseline 184/136)",
+    "authFoundation": "TBD run (expected 53 passed / 1 failed pre-existing)"
+  },
+  "blocking": false,
+  "recommendedNextStage": "K26-F-WORKTIME-SCHEMA-IMPLEMENTATION"
+}
