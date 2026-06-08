@@ -73,3 +73,19 @@ npm run dev
 - ❌ importer / parser
 - ❌ RBAC permission model
 - ❌ K22/K23/K24/K25 expected
+
+## User Manual Validation Result
+
+> 本节由 `K26-H1A-WORKTIME-SETTINGS-UI-VERIFICATION-COMPLETE` 追加。
+
+| 项目 | 值 |
+|------|-----|
+| 用户是否已重启 dev server | ✅ 是 |
+| 用户是否已人工验证 | ✅ 是 |
+| 是否通过 | ✅ **PASSED** |
+| 是否仍显示 `Cannot read properties of undefined (reading 'findMany')` | ❌ 不再出现 |
+| WorkTime settings UI 可正常打开 | ✅ |
+| resolved card 正常 | ✅ |
+| config list 正常 | ✅ |
+| slot table 正常 | ✅ |
+| `manualValidationRequired` | **false** |

@@ -56,5 +56,11 @@
     "确认 slot table 正常",
     "确认学期设置和排课参数设置仍能切换"
   ],
-  "blocking": false
+  "blocking": false,
+  "userManualValidation": {
+    "status": "PASSED",
+    "source": "user-provided browser validation",
+    "note": "用户重启 dev server 后人工验证通过",
+    "manualValidationRequired": false
+  }
 }
