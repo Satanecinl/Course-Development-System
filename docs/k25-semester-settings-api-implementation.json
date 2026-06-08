@@ -1,0 +1,75 @@
+{
+  "stage": "K25-H-SEMESTER-SETTINGS-API-IMPLEMENTATION",
+  "status": "IMPLEMENTATION_COMPLETE",
+  "gitHubSync": {
+    "branch": "master",
+    "remote": "origin",
+    "remoteUrl": "git@github.com:Satanecinl/Course-Development-System.git",
+    "trackingBranch": "origin/master",
+    "localHeadBefore": "f4976e7",
+    "remoteHeadBefore": "f4976e7",
+    "localHeadAfter": "(to be filled after commit)",
+    "remoteHeadAfter": "(to be filled after push)",
+    "aheadBehind": "up to date",
+    "pushed": false,
+    "forcePush": false
+  },
+  "implementedApi": [
+    { "method": "GET", "path": "/api/semesters", "status": "enhanced", "changes": "Added ?includeCounts=true with settings:manage auth" },
+    { "method": "POST", "path": "/api/semesters", "status": "new", "permission": "settings:manage" },
+    { "method": "PUT", "path": "/api/semesters/[id]", "status": "new", "permission": "settings:manage" },
+    { "method": "DELETE", "path": "/api/semesters/[id]", "status": "new", "permission": "settings:manage" },
+    { "method": "POST", "path": "/api/semesters/[id]/activate", "status": "new", "permission": "settings:manage" },
+    { "method": "GET", "path": "/api/semesters/[id]/dependencies", "status": "new", "permission": "settings:manage" }
+  ],
+  "permissionModel": {
+    "basicGet": "public (no auth gate, K25-E compatible)",
+    "includeCounts": "settings:manage",
+    "create": "settings:manage",
+    "update": "settings:manage",
+    "delete": "settings:manage",
+    "activate": "settings:manage",
+    "dependencies": "settings:manage"
+  },
+  "validationRules": [
+    "name required, non-empty after trim",
+    "code required, non-empty after trim, unique",
+    "startsAt < endsAt when both provided",
+    "invalid id returns 400 INVALID_SEMESTER_ID",
+    "not found returns 404 SEMESTER_NOT_FOUND",
+    "direct deactivation returns 400 CANNOT_DEACTIVATE_ACTIVE_SEMESTER_DIRECTLY"
+  ],
+  "deleteProtection": {
+    "blockers": [
+      "Active semester → SEMESTER_ACTIVE_DELETE_FORBIDDEN (409)",
+      "Last semester → SEMESTER_LAST_DELETE_FORBIDDEN (409)",
+      "Has dependencies → SEMESTER_HAS_DEPENDENCIES (409)"
+    ],
+    "dependencyModels": ["ClassGroup", "TeachingTask", "ScheduleSlot", "ScheduleAdjustment", "SchedulingRun", "SchedulingConfig", "ImportBatch"],
+    "cascadeDelete": false
+  },
+  "activeSemesterTransaction": {
+    "pattern": "updateMany all false → update target true",
+    "guarantees": "at most 1 active semester",
+    "idempotent": true
+  },
+  "compatibility": {
+    "k25eBasicGet": "preserved — same response shape",
+    "includeCountsAdditive": true,
+    "uiNotImplemented": true
+  },
+  "verification": {
+    "k25hVerify": "PASS=71 FAIL=0",
+    "k25gAudit": "PASS=58 FAIL=0",
+    "k25eVerify": "PASS=63 FAIL=0",
+    "k25dVerify": "PASS=54 FAIL=0",
+    "k25cValidation": "37/37 PASS",
+    "prismaValidate": "PASS",
+    "migrateStatus": "up to date",
+    "build": "PASS",
+    "lint": "184 errors / 136 warnings (matches K25-G baseline)",
+    "authFoundation": "53 passed / 1 failed (pre-existing)"
+  },
+  "blocking": false,
+  "recommendedNextStage": "K25-I-SEMESTER-SETTINGS-UI-IMPLEMENTATION"
+}

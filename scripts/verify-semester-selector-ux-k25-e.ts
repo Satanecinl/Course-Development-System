@@ -311,8 +311,14 @@ function testNonGoals() {
     }
   }
 
-  // No RBAC changes in K25-E files
-  for (const f of k25eFiles) {
+  // No RBAC changes in K25-E frontend files
+  // Note: src/app/api/semesters/route.ts is excluded because K25-H adds
+  // settings:manage permission for write operations — this is expected evolution.
+  const k25eFrontendFiles = [
+    'src/store/semesterStore.ts',
+    'src/components/semester-selector.tsx',
+  ]
+  for (const f of k25eFrontendFiles) {
     if (fileExists(f)) {
       const src = fileRead(f)
       assert(
