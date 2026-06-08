@@ -148,9 +148,11 @@ console.log('\n[Section 2] Current behavior')
   record('B7', 'apply legality guard status identified (K26-I2: WorkTime guard active via dryRun, or pre-I2: no WorkTime check)', ok)
 }
 {
+  // K26-I3: room recommendation now has WorkTime guard via checkWorkTimeTargetAllowed.
   const ok = fileExists('src/lib/schedule/room-recommendations.ts') &&
-    !fileContains('src/lib/schedule/room-recommendations.ts', 'resolveWorkTimeConfig')
-  record('B8', 'room recommendation legality guard status identified (no WorkTime check)', ok)
+    (fileContains('src/lib/schedule/room-recommendations.ts', 'checkWorkTimeTargetAllowed') ||
+     !fileContains('src/lib/schedule/room-recommendations.ts', 'resolveWorkTimeConfig'))
+  record('B8', 'room recommendation legality guard status identified (K26-I3: WorkTime guard active, or pre-I3: no WorkTime check)', ok)
 }
 
 // ---------------------------------------------------------------------------

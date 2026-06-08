@@ -183,8 +183,10 @@ console.log('\n[Section 3] Non-goals')
   record('N1', 'dry-run/apply unchanged (or K26-I2 guard accepted)', ok)
 }
 {
-  const ok = !fileContains('src/lib/schedule/room-recommendations.ts', 'resolveWorkTimeConfigForSchedule')
-  record('N2', 'room recommendation unchanged', ok)
+  // K26-I3 stage-aware: room recommendation now has WorkTime guard (accepted).
+  const hasI3Guard = fileContains('src/lib/schedule/room-recommendations.ts', 'checkWorkTimeTargetAllowed')
+  const ok = hasI3Guard || !fileContains('src/lib/schedule/room-recommendations.ts', 'resolveWorkTimeConfigForSchedule')
+  record('N2', 'room recommendation unchanged (or K26-I3 guard accepted)', ok)
 }
 {
   const ok = !fileContains('src/components/schedule-adjustment-dialog.tsx', 'resolveWorkTimeConfigForSchedule')

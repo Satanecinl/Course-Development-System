@@ -22,6 +22,11 @@ import { prisma } from '@/lib/prisma'
 import { resolveSchedulerSemester } from '@/lib/semester'
 import { getTaskStudentCount } from '@/lib/scheduler/capacity'
 import { checkScheduleConflicts } from '@/lib/schedule/conflict-check'
+import {
+  resolveWorkTimeConfigForSchedule,
+  checkWorkTimeTargetAllowed,
+  type ResolvedWorkTimeForSchedule,
+} from '@/lib/worktime/worktime-schedule-resolver'
 
 // ─── K22-F2A specialty classification (verbatim copy from score.ts) ───
 
@@ -110,6 +115,12 @@ export interface RoomRecommendationResult {
   candidates: RoomRecommendationCandidate[]
   rejectedSummary: RoomRecommendationRejectedSummary
   message?: string
+  /** K26-I3: WorkTime error when target is blocked by WorkTime policy. */
+  workTimeError?: {
+    code: string
+    message: string
+    details?: Record<string, unknown>
+  }
 }
 
 // ─── Constants for ranking ───
@@ -143,6 +154,31 @@ export async function findAdjustmentRoomRecommendations(
     semesterId: input.semesterId ?? undefined,
   })
   const semesterId = semester.id
+
+  // 1a. K26-I3: WorkTime guard — block targets that violate WorkTime policy
+  // before any room query / capacity / conflict check.
+  let workTime: ResolvedWorkTimeForSchedule
+  try {
+    workTime = await resolveWorkTimeConfigForSchedule(semesterId)
+  } catch {
+    return emptyResult('无法解析作息配置，请稍后重试', {
+      conflict: 0, capacity: 0, linxiaoPolicy: 0, unavailable: 0, other: 1,
+    }, { code: 'WORKTIME_DAY_DISABLED', message: '无法解析作息配置，请稍后重试。' })
+  }
+
+  const targetCheck = checkWorkTimeTargetAllowed(workTime, {
+    dayOfWeek: input.targetDayOfWeek,
+    slotIndex: input.targetSlotIndex,
+  })
+  if (!targetCheck.ok) {
+    return emptyResult(targetCheck.message, {
+      conflict: 0, capacity: 0, linxiaoPolicy: 0, unavailable: 0, other: 1,
+    }, {
+      code: targetCheck.code,
+      message: targetCheck.message,
+      details: targetCheck.details,
+    })
+  }
 
   // 2. Load the source slot + teaching task with class groups
   const slot = await prisma.scheduleSlot.findUnique({
@@ -322,12 +358,14 @@ async function collectHistoricalRoomIds(
 function emptyResult(
   message: string,
   rejectedSummary: RoomRecommendationRejectedSummary,
+  workTimeError?: RoomRecommendationResult['workTimeError'],
 ): RoomRecommendationResult {
   return {
     minimumSatisfied: false,
     candidates: [],
     rejectedSummary,
     message,
+    workTimeError,
   }
 }
 

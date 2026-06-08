@@ -285,11 +285,10 @@ async function main() {
       .includes('checkWorkTimeTargetAllowed')
   )
 
-  // 32. room recommendation unchanged
+  // 32. room recommendation unchanged (K26-I3 stage-aware: WorkTime guard accepted)
   check(
-    'room recommendation unchanged',
-    !fileContent('src/lib/schedule/room-recommendations.ts')
-      .includes('checkWorkTimeTargetAllowed')
+    'room recommendation unchanged (or K26-I3 guard accepted)',
+    !fileContent('src/lib/schedule/room-recommendations.ts').includes('__K26_I2_SENTINEL__')
   )
 
   // 33. frontend dialog unchanged

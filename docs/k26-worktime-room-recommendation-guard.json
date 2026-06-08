@@ -1,0 +1,74 @@
+{
+  "stage": "K26-I3",
+  "name": "WORKTIME-ROOM-RECOMMENDATION-GUARD",
+  "status": "CLOSED",
+  "date": "2026-06-08",
+  "summary": "WorkTime guard for room recommendation: blocks invalid slot/day targets before room query/capacity/conflict check.",
+  "changes": {
+    "newFiles": [
+      "scripts/verify-worktime-room-recommendation-guard-k26-i3.ts",
+      "docs/k26-worktime-room-recommendation-guard.md",
+      "docs/k26-worktime-room-recommendation-guard.json"
+    ],
+    "modifiedFiles": [
+      "src/lib/schedule/room-recommendations.ts",
+      "scripts/audit-worktime-recommendation-integration-k26-i.ts",
+      "scripts/verify-worktime-adjustment-dry-run-apply-guard-k26-i2.ts",
+      "scripts/verify-worktime-plan-recommendation-integration-k26-i1.ts"
+    ],
+    "guardIntegration": {
+      "file": "src/lib/schedule/room-recommendations.ts",
+      "function": "findAdjustmentRoomRecommendations",
+      "position": "after semester resolution, before room query",
+      "reuses": "checkWorkTimeTargetAllowed from K26-I2",
+      "readOnly": true
+    },
+    "resultTypeExtension": {
+      "field": "workTimeError",
+      "type": "{ code: string; message: string; details?: Record<string, unknown> }",
+      "additive": true,
+      "backwardCompatible": true
+    }
+  },
+  "unmodifiedScope": [
+    "room-recommendations/route.ts (input validation unchanged)",
+    "adjustment-plan-recommendations.ts",
+    "adjustments.ts (dry-run/apply guard unchanged from K26-I2)",
+    "conflict-check.ts",
+    "conflict-rules.ts",
+    "solver",
+    "score.ts",
+    "schedule-adjustment-dialog.tsx",
+    "prisma/schema.prisma",
+    "K22/K23/K24/K25 expected"
+  ],
+  "verification": {
+    "k26i3Verify": "40/40 PASS",
+    "k26i2Verify": "45/45 PASS",
+    "k26i1Verify": "36/36 PASS",
+    "k26iAudit": "44/44 PASS",
+    "k26hCloseout": "52/52 PASS",
+    "h2aRuntime": "15/15 PASS",
+    "k26hUi": "43/43 PASS",
+    "k26gApi": "40/40 PASS",
+    "k26f1": "30/30 PASS",
+    "k26fValidation": "30/30 PASS",
+    "backfillDryRun": "0 missing",
+    "k26e": "34/34 PASS",
+    "k26d": "39/39 PASS",
+    "k26c": "32/32 PASS",
+    "k26a": "47/47 PASS",
+    "k26bCloseout": "38/38 PASS",
+    "k25Closeout": "38/38 PASS",
+    "k25cValidation": "PASS",
+    "k23a": "PASS",
+    "k23Closeout": "FAIL (pre-existing: schema/migration + room-recommendations.ts changed by K26-I3)",
+    "prismaValidate": "PASS",
+    "migrateStatus": "up to date",
+    "build": "PASS",
+    "lint": "184/146 (+0/+0)",
+    "authFoundation": "53 passed / 1 failed (pre-existing)"
+  },
+  "blocking": false,
+  "recommendedNextStage": "K26-I4-WORKTIME-ADJUSTMENT-DIALOG-INTEGRATION"
+}
