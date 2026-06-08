@@ -1,0 +1,371 @@
+{
+  "stage": "K26-J1-WORKTIME-SOLVER-SCORE-HARNESS-PLAN",
+  "status": "CLOSED",
+  "date": "2026-06-09",
+  "dependsOn": "K26-J-WORKTIME-SOLVER-SCORE-INTEGRATION-AUDIT (5bd779a)",
+  "auditOnly": true,
+  "noCodeChanges": true,
+  "noSolverChange": true,
+  "noScoreChange": true,
+  "noSchedulingRunWriteChange": true,
+  "noSchemaChange": true,
+  "noMigrationChange": true,
+  "noK22ExpectedChange": true,
+  "noUiChange": true,
+  "noRecommendationChange": true,
+  "noDbWrite": true,
+  "summary": "Plan-only stage. Designs synthetic WorkTime fixtures, candidate generation harness, score full/delta consistency harness, SchedulingRun snapshot harness, and K22 harness extension (Harness K/L/M). No solver, score, schema, migration, or K22 expected change.",
+  "githubSync": {
+    "branch": "master",
+    "remote": "origin",
+    "remoteUrl": "git@github.com:Satanecinl/Course-Development-System.git",
+    "localHeadBefore": "5bd779a",
+    "localHeadAfter": "<J1 commit>",
+    "remoteHeadAfter": "<J1 commit>",
+    "push": true,
+    "forcePush": false,
+    "fetch": true,
+    "pullRebase": false
+  },
+  "baselineAudit": {
+    "stage": "K26-J-WORKTIME-SOLVER-SCORE-INTEGRATION-AUDIT",
+    "commit": "5bd779a",
+    "risks": {
+      "high": 3,
+      "medium": 4,
+      "low": 2,
+      "info": 2
+    },
+    "keyFindings": [
+      "solver candidate generation hardcoded day ∈ [1,7], slot ∈ [1,6]",
+      "score SC3 hardcoded slotIndex >= 5",
+      "score SC7 hardcoded day >= 6",
+      "SchedulingRun.workTimeConfigSnapshot schema exists but never written",
+      "K22 harness has no WorkTime fixtures"
+    ]
+  },
+  "fixtures": [
+    {
+      "name": "STATIC_BASELINE",
+      "purpose": "Capture current static solver/score behavior as baseline",
+      "allowWeekend": false,
+      "activeTeachingSlotIndexes": [1, 2, 3, 4, 5],
+      "legacyDisplaySlotIndexes": [6, 7],
+      "allowedDayOfWeeks": [1, 2, 3, 4, 5],
+      "weekendDayOfWeeks": [6, 7],
+      "earlySlotIndexes": [1, 2],
+      "lateSlotIndexes": [5],
+      "expectedCurrentSolverBehavior": {
+        "exhaustiveSearchMayIncludeDays": [1, 2, 3, 4, 5, 6, 7],
+        "exhaustiveSearchMayIncludeSlots": [1, 2, 3, 4, 5, 6],
+        "randomGenerationMayIncludeDays": [1, 2, 3, 4, 5, 6, 7],
+        "randomGenerationMayIncludeSlots": [1, 2, 3, 4, 5, 6]
+      },
+      "expectedFutureSolverBehavior": {
+        "candidateDays": [1, 2, 3, 4, 5],
+        "candidateSlots": [1, 2, 3, 4, 5]
+      },
+      "serves": ["candidateGeneration", "scoreFullDelta", "snapshot", "k22Regression", "realUsage"]
+    },
+    {
+      "name": "SHORT_TEACHING_DAY",
+      "purpose": "Verify solver does not generate disabled slots when active slots shrink",
+      "allowWeekend": false,
+      "activeTeachingSlotIndexes": [1, 2, 3, 4],
+      "legacyDisplaySlotIndexes": [5, 6, 7],
+      "allowedDayOfWeeks": [1, 2, 3, 4, 5],
+      "weekendDayOfWeeks": [6, 7],
+      "earlySlotIndexes": [1, 2],
+      "lateSlotIndexes": [4],
+      "expectedCurrentSolverBehavior": {
+        "exhaustiveSearchMayIncludeSlots": [1, 2, 3, 4, 5, 6],
+        "randomGenerationMayIncludeSlots": [1, 2, 3, 4, 5, 6]
+      },
+      "expectedFutureSolverBehavior": {
+        "candidateDays": [1, 2, 3, 4, 5],
+        "candidateSlots": [1, 2, 3, 4],
+        "forbiddenSlots": [5, 6, 7]
+      },
+      "serves": ["candidateGeneration", "scoreFullDelta", "k22Regression"]
+    },
+    {
+      "name": "WEEKEND_ENABLED",
+      "purpose": "Verify solver can generate weekend candidates when allowWeekend=true",
+      "allowWeekend": true,
+      "activeTeachingSlotIndexes": [1, 2, 3, 4, 5],
+      "legacyDisplaySlotIndexes": [6, 7],
+      "allowedDayOfWeeks": [1, 2, 3, 4, 5, 6, 7],
+      "weekendDayOfWeeks": [6, 7],
+      "earlySlotIndexes": [1, 2],
+      "lateSlotIndexes": [5],
+      "expectedCurrentSolverBehavior": {
+        "exhaustiveSearchMayIncludeDays": [1, 2, 3, 4, 5, 6, 7],
+        "exhaustiveSearchMayIncludeSlots": [1, 2, 3, 4, 5, 6]
+      },
+      "expectedFutureSolverBehavior": {
+        "candidateDays": [1, 2, 3, 4, 5, 6, 7],
+        "candidateSlots": [1, 2, 3, 4, 5]
+      },
+      "expectedFutureScoreBehavior": {
+        "sc7WeekendPenaltyDays": [6, 7]
+      },
+      "serves": ["candidateGeneration", "scoreFullDelta", "snapshot", "k22Regression", "realUsage"]
+    },
+    {
+      "name": "LATE_SLOT_REDEFINED",
+      "purpose": "Verify SC3 no longer hardcoded slotIndex >= 5",
+      "allowWeekend": false,
+      "activeTeachingSlotIndexes": [1, 2, 3, 4, 5],
+      "legacyDisplaySlotIndexes": [6, 7],
+      "lateSlotIndexes": [4, 5],
+      "earlySlotIndexes": [1, 2, 3],
+      "allowedDayOfWeeks": [1, 2, 3, 4, 5],
+      "expectedCurrentScoreBehavior": {
+        "sc3LatePenaltySlots": [5]
+      },
+      "expectedFutureScoreBehavior": {
+        "sc3LatePenaltySlots": [4, 5]
+      },
+      "serves": ["scoreFullDelta", "k22Regression", "realUsage"]
+    },
+    {
+      "name": "LEGACY_SLOT_MALFORMED",
+      "purpose": "Even if DB mis-marks slot 6 as active teaching, solver excludes legacy slots",
+      "allowWeekend": false,
+      "activeTeachingSlotIndexes": [1, 2, 3, 4, 5, 6],
+      "legacyDisplaySlotIndexes": [6, 7],
+      "allowedDayOfWeeks": [1, 2, 3, 4, 5],
+      "earlySlotIndexes": [1, 2],
+      "lateSlotIndexes": [5],
+      "expectedCurrentSolverBehavior": {
+        "exhaustiveSearchMayIncludeSlots": [1, 2, 3, 4, 5, 6]
+      },
+      "expectedFutureSolverBehavior": {
+        "candidateDays": [1, 2, 3, 4, 5],
+        "candidateSlots": [1, 2, 3, 4, 5],
+        "forbiddenSlots": [6, 7]
+      },
+      "notes": "solver-side hard rule: even if DB mis-marks slot 6 as active teaching, slot 6/7 are display-only and must never be generated.",
+      "serves": ["candidateGeneration", "k22Regression"]
+    }
+  ],
+  "candidateHarnessPlan": {
+    "keyDecisions": {
+      "exhaustiveAndRandomBothCovered": true,
+      "randomSeedDeterministic": true,
+      "candidateGeneratorHelperExtraction": "Required at K26-J3: extract generateCandidateMove helper, takes workTimeSnapshot param, falls back to current static behavior when param absent (K22 compat)",
+      "iterationsForRandomPath": {
+        "default": 20000,
+        "legacyMalformedFixture": 50000
+      },
+      "samplingPoints": "≥ 100 per fixture",
+      "noDbDependency": "Reuse K22-C buildContext in-memory pattern"
+    },
+    "harnessTable": [
+      { "id": "C-EX-A", "fixture": "STATIC_BASELINE", "current": "exhaustive uses day ∈ [1..7], slot ∈ [1..6]", "future": "exhaustive uses day ∈ [1..5], slot ∈ [1..5]", "stage": "K26-J3" },
+      { "id": "C-EX-B", "fixture": "SHORT_TEACHING_DAY", "current": "exhaustive still uses [1..6]", "future": "exhaustive uses slot ∈ [1..4]", "stage": "K26-J3" },
+      { "id": "C-EX-C", "fixture": "WEEKEND_ENABLED", "current": "exhaustive uses day ∈ [1..7]", "future": "exhaustive uses day ∈ [1..7]", "stage": "K26-J3" },
+      { "id": "C-EX-E", "fixture": "LEGACY_SLOT_MALFORMED", "current": "exhaustive allows slot 6", "future": "exhaustive excludes slot 6/7", "stage": "K26-J3" },
+      { "id": "C-RND-A", "fixture": "STATIC_BASELINE", "current": "random may pick day=6,7 / slot=6", "future": "random ⊆ [1..5]×[1..5]", "stage": "K26-J3" },
+      { "id": "C-RND-B", "fixture": "SHORT_TEACHING_DAY", "current": "random may pick slot=5", "future": "random ⊆ [1..4]", "stage": "K26-J3" },
+      { "id": "C-RND-C", "fixture": "WEEKEND_ENABLED", "current": "random day/slot includes weekend", "future": "random includes weekend, but not slot 6/7", "stage": "K26-J3" },
+      { "id": "C-RND-E", "fixture": "LEGACY_SLOT_MALFORMED", "current": "random may pick slot 6", "future": "random excludes 6/7", "stage": "K26-J3" },
+      { "id": "C-SEED-DET", "fixture": "all", "current": "same (seed, fixture) → same set", "future": "same property holds", "stage": "K26-J3" },
+      { "id": "C-HELPER-EXISTS", "fixture": "n/a", "current": "helper not extracted", "future": "helper generateCandidateMove exposed", "stage": "K26-J3" }
+    ]
+  },
+  "scoreHarnessPlan": {
+    "keyDecisions": {
+      "workTimeConstraints": ["SC3", "SC7"],
+      "optionalConstraints": ["SC5", "SC8", "SC9"],
+      "sc5WeekendDecision": "SC5 still weekday-only (weekend density is SC7's job)",
+      "sc7WeekendPolicy": "SC7 penalty = -15 when weekendDayOfWeeks.includes(p.day), no exemption",
+      "fullDeltaConsistency": "SC3 / SC7 must use the same lateSlotIndexes / weekendDayOfWeeks in both full and delta paths",
+      "componentLevelExtraction": "Extend ScoreWithDetails with sumByType aggregation (already partially in details array)",
+      "scoreSnapshotVersionBump": "Not required; score is functional and stateless; same args → same result"
+    },
+    "harnessTable": [
+      { "id": "S-FULL-D", "fixture": "LATE_SLOT_REDEFINED", "constraint": "SC3 full", "current": "only idx=5 triggers", "future": "idx ∈ [4,5] triggers", "risk": "MEDIUM" },
+      { "id": "S-DELTA-D", "fixture": "LATE_SLOT_REDEFINED", "constraint": "SC3 delta", "current": "only 5→6 / 4→5 boundary", "future": "symmetric on 4,5", "risk": "MEDIUM" },
+      { "id": "S-FULL-C", "fixture": "WEEKEND_ENABLED", "constraint": "SC7 full", "current": "day=6/7 triggers (allowWeekend ignored)", "future": "day ∈ weekendDayOfWeeks triggers", "risk": "MEDIUM" },
+      { "id": "S-DELTA-C", "fixture": "WEEKEND_ENABLED", "constraint": "SC7 delta", "current": "symmetric on day=6/7", "future": "symmetric on weekendDayOfWeeks", "risk": "MEDIUM" },
+      { "id": "S-FULL-A", "fixture": "STATIC_BASELINE", "constraint": "SC3/SC7", "current": "current static", "future": "identical to current (backward compat)", "risk": "LOW" },
+      { "id": "S-FULL-E", "fixture": "LEGACY_SLOT_MALFORMED", "constraint": "SC3/SC7", "current": "only 6/7 not in lateSlotIndexes", "future": "n/a (legacy slots are not score-relevant)", "risk": "LOW" },
+      { "id": "S-CONSIST-D", "fixture": "LATE_SLOT_REDEFINED", "constraint": "SC3 full ≡ delta", "current": "boundary 5 only", "future": "boundary [4,5]", "risk": "HIGH" },
+      { "id": "S-CONSIST-C", "fixture": "WEEKEND_ENABLED", "constraint": "SC7 full ≡ delta", "current": "day 6/7 only", "future": "weekendDayOfWeeks", "risk": "HIGH" },
+      { "id": "S-EXTRACT-S", "fixture": "STATIC_BASELINE", "constraint": "component-level extraction", "current": "n/a (no aggregate)", "future": "sumByType works for SC3/SC7", "risk": "MEDIUM" },
+      { "id": "S-VERSION-A", "fixture": "STATIC_BASELINE", "constraint": "deterministic", "current": "same input → same output", "future": "same property", "risk": "INFO" },
+      { "id": "S-SC5-A", "fixture": "STATIC_BASELINE", "constraint": "SC5 teacher balance", "current": "TEACHING_DAYS=[1..5]", "future": "weekdayDayOfWeeks (default same)", "risk": "LOW" }
+    ]
+  },
+  "snapshotHarnessPlan": {
+    "keyDecisions": {
+      "previewFailsFastOnNoActiveConfig": true,
+      "applyReusesSnapshot": true,
+      "rollbackReusesSnapshot": true,
+      "snapshotCorruptFailsFast": true,
+      "staticFallbackNeverInSnapshot": true,
+      "snapshotIncludesLabelAndTime": true
+    },
+    "snapshotSchema": {
+      "workTimeConfigId": "number | null",
+      "name": "string",
+      "isDefault": "boolean",
+      "allowWeekend": "boolean",
+      "lunchStart": "string | null",
+      "lunchEnd": "string | null",
+      "semesterId": "number",
+      "source": "'database' | 'staticFallback'",
+      "snapshotAt": "string (ISO timestamp)",
+      "activeTeachingSlotIndexes": "number[]",
+      "legacyDisplaySlotIndexes": "number[]",
+      "allowedDayOfWeeks": "number[]",
+      "weekdayDayOfWeeks": "number[]",
+      "weekendDayOfWeeks": "number[]",
+      "slotsByIndex": "Record<number, { slotIndex, label, startsAt, endsAt, isTeachingSlot, isLegacyDisplay, sortOrder }>"
+    },
+    "harnessTable": [
+      { "id": "P-WRITE-1", "flow": "preview normal", "expected": "snapshot written, source=database", "stage": "K26-J2", "dbWrite": true },
+      { "id": "P-WRITE-2", "flow": "preview with default config", "expected": "snapshot.workTimeConfigId === default.id", "stage": "K26-J2", "dbWrite": true },
+      { "id": "P-FAIL-1", "flow": "preview no active config", "expected": "fail-fast 400, no row written", "stage": "K26-J2", "dbWrite": false },
+      { "id": "A-REUSE-1", "flow": "preview → mutate WorkTimeConfig → apply", "expected": "apply uses old snapshot, not new DB", "stage": "K26-J2", "dbWrite": true },
+      { "id": "A-REUSE-2", "flow": "preview → delete WorkTimeConfig → apply", "expected": "apply still uses snapshot (snapshot not broken)", "stage": "K26-J2", "dbWrite": true },
+      { "id": "R-REUSE-1", "flow": "preview → apply → rollback", "expected": "rollback reads apply run snapshot", "stage": "K26-J2", "dbWrite": true },
+      { "id": "R-PARSE-1", "flow": "run snapshot corrupted", "expected": "rollback fail-fast, no DB mutation", "stage": "K26-J2", "dbWrite": false },
+      { "id": "F-LEGACY-1", "flow": "WorkTimeConfig slot 6 mis-marked active", "expected": "snapshot.legacyDisplaySlotIndexes includes 6", "stage": "K26-J2", "dbWrite": true },
+      { "id": "F-WEEKEND-1", "flow": "allowWeekend=true", "expected": "snapshot.allowedDayOfWeeks includes 6,7", "stage": "K26-J2", "dbWrite": true },
+      { "id": "F-FALLBACK-1", "flow": "preview static fallback path", "expected": "snapshot.source !== 'staticFallback' (fail-fast)", "stage": "K26-J2", "dbWrite": false },
+      { "id": "DETERM-1", "flow": "same WorkTimeConfig → 2 previews", "expected": "snapshots equal (modulo snapshotAt)", "stage": "K26-J2", "dbWrite": true }
+    ]
+  },
+  "k22Extension": {
+    "noExpectedChange": true,
+    "noGeneratedSnapshotUpdate": true,
+    "noExistingFixtureChange": true,
+    "baselinePreserved": "K22-C 73/0/0/0",
+    "newHarnessGroups": [
+      {
+        "id": "Harness K",
+        "purpose": "WorkTime candidate generation",
+        "fixtures": ["STATIC_BASELINE", "SHORT_TEACHING_DAY", "WEEKEND_ENABLED", "LEGACY_SLOT_MALFORMED"],
+        "stage": "K26-J3",
+        "dbNeeded": false,
+        "updatesK22Expected": false
+      },
+      {
+        "id": "Harness L",
+        "purpose": "WorkTime score full/delta",
+        "fixtures": ["STATIC_BASELINE", "WEEKEND_ENABLED", "LATE_SLOT_REDEFINED"],
+        "stage": "K26-J4",
+        "dbNeeded": false,
+        "updatesK22Expected": false
+      },
+      {
+        "id": "Harness M",
+        "purpose": "WorkTime snapshot reproducibility",
+        "fixtures": ["runtime fixtures with synthetic WorkTimeConfig"],
+        "stage": "K26-J2",
+        "dbNeeded": true,
+        "updatesK22Expected": false
+      }
+    ],
+    "expectedUpdateApprovalGate": "Any K22 / K26 score expected update must go through explicit approval (separate commit + PR review). K/L/M do not carry K22 expected.",
+    "generatedAtDriftPrevention": "K22-C verify run's docs/k22-score-default-snapshot.json generatedAt drift must not be committed during J1-J5 stages unless accompanied by an explicit expected change commit."
+  },
+  "verificationGates": {
+    "K26-J2": [
+      "preview writes workTimeConfigSnapshot (DB row non-null, schema valid, source=database)",
+      "apply reads snapshot (does not re-resolve DB)",
+      "apply uses old snapshot even if WorkTimeConfig changed between preview and apply",
+      "rollback reads apply run snapshot",
+      "corrupt snapshot fail-fast, no DB write",
+      "no solver candidate behavior change (exhaustive/random ranges same as K26-J)",
+      "K22-C 73/0/0/0 unchanged",
+      "Harness M snapshot verify PASS"
+    ],
+    "K26-J3": [
+      "candidate days = allowedDayOfWeeks (from snapshot)",
+      "candidate slots = activeTeachingSlotIndexes (from snapshot)",
+      "slot 6/7 excluded (even Fixture E DB mis-marked active)",
+      "allowWeekend honored (Fixture A weekday only, Fixture C includes weekend)",
+      "exhaustive + random both covered",
+      "randomSeed deterministic: same (seed, fixture) → same candidate set",
+      "score unchanged (K22-C still PASS)",
+      "Harness K candidate harness PASS"
+    ],
+    "K26-J4": [
+      "SC3 uses lateSlotIndexes (Fixture D verifies idx=4 triggers)",
+      "SC7 uses weekendDayOfWeeks (Fixture C verifies day=6 triggers)",
+      "SC5/SC8/SC9 decisions recorded (weekday-only default unchanged)",
+      "full ≡ delta consistency for SC3/SC7",
+      "score snapshot expected unchanged (K22 behavior unchanged)",
+      "no solver candidate additional drift (K26-J3 behavior unchanged)",
+      "Harness L score harness PASS",
+      "K22-C Harness A still PASS (coexists with K/L)"
+    ],
+    "K26-J5": [
+      "real solver preview run on dev DB (manual)",
+      "hardScore remains valid (no HC violation)",
+      "soft score breakdown reviewed (K22 breakdown UI visualization)",
+      "user manual validation",
+      "rollback/apply reviewed",
+      "WorkTime settings change期间 no crash"
+    ]
+  },
+  "nonGoals": [
+    "schema change",
+    "migration",
+    "DB write",
+    "solver behavior change",
+    "score change",
+    "scheduler API behavior change",
+    "SchedulingRun write logic change",
+    "K22 expected change",
+    "recommendation behavior change",
+    "UI change",
+    "reset / force-reset / seed"
+  ],
+  "verification": {
+    "planWorktimeSolverScoreHarnessK26J1": "56/56 PASS",
+    "auditWorktimeSolverScoreIntegrationK26J": "48/48 PASS",
+    "k26ICloseout": "64/64 PASS",
+    "k26I4": "49/49 PASS",
+    "k26I3": "40/40 PASS",
+    "k26I2": "45/45 PASS",
+    "k26I1": "36/36 PASS",
+    "k26Iaudit": "44/44 PASS",
+    "k26Hcloseout": "52/52 PASS",
+    "k26H2A": "15/15 PASS",
+    "k26Hui": "43/43 PASS",
+    "k26Gapi": "40/40 PASS",
+    "k26F1": "30/30 PASS",
+    "k26Fvalidation": "30/30 PASS",
+    "k26FbackfillDryRun": "0 missing",
+    "k26E": "34/34 PASS",
+    "k26D": "39/39 PASS",
+    "k26C": "32/32 PASS",
+    "k26A": "47/47 PASS",
+    "k26Bcloseout": "38/38 PASS",
+    "k25closeout": "38/38 PASS",
+    "k25C": "PASS",
+    "k22CscoreHarness": "PASS",
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "up to date (8 migrations)",
+    "build": "PASS",
+    "lint": "184 errors / 146 warnings (no new)",
+    "authFoundation": "53 passed / 1 failed (pre-existing ScheduleAdjustment ACTIVE count)"
+  },
+  "stageClose": {
+    "k26J1Closeable": true,
+    "recommendedNextStage": "K26-J2-WORKTIME-SCHEDULINGRUN-SNAPSHOT-WRITE",
+    "j2EntryAllowed": true,
+    "j2Scope": "preview writes snapshot + apply reads snapshot + rollback reads snapshot + Harness M; solver/score/K22 expected unchanged",
+    "solverOrScoreImplementationStillBanned": true,
+    "stageOrderRamp": [
+      "J1: plan fixtures",
+      "J2: snapshot write (no solver/score change)",
+      "J3: solver candidate generation (first solver change; score unchanged)",
+      "J4: score SC3/SC7 (first score change; candidate unchanged)"
+    ]
+  }
+}

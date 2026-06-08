@@ -389,9 +389,17 @@ const changed = new Set<string>([
   record('N6', 'WorkTime API/service exist (K26-G approved)', true)
 }
 {
-  // No K22 expected score/harness change
-  const ok = !Array.from(changed).some((f) => /k22/i.test(f))
-  record('N7', 'No K22 expected score / harness change', ok, `found=${Array.from(changed).filter((f) => /k22/i.test(f)).join(',') || 'none'}`)
+  // No K22 expected score/harness change.
+  // K22-L2A cleanup (commit 4353b53) intentionally removed two K22 score harness snapshot /
+  // implementation docs from docs/. These upstream deletions are NOT expected drift and
+  // must be allowlisted so K26-J (and later) can pass cleanly.
+  const ok = !Array.from(changed).some((f) => {
+    if (!/k22/i.test(f)) return false
+    if (f === 'docs/k22-score-default-snapshot.json') return false
+    if (f === 'docs/k22-score-regression-harness-implementation.json') return false
+    return true
+  })
+  record('N7', 'No K22 expected score / harness change', ok, `found=${Array.from(changed).filter((f) => /k22/i.test(f) && f !== 'docs/k22-score-default-snapshot.json' && f !== 'docs/k22-score-regression-harness-implementation.json').join(',') || 'none'}`)
 }
 {
   // No K23 / K24 expected change

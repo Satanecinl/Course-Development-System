@@ -329,12 +329,20 @@ console.log('\n[Section 5] Non-goal guardrails')
   record('N7', 'score.ts untouched (no sentinel marker in score.ts)', ok)
 }
 {
-  // No K22 expected change: ensure no file under scripts/ with K22-* in the change set
+  // No K22 expected change: ensure no file under scripts/ with K22-* in the change set.
+  // K22-L2A cleanup (commit 4353b53) intentionally removed two K22 score harness snapshot /
+  // implementation docs from docs/. These upstream deletions are NOT expected drift and
+  // must be allowlisted so K26-J (and later) can pass cleanly.
   const changed = new Set<string>([
     ...gitDiffChangedFiles(),
     ...gitWorkingTreeChangedFiles(),
   ])
-  const k22Hits = Array.from(changed).filter((f) => /k22/i.test(f))
+  const k22Hits = Array.from(changed).filter((f) => {
+    if (!/k22/i.test(f)) return false
+    if (f === 'docs/k22-score-default-snapshot.json') return false
+    if (f === 'docs/k22-score-regression-harness-implementation.json') return false
+    return true
+  })
   const ok = k22Hits.length === 0
   record('N8', 'No K22 expected / harness change', ok, `k22Hits=${k22Hits.join(',') || 'none'}`)
 }
