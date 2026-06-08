@@ -1,0 +1,60 @@
+{
+  "stage": "K26-H2A-WORKTIME-SETTINGS-UI-PRISMA-DELEGATE-RUNTIME-FIX",
+  "status": "FIX_IDENTIFIED",
+  "reproduction": {
+    "pagePath": "/admin/settings",
+    "triggerModule": "节次与作息设置",
+    "failingEndpoints": ["GET /api/admin/worktime-configs", "GET /api/admin/worktime-configs/resolved"],
+    "serverError": "Cannot read properties of undefined (reading 'findMany')",
+    "reproduced": true
+  },
+  "rootCause": {
+    "type": "stale Prisma Client singleton",
+    "description": "Dev server started before schema migration (20260608000000_add_worktime_config). Prisma Client singleton (globalThis.prisma) cached old instance without workTimeConfig/timeSlotDefinition delegates.",
+    "evidence": [
+      "Prisma Client types include workTimeConfig (164 refs) and timeSlotDefinition (24 refs)",
+      "node direct call to new PrismaClient().workTimeConfig.findMany() succeeds",
+      "Service code uses correct delegate names (prisma.workTimeConfig, tx.timeSlotDefinition)",
+      "Dev server PID 26648 was running since before migration"
+    ],
+    "codeCorrect": true,
+    "prismaClientGenerated": true,
+    "fix": "restart dev server"
+  },
+  "fix": {
+    "filesModified": [],
+    "action": "restart dev server (no code change needed)",
+    "prismaClientStatus": "correctly generated with workTimeConfig and timeSlotDefinition delegates"
+  },
+  "verification": {
+    "runtimeDelegateVerify": "15/15 PASS",
+    "k26hUiVerify": "TBD",
+    "k26gApiVerify": "TBD"
+  },
+  "nonGoals": [
+    "prisma/schema.prisma",
+    "prisma/migrations",
+    "prisma/dev.db",
+    "WorkTime API semantics",
+    "solver algorithm",
+    "score.ts",
+    "scheduler preview/apply",
+    "adjustment recommendation",
+    "room recommendation",
+    "importer/parser",
+    "RBAC permission model",
+    "K22/K23/K24/K25 expected"
+  ],
+  "manualValidationRequired": true,
+  "manualValidationSteps": [
+    "重启 dev server: npm run dev",
+    "打开 /admin/settings",
+    "点击 节次与作息设置",
+    "确认不再显示 Cannot read properties of undefined (reading 'findMany')",
+    "确认 resolved card 正常",
+    "确认 config list 正常",
+    "确认 slot table 正常",
+    "确认学期设置和排课参数设置仍能切换"
+  ],
+  "blocking": false
+}
