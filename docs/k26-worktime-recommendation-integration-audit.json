@@ -1,0 +1,124 @@
+{
+  "stage": "K26-I-WORKTIME-RECOMMENDATION-INTEGRATION-AUDIT",
+  "status": "AUDIT_COMPLETE",
+  "gitHubSync": {
+    "branch": "master",
+    "remote": "origin",
+    "trackingBranch": "origin/master",
+    "localHeadBefore": "6a216ef",
+    "localHeadAfter": "",
+    "remoteHeadBefore": "6a216ef",
+    "remoteHeadAfter": "",
+    "aheadBehind": "up to date",
+    "fetched": true,
+    "pullRebase": false,
+    "pushed": false,
+    "forcePush": false
+  },
+  "currentWorkTimeBaseline": {
+    "models": ["WorkTimeConfig", "TimeSlotDefinition", "Semester.workTimeConfigs", "SchedulingRun.workTimeConfigSnapshot"],
+    "defaults": {
+      "activeTeachingSlots": [1, 2, 3, 4, 5],
+      "legacyDisplaySlots": [6, 7],
+      "allowWeekend": false
+    },
+    "apiEndpoints": ["list", "create", "get", "update", "delete", "activate", "resolved"],
+    "uiStatus": "READY_FOR_REAL_USE"
+  },
+  "findings": {
+    "planRecommendation": {
+      "currentSource": "K26-D static helper (getValidTeachingSlotIndexes)",
+      "usesWorkTime": false,
+      "gap": "Does not respect allowWeekend or per-slot isActive",
+      "risk": "HIGH"
+    },
+    "roomRecommendation": {
+      "currentSource": "API route validates targetSlotIndex 1..5 only",
+      "usesWorkTime": false,
+      "gap": "Assumes slot legality; no WorkTime guard",
+      "risk": "HIGH"
+    },
+    "dryRunApply": {
+      "currentSource": "validateScheduleAdjustmentInput validates newSlotIndex 1..6",
+      "usesWorkTime": false,
+      "gap": "Inconsistent with room-rec (allows 6); no WorkTime guard",
+      "risk": "HIGH"
+    },
+    "frontendDialog": {
+      "currentSource": "K26-D static helper (getTeachingSlotLabelOptions, DAYS)",
+      "usesWorkTime": false,
+      "gap": "Does not show active teaching only; hardcoded includeWeekend=false",
+      "risk": "HIGH"
+    },
+    "conflictCheck": {
+      "currentSource": "Pure rule kernel",
+      "usesWorkTime": false,
+      "gap": "Guard belongs upstream, not in conflict-check",
+      "risk": "MEDIUM"
+    }
+  },
+  "integrationContract": {
+    "resolvedService": {
+      "function": "resolveWorkTimeConfigForSchedule(semesterId)",
+      "returns": {
+        "semesterId": "number",
+        "source": "database | staticFallback",
+        "allowWeekend": "boolean",
+        "activeTeachingSlotIndexes": "number[]",
+        "legacyDisplaySlotIndexes": "number[]",
+        "weekendDayValues": "number[]",
+        "weekdayValues": "number[]",
+        "slotsByIndex": "Record<number, TimeSlotDefinitionDTO>"
+      }
+    },
+    "candidatePolicy": {
+      "day": "dayOfWeek in weekdayValues OR (allowWeekend=true AND dayOfWeek in weekendDayValues)",
+      "slot": "slotIndex in activeTeachingSlotIndexes AND isTeachingSlot=true AND isLegacyDisplay=false"
+    },
+    "errorCodes": [
+      "WORKTIME_CONFIG_NOT_FOUND",
+      "WORKTIME_SLOT_DISABLED",
+      "WORKTIME_SLOT_LEGACY_ONLY",
+      "WORKTIME_WEEKEND_DISABLED",
+      "WORKTIME_RESOLUTION_FAILED"
+    ]
+  },
+  "riskSummary": {
+    "high": 4,
+    "medium": 1,
+    "low": 2,
+    "info": 1
+  },
+  "nextStages": [
+    { "stage": "K26-I1", "scope": "plan recommendation uses resolved WorkTime", "k22Impact": "no" },
+    { "stage": "K26-I2", "scope": "dry-run / apply WorkTime guard", "k22Impact": "no" },
+    { "stage": "K26-I3", "scope": "room recommendation guard", "k22Impact": "no" },
+    { "stage": "K26-I4", "scope": "frontend dialog integration", "k22Impact": "no" },
+    { "stage": "K26-J", "scope": "solver / score integration (separate)", "k22Impact": "yes (K22-after-k26-j)" }
+  ],
+  "nonGoals": [
+    "schema change",
+    "migration",
+    "DB write",
+    "API behavior change",
+    "UI behavior change",
+    "recommendation algorithm",
+    "room recommendation algorithm",
+    "conflict-check logic",
+    "dry-run logic",
+    "apply logic",
+    "solver algorithm",
+    "score.ts",
+    "scheduler preview/apply",
+    "importer/parser",
+    "RBAC",
+    "K22/K23/K24/K25 expected",
+    "SchedulingRun snapshot write"
+  ],
+  "verification": {
+    "k26iAudit": "TBD",
+    "k26hCloseout": "TBD"
+  },
+  "blocking": false,
+  "recommendedNextStage": "K26-I1-WORKTIME-PLAN-RECOMMENDATION-INTEGRATION"
+}
