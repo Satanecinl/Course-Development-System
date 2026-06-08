@@ -34,6 +34,12 @@ import { resolveSchedulerSemester } from '@/lib/semester'
 import { findAdjustmentRoomRecommendations } from './room-recommendations'
 import type { RoomRecommendationResult } from './room-recommendations'
 import { getValidTeachingSlotIndexes } from './time-slots'
+import {
+  resolveWorkTimeConfigForSchedule,
+  isWorkTimeDayAllowed,
+  isWorkTimeSlotAllowed,
+  type ResolvedWorkTimeForSchedule,
+} from '@/lib/worktime/worktime-schedule-resolver'
 // ─── Constants for the search space ──────────────────────
 
 const DEFAULT_WEEK_WINDOW = 1
@@ -280,10 +286,29 @@ export async function findAdjustmentPlanRecommendations(
   const taskStartWeek = slot.teachingTask.startWeek ?? 1
   const centerWeek = input.preferredWeek ?? taskStartWeek
 
-  // 4. Build the search space.
+  // 4. Build the search space using K26-I1 resolved WorkTime.
+  //    Days and slots are driven by the active WorkTime config;
+  //    `includeWeekend` is intersected with `allowWeekend`.
   const weeks = buildWeekList(centerWeek, weekWindow)
-  const days = buildDayList(includeWeekend)
-  const slotIndexes = [...DEFAULT_SLOT_INDEXES]
+  const workTime = await resolveWorkTimeConfigForSchedule(semesterId)
+  // Days: union of WorkTime weekday + (allowWeekend && caller includeWeekend).
+  const days: number[] = []
+  for (const d of workTime.weekdayValues) {
+    if (!days.includes(d)) days.push(d)
+  }
+  if (workTime.allowWeekend && includeWeekend) {
+    for (const d of workTime.weekendDayValues) {
+      if (!days.includes(d)) days.push(d)
+    }
+  }
+  // Slots: WorkTime active teaching slots (already excludes 6/7).
+  const slotIndexes = [...workTime.activeTeachingSlotIndexes]
+  // Always include 6/7 in `slotIndexes` for K24 display compatibility,
+  // but the inner loop will skip them when targetSlotIndex is in legacy list.
+  // However K26-I1 explicitly excludes 6/7 from active candidates, so
+  // the inner loop's day-slot iteration should NOT propose them as new
+  // targets. We keep them out of `slotIndexes` entirely.
+  // (No additional padding.)
 
   // Pre-compute the set of weekend days to detect and count.
   const weekendDaySet = new Set<number>(WEEKEND_DAYS)

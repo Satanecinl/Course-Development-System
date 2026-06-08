@@ -30,6 +30,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requirePermission } from '@/lib/auth/require-permission'
 import { findAdjustmentPlanRecommendations } from '@/lib/schedule/adjustment-plan-recommendations'
+import {
+  resolveWorkTimeConfigForSchedule,
+  isWorkTimeDayAllowed as isWorkTimeDayAllowedHelper,
+} from '@/lib/worktime/worktime-schedule-resolver'
+import { resolveSchedulerSemester } from '@/lib/semester'
 
 // POST /api/schedule-adjustments/plan-recommendations
 export async function POST(request: NextRequest) {
@@ -91,26 +96,46 @@ export async function POST(request: NextRequest) {
     }
 
     // K24-A5: preferredDayOfWeek (optional). null/undefined = auto.
-    // Valid values: null or 1..5 (Mon..Fri). 6/7 (weekend) are
-    // rejected with 400 to keep semantics unambiguous.
+    // K26-I1: Validate against resolved WorkTime allowed days.
+    // Default WorkTime has allowWeekend=false → preferredDayOfWeek must be 1-5.
+    // When allowWeekend=true, 6/7 are also accepted.
+    const semesterId = body.semesterId != null ? Number(body.semesterId) : null
     let preferredDayOfWeek: number | null | undefined
     if (body.preferredDayOfWeek == null) {
       preferredDayOfWeek = null
     } else {
       const n = Number(body.preferredDayOfWeek)
-      if (!Number.isFinite(n) || n < 1 || n > 5 || !Number.isInteger(n)) {
+      if (!Number.isFinite(n) || !Number.isInteger(n)) {
         return NextResponse.json(
           {
             ok: false,
-            error: 'preferredDayOfWeek 必须是 null 或 1-5 之间的整数 (周一..周五)',
+            error: 'preferredDayOfWeek 必须是 null 或正整数',
+          },
+          { status: 400 },
+        )
+      }
+      // Resolve WorkTime to validate preferred day.
+      const resolvedSemesterForDay = await resolveSchedulerSemester({ semesterId: semesterId ?? undefined })
+      const workTimeForDay = await resolveWorkTimeConfigForSchedule(resolvedSemesterForDay.id)
+      const isWorkTimeDayAllowed = n >= 1 && n <= 7 && isWorkTimeDayAllowedHelper(workTimeForDay, n)
+      if (!isWorkTimeDayAllowed) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: workTimeForDay.allowWeekend ? 'preferredDayOfWeek 必须是 1-7 之间的整数' : 'WORKTIME_WEEKEND_DISABLED',
+            message: workTimeForDay.allowWeekend
+              ? `preferredDayOfWeek 必须是 1-7 之间的整数，当前值: ${n}`
+              : `当前作息配置不允许推荐到周末，preferredDayOfWeek=${n}`,
+            details: {
+              dayOfWeek: n,
+              allowWeekend: workTimeForDay.allowWeekend,
+            },
           },
           { status: 400 },
         )
       }
       preferredDayOfWeek = n
     }
-
-    const semesterId = body.semesterId != null ? Number(body.semesterId) : null
 
     const result = await findAdjustmentPlanRecommendations({
       scheduleSlotId,
@@ -122,7 +147,19 @@ export async function POST(request: NextRequest) {
       preferredDayOfWeek,
     })
 
-    return NextResponse.json({ ok: true, ...result })
+    // K26-I1: additive WorkTime metadata for the response.
+    // Resolve the actual semesterId used by the helper (may have been auto-resolved).
+    const resolvedSemester = await resolveSchedulerSemester({ semesterId: semesterId ?? undefined })
+    const workTime = await resolveWorkTimeConfigForSchedule(resolvedSemester.id)
+
+    return NextResponse.json({
+      ok: true,
+      ...result,
+      workTimeSource: workTime.source,
+      allowWeekend: workTime.allowWeekend,
+      allowedSlotIndexes: workTime.activeTeachingSlotIndexes,
+      excludedLegacySlotIndexes: workTime.legacyDisplaySlotIndexes,
+    })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error'
     console.error('[schedule-adjustments/plan-recommendations] error:', message)

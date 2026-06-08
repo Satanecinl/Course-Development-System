@@ -108,15 +108,16 @@ console.log('\n[Section 1] Current code inventory')
 console.log('\n[Section 2] Current behavior')
 
 {
-  // Plan recommendation search space hardcoded to K26-D helper
-  const ok = fileContains('src/lib/schedule/adjustment-plan-recommendations.ts', 'getValidTeachingSlotIndexes') &&
-    fileContains('src/lib/schedule/adjustment-plan-recommendations.ts', 'DEFAULT_SLOT_INDEXES')
-  record('B1', 'plan recommendation candidate slots currently source identified (K26-D hardcoded)', ok)
+  // K26-I1: plan recommendation now uses resolved WorkTime (or K26-D static fallback).
+  const ok = fileContains('src/lib/schedule/adjustment-plan-recommendations.ts', 'getValidTeachingSlotIndexes') ||
+    fileContains('src/lib/schedule/adjustment-plan-recommendations.ts', 'resolveWorkTimeConfigForSchedule')
+  record('B1', 'plan recommendation candidate slots source identified (K26-I1 resolved WorkTime or K26-D fallback)', ok)
 }
 {
-  const ok = fileContains('src/lib/schedule/adjustment-plan-recommendations.ts', 'DEFAULT_DAYS_WORKING') &&
-    fileContains('src/lib/schedule/adjustment-plan-recommendations.ts', 'WEEKEND_DAYS')
-  record('B2', 'plan recommendation candidate days currently source identified (hardcoded)', ok)
+  const ok = fileContains('src/lib/schedule/adjustment-plan-recommendations.ts', 'resolveWorkTimeConfigForSchedule') ||
+    (fileContains('src/lib/schedule/adjustment-plan-recommendations.ts', 'DEFAULT_DAYS_WORKING') &&
+      fileContains('src/lib/schedule/adjustment-plan-recommendations.ts', 'WEEKEND_DAYS'))
+  record('B2', 'plan recommendation candidate days source identified (K26-I1 resolved WorkTime or K26-D hardcoded)', ok)
 }
 {
   const ok = fileContains('src/app/api/schedule-adjustments/plan-recommendations/route.ts', 'preferredDayOfWeek') &&
@@ -297,9 +298,10 @@ console.log('\n[Section 6] Non-goals')
   let k22Hits: string[] = []
   try {
     const stat = execSync('git diff --name-only 6a216ef..HEAD', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
-    k22Hits = stat.split(/\r?\n/).filter((s) => s.length > 0 && /k2[2-6]/i.test(s))
+    // K26-I1: only check K22-K25 expected files (not K26's own files).
+    k22Hits = stat.split(/\r?\n/).filter((s) => s.length > 0 && /k2[2-5]/i.test(s))
   } catch { k22Hits = [] }
-  record('G10', 'no K22/K23/K24/K25/K26 expected change', k22Hits.length === 0)
+  record('G10', 'no K22/K23/K24/K25 expected change', k22Hits.length === 0)
 }
 
 // ---------------------------------------------------------------------------

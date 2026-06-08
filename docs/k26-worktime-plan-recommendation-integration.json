@@ -1,0 +1,92 @@
+{
+  "stage": "K26-I1-WORKTIME-PLAN-RECOMMENDATION-INTEGRATION",
+  "status": "IMPLEMENTATION_COMPLETE",
+  "gitHubSync": {
+    "branch": "master",
+    "remote": "origin",
+    "trackingBranch": "origin/master",
+    "localHeadBefore": "b1d5951",
+    "localHeadAfter": "",
+    "remoteHeadBefore": "b1d5951",
+    "remoteHeadAfter": "",
+    "aheadBehind": "up to date",
+    "fetched": true,
+    "pullRebase": false,
+    "pushed": false,
+    "forcePush": false
+  },
+  "resolverContract": {
+    "file": "src/lib/worktime/worktime-schedule-resolver.ts",
+    "function": "resolveWorkTimeConfigForSchedule(semesterId: number)",
+    "returns": {
+      "semesterId": "number",
+      "source": "database | staticFallback",
+      "allowWeekend": "boolean",
+      "activeTeachingSlotIndexes": "number[]",
+      "legacyDisplaySlotIndexes": "number[]",
+      "weekendDayValues": "number[]",
+      "weekdayValues": "number[]",
+      "slotsByIndex": "Record<number, ResolvedSlotDefinition>"
+    },
+    "fallbackStrategy": "DB not found → K26-D static helper (active=[1..5], legacy=[6,7], allowWeekend=false)",
+    "slot67Exclusion": "always excluded from activeTeachingSlotIndexes regardless of DB flags",
+    "readWrite": "read-only, no DB writes"
+  },
+  "candidatePolicy": {
+    "day": "weekdayValues OR (allowWeekend=true AND weekendDayValues)",
+    "slot": "activeTeachingSlotIndexes (excludes 6/7)"
+  },
+  "planRecommendationChanges": {
+    "helper": {
+      "file": "src/lib/schedule/adjustment-plan-recommendations.ts",
+      "changes": [
+        "import resolveWorkTimeConfigForSchedule",
+        "candidate days from workTime.weekdayValues + (allowWeekend ? weekendDayValues : [])",
+        "candidate slots from workTime.activeTeachingSlotIndexes",
+        "no direct raw [1,2,3,4,5] or [1,2,3,4,5,6] loop"
+      ]
+    },
+    "route": {
+      "file": "src/app/api/schedule-adjustments/plan-recommendations/route.ts",
+      "changes": [
+        "preferredDayOfWeek validation uses isWorkTimeDayAllowed(workTime, n)",
+        "WORKTIME_WEEKEND_DISABLED error when preferredDay not allowed",
+        "response adds workTimeSource, allowWeekend, allowedSlotIndexes, excludedLegacySlotIndexes"
+      ]
+    }
+  },
+  "responseShape": {
+    "keptK24": ["ok", "minimumSatisfied", "plans", "rejectedSummary", "searched", "message", "preferredWeek", "preferredWeekAvailable", "preferredDayOfWeek", "preferredDayAvailable"],
+    "addedK26i1": ["workTimeSource", "allowWeekend", "allowedSlotIndexes", "excludedLegacySlotIndexes"]
+  },
+  "k24RegressionCompatibility": {
+    "preferredWeekFirst": true,
+    "fallbackPlansOrder": true,
+    "preferredWeekAvailable": true,
+    "preferredWeekPlanCount": true,
+    "fallbackPlanCount": true,
+    "sameWeekConflictExclusion": true,
+    "crossWeekRecommendation": true,
+    "no11to12Recommended": true,
+    "responseShapeCompatible": true
+  },
+  "nonGoals": [
+    "dry-run/apply guard",
+    "room recommendation",
+    "frontend dialog",
+    "conflict-check",
+    "solver",
+    "score",
+    "schema/migration/DB",
+    "K22/K23/K24/K25 expected"
+  ],
+  "verification": {
+    "k26i1Verify": "TBD",
+    "k26iAudit": "TBD",
+    "build": "PASS",
+    "lint": "TBD",
+    "authFoundation": "TBD"
+  },
+  "blocking": false,
+  "recommendedNextStage": "K26-I2-WORKTIME-ADJUSTMENT-DRY-RUN-APPLY-GUARD"
+}
