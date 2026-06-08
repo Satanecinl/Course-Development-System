@@ -367,8 +367,8 @@ check({
   id: 'TRIAL-JSON-EXISTS',
   category: 'ManualDocs',
   title: 'K26-B1 manual trial JSON exists',
-  passed: fileExists(trialJsonPath),
-  evidence: [trialJsonPath],
+  passed: fileExists('docs/k26-scheduler-config-settings-manual-trial.json'),
+  evidence: ['docs/k26-scheduler-config-settings-manual-trial.json'],
 })
 
 // 31. Checklist includes open settings

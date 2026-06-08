@@ -198,3 +198,16 @@ npm run test:auth-foundation → 53 passed / 1 failed (pre-existing)
 
 - No code changes made — only docs and verification scripts added.
 - No schema, migration, DB, API, solver, score, or UI changes.
+
+## Manual Validation Result
+
+- **浏览器人工验证**：PASSED
+- **验证来源**：用户反馈（user-provided browser validation）
+- **总结果**：`10 PASS / 0 FAIL / 1 BLOCKED`
+- **Case H**：BLOCKED，但不阻塞 closeout
+  - 原因：当前 DB 无已被 SchedulingRun 引用的配置，无法人工触发 `CONFIG_IN_USE` 分支
+  - followUp：needs real-data validation
+- **结论**：当前可以进入 acceptance closeout
+
+未伪造具体浏览器、截图、操作人姓名或验证时间（用户未提供这些信息）。
+

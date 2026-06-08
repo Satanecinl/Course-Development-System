@@ -16,6 +16,8 @@
   "manualTrial": {
     "status": "PASSED",
     "requiresHumanValidation": false,
+    "manualValidationSource": "user-provided browser validation",
+    "manualValidationNote": "浏览器人工验证通过",
     "validatedBy": "user",
     "environment": {
       "browser": "Google Chrome (Windows 11)",
@@ -38,7 +40,22 @@
       { "case": "J: other modules planned", "result": "PASS", "note": "7 个模块均显示 planned/coming-soon 占位" },
       { "case": "K: scheduler preview regression", "result": "PASS", "note": "排课页面正常，config picker 完好" }
     ],
-    "summary": "10 PASS / 0 FAIL / 1 BLOCKED (H case: no referenced config in DB)"
+    "summary": {
+      "pass": 10,
+      "fail": 0,
+      "blocked": 1,
+      "detail": "10 PASS / 0 FAIL / 1 BLOCKED (H case: no referenced config in DB)"
+    },
+    "blockedCases": [
+      {
+        "case": "H",
+        "name": "阻止删除已引用配置",
+        "status": "BLOCKED",
+        "reason": "当前 DB 无已被 SchedulingRun 引用的配置，无法人工触发 CONFIG_IN_USE 分支",
+        "blocking": false,
+        "followUp": "needs real-data validation"
+      }
+    ]
   },
   "decision": {
     "canCloseout": true,

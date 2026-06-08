@@ -1,0 +1,118 @@
+{
+  "stage": "K26-B-SCHEDULER-CONFIG-SETTINGS-ACCEPTANCE-CLOSEOUT",
+  "status": "CLOSED",
+  "featureStatus": "READY_FOR_REAL_USE",
+  "manualFrontendValidation": {
+    "status": "PASSED",
+    "source": "user-provided browser validation",
+    "manualValidationSource": "user-provided browser validation",
+    "manualValidationNote": "浏览器人工验证通过",
+    "summary": {
+      "pass": 10,
+      "fail": 0,
+      "blocked": 1
+    }
+  },
+  "blockedCases": [
+    {
+      "case": "H",
+      "name": "阻止删除已引用配置",
+      "status": "BLOCKED",
+      "reason": "当前 DB 无已被 SchedulingRun 引用的配置，无法人工触发 CONFIG_IN_USE 分支",
+      "blocking": false,
+      "followUp": "needs real-data validation"
+    }
+  ],
+  "closedStages": [
+    "K26-B-SCHEDULER-CONFIG-SETTINGS-INTEGRATION",
+    "K26-B1-SCHEDULER-CONFIG-SETTINGS-MANUAL-TRIAL",
+    "K26-B-SCHEDULER-CONFIG-SETTINGS-ACCEPTANCE-CLOSEOUT"
+  ],
+  "closedScope": {
+    "settingsIntegration": [
+      "/admin/settings 中排课参数设置模块为 ready",
+      "SchedulerConfigSettingsPanel（表格化配置列表）",
+      "配置列表（maxIterations / lahcWindowSize / randomSeed / lockedSlotIds / solverVersion / semesterId / createdAt）",
+      "新建配置（复用 ConfigFormDialog）",
+      "编辑配置（复用 ConfigFormDialog）",
+      "删除未引用配置（复用 DeleteConfigButton）",
+      "删除保护 CONFIG_IN_USE（后端 409 + UI toast）",
+      "loading / error / empty states",
+      "信息卡片（明确列出非目标项）",
+      "学期设置模块仍正常"
+    ],
+    "reusedSchedulingConfigCapability": [
+      "Prisma SchedulingConfig model (10 字段)",
+      "Existing CRUD API (GET/POST/PUT/DELETE) 受 schedule:adjust 保护",
+      "Existing client (scheduler-config-client.ts)",
+      "Existing types (scheduling-config.ts)",
+      "ConfigFormDialog (含客户端校验)",
+      "DeleteConfigButton (含 409 CONFIG_IN_USE 处理)",
+      "Server-side validation (CONFIG_LIMITS / validateConfigPayload)",
+      "Semester-scoped config (semesterId NOT NULL)"
+    ],
+    "manualTrial": [
+      "Case A: 打开系统设置页 — PASS",
+      "Case B: 进入排课参数设置模块 — PASS",
+      "Case C: 查看配置列表 — PASS",
+      "Case D: 新建配置 — PASS",
+      "Case E: 编辑配置 — PASS",
+      "Case F: 校验错误 — PASS",
+      "Case G: 删除未引用配置 — PASS",
+      "Case H: 阻止删除已引用配置 — BLOCKED (non-blocking, needs real-data validation)",
+      "Case I: 学期设置回归 — PASS",
+      "Case J: 其他模块状态 — PASS",
+      "Case K: 自动排课回归 — PASS"
+    ]
+  },
+  "verificationBaseline": {
+    "k26B1Readiness": "48/48 PASS",
+    "k26BIntegration": "47/47 PASS",
+    "k26AShellVerify": "47/47 PASS",
+    "k21ApiVerify": "PASS",
+    "k21UiVerify": "22/22 PASS",
+    "prismaValidate": "PASS",
+    "migrateStatus": "up to date",
+    "build": "PASS (recorded at K26-B1; rerun results override if different)",
+    "lint": "184 errors / 136 warnings (+0/+0 vs K26-B1 baseline)",
+    "authFoundation": "53 passed / 1 failed (pre-existing)"
+  },
+  "knownLimitations": [
+    "hardWeights / softWeights 未实现",
+    "软约束开关未实现",
+    "节次与作息设置未实现",
+    "教室规则设置未实现",
+    "调课规则设置未实现",
+    "导入规则设置未实现",
+    "权限与角色设置未实现",
+    "数据维护与备份未实现",
+    "审计日志未实现",
+    "Case H 人工验证 CONFIG_IN_USE 分支为 BLOCKED，需未来真实数据覆盖",
+    "lint 仍有历史 debt 184/136",
+    "auth foundation 仍有 pre-existing ScheduleAdjustment ACTIVE count mismatch"
+  ],
+  "postCloseoutDecisionRules": [
+    "排课参数设置 UI 小问题 → K26-B-Settings-UI-Polish",
+    "SchedulingConfig API bug → K26-B-Settings-API-Fix",
+    "删除保护 bug → K26-B-Config-Delete-Protection-Fix",
+    "需要 weights / presets → 独立 K22/K26-SCORE-WEIGHTS-PLAN",
+    "需要软约束开关 → 独立 planning",
+    "自动排课 preview 受影响 → blocker fix stage",
+    "进入下一个设置模块 → K26-C-TIME-SLOT-WORKTIME-SETTINGS-AUDIT"
+  ],
+  "gitHubSync": {
+    "branch": "master",
+    "remote": "origin",
+    "trackingBranch": "origin/master",
+    "localHeadBefore": "6f80b9d",
+    "remoteHeadBefore": "6f80b9d",
+    "localHeadAfter": "",
+    "remoteHeadAfter": "",
+    "aheadBehind": "up to date",
+    "pushed": false,
+    "forcePush": false
+  },
+  "blocking": false,
+  "recommendedDefaultAction": "Use in real workflow; no further K26-B scheduler config settings mechanical development unless real feedback exists.",
+  "recommendedNextStage": "K26-C-TIME-SLOT-WORKTIME-SETTINGS-AUDIT"
+}
