@@ -1,0 +1,64 @@
+{
+  "stage": "K25-J-SEMESTER-SETTINGS-E2E-MANUAL-TRIAL",
+  "status": "MANUAL_TRIAL_READY",
+  "gitHubSync": {
+    "branch": "master",
+    "remote": "origin",
+    "remoteUrl": "git@github.com:Satanecinl/Course-Development-System.git",
+    "trackingBranch": "origin/master",
+    "localHeadBefore": "8698680",
+    "remoteHeadBefore": "8698680",
+    "localHeadAfter": "(to be filled after commit)",
+    "remoteHeadAfter": "(to be filled after push)",
+    "aheadBehind": "up to date",
+    "pushed": false,
+    "forcePush": false
+  },
+  "manualTrial": {
+    "status": "READY",
+    "requiresHumanValidation": true,
+    "environment": {
+      "url": "http://localhost:3000/admin/settings",
+      "loginUser": "admin",
+      "role": "ADMIN (settings:manage)",
+      "database": "prisma/dev.db (real data)",
+      "activeSemester": "LEGACY-DEFAULT (id=1)"
+    },
+    "cases": [
+      { "id": "A", "name": "open settings page", "status": "pending" },
+      { "id": "B", "name": "create empty semester", "status": "pending" },
+      { "id": "C", "name": "edit semester", "status": "pending" },
+      { "id": "D", "name": "activate semester", "status": "pending" },
+      { "id": "E", "name": "delete empty semester", "status": "pending" },
+      { "id": "F", "name": "block delete populated semester", "status": "pending" },
+      { "id": "G", "name": "block delete active semester", "status": "pending" },
+      { "id": "H", "name": "localStorage persistence", "status": "pending" },
+      { "id": "I", "name": "permission check", "status": "pending" },
+      { "id": "J", "name": "dashboard/admin-db regression", "status": "pending" }
+    ]
+  },
+  "decisionRules": [
+    { "condition": "All critical cases PASS", "nextStage": "K25-SEMESTER-SETTINGS-ACCEPTANCE-CLOSEOUT" },
+    { "condition": "UI minor issues, non-blocking", "nextStage": "K25-J1-SEMESTER-SETTINGS-E2E-FIX" },
+    { "condition": "API / data bug", "nextStage": "K25-H1-SEMESTER-SETTINGS-API-FIX" },
+    { "condition": "Selector sync bug", "nextStage": "K25-E2-SELECTOR-SYNC-FIX" },
+    { "condition": "Delete protection bug", "nextStage": "BLOCKER — cannot closeout" }
+  ],
+  "verification": {
+    "readinessScript": "PASS=56 FAIL=0",
+    "k25iVerify": "PASS=45 FAIL=0",
+    "k25hVerify": "PASS=70 FAIL=0",
+    "k25gAudit": "PASS=58 FAIL=0",
+    "k25eVerify": "PASS=63 FAIL=0",
+    "k25dVerify": "PASS=54 FAIL=0",
+    "k25cValidation": "37/37 PASS",
+    "prismaValidate": "PASS",
+    "migrateStatus": "up to date",
+    "build": "PASS",
+    "lint": "184 errors / 136 warnings (matches K25-I baseline)",
+    "authFoundation": "53 passed / 1 failed (pre-existing)"
+  },
+  "blocking": false,
+  "recommendedNextStageIfPass": "K25-SEMESTER-SETTINGS-ACCEPTANCE-CLOSEOUT",
+  "recommendedNextStageIfFail": "K25-J1-SEMESTER-SETTINGS-E2E-FIX"
+}
