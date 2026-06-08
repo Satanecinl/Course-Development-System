@@ -7,10 +7,10 @@
     "trackingBranch": "origin/master",
     "localHeadBefore": "c11a8ab",
     "remoteHeadBefore": "c11a8ab",
-    "localHeadAfter": "",
-    "remoteHeadAfter": "",
+    "localHeadAfter": "7c2d1d7",
+    "remoteHeadAfter": "7c2d1d7",
     "aheadBehind": "up to date",
-    "pushed": false,
+    "pushed": true,
     "forcePush": false
   },
   "existingSchedulingConfigAudit": {
