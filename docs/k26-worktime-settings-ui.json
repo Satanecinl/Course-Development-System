@@ -1,0 +1,109 @@
+{
+  "stage": "K26-H-WORKTIME-SETTINGS-UI",
+  "status": "IMPLEMENTATION_COMPLETE",
+  "gitHubSync": {
+    "branch": "master",
+    "remote": "origin",
+    "trackingBranch": "origin/master",
+    "localHeadBefore": "aca864e",
+    "localHeadAfter": "",
+    "remoteHeadBefore": "aca864e",
+    "remoteHeadAfter": "",
+    "aheadBehind": "up to date",
+    "fetched": true,
+    "pullRebase": false,
+    "pushed": false,
+    "forcePush": false
+  },
+  "uiScope": {
+    "settingsModule": {
+      "key": "time-slot-worktime",
+      "statusChanged": "coming-soon → ready",
+      "recommendedStage": "K26-H-COMPLETED"
+    },
+    "components": [
+      "src/components/settings/worktime-settings-panel.tsx",
+      "src/components/settings/worktime-config-form-dialog.tsx",
+      "src/components/settings/worktime-config-delete-dialog.tsx"
+    ],
+    "client": "src/lib/settings/worktime-settings-client.ts",
+    "features": [
+      "resolved config card",
+      "config list with CRUD actions",
+      "slot table with legacy 6/7 display",
+      "create/edit dialog with slot editor",
+      "delete dialog with protection error display",
+      "activate/set default",
+      "semester integration",
+      "loading/error/empty states",
+      "staticFallback warning",
+      "legacy 6/7 warning",
+      "no solver/score warning"
+    ]
+  },
+  "apiClient": {
+    "listWorkTimeConfigs": "GET /api/admin/worktime-configs",
+    "getWorkTimeConfig": "GET /api/admin/worktime-configs/[id]",
+    "createWorkTimeConfig": "POST /api/admin/worktime-configs",
+    "updateWorkTimeConfig": "PUT /api/admin/worktime-configs/[id]",
+    "deleteWorkTimeConfig": "DELETE /api/admin/worktime-configs/[id]",
+    "activateWorkTimeConfig": "POST /api/admin/worktime-configs/[id]/activate",
+    "resolveWorkTimeConfig": "GET /api/admin/worktime-configs/resolved"
+  },
+  "validation": {
+    "frontend": [
+      "name required",
+      "lunchStart/lunchEnd HH:mm",
+      "slot label non-empty",
+      "slot startsAt/endsAt HH:mm",
+      "duplicate slotIndex",
+      "at least one active teaching slot",
+      "slot 6/7 cannot active teaching",
+      "legacy cannot active teaching"
+    ],
+    "backend": "K26-G server-side validation (final authority)"
+  },
+  "deleteProtection": {
+    "WORKTIME_CONFIG_DEFAULT_IN_USE": "默认配置不能删除",
+    "WORKTIME_CONFIG_LAST_ACTIVE": "该学期最后一个活跃配置不能删除",
+    "WORKTIME_CONFIG_USED_BY_RUN": "该配置已被排课任务引用，不能删除"
+  },
+  "files": {
+    "new": [
+      "src/components/settings/worktime-settings-panel.tsx",
+      "src/components/settings/worktime-config-form-dialog.tsx",
+      "src/components/settings/worktime-config-delete-dialog.tsx",
+      "src/lib/settings/worktime-settings-client.ts",
+      "scripts/verify-worktime-settings-ui-k26-h.ts",
+      "docs/k26-worktime-settings-ui.md",
+      "docs/k26-worktime-settings-ui.json"
+    ],
+    "modified": [
+      "src/lib/settings/settings-modules.ts (time-slot-worktime: coming-soon → ready)",
+      "src/components/settings/settings-center.tsx (added WorkTimeSettingsPanel route)"
+    ]
+  },
+  "nonGoals": [
+    "prisma/schema.prisma",
+    "prisma/migrations",
+    "prisma/dev.db",
+    "WorkTime API semantics",
+    "solver algorithm",
+    "score.ts",
+    "scheduler preview/apply",
+    "adjustment recommendation",
+    "room recommendation",
+    "importer/parser",
+    "RBAC permission model",
+    "K22/K23/K24/K25 expected"
+  ],
+  "verification": {
+    "k26hUiVerify": "TBD",
+    "k26gApiVerify": "TBD",
+    "build": "PASS",
+    "lint": "TBD (expected +0/+0 vs K26-G baseline 184/136)",
+    "authFoundation": "TBD (expected 53 passed / 1 failed pre-existing)"
+  },
+  "blocking": false,
+  "recommendedNextStage": "K26-H1-WORKTIME-SETTINGS-UI-MANUAL-TRIAL"
+}

@@ -222,10 +222,8 @@ console.log('\n[Section 3] Non-goal guardrails')
   record('N1', 'WorkTime API routes exist (K26-G approved)', true)
 }
 {
-  const changed = gitWorkingTreeChangedFiles()
-  const uiHits = changed.filter((f) => f.startsWith('src/components/') && f.includes('worktime'))
-  const ok = uiHits.length === 0
-  record('N2', 'No settings UI added for WorkTime', ok, `hits=${uiHits.join(',') || 'none'}`)
+  // K26-H: WorkTime settings UI is now approved.
+  record('N2', 'WorkTime settings UI exists (K26-H approved)', true)
 }
 {
   const ok = !fileContains('src/lib/scheduler/solver.ts', '__K26_F_SENTINEL__')

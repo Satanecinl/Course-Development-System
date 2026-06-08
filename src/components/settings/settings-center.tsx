@@ -5,6 +5,7 @@ import { SETTINGS_MODULES, getStatusBadge, type SettingsModule } from '@/lib/set
 import { SettingsModuleCard } from '@/components/settings/settings-module-card'
 import { SemesterSettingsPanel } from '@/components/settings/semester-settings-panel'
 import { SchedulerConfigSettingsPanel } from '@/components/settings/scheduler-config-settings-panel'
+import { WorkTimeSettingsPanel } from '@/components/settings/worktime-settings-panel'
 import { Badge } from '@/components/ui/badge'
 import { Settings, ArrowLeft } from 'lucide-react'
 
@@ -35,6 +36,8 @@ export function SettingsCenter() {
           <SemesterSettingsContent />
         ) : currentModule?.key === 'scheduler-config' ? (
           <SchedulerConfigSettingsPanel />
+        ) : currentModule?.key === 'time-slot-worktime' ? (
+          <WorkTimeSettingsPanel />
         ) : currentModule ? (
           <PlannedModuleContent module={currentModule} onBack={() => setActiveModule('semester-settings')} />
         ) : null}

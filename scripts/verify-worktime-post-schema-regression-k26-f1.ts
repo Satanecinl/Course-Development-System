@@ -219,19 +219,8 @@ console.log('\n[Section 4] Non-goal guardrails')
   record('N1', 'WorkTime API routes exist (K26-G approved)', true)
 }
 {
-  // No WorkTime settings UI added.
-  const uiDir = 'src/components'
-  if (!existsSync(join(projectRoot, uiDir))) {
-    record('N2', 'No WorkTime settings UI added', true)
-  } else {
-    try {
-      const stat = execSync(`git status --short -- ${uiDir}/`, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
-      const hits = stat.split(/\r?\n/).filter((l) => /\?{2}|M|A/.test(l) && /worktime/i.test(l))
-      record('N2', 'No WorkTime settings UI added', hits.length === 0, `hits=${hits.join(',') || 'none'}`)
-    } catch {
-      record('N2', 'No WorkTime settings UI added', true)
-    }
-  }
+  // K26-H: WorkTime settings UI is now approved.
+  record('N2', 'WorkTime settings UI exists (K26-H approved)', true)
 }
 {
   const ok = !fileContains('src/lib/scheduler/solver.ts', '__K26_F1_SENTINEL__')

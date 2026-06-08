@@ -42,12 +42,12 @@ export const SETTINGS_MODULES: SettingsModule[] = [
   {
     key: 'time-slot-worktime',
     title: '节次与作息设置',
-    description: '管理节次名称、起止时间、启用状态、午休、晚课和周末排课规则。该模块影响 score、调课、推荐方案和课表 UI，需先做影响面审计。',
-    status: 'coming-soon',
+    description: '管理节次名称、起止时间、启用状态、午休、晚课和周末排课规则。当前仅管理配置本身，尚未接入调课推荐、自动排课 solver、score。',
+    status: 'ready',
     priority: 'P2',
-    recommendedStage: 'K26-C-TIME-SLOT-WORKTIME-SETTINGS-AUDIT',
+    recommendedStage: 'K26-H-COMPLETED',
     riskLevel: 'high',
-    notes: '影响面广，需先审计对 score、调课、课表 UI 的影响。',
+    notes: 'K26-F schema + K26-G API + K26-H UI 已完成。影响面广，solver/score/recommendation 接入需 K26-I/K26-J。',
   },
   {
     key: 'campus-room-rules',
