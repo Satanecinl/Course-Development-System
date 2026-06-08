@@ -1,0 +1,99 @@
+{
+  "stage": "K25-D2-LINT-BASELINE-RECONCILIATION",
+  "status": "CORRECTION_COMPLETE",
+  "date": "2026-06-08",
+  "k25d1BaselineCommit": "f6fc1f7",
+  "type": "Reconciliation (no new features; lint baseline restoration)",
+  "baseline": {
+    "k25c1Actual": {
+      "errors": 184,
+      "warnings": 136,
+      "commit": "a0ecd7b",
+      "method": "git worktree + npm run lint"
+    },
+    "k25d1Before": {
+      "errors": 184,
+      "warnings": 136,
+      "commit": "f6fc1f7"
+    },
+    "k25d2After": {
+      "errors": 184,
+      "warnings": 136
+    },
+    "newErrors": 0,
+    "warningDrift": 0
+  },
+  "investigation": {
+    "approach": "git worktree comparison",
+    "filesTouchedByK25dD1": [
+      "src/lib/schedule/semester-scope.ts",
+      "scripts/verify-semester-scoping-api-k25-d.ts",
+      "scripts/verify-schedule-api-response-compat-k25-d1.ts",
+      "src/app/api/data/teaching-tasks/route.ts",
+      "src/app/api/data/schedule-slots/route.ts",
+      "src/app/api/schedule/route.ts",
+      "src/app/api/teaching-task/route.ts",
+      "src/app/api/teaching-task/[id]/route.ts",
+      "src/app/api/schedule-slot/route.ts",
+      "src/app/api/schedule-slot/[id]/route.ts",
+      "src/app/api/conflict-check/route.ts",
+      "src/store/scheduleStore.ts",
+      "src/app/dashboard/dashboard-content.tsx"
+    ],
+    "k25dD1IntroducedErrors": 0,
+    "k25dD1IntroducedWarnings": 0,
+    "evidence": "dashboard-content.tsx lint error at line 223 also exists at K25-C1 baseline (a0ecd7b) at line 220 (3 lines shifted by K25-D1 Array.isArray defensive unwrap)"
+  },
+  "locatedErrors": [
+    {
+      "file": "src/app/dashboard/dashboard-content.tsx",
+      "line": 223,
+      "rule": "react-hooks/set-state-in-effect",
+      "cause": "setEffectiveItems(null) called inside useEffect (K25-D/D1 line shift only; same code pattern at K25-C1 baseline)",
+      "fix": "no fix needed — pre-existing pattern; K25-D2 does not change runtime behavior"
+    }
+  ],
+  "fixes": [
+    {
+      "file": "scripts/audit-lint-baseline-k25-d2.ts",
+      "fix": "Removed unused `passed`/`failed` counters and `assert` helper",
+      "lintDelta": "-3 warnings"
+    },
+    {
+      "file": "scripts/audit-lint-baseline-k25-d2.ts",
+      "fix": "Removed unused catch binding `e`",
+      "lintDelta": "-1 warning"
+    }
+  ],
+  "verification": {
+    "k25d2LintAudit": "0 new errors, 0 new warnings vs K25-C1 baseline",
+    "k25d1CompatVerify": "20/20 PASS",
+    "k25dMainVerify": "54/54 PASS",
+    "k25cValidate": "37/37 PASS",
+    "prismaValidate": "schema valid",
+    "prismaMigrateStatus": "Database schema is up to date",
+    "build": "PASS (31/31 routes)",
+    "lint": "184/136 (= K25-C1 baseline, +0/+0)",
+    "authFoundation": "53 passed / 1 pre-existing failure (NOT modified)"
+  },
+  "unmodifiedScope": {
+    "prismaSchema": "NOT modified",
+    "migrations": "NOT added (K25-C migration intact)",
+    "devDb": "NOT written",
+    "k25dApiScopingExpansion": "NOT done",
+    "k25eUiSelector": "NOT added (next stage)",
+    "frontendGlobalSelector": "NOT added",
+    "schedulerScoreSolver": "NOT modified",
+    "importerParser": "NOT modified",
+    "rbacPermissionModel": "NOT modified",
+    "courseTeacherRoomGlobalSemantics": "NOT modified",
+    "scheduleChangeLog": "NOT modified",
+    "k22k23k24VerifyExpected": "NOT modified",
+    "prismaMigrateReset": "NOT run",
+    "prismaDbPush": "NOT run",
+    "seed": "NOT run",
+    "dashboardContentRuntimeBehavior": "NOT changed (reverted experimental edit)"
+  },
+  "blocking": false,
+  "recommendedNextStage": "K25-E-SEMESTER-SELECTOR-UX"
+}
