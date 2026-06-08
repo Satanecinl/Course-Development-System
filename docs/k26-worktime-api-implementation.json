@@ -1,0 +1,143 @@
+{
+  "stage": "K26-G-WORKTIME-API-IMPLEMENTATION",
+  "status": "IMPLEMENTATION_COMPLETE",
+  "gitHubSync": {
+    "branch": "master",
+    "remote": "origin",
+    "trackingBranch": "origin/master",
+    "localHeadBefore": "8d411b8",
+    "localHeadAfter": "",
+    "remoteHeadBefore": "8d411b8",
+    "remoteHeadAfter": "",
+    "aheadBehind": "up to date",
+    "fetched": true,
+    "pullRebase": false,
+    "pushed": false,
+    "forcePush": false
+  },
+  "apiEndpoints": [
+    {
+      "method": "GET",
+      "path": "/api/admin/worktime-configs",
+      "permission": "settings:manage",
+      "description": "List worktime configs",
+      "queryParams": ["semesterId?", "includeSlots?", "includeInactive?"]
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/worktime-configs",
+      "permission": "settings:manage",
+      "description": "Create worktime config",
+      "body": ["semesterId", "name", "isDefault?", "allowWeekend?", "slots[]"]
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/worktime-configs/[id]",
+      "permission": "settings:manage",
+      "description": "Get single worktime config"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/admin/worktime-configs/[id]",
+      "permission": "settings:manage",
+      "description": "Update worktime config",
+      "body": ["name?", "isDefault?", "allowWeekend?", "slots?"]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/admin/worktime-configs/[id]",
+      "permission": "settings:manage",
+      "description": "Delete worktime config (with protection)"
+    },
+    {
+      "method": "POST",
+      "path": "/api/admin/worktime-configs/[id]/activate",
+      "permission": "settings:manage",
+      "description": "Set config as default (activate)"
+    },
+    {
+      "method": "GET",
+      "path": "/api/admin/worktime-configs/resolved",
+      "permission": "settings:manage",
+      "description": "Get resolved config (database or static fallback)",
+      "queryParams": ["semesterId?"]
+    }
+  ],
+  "service": {
+    "file": "src/lib/worktime/worktime-service.ts",
+    "functions": [
+      "listWorkTimeConfigs",
+      "getWorkTimeConfig",
+      "createWorkTimeConfig",
+      "updateWorkTimeConfig",
+      "deleteWorkTimeConfig",
+      "activateWorkTimeConfig",
+      "resolveWorkTimeConfig",
+      "buildStaticFallbackWorkTimeConfig",
+      "mapWorkTimeConfigToDTO"
+    ]
+  },
+  "validation": {
+    "file": "src/lib/worktime/worktime-validation.ts",
+    "rules": [
+      "semesterId: positive integer",
+      "name: non-empty, max 100 chars",
+      "lunchStart/lunchEnd: nullable HH:mm",
+      "slotIndex: positive integer, unique within config",
+      "label: non-empty, max 50 chars",
+      "startsAt/endsAt: nullable HH:mm",
+      "slotIndex 6/7: cannot be active teaching",
+      "legacy display: cannot be active teaching",
+      "at least one active teaching slot required"
+    ]
+  },
+  "deleteProtection": {
+    "WORKTIME_CONFIG_DEFAULT_IN_USE": "Cannot delete default config",
+    "WORKTIME_CONFIG_LAST_ACTIVE": "Cannot delete last active config for semester",
+    "WORKTIME_CONFIG_USED_BY_RUN": "Cannot delete if referenced by SchedulingRun snapshot"
+  },
+  "resolvedConfig": {
+    "priority": ["semesterId", "active semester", "default active config", "static fallback"],
+    "sources": ["database", "staticFallback"]
+  },
+  "files": {
+    "new": [
+      "src/types/worktime.ts",
+      "src/lib/worktime/worktime-validation.ts",
+      "src/lib/worktime/worktime-service.ts",
+      "src/app/api/admin/worktime-configs/route.ts",
+      "src/app/api/admin/worktime-configs/[id]/route.ts",
+      "src/app/api/admin/worktime-configs/[id]/activate/route.ts",
+      "src/app/api/admin/worktime-configs/resolved/route.ts",
+      "scripts/verify-worktime-api-k26-g.ts",
+      "docs/k26-worktime-api-implementation.md",
+      "docs/k26-worktime-api-implementation.json"
+    ],
+    "modified": []
+  },
+  "nonGoals": [
+    "frontend UI",
+    "system settings UI",
+    "solver algorithm",
+    "score.ts",
+    "scheduler preview/apply",
+    "adjustment recommendation",
+    "room recommendation",
+    "importer/parser",
+    "RBAC permission model",
+    "K22/K23/K24/K25 expected"
+  ],
+  "verification": {
+    "k26gApiVerify": "TBD",
+    "k26f1PostSchemaRegression": "TBD",
+    "k26fValidation": "TBD",
+    "backfillDryRun": "TBD",
+    "prismaValidate": "TBD",
+    "prismaMigrateStatus": "TBD",
+    "build": "PASS",
+    "lint": "TBD (expected +0/+0 vs K26-F1 baseline 184/136)",
+    "authFoundation": "TBD (expected 53 passed / 1 failed pre-existing)"
+  },
+  "blocking": false,
+  "recommendedNextStage": "K26-H-WORKTIME-SETTINGS-UI"
+}

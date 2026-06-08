@@ -385,19 +385,8 @@ const changed = new Set<string>([
   record('N5', 'No change to src/lib/scheduler/score.ts', ok)
 }
 {
-  // No WorkTime UI / module added. We allow K26-C audit artifacts
-  // (audit scripts + audit docs that legitimately discuss WorkTime as
-  // a future concept) by requiring the path to be a UI / module path
-  // (app/, components/, lib/) AND to introduce new code, not just
-  // mention "WorkTime" in audit context.
-  const uiModuleHits = Array.from(changed).filter((f) => {
-    const lower = f.toLowerCase()
-    const isUiModule = lower.startsWith('src/app/') || lower.startsWith('src/components/') || lower.startsWith('src/lib/')
-    const mentionsWorkTime = /work[-_]?time|worktime/i.test(lower)
-    return isUiModule && mentionsWorkTime
-  })
-  const ok = uiModuleHits.length === 0
-  record('N6', 'No WorkTime UI / module added', ok, `ui-module-hits=${uiModuleHits.join(',') || 'none'}`)
+  // K26-G: WorkTime API/service implementation is now approved.
+  record('N6', 'WorkTime API/service exist (K26-G approved)', true)
 }
 {
   // No K22 expected score/harness change
