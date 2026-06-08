@@ -5,6 +5,8 @@ import { toast } from 'sonner'
 import { AdminSidebar } from '@/components/admin-db/admin-sidebar'
 import { AdminToolbar } from '@/components/admin-db/admin-toolbar'
 import { AdminDataTable } from '@/components/admin-db/admin-data-table'
+import { SemesterSelector } from '@/components/semester-selector'
+import { useSemesterStore } from '@/store/semesterStore'
 import {
   Dialog,
   DialogContent,
@@ -32,6 +34,12 @@ export default function AdminDbContent() {
   const [loading, setLoading] = useState(false)
   const [counts, setCounts] = useState<Record<string, number>>({})
 
+  // K25-E: semester store
+  const {
+    currentSemesterId,
+    loaded: semesterLoaded,
+    fetchSemesters,
+  } = useSemesterStore()
   // 通用弹窗状态
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create')
@@ -84,7 +92,7 @@ export default function AdminDbContent() {
 
   async function fetchEntityOptions() {
     try {
-      const data = await apiFetchEntityOptions()
+      const data = await apiFetchEntityOptions(currentSemesterId)
       setCourses(data.courses)
       setTeachers(data.teachers)
       setRooms(data.rooms)
@@ -96,7 +104,7 @@ export default function AdminDbContent() {
 
   async function fetchTaskOptions() {
     try {
-      const options = await apiFetchTaskOptions()
+      const options = await apiFetchTaskOptions(currentSemesterId)
       setTaskOptions(options)
     } catch {
       // silent fail
@@ -112,7 +120,7 @@ export default function AdminDbContent() {
     const t = table ?? activeTable
     setLoading(true)
     try {
-      const data = await fetchAdminTableRecords(t)
+      const data = await fetchAdminTableRecords(t, currentSemesterId)
       setRecords(data)
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
@@ -123,6 +131,21 @@ export default function AdminDbContent() {
     }
   }
 
+  // K25-E: load semester list on mount
+  useEffect(() => {
+    if (!semesterLoaded) {
+      fetchSemesters()
+    }
+  }, [semesterLoaded, fetchSemesters])
+
+  // K25-E: refetch data when semester changes
+  useEffect(() => {
+    if (semesterLoaded && currentSemesterId != null) {
+      fetchData(activeTable)
+      fetchCounts()
+      fetchEntityOptions()
+    }
+  }, [semesterLoaded, currentSemesterId])
   useEffect(() => {
     fetchData(activeTable)
   }, [activeTable])
@@ -498,15 +521,19 @@ export default function AdminDbContent() {
 
       {/* 右侧内容 */}
       <main className="flex-1 overflow-auto p-6">
-        <AdminToolbar
-          tableName={TABLES.find((t) => t.key === activeTable)?.label ?? ''}
-          recordCount={records.length}
-          onImportClick={() => setImportOpen(true)}
-          onAddClick={openCreate}
-          onHistoryClick={() => setImportHistoryOpen(true)}
-          canCreate={canWriteCurrentModel}
-          canImport={canImport}
-        />
+        <div className="mb-4 flex items-center justify-between">
+          <AdminToolbar
+            tableName={TABLES.find((t) => t.key === activeTable)?.label ?? ''}
+            recordCount={records.length}
+            onImportClick={() => setImportOpen(true)}
+            onAddClick={openCreate}
+            onHistoryClick={() => setImportHistoryOpen(true)}
+            canCreate={canWriteCurrentModel}
+            canImport={canImport}
+          />
+          {/* K25-E: semester selector */}
+          <SemesterSelector className="ml-4" showFallbackWarning={false} />
+        </div>
 
         <AdminDataTable
           records={records}

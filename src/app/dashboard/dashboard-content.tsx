@@ -6,7 +6,9 @@ import { toast } from 'sonner'
 import { ScheduleSidebar } from '@/components/schedule-sidebar'
 import { ScheduleGrid } from '@/components/schedule-grid'
 import { ScheduleAdjustmentDialog } from '@/components/schedule-adjustment-dialog'
+import { SemesterSelector } from '@/components/semester-selector'
 import { useScheduleStore } from '@/store/scheduleStore'
+import { useSemesterStore, withSemesterQuery } from '@/store/semesterStore'
 import { ViewType, DAYS, TIME_SLOTS } from '@/types/schedule'
 import type { ScheduleViewData } from '@/types/schedule'
 import { type WeekFilter } from '@/lib/schedule/week-filter'
@@ -149,11 +151,19 @@ export default function DashboardContent() {
     teacherOptions,
     roomOptions,
     isLoading,
+    semesterSource,
     fetchSchedule,
     loadEntityOptions,
     setView,
     scheduleItems,
   } = useScheduleStore()
+
+  // K25-E: semester selector integration
+  const {
+    currentSemesterId,
+    loaded: semesterLoaded,
+    fetchSemesters,
+  } = useSemesterStore()
 
   const [selectedWeek, setSelectedWeek] = useState<WeekFilter>('ALL')
   const [effectiveItems, setEffectiveItems] = useState<ScheduleViewData[] | null>(null)
@@ -177,12 +187,18 @@ export default function DashboardContent() {
   // 初始化加载实体选项
   useEffect(() => {
     loadEntityOptions()
-  }, [loadEntityOptions])
+    // K25-E: load semester list on mount
+    if (!semesterLoaded) {
+      fetchSemesters()
+    }
+  }, [loadEntityOptions, semesterLoaded, fetchSemesters])
 
-  // 首次加载全部数据
+  // K25-E: refetch schedule when semester changes
   useEffect(() => {
-    fetchSchedule('all')
-  }, [fetchSchedule])
+    if (semesterLoaded && currentSemesterId != null) {
+      fetchSchedule('all', undefined, currentSemesterId)
+    }
+  }, [semesterLoaded, currentSemesterId, fetchSchedule])
 
   // Fetch room options
   useEffect(() => {
@@ -203,7 +219,12 @@ export default function DashboardContent() {
   const fetchEffectiveSchedule = useCallback(async (week: number) => {
     setEffectiveLoading(true)
     try {
-      const res = await fetch(`/api/schedule?week=${week}&applyAdjustments=true`)
+      // K25-E: pass currentSemesterId explicitly
+      const url = withSemesterQuery(
+        `/api/schedule?week=${week}&applyAdjustments=true`,
+        currentSemesterId,
+      )
+      const res = await fetch(url)
       if (!res.ok) throw new Error('Failed to fetch')
       // K25-D: /api/schedule returns { items, semesterId, semesterSource }.
       // Extract items defensively to support both wrapped and raw-array shapes.
@@ -216,7 +237,7 @@ export default function DashboardContent() {
     } finally {
       setEffectiveLoading(false)
     }
-  }, [])
+  }, [currentSemesterId])
 
   useEffect(() => {
     if (selectedWeek === 'ALL') {
@@ -242,7 +263,7 @@ export default function DashboardContent() {
   function handleViewTypeChange(type: string) {
     if (type === 'all') {
       setView('all', null, '')
-      fetchSchedule('all')
+      fetchSchedule('all', undefined, currentSemesterId)
     } else {
       const vt = type as ViewType
       const raw =
@@ -255,7 +276,7 @@ export default function DashboardContent() {
       const first = options[0]
       if (first) {
         setView(vt, first.id, first.name)
-        fetchSchedule(vt, first.id)
+        fetchSchedule(vt, first.id, currentSemesterId)
       } else {
         setView(vt, null, '')
       }
@@ -267,7 +288,7 @@ export default function DashboardContent() {
     const option = safeOptions.find((o) => o.name === name)
     if (option && viewType !== 'all') {
       setView(viewType, option.id, option.name)
-      fetchSchedule(viewType, option.id)
+      fetchSchedule(viewType, option.id, currentSemesterId)
     }
   }
 
@@ -322,12 +343,22 @@ export default function DashboardContent() {
           {/* 顶部栏：标题 + 视图切换器 */}
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold text-gray-900">课程表看板</h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-xl font-bold text-gray-900">课程表看板</h1>
+                {/* K25-E: semester selector */}
+                <SemesterSelector className="ml-2" />
+              </div>
               <p className="text-sm text-gray-500 mt-0.5">
                 拖拽课程卡片到目标时间段进行调课，系统会自动检测冲突
                 {selectedWeek !== 'ALL' && (
                   <span className="ml-2 text-blue-600 font-medium">
                     当前查看：第 {selectedWeek} 周
+                  </span>
+                )}
+                {/* K25-E: active fallback warning */}
+                {semesterSource === 'activeFallback' && (
+                  <span className="ml-2 text-amber-500 text-xs">
+                    (使用默认激活学期)
                   </span>
                 )}
               </p>
@@ -404,6 +435,10 @@ export default function DashboardContent() {
                   if (selectedWeek !== 'ALL') {
                     params.set('week', String(selectedWeek))
                     params.set('applyAdjustments', 'true')
+                  }
+                  // K25-E: pass semesterId to export
+                  if (currentSemesterId != null) {
+                    params.set('semesterId', String(currentSemesterId))
                   }
                   const query = params.toString()
                   window.location.href = `/api/export/excel${query ? '?' + query : ''}`

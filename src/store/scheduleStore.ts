@@ -7,6 +7,7 @@ import {
   getSlotLabelByIndex,
   parseSlotLabel,
 } from '@/types/schedule'
+import { withSemesterQuery, useSemesterStore } from '@/store/semesterStore'
 
 export type FilterType = 'all' | ViewType
 
@@ -22,13 +23,15 @@ interface ScheduleState {
   viewTargetName: string
   isLoading: boolean
   error: string | null
+  /** K25-E: semesterSource from the last /api/schedule response. */
+  semesterSource: string | null
 
   // 选项缓存
   classOptions: EntityOption[]
   teacherOptions: EntityOption[]
   roomOptions: EntityOption[]
 
-  fetchSchedule: (viewType?: FilterType, targetId?: number) => Promise<void>
+  fetchSchedule: (viewType?: FilterType, targetId?: number, semesterId?: number | null) => Promise<void>
   loadEntityOptions: () => Promise<void>
   moveSlot: (slotId: number, newDay: number, newSlotLabel: string, newRoomId: number) => Promise<boolean>
   updateTask: (taskId: number, updatedItems: ScheduleViewData[]) => void
@@ -44,14 +47,19 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
   viewTargetName: '',
   isLoading: false,
   error: null,
+  semesterSource: null,
 
   classOptions: [],
   teacherOptions: [],
   roomOptions: [],
 
-  fetchSchedule: async (viewType, targetId) => {
+  fetchSchedule: async (viewType, targetId, semesterId) => {
     const vt = viewType ?? get().viewType
     const tid = targetId ?? get().viewTargetId
+    // K25-E: resolve semesterId — explicit param > semester store > null (server fallback)
+    const resolvedSemesterId = semesterId !== undefined
+      ? semesterId
+      : useSemesterStore.getState().currentSemesterId
 
     set({ isLoading: true, error: null })
     try {
@@ -61,14 +69,20 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
         params.set('targetId', String(tid))
       }
       const query = params.toString()
-      const res = await fetch(`/api/schedule${query ? '?' + query : ''}`)
+      // K25-E: explicit semesterId via withSemesterQuery helper
+      const url = withSemesterQuery(
+        `/api/schedule${query ? '?' + query : ''}`,
+        resolvedSemesterId,
+      )
+      const res = await fetch(url)
       if (!res.ok) throw new Error('Failed to fetch schedule')
       // K25-D: /api/schedule now returns { items, semesterId, semesterSource }
       // instead of a raw array. Extract items defensively so older call
       // sites that still send raw arrays (e.g., in tests) keep working.
       const data = await res.json()
       const items = Array.isArray(data) ? data : data.items ?? []
-      set({ scheduleItems: items, isLoading: false })
+      const source = Array.isArray(data) ? null : (data.semesterSource ?? null)
+      set({ scheduleItems: items, isLoading: false, semesterSource: source })
     } catch (err) {
       set({ error: String(err), isLoading: false })
     }

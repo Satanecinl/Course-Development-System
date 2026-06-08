@@ -1,0 +1,79 @@
+{
+  "stage": "K25-E-SEMESTER-SELECTOR-UX",
+  "status": "IMPLEMENTATION_COMPLETE",
+  "gitHubSync": {
+    "branch": "master",
+    "remote": "origin",
+    "remoteUrl": "git@github.com:Satanecinl/Course-Development-System.git",
+    "trackingBranch": "origin/master",
+    "localHead": "(to be filled after commit)",
+    "remoteHead": "053c550",
+    "aheadBehind": "ahead 1 (K25-D2 not yet pushed) + K25-E changes",
+    "pushed": false,
+    "forcePush": false
+  },
+  "semesterListSource": {
+    "endpoint": "GET /api/semesters",
+    "newEndpoint": true,
+    "readOnly": true,
+    "authGate": false,
+    "responseFields": ["id", "name", "code", "academicYear", "term", "startsAt", "endsAt", "isActive"],
+    "activeSemesterIdIncluded": true
+  },
+  "semesterStore": {
+    "file": "src/store/semesterStore.ts",
+    "localStorageKey": "course-system.currentSemesterId",
+    "state": ["semesters", "currentSemesterId", "currentSemesterName", "isActiveSemester", "loaded", "loading", "error"],
+    "actions": ["fetchSemesters", "setCurrentSemester", "getCurrentSemesterId"],
+    "helper": "withSemesterQuery(url, semesterId)",
+    "fallbackLogic": "persisted > active > first"
+  },
+  "uiComponent": {
+    "file": "src/components/semester-selector.tsx",
+    "type": "select dropdown",
+    "features": ["current semester display", "active semester indicator", "non-active warning", "loading/error/empty states", "activeFallback hint"]
+  },
+  "uiPlacement": [
+    { "page": "/dashboard", "method": "SemesterSelector component in header", "fallbackWarning": true },
+    { "page": "/admin/db", "method": "SemesterSelector component next to toolbar", "fallbackWarning": false }
+  ],
+  "apiRequestWiring": [
+    { "consumer": "scheduleStore.fetchSchedule", "api": "/api/schedule", "method": "withSemesterQuery auto from semesterStore" },
+    { "consumer": "dashboard-content effective schedule", "api": "/api/schedule?week=N&applyAdjustments=true", "method": "withSemesterQuery with currentSemesterId" },
+    { "consumer": "dashboard-content export", "api": "/api/export/excel", "method": "params.set semesterId" },
+    { "consumer": "admin-db/api fetchAdminTableRecords", "api": "/api/admin/{model}", "method": "withSemesterQuery" },
+    { "consumer": "admin-db/api fetchAdminTableCounts", "api": "/api/admin/{model}", "method": "withSemesterQuery loop" },
+    { "consumer": "admin-db/api fetchEntityOptions", "api": "/api/entity-list?type=classgroup", "method": "withSemesterQuery" },
+    { "consumer": "admin-db/api fetchTaskOptions", "api": "/api/admin/teachingtask", "method": "withSemesterQuery" }
+  ],
+  "fallbackWarning": {
+    "storeField": "semesterSource",
+    "dashboardDisplay": "(使用默认激活学期) amber text",
+    "selectorDisplay": "当前使用默认激活学期",
+    "nonActiveLabel": "非激活学期"
+  },
+  "verification": {
+    "script": "scripts/verify-semester-selector-ux-k25-e.ts",
+    "result": "PASS=64 FAIL=0",
+    "k25d1Compat": "PASS=20 FAIL=0",
+    "k25dVerify": "PASS=54 FAIL=0",
+    "k25cValidation": "PASS=37 FAIL=0",
+    "prismaValidate": "PASS",
+    "migrateStatus": "up to date",
+    "build": "PASS",
+    "lint": "185 errors / 138 warnings (K25-E files: 0 errors; +1/+2 from pre-existing scripts drift)",
+    "authFoundation": "53 passed / 1 failed (pre-existing ScheduleAdjustment ACTIVE mismatch)"
+  },
+  "nonGoalsConfirmed": {
+    "schemaChanges": false,
+    "migrationAdded": false,
+    "dbWrites": false,
+    "apiScopingExpansion": false,
+    "rbacChanges": false,
+    "solverScoreChanges": false,
+    "importerParserChanges": false,
+    "k22k23k24ExpectedChanges": false
+  },
+  "blocking": false,
+  "recommendedNextStage": "K25-F-MULTI-SEMESTER-E2E-MANUAL-TRIAL"
+}
