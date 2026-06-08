@@ -166,3 +166,46 @@ recommendedDefaultAction: use in real workflow; no further K26-B scheduler confi
 - `K26-B-SCHEDULER-CONFIG-SETTINGS-INTEGRATION`
 - `K26-B1-SCHEDULER-CONFIG-SETTINGS-MANUAL-TRIAL`
 - `K26-B-SCHEDULER-CONFIG-SETTINGS-ACCEPTANCE-CLOSEOUT`（本阶段）
+
+## Verification Complete Addendum
+
+本阶段：`K26-B-CLOSEOUT-A-VERIFICATION-COMPLETE`
+
+### 补齐的验证项
+
+| 缺失项 | 本阶段结果 |
+|--------|-----------|
+| `npm run build` | PASS (Compiled successfully) |
+| `npm run test:auth-foundation` | 53 passed / 1 failed (pre-existing) |
+| K21 solver config preview 回归 | 16/16 PASS |
+| K21 solver config snapshot 回归 | 19/19 PASS |
+
+### 完整验证命令表（本阶段实际运行）
+
+| Command | Result |
+|---------|--------|
+| `npx tsx scripts/verify-scheduler-config-settings-acceptance-closeout-k26-b.ts` | **38/38 PASS** |
+| `npx tsx scripts/verify-scheduler-config-settings-manual-trial-readiness-k26-b1.ts` | **48/48 PASS** |
+| `npx tsx scripts/verify-scheduler-config-settings-integration-k26-b.ts` | **47/47 PASS** |
+| `npx tsx scripts/verify-system-settings-shell-k26-a.ts` | **47/47 PASS** |
+| `npx tsx scripts/verify-solver-config-api-k21-fix-f.ts` | **27/27 PASS** |
+| `npx tsx scripts/verify-solver-config-ui-k21-fix-g.ts` | **22/22 PASS** |
+| `npx tsx scripts/verify-solver-config-preview-k21-fix-f.ts` | **16/16 PASS** |
+| `npx tsx scripts/verify-solver-config-snapshot-k21-fix-f.ts` | **19/19 PASS** |
+| `npx prisma validate` | **PASS** |
+| `npx prisma migrate status` | **up to date** |
+| `npm run build` | **PASS** |
+| `npx eslint .` | **184 errors / 136 warnings (+0/+0 vs baseline)** |
+| `npm run test:auth-foundation` | **53 passed / 1 failed (pre-existing)** |
+
+### Final Conclusion
+
+```txt
+K26-B-CLOSEOUT-A-VERIFICATION-COMPLETE: 建议关闭
+K26-B-SCHEDULER-CONFIG-SETTINGS-ACCEPTANCE-CLOSEOUT: 现在可以正式关闭
+K26-B 排课参数设置小主线: 正式关闭
+featureStatus: READY_FOR_REAL_USE
+manualFrontendValidation: PASSED
+recommendedNextStage: K26-C-TIME-SLOT-WORKTIME-SETTINGS-AUDIT
+K26-C 注: 必须先做影响面审计，不直接实现节次作息配置
+```
