@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requirePermission } from '@/lib/auth/require-permission'
 import { guardTeachingTaskUpdateSemantics } from '@/lib/schedule/teaching-task-mutation-guard'
+import { toSemesterErrorResponse } from '@/lib/schedule/semester-scope'
 
 export async function PUT(
   request: NextRequest,
@@ -76,6 +77,35 @@ export async function PUT(
         },
         { status: guardResult.status ?? 409 },
       )
+    }
+
+    // K25-D: defense-in-depth — verify any provided classGroupIds belong to
+    // the same semester as the existing task. The semantic guard already
+    // covers semester mismatch on the task itself, but cross-semester
+    // classGroup leakage is a separate risk that this check closes.
+    if (validClassGroupIds && validClassGroupIds.length > 0) {
+      const task = await prisma.teachingTask.findUnique({
+        where: { id: taskId },
+        select: { semesterId: true },
+      })
+      if (task) {
+        const classGroups = await prisma.classGroup.findMany({
+          where: { id: { in: validClassGroupIds } },
+          select: { id: true, semesterId: true },
+        })
+        const mismatched = classGroups.filter((cg) => cg.semesterId !== task.semesterId)
+        if (mismatched.length > 0) {
+          return NextResponse.json(
+            {
+              error: 'CLASS_GROUP_SEMESTER_MISMATCH',
+              message: `${mismatched.length} classGroup(s) belong to a different semester than the task's semester ${task.semesterId}`,
+              mismatchedIds: mismatched.map((m) => m.id),
+              taskSemesterId: task.semesterId,
+            },
+            { status: 400 },
+          )
+        }
+      }
     }
 
     const result = await prisma.$transaction(async (tx) => {
@@ -167,6 +197,10 @@ export async function PUT(
 
     return NextResponse.json(viewData)
   } catch (error) {
+    const errResponse = toSemesterErrorResponse(error)
+    if (errResponse) {
+      return NextResponse.json(errResponse.response, { status: errResponse.status })
+    }
     const err = error as { conflicts?: string[]; conflictDetails?: unknown[]; message?: string }
     if (err.conflicts) {
       return NextResponse.json(

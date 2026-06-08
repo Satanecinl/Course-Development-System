@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { resolveSchedulerSemester } from '@/lib/semester'
+import { resolveRequestSemester, toSemesterErrorResponse } from '@/lib/schedule/semester-scope'
 import { getEffectiveScheduleForWeek } from '@/lib/schedule/adjustments'
 import { requirePermission } from '@/lib/auth/require-permission'
 
+// GET /api/schedule — main schedule grid (read-only)
+//
+// K25-D: Semester-scoped list. Accepts semesterId from query / X-Semester-Id header /
+// body, with transitional active-semester fallback. This is the route used by
+// the dashboard's schedule grid.
 export async function GET(request: NextRequest) {
   try {
     const auth = await requirePermission('schedule:view', request)
     if ('error' in auth) return auth.error
+
     const { searchParams } = new URL(request.url)
     const viewType = searchParams.get('viewType') as 'class' | 'teacher' | 'room' | null
     const targetIdParam = searchParams.get('targetId')
@@ -15,17 +21,21 @@ export async function GET(request: NextRequest) {
     const weekParam = searchParams.get('week')
     const applyAdjustments = searchParams.get('applyAdjustments') === 'true'
     const week = weekParam ? parseInt(weekParam, 10) : null
-    const semesterIdParam = searchParams.get('semesterId')
 
-    // Resolve semester (explicit or active)
-    const semester = await resolveSchedulerSemester({
-      semesterId: semesterIdParam ? parseInt(semesterIdParam, 10) : undefined,
+    // K25-D: unified resolver — query / header / body / active fallback
+    const semester = await resolveRequestSemester({
+      searchParams: request.nextUrl.searchParams,
+      headers: request.headers,
     })
 
     // If week + applyAdjustments, use effective schedule
     if (week != null && applyAdjustments) {
       const effectiveItems = await getEffectiveScheduleForWeek(week, semester.id)
-      return NextResponse.json(effectiveItems)
+      return NextResponse.json({
+        items: effectiveItems,
+        semesterId: semester.id,
+        semesterSource: semester.source,
+      })
     }
 
     const where: Record<string, unknown> = { semesterId: semester.id }
@@ -38,7 +48,11 @@ export async function GET(request: NextRequest) {
         })
         const taskIds = taskClasses.map((tc) => tc.teachingTaskId)
         if (taskIds.length === 0) {
-          return NextResponse.json([])
+          return NextResponse.json({
+            items: [],
+            semesterId: semester.id,
+            semesterSource: semester.source,
+          })
         }
         where.teachingTaskId = { in: taskIds }
       } else if (viewType === 'teacher') {
@@ -53,9 +67,15 @@ export async function GET(request: NextRequest) {
       include: {
         room: true,
         teachingTask: {
-          include: {
+          select: {
+            semesterId: true,
             course: true,
             teacher: true,
+            weekType: true,
+            startWeek: true,
+            endWeek: true,
+            remark: true,
+            teacherId: true,
             taskClasses: {
               include: { classGroup: true },
             },
@@ -68,7 +88,14 @@ export async function GET(request: NextRequest) {
       ],
     })
 
-    const viewData = slots.map((slot) => ({
+    // K25-D: defense-in-depth — drop any rows where the joined teachingTask is
+    // not in the resolved semester. (K25-C NOT NULL + validate script already
+    // guarantees 0 mismatches at rest, but this filter catches any drift.)
+    const sameSemesterSlots = slots.filter(
+      (slot) => slot.teachingTask.semesterId === semester.id,
+    )
+
+    const viewData = sameSemesterSlots.map((slot) => ({
       slotId: slot.id,
       taskId: slot.teachingTaskId,
       roomId: slot.roomId,
@@ -87,12 +114,20 @@ export async function GET(request: NextRequest) {
       remark: slot.teachingTask.remark,
     }))
 
-    return NextResponse.json(viewData)
+    return NextResponse.json({
+      items: viewData,
+      semesterId: semester.id,
+      semesterSource: semester.source,
+    })
   } catch (error) {
     console.error('Schedule fetch error:', error)
+    const errResponse = toSemesterErrorResponse(error)
+    if (errResponse) {
+      return NextResponse.json(errResponse.response, { status: errResponse.status })
+    }
     return NextResponse.json(
       { error: 'Internal server error', details: String(error) },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }

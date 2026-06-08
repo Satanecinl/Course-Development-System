@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requirePermission } from '@/lib/auth/require-permission'
 import { guardSlotUpdate } from '@/lib/schedule/slot-mutation-guard'
+import { toSemesterErrorResponse } from '@/lib/schedule/semester-scope'
 
 export async function PUT(
   request: NextRequest,
@@ -36,11 +37,34 @@ export async function PUT(
     // 查询旧状态用于日志和 guard
     const oldSlot = await prisma.scheduleSlot.findUnique({
       where: { id: slotId },
-      select: { teachingTaskId: true, dayOfWeek: true, slotIndex: true, roomId: true },
+      select: {
+        teachingTaskId: true,
+        dayOfWeek: true,
+        slotIndex: true,
+        roomId: true,
+        semesterId: true,
+      },
     })
 
     if (!oldSlot) {
       return NextResponse.json({ error: 'Slot not found' }, { status: 404 })
+    }
+
+    // K25-D: explicit body.semesterId (if any) must match the slot's semester.
+    // Defense-in-depth: even though slot-mutation-guard already enforces
+    // same-semester on the actual write, this catches mismatches earlier with
+    // a clean 400 envelope.
+    if (body && typeof body === 'object' && 'semesterId' in body) {
+      const requested = (body as Record<string, unknown>).semesterId
+      if (requested != null && requested !== oldSlot.semesterId) {
+        return NextResponse.json(
+          {
+            error: 'SEMESTER_MISMATCH',
+            message: `Body semesterId=${requested} does not match slot semesterId=${oldSlot.semesterId}`,
+          },
+          { status: 400 },
+        )
+      }
     }
 
     // Server-side guard: same-semester + conflict check
@@ -106,6 +130,10 @@ export async function PUT(
     return NextResponse.json(viewData)
   } catch (error) {
     console.error('Schedule slot update error:', error)
+    const errResponse = toSemesterErrorResponse(error)
+    if (errResponse) {
+      return NextResponse.json(errResponse.response, { status: errResponse.status })
+    }
     return NextResponse.json(
       { error: 'Internal server error', details: String(error) },
       { status: 500 }

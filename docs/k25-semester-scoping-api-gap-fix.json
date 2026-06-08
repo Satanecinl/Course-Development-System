@@ -1,0 +1,187 @@
+{
+  "stage": "K25-D-SEMESTER-SCOPING-API-GAP-FIX",
+  "status": "IMPLEMENTATION_COMPLETE",
+  "date": "2026-06-07",
+  "k25c1BaselineCommit": "a0ecd7b",
+  "type": "API hardening (no schema/DB/UI changes)",
+  "sourceFindings": [
+    {
+      "finding": "K25-A HIGH: data/teaching-tasks GET list no semester filter",
+      "actualRoute": "src/app/api/data/teaching-tasks/route.ts",
+      "k25aStatus": "K25-C had already added filter; K25-D upgrades to resolveRequestSemester + classGroup same-semester defense",
+      "remediation": "K25-D refactor: resolveRequestSemester + classGroup same-semester filter"
+    },
+    {
+      "finding": "K25-A HIGH: schedule GET list no semester filter",
+      "actualRoute": "src/app/api/schedule/route.ts + src/app/api/data/schedule-slots/route.ts",
+      "k25aStatus": "K25-C had already added filter; K25-D upgrades to resolveRequestSemester + teachingTask same-semester defense",
+      "remediation": "K25-D refactor: resolveRequestSemester + teachingTask same-semester filter"
+    },
+    {
+      "finding": "K25-A HIGH: teaching-task [id] PUT mutation has no semesterId reference",
+      "actualRoute": "src/app/api/teaching-task/[id]/route.ts",
+      "k25aStatus": "HIGH",
+      "remediation": "K25-D: classGroup same-semester guard added (defense-in-depth)"
+    },
+    {
+      "finding": "K25-A HIGH: schedule-slot [id] PUT mutation has no semesterId reference",
+      "actualRoute": "src/app/api/schedule-slot/[id]/route.ts",
+      "k25aStatus": "HIGH",
+      "remediation": "K25-D: body.semesterId mismatch 400 guard added"
+    }
+  ],
+  "requestSemesterResolution": {
+    "helperFile": "src/lib/schedule/semester-scope.ts",
+    "functionName": "resolveRequestSemester",
+    "sourcePriority": ["query", "header", "body", "activeFallback"],
+    "transitionalFallback": true,
+    "fallbackMarker": "semesterSource field in response",
+    "supportedHeader": "X-Semester-Id",
+    "errorCodes": [
+      "INVALID_SEMESTER_ID",
+      "SEMESTER_NOT_FOUND",
+      "NO_ACTIVE_SEMESTER",
+      "MULTIPLE_ACTIVE_SEMESTERS"
+    ],
+    "errorResponseHelper": "toSemesterErrorResponse"
+  },
+  "routeFixes": [
+    {
+      "route": "src/app/api/data/teaching-tasks/route.ts",
+      "type": "refactor",
+      "changes": [
+        "use resolveRequestSemester with searchParams + headers",
+        "add defense-in-depth classGroup same-semester filter",
+        "expose semesterId and semesterSource in response",
+        "use toSemesterErrorResponse in catch"
+      ]
+    },
+    {
+      "route": "src/app/api/data/schedule-slots/route.ts",
+      "type": "refactor",
+      "changes": [
+        "use resolveRequestSemester with searchParams + headers",
+        "add defense-in-depth teachingTask same-semester filter",
+        "expose semesterId and semesterSource in response",
+        "use toSemesterErrorResponse in catch"
+      ]
+    },
+    {
+      "route": "src/app/api/schedule/route.ts",
+      "type": "refactor",
+      "changes": [
+        "use resolveRequestSemester with searchParams + headers",
+        "add defense-in-depth teachingTask same-semester filter",
+        "expose semesterId and semesterSource in response (wrap result in { items, semesterId, semesterSource })",
+        "use toSemesterErrorResponse in catch"
+      ]
+    },
+    {
+      "route": "src/app/api/teaching-task/route.ts",
+      "type": "refactor+guard",
+      "changes": [
+        "use resolveRequestSemester with searchParams + headers + body",
+        "add classGroup same-semester guard (400 CLASS_GROUP_SEMESTER_MISMATCH)",
+        "expose semesterId and semesterSource in response",
+        "use toSemesterErrorResponse in catch"
+      ]
+    },
+    {
+      "route": "src/app/api/teaching-task/[id]/route.ts",
+      "type": "guard",
+      "changes": [
+        "add classGroup same-semester guard (400 CLASS_GROUP_SEMESTER_MISMATCH)",
+        "use toSemesterErrorResponse in catch"
+      ]
+    },
+    {
+      "route": "src/app/api/schedule-slot/[id]/route.ts",
+      "type": "guard",
+      "changes": [
+        "select semesterId in oldSlot query",
+        "add body.semesterId mismatch 400 guard (SEMESTER_MISMATCH)",
+        "use toSemesterErrorResponse in catch"
+      ]
+    },
+    {
+      "route": "src/app/api/conflict-check/route.ts",
+      "type": "refactor",
+      "changes": [
+        "use resolveRequestSemester with searchParams + headers + body",
+        "remove body.semesterId field destructuring (now handled by helper)",
+        "use toSemesterErrorResponse in catch (replaces knownError prefix matching)"
+      ]
+    }
+  ],
+  "mutationGuards": [
+    {
+      "route": "POST /api/teaching-task",
+      "existingGuards": ["K25-C: resolveSchedulerSemester"],
+      "k25dAdded": ["classGroup same-semester check (400 CLASS_GROUP_SEMESTER_MISMATCH)"]
+    },
+    {
+      "route": "PUT /api/teaching-task/[id]",
+      "existingGuards": ["K16: guardTeachingTaskUpdateSemantics (same-semester)"],
+      "k25dAdded": ["classGroup same-semester check (400 CLASS_GROUP_SEMESTER_MISMATCH)"]
+    },
+    {
+      "route": "POST /api/schedule-slot",
+      "existingGuards": ["K16: guardSlotCreate", "K25-C: guardResult.semesterId! binding"],
+      "k25dAdded": []
+    },
+    {
+      "route": "PUT /api/schedule-slot/[id]",
+      "existingGuards": ["K16: guardSlotUpdate (same-semester)"],
+      "k25dAdded": ["body.semesterId mismatch 400 guard (SEMESTER_MISMATCH)"]
+    },
+    {
+      "route": "POST /api/conflict-check",
+      "existingGuards": ["K25-C: resolveSchedulerSemester"],
+      "k25dAdded": ["resolveRequestSemester with header support"]
+    },
+    {
+      "route": "GET/POST /api/schedule-adjustments",
+      "existingGuards": ["K25-C: resolveSchedulerSemester", "semesterId filter"],
+      "k25dAdded": []
+    },
+    {
+      "route": "dry-run / room-recommendations / plan-recommendations",
+      "existingGuards": ["K25-A INFO: from originalSlot.semesterId reverse lookup"],
+      "k25dAdded": []
+    }
+  ],
+  "newFiles": [
+    "src/lib/schedule/semester-scope.ts",
+    "scripts/verify-semester-scoping-api-k25-d.ts",
+    "docs/k25-semester-scoping-api-gap-fix.md",
+    "docs/k25-semester-scoping-api-gap-fix.json"
+  ],
+  "verification": {
+    "k25dVerify": "54/54 PASS",
+    "k25cValidate": "37/37 PASS (intact)",
+    "prismaValidate": "schema valid",
+    "prismaMigrateStatus": "Database schema is up to date",
+    "build": "PASS (31/31 routes)",
+    "lint": "181/136 (0 new)",
+    "authFoundation": "53 passed / 1 pre-existing failure",
+    "highApiFindingsRemediated": "2/2"
+  },
+  "unmodifiedScope": {
+    "prismaSchema": "NOT modified",
+    "migrations": "NOT added (K25-C migration intact)",
+    "devDb": "NOT written (no business data writes)",
+    "frontendUiSelector": "NOT added (K25-E scope)",
+    "schedulerScoreSolver": "NOT modified",
+    "importerParser": "NOT modified",
+    "rbacPermissionModel": "NOT modified",
+    "courseTeacherRoomGlobalSemantics": "NOT modified (preserved)",
+    "scheduleChangeLog": "NOT modified",
+    "k22k23k24VerifyExpected": "NOT modified",
+    "prismaMigrateReset": "NOT run",
+    "prismaDbPush": "NOT run",
+    "seed": "NOT run"
+  },
+  "blocking": false,
+  "recommendedNextStage": "K25-E-SEMESTER-SELECTOR-UX",
+  "recommendedNextStageRationale": "Schema NOT NULL complete (K25-C); API scoping HIGH risk fixed (K25-D). Next step is user-visible semester selector that uses X-Semester-Id header / ?semesterId= query, leveraging response.semesterSource to detect transitional fallback."
+}
