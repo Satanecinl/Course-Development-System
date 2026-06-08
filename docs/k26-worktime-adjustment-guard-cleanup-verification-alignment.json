@@ -1,0 +1,88 @@
+{
+  "stage": "K26-I2A",
+  "name": "WORKTIME-ADJUSTMENT-GUARD-CLEANUP-AND-VERIFICATION-ALIGNMENT",
+  "status": "VERIFICATION_ALIGNED",
+  "date": "2026-06-08",
+  "summary": "Cleanup and verification alignment for K26-I2. No new features. Resolves 3 blocking issues: untracked byproducts, verify stage-aware alignment, lint baseline reconciliation.",
+  "blockingIssues": {
+    "untrackedByproducts": {
+      "files": [
+        "docs/k26-scheduler-config-settings-acceptance-closeout-verify.json",
+        "docs/k26-time-slot-worktime-settings-audit-verify.json"
+      ],
+      "resolution": "removed",
+      "status": "RESOLVED"
+    },
+    "k26cAuditFailure": {
+      "check": "NO-UI-IMPL",
+      "rootCause": "K26-H created WorkTimeSettingsPanel; check not stage-aware",
+      "fix": "stage-aware acceptance: worktime-settings-panel.tsx existence = PASS",
+      "before": "PASS=31 FAIL=1",
+      "after": "PASS=32 FAIL=0",
+      "status": "RESOLVED"
+    },
+    "k26aShellFailure": {
+      "check": "time-slot has recommendedStage",
+      "rootCause": "K26-H closeout changed recommendedStage from K26-C to K26-H-COMPLETED",
+      "fix": "regex accepts K26-C or K26-H-COMPLETED",
+      "before": "PASS=46 FAIL=1",
+      "after": "PASS=47 FAIL=0",
+      "status": "RESOLVED"
+    },
+    "lintBaselineDrift": {
+      "reportedBaseline": "184/136",
+      "committedBaseline": "184/146",
+      "k26i2Introduced": false,
+      "deltaExplanation": "136 was captured at a different point in K26-I1 session; committed state at e9b409b already shows 146",
+      "acceptedBaseline": "184/146",
+      "status": "RESOLVED"
+    }
+  },
+  "verificationAlignment": {
+    "k26cAudit": "PASS 32/32",
+    "k26aShell": "PASS 47/47",
+    "k26bCloseout": "PASS 38/38",
+    "k25Closeout": "PASS 38/38",
+    "k25cValidation": "PASS",
+    "k26i2Verify": "PASS 45/45",
+    "k26i1Verify": "PASS 36/36",
+    "k26iAudit": "PASS 44/44",
+    "k26hCloseout": "PASS 52/52",
+    "h2aRuntime": "PASS 15/15",
+    "k26hUi": "PASS 43/43",
+    "k26gApi": "PASS 40/40",
+    "k26f1": "PASS 30/30",
+    "k26fValidation": "PASS 30/30",
+    "backfillDryRun": "0 missing",
+    "k26e": "PASS 34/34",
+    "k26d": "PASS 39/39",
+    "prismaValidate": "PASS",
+    "migrateStatus": "up to date",
+    "build": "PASS",
+    "lint": "184/146 (+0/+0)",
+    "authFoundation": "53 passed / 1 failed (pre-existing)",
+    "k24a": "FAIL (pre-existing: schema/migration changed by K25-C/K26-F)",
+    "k24a2": "FAIL (pre-existing: schema/migration/adjustments.ts changed)",
+    "k24a3": "FAIL (pre-existing: schema/migration changed)",
+    "k24a4": "FAIL (pre-existing: slotIndexes source + schema/migration)",
+    "k24a5": "FAIL (pre-existing: preferredDayOfWeek changed by K26-I1)",
+    "k24Closeout": "FAIL (pre-existing: time-slots.ts/dialog/schema changed)",
+    "k23Closeout": "FAIL (pre-existing: schema/migration changed)",
+    "k23a": "PASS",
+    "scheduleAdjustmentTest": "PASS"
+  },
+  "modifiedFiles": [
+    "scripts/audit-time-slot-worktime-settings-k26-c.ts",
+    "scripts/verify-system-settings-shell-k26-a.ts",
+    "scripts/audit-lint-baseline-k26-i2a.ts",
+    "docs/k26-worktime-adjustment-guard-cleanup-verification-alignment.md",
+    "docs/k26-worktime-adjustment-guard-cleanup-verification-alignment.json"
+  ],
+  "deletedFiles": [
+    "docs/k26-scheduler-config-settings-acceptance-closeout-verify.json",
+    "docs/k26-time-slot-worktime-settings-audit-verify.json"
+  ],
+  "blocking": false,
+  "k26i2CanClose": true,
+  "recommendedNextStage": "K26-I3-WORKTIME-ROOM-RECOMMENDATION-GUARD"
+}

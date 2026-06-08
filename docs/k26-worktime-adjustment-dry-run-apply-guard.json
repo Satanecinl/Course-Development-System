@@ -81,5 +81,29 @@
     "authFoundation": "53 passed / 1 failed (pre-existing)"
   },
   "blocking": false,
-  "recommendedNextStage": "K26-I3-WORKTIME-ROOM-RECOMMENDATION-GUARD"
+  "recommendedNextStage": "K26-I3-WORKTIME-ROOM-RECOMMENDATION-GUARD",
+  "cleanupAndVerificationAlignmentAddendum": {
+    "stage": "K26-I2A-WORKTIME-ADJUSTMENT-GUARD-CLEANUP-AND-VERIFICATION-ALIGNMENT",
+    "status": "VERIFICATION_ALIGNED",
+    "worktreeCleanup": {
+      "untrackedByproductsRemoved": true,
+      "finalGitStatusClean": true
+    },
+    "verificationAlignment": {
+      "k26cAudit": "PASS 32/32 (aligned: NO-UI-IMPL stage-aware for K26-H)",
+      "k26aShell": "PASS 47/47 (aligned: recommendedStage regex accepts K26-C or K26-H-COMPLETED)",
+      "k26bCloseout": "PASS 38/38",
+      "k25Closeout": "PASS 38/38",
+      "k25cValidation": "PASS"
+    },
+    "lintBaseline": {
+      "previousReportedBaseline": "184/136",
+      "currentAcceptedBaseline": "184/146",
+      "k26i2IntroducedNewWarnings": false,
+      "deltaExplanation": "136 was captured at a different point in K26-I1 session; committed state at e9b409b already shows 146. K26-I2 introduced 0 new warnings."
+    },
+    "blocking": false,
+    "k26i2CanClose": true,
+    "recommendedNextStage": "K26-I3-WORKTIME-ROOM-RECOMMENDATION-GUARD"
+  }
 }

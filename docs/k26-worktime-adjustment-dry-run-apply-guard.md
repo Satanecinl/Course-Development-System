@@ -162,3 +162,29 @@ No direct changes — `createScheduleAdjustment` delegates to `dryRunScheduleAdj
 `K26-I3-WORKTIME-ROOM-RECOMMENDATION-GUARD`
 
 K26-I3 will integrate WorkTime guard into the room recommendation helper (`room-recommendations.ts`), ensuring `targetSlotIndex` and `targetDayOfWeek` respect the resolved WorkTime config. Still prohibited: solver/score integration (K26-J).
+
+---
+
+## Cleanup and Verification Alignment Addendum (K26-I2A)
+
+**Stage**: `K26-I2A-WORKTIME-ADJUSTMENT-GUARD-CLEANUP-AND-VERIFICATION-ALIGNMENT`
+
+### Issues Resolved
+
+| Issue | Status |
+|-------|--------|
+| Untracked byproducts (`docs/k26-scheduler-config-settings-*`, `docs/k26-time-slot-*`) | Removed |
+| K26-C audit `NO-UI-IMPL` failure (K26-H created WorkTimeSettingsPanel) | Stage-aware aligned → 32/32 PASS |
+| K26-A shell `time-slot has recommendedStage` failure (K26-H changed to K26-H-COMPLETED) | Stage-aware aligned → 47/47 PASS |
+| K26-B closeout missing from report | Confirmed 38/38 PASS |
+| Lint baseline 184/136 → 184/146 drift | Reconciled: 0 new warnings from K26-I2; accepted baseline 184/146 |
+
+### Final Verification
+
+All K26 verification chain PASS. K24/K23 scripts have pre-existing failures from K25-C/K26-F schema changes (not K26-I2 related).
+
+### Closeout
+
+`k26i2CanClose = true`
+
+See `docs/k26-worktime-adjustment-guard-cleanup-verification-alignment.md` for full details.

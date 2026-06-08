@@ -112,7 +112,7 @@ function testModuleStates() {
 
   // Each future module has recommendedStage
   assert(/recommendedStage:\s*'K26-B/.test(src), 'scheduler-config has recommendedStage')
-  assert(/recommendedStage:\s*'K26-C/.test(src), 'time-slot has recommendedStage')
+  assert(/recommendedStage:\s*'K26-[CH]/.test(src), 'time-slot has recommendedStage')  // K26-I2A: accept K26-C or K26-H-COMPLETED
   assert(/recommendedStage:\s*'K26-D/.test(src), 'campus-room has recommendedStage')
   assert(/recommendedStage:\s*'K26-E/.test(src), 'adjustment has recommendedStage')
   assert(/recommendedStage:\s*'K26-F/.test(src), 'import has recommendedStage')
