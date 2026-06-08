@@ -54,7 +54,7 @@ function testPageAndComponents() {
   if (fileExists(page)) {
     const src = fileRead(page)
     assert(!/功能建设中/.test(src), 'settings page is no longer placeholder')
-    assert(/SemesterSettingsPanel/.test(src), 'settings page uses SemesterSettingsPanel')
+    assert(/SemesterSettingsPanel|SettingsCenter/.test(src), 'settings page uses SemesterSettingsPanel or SettingsCenter')
     assert(/ProtectedShell/.test(src), 'settings page uses ProtectedShell')
   }
 
