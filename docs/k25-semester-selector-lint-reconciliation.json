@@ -1,0 +1,87 @@
+{
+  "stage": "K25-E1-SEMESTER-SELECTOR-LINT-BASELINE-RECONCILIATION",
+  "status": "CORRECTION_COMPLETE",
+  "gitHubSync": {
+    "branch": "master",
+    "remote": "origin",
+    "remoteUrl": "git@github.com:Satanecinl/Course-Development-System.git",
+    "trackingBranch": "origin/master",
+    "localHeadBefore": "6222305",
+    "remoteHeadBefore": "6222305",
+    "localHeadAfter": "(to be filled after commit)",
+    "remoteHeadAfter": "(to be filled after push)",
+    "aheadBehind": "up to date",
+    "pushed": false,
+    "forcePush": false
+  },
+  "baseline": {
+    "k25d2": {
+      "errors": 184,
+      "warnings": 136
+    },
+    "k25eReported": {
+      "errors": 185,
+      "warnings": 138
+    },
+    "after": {
+      "errors": 184,
+      "warnings": 136
+    },
+    "newErrors": 0,
+    "newWarnings": 0
+  },
+  "comparisonMethod": "git worktree at 053c550, eslint JSON export, sorted diff",
+  "locatedIssues": [
+    {
+      "file": "scripts/tmp-parse-lint.js",
+      "line": 2,
+      "rule": "@typescript-eslint/no-require-imports",
+      "cause": "Temp analysis script not cleaned up",
+      "fix": "Deleted file",
+      "introducedByK25e": true
+    },
+    {
+      "file": "src/app/admin/db/admin-db-content.tsx",
+      "line": 144,
+      "rule": "react-hooks/set-state-in-effect",
+      "cause": "K25-E added duplicate useEffect for semester change",
+      "fix": "Merged into existing activeTable useEffect",
+      "introducedByK25e": true
+    },
+    {
+      "file": "src/app/admin/db/admin-db-content.tsx",
+      "line": 151,
+      "rule": "react-hooks/exhaustive-deps",
+      "cause": "fetchData captured currentSemesterId in closure",
+      "fix": "Read from useSemesterStore.getState() at call time",
+      "introducedByK25e": true
+    },
+    {
+      "file": "src/app/admin/db/admin-db-content.tsx",
+      "line": 156,
+      "rule": "react-hooks/exhaustive-deps",
+      "cause": "fetchEntityOptions captured currentSemesterId in closure",
+      "fix": "Read from useSemesterStore.getState() at call time",
+      "introducedByK25e": true
+    }
+  ],
+  "fixes": [
+    "Deleted scripts/tmp-parse-lint.js (temp investigation artifact)",
+    "Merged K25-E semester-change useEffect into existing activeTable useEffect",
+    "Changed fetchData/fetchEntityOptions/fetchTaskOptions to read currentSemesterId from store at call time instead of closure capture"
+  ],
+  "verification": {
+    "k25e1Audit": "PASS=125 FAIL=0",
+    "k25eVerify": "PASS=64 FAIL=0",
+    "k25d1Compat": "PASS=20 FAIL=0",
+    "k25dVerify": "PASS=54 FAIL=0",
+    "k25cValidation": "37/37 PASS",
+    "prismaValidate": "PASS",
+    "migrateStatus": "up to date",
+    "build": "PASS",
+    "lint": "184 errors / 136 warnings (matches K25-D2 baseline exactly)",
+    "authFoundation": "53 passed / 1 failed (pre-existing)"
+  },
+  "blocking": false,
+  "recommendedNextStage": "K25-F-MULTI-SEMESTER-E2E-MANUAL-TRIAL"
+}

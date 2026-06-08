@@ -92,7 +92,10 @@ export default function AdminDbContent() {
 
   async function fetchEntityOptions() {
     try {
-      const data = await apiFetchEntityOptions(currentSemesterId)
+      // K25-E: read semesterId from store at call time (avoids closure capture
+      // that would make this function unstable and trigger exhaustive-deps).
+      const sid = useSemesterStore.getState().currentSemesterId
+      const data = await apiFetchEntityOptions(sid)
       setCourses(data.courses)
       setTeachers(data.teachers)
       setRooms(data.rooms)
@@ -104,7 +107,8 @@ export default function AdminDbContent() {
 
   async function fetchTaskOptions() {
     try {
-      const options = await apiFetchTaskOptions(currentSemesterId)
+      const sid = useSemesterStore.getState().currentSemesterId
+      const options = await apiFetchTaskOptions(sid)
       setTaskOptions(options)
     } catch {
       // silent fail
@@ -120,7 +124,9 @@ export default function AdminDbContent() {
     const t = table ?? activeTable
     setLoading(true)
     try {
-      const data = await fetchAdminTableRecords(t, currentSemesterId)
+      // K25-E: read semesterId from store at call time (avoids closure capture).
+      const sid = useSemesterStore.getState().currentSemesterId
+      const data = await fetchAdminTableRecords(t, sid)
       setRecords(data)
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
@@ -138,17 +144,14 @@ export default function AdminDbContent() {
     }
   }, [semesterLoaded, fetchSemesters])
 
-  // K25-E: refetch data when semester changes
+  // Refetch table data when table or semester changes (merged K25-E semester
+  // change handler with the original activeTable handler to avoid an extra
+  // useEffect and the associated set-state-in-effect lint error).
   useEffect(() => {
-    if (semesterLoaded && currentSemesterId != null) {
+    if (semesterLoaded) {
       fetchData(activeTable)
-      fetchCounts()
-      fetchEntityOptions()
     }
-  }, [semesterLoaded, currentSemesterId])
-  useEffect(() => {
-    fetchData(activeTable)
-  }, [activeTable])
+  }, [activeTable, semesterLoaded, currentSemesterId])
 
   useEffect(() => {
     fetchCounts()
