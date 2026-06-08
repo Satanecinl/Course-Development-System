@@ -1,0 +1,77 @@
+{
+  "stage": "K26-B1-SCHEDULER-CONFIG-SETTINGS-MANUAL-TRIAL",
+  "status": "MANUAL_TRIAL_PASSED",
+  "gitHubSync": {
+    "branch": "master",
+    "remote": "origin",
+    "trackingBranch": "origin/master",
+    "localHeadBefore": "06c47c4",
+    "remoteHeadBefore": "06c47c4",
+    "localHeadAfter": "",
+    "remoteHeadAfter": "",
+    "aheadBehind": "up to date",
+    "pushed": false,
+    "forcePush": false
+  },
+  "manualTrial": {
+    "status": "PASSED",
+    "requiresHumanValidation": false,
+    "validatedBy": "user",
+    "environment": {
+      "browser": "Google Chrome (Windows 11)",
+      "url": "http://localhost:3000/admin/settings",
+      "loginRole": "Admin",
+      "activeSemester": "2026年春季学期 (id=1)",
+      "environment": "Local dev",
+      "database": "Real prisma/dev.db"
+    },
+    "cases": [
+      { "case": "A: open settings", "result": "PASS", "note": "页面正常打开，排课参数设置模块可见" },
+      { "case": "B: open scheduler config module", "result": "PASS", "note": "面板正常渲染，无 coming-soon 占位" },
+      { "case": "C: view config list", "result": "PASS", "note": "表格所有列正常显示" },
+      { "case": "D: create config", "result": "PASS", "note": "创建成功，列表即时刷新" },
+      { "case": "E: edit config", "result": "PASS", "note": "编辑弹窗预填正确，修改保存成功" },
+      { "case": "F: validation errors", "result": "PASS", "note": "客户端校验阻止无效输入" },
+      { "case": "G: delete unused config", "result": "PASS", "note": "删除成功，列表刷新" },
+      { "case": "H: block delete used config", "result": "BLOCKED", "note": "当前 DB 无已引用 config，需排课执行后验证" },
+      { "case": "I: semester settings regression", "result": "PASS", "note": "学期设置面板完全正常" },
+      { "case": "J: other modules planned", "result": "PASS", "note": "7 个模块均显示 planned/coming-soon 占位" },
+      { "case": "K: scheduler preview regression", "result": "PASS", "note": "排课页面正常，config picker 完好" }
+    ],
+    "summary": "10 PASS / 0 FAIL / 1 BLOCKED (H case: no referenced config in DB)"
+  },
+  "decision": {
+    "canCloseout": true,
+    "blocking": false,
+    "notes": "H case BLOCKED not blocking — needs validation after real scheduling run"
+  },
+  "decisionRules": [
+    "All critical cases PASS → K26-B1 可关闭",
+    "UI 小问题但不阻塞 → K26-B2 UI polish",
+    "API bug → K21/K26 scheduler config API fix",
+    "删除保护 bug → K26-B2 delete-protection fix",
+    "Scheduler preview 破坏 → blocker",
+    "H case 缺少已引用配置数据 → 不阻塞"
+  ],
+  "verification": {
+    "k26b1Readiness": "48/48 PASS",
+    "k26bVerify": "47/47 PASS",
+    "k26aVerify": "47/47 PASS",
+    "k25Closeout": "38/38 PASS",
+    "k25I": "45/45 PASS",
+    "k25H": "70/70 PASS",
+    "k25E": "63/63 PASS",
+    "k25C": "37/37 PASS",
+    "k21Api": "PASS",
+    "k21Preview": "PASS",
+    "k21Snapshot": "19/19 PASS",
+    "k21Ui": "22/22 PASS",
+    "prismaValidate": "PASS",
+    "migrateStatus": "up to date",
+    "build": "PASS",
+    "lint": "184 errors / 136 warnings",
+    "authFoundation": "53 passed / 1 failed (pre-existing)"
+  },
+  "blocking": false,
+  "recommendedNextStage": "K26-B-SCHEDULER-CONFIG-SETTINGS-ACCEPTANCE-CLOSEOUT"
+}
