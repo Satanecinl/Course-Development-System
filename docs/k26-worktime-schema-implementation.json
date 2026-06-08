@@ -1,0 +1,105 @@
+{
+  "stage": "K26-F-WORKTIME-SCHEMA-IMPLEMENTATION",
+  "status": "IMPLEMENTATION_COMPLETE",
+  "gitHubSync": {
+    "branch": "master",
+    "remote": "origin",
+    "trackingBranch": "origin/master",
+    "localHeadBefore": "235b2db",
+    "localHeadAfter": "",
+    "remoteHeadBefore": "235b2db",
+    "remoteHeadAfter": "",
+    "aheadBehind": "up to date",
+    "fetched": true,
+    "pullRebase": false,
+    "pushed": false,
+    "forcePush": false
+  },
+  "dbBackup": {
+    "path": "prisma/dev.db.backup-before-k26-worktime-schema-20260608173742",
+    "sizeBytes": 3735552,
+    "committed": false
+  },
+  "schemaChanges": {
+    "newModels": [
+      {
+        "name": "WorkTimeConfig",
+        "fields": ["id", "semesterId", "name", "isDefault", "allowWeekend", "lunchStart", "lunchEnd", "isActive", "version", "effectiveFrom", "notes", "createdAt", "updatedAt"],
+        "relations": ["semester", "slots"],
+        "constraints": ["@@unique([semesterId, name])", "@@index([semesterId])", "@@index([semesterId, isDefault])"]
+      },
+      {
+        "name": "TimeSlotDefinition",
+        "fields": ["id", "workTimeConfigId", "slotIndex", "label", "startsAt", "endsAt", "isActive", "isTeachingSlot", "isLegacyDisplay", "sortOrder", "createdAt", "updatedAt"],
+        "relations": ["workTimeConfig"],
+        "constraints": ["@@unique([workTimeConfigId, slotIndex])", "@@index([workTimeConfigId])", "@@index([slotIndex])"]
+      }
+    ],
+    "modifiedModels": [
+      {
+        "name": "Semester",
+        "newRelation": "workTimeConfigs WorkTimeConfig[]"
+      },
+      {
+        "name": "SchedulingRun",
+        "newField": "workTimeConfigSnapshot String?"
+      }
+    ]
+  },
+  "migration": {
+    "file": "prisma/migrations/20260608000000_add_worktime_config/migration.sql",
+    "method": "prisma migrate deploy",
+    "status": "applied",
+    "totalMigrations": 8
+  },
+  "backfill": {
+    "dryRunBefore": {
+      "semestersFound": 2,
+      "semestersNeedingBackfill": 2
+    },
+    "apply": {
+      "createdWorkTimeConfig": 2,
+      "createdTimeSlotDefinition": 14
+    },
+    "dryRunAfter": {
+      "semestersNeedingBackfill": 0,
+      "idempotent": true
+    },
+    "defaultSlots": [
+      { "slotIndex": 1, "label": "1-2节", "isActive": true, "isTeachingSlot": true, "isLegacyDisplay": false },
+      { "slotIndex": 2, "label": "3-4节", "isActive": true, "isTeachingSlot": true, "isLegacyDisplay": false },
+      { "slotIndex": 3, "label": "5-6节", "isActive": true, "isTeachingSlot": true, "isLegacyDisplay": false },
+      { "slotIndex": 4, "label": "7-8节", "isActive": true, "isTeachingSlot": true, "isLegacyDisplay": false },
+      { "slotIndex": 5, "label": "9-10节", "isActive": true, "isTeachingSlot": true, "isLegacyDisplay": false },
+      { "slotIndex": 6, "label": "11-12节", "isActive": false, "isTeachingSlot": false, "isLegacyDisplay": true },
+      { "slotIndex": 7, "label": "中午", "isActive": false, "isTeachingSlot": false, "isLegacyDisplay": true }
+    ]
+  },
+  "historicalCompatibility": {
+    "scheduleSlotDeleted": false,
+    "scheduleSlotCount": 440,
+    "legacySlot6Count": 2,
+    "legacySlot7Count": 0,
+    "weekendCount": 21
+  },
+  "verification": {
+    "k26fValidation": "30/30 PASS",
+    "k26ePlan": "TBD",
+    "k26dVerify": "TBD",
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "UP_TO_DATE (8 migrations)",
+    "build": "TBD",
+    "lint": "TBD (expected +0/+0 vs K26-E baseline 184/136)",
+    "authFoundation": "TBD (expected 53 passed / 1 failed pre-existing)"
+  },
+  "nonGoals": [
+    "API routes for WorkTime",
+    "settings UI for WorkTime",
+    "solver / score changes",
+    "adjustment recommendation changes",
+    "room recommendation changes",
+    "K22/K23/K24/K25 expected changes"
+  ],
+  "blocking": false,
+  "recommendedNextStage": "K26-G-WORKTIME-API-IMPLEMENTATION"
+}

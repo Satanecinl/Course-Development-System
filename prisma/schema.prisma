@@ -26,6 +26,7 @@ model Semester {
   schedulingRuns      SchedulingRun[]
   schedulingConfigs   SchedulingConfig[]
   importBatches       ImportBatch[]
+  workTimeConfigs     WorkTimeConfig[]
 }
 
 model ClassGroup {
@@ -240,6 +241,9 @@ model SchedulingRun {
   previewExpiresAt    DateTime?
   changedSlotCount    Int       @default(0)
   errorMessage        String?
+  // K26-F: nullable snapshot of the WorkTimeConfig used by this run.
+  // Null for pre-K26-F runs; K26-J will populate for new runs.
+  workTimeConfigSnapshot String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
@@ -386,4 +390,50 @@ model Session {
   createdAt DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ─── K26-F: WorkTime / TimeSlotConfig Models ──────────────────────────
+
+model WorkTimeConfig {
+  id           Int       @id @default(autoincrement())
+  semesterId   Int
+  semester     Semester  @relation(fields: [semesterId], references: [id])
+  name         String
+  isDefault    Boolean   @default(false)
+  allowWeekend Boolean   @default(false)
+  lunchStart   String?
+  lunchEnd     String?
+  isActive     Boolean   @default(true)
+  version      Int       @default(1)
+  effectiveFrom DateTime?
+  notes        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  slots TimeSlotDefinition[]
+
+  @@unique([semesterId, name])
+  @@index([semesterId])
+  @@index([semesterId, isDefault])
+}
+
+model TimeSlotDefinition {
+  id               Int      @id @default(autoincrement())
+  workTimeConfigId Int
+  slotIndex        Int
+  label            String
+  startsAt         String?
+  endsAt           String?
+  isActive         Boolean  @default(true)
+  isTeachingSlot   Boolean  @default(true)
+  isLegacyDisplay  Boolean  @default(false)
+  sortOrder        Int
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  workTimeConfig WorkTimeConfig @relation(fields: [workTimeConfigId], references: [id], onDelete: Cascade)
+
+  @@unique([workTimeConfigId, slotIndex])
+  @@index([workTimeConfigId])
+  @@index([slotIndex])
 }
