@@ -110,3 +110,8 @@ if (!targetCheck.ok) {
 `K26-I4-WORKTIME-ADJUSTMENT-DIALOG-INTEGRATION`
 
 K26-I4 will integrate WorkTime metadata into the frontend adjustment dialog. Still prohibited: solver/score integration (K26-J).
+
+---
+
+Acceptance closeout: K26-I-WORKTIME-RECOMMENDATION-INTEGRATION-ACCEPTANCE-CLOSEOUT
+Status: CLOSED

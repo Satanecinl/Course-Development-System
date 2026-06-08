@@ -102,3 +102,8 @@ K26-I4B resolves the 3 remaining blocking issues from K26-I4A:
 - **K26-I4**: CLOSABLE
 - **Next stage**: `K26-I5-WORKTIME-ADJUSTMENT-DIALOG-MANUAL-TRIAL` (manual frontend validation)
 - **Solver/score**: Still prohibited until K26-J
+
+---
+
+Acceptance closeout: K26-I-WORKTIME-RECOMMENDATION-INTEGRATION-ACCEPTANCE-CLOSEOUT
+Status: CLOSED

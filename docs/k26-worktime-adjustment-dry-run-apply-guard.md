@@ -188,3 +188,8 @@ All K26 verification chain PASS. K24/K23 scripts have pre-existing failures from
 `k26i2CanClose = true`
 
 See `docs/k26-worktime-adjustment-guard-cleanup-verification-alignment.md` for full details.
+
+---
+
+Acceptance closeout: K26-I-WORKTIME-RECOMMENDATION-INTEGRATION-ACCEPTANCE-CLOSEOUT
+Status: CLOSED

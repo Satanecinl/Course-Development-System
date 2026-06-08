@@ -193,3 +193,8 @@ K26-I1 **建议关闭**。下一步进入 K26-I2（dry-run / apply guard）：
 - 收紧 `newSlotIndex ≤ 5`（与 room-rec 一致）
 - 引入新 error codes
 - **不改 K24 expected**
+
+---
+
+Acceptance closeout: K26-I-WORKTIME-RECOMMENDATION-INTEGRATION-ACCEPTANCE-CLOSEOUT
+Status: CLOSED

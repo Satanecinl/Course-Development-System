@@ -145,3 +145,8 @@ Manual frontend validation recommended before closeout to verify:
 - `k26i4aCanClose = true`
 - `k26i4CanClose = true`
 - `recommendedNextStage = K26-I5-WORKTIME-ADJUSTMENT-DIALOG-MANUAL-TRIAL`
+
+---
+
+Acceptance closeout: K26-I-WORKTIME-RECOMMENDATION-INTEGRATION-ACCEPTANCE-CLOSEOUT
+Status: CLOSED

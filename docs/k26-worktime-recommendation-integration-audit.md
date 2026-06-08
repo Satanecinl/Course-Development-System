@@ -288,3 +288,8 @@ recommendedNextStage=K26-I1-WORKTIME-PLAN-RECOMMENDATION-INTEGRATION
 K26-I1 注: 只改 plan recommendation search space; 不接 solver/score; 不改 K24 expected
 仍禁止直接接 solver/score/recommendation（必须按 I1→I2→I3→I4→J 顺序）
 ```
+
+---
+
+Acceptance closeout: K26-I-WORKTIME-RECOMMENDATION-INTEGRATION-ACCEPTANCE-CLOSEOUT
+Status: CLOSED
