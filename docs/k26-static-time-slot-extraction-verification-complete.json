@@ -1,0 +1,105 @@
+{
+  "stage": "K26-D1-STATIC-TIME-SLOT-EXTRACTION-VERIFICATION-COMPLETE",
+  "status": "VERIFICATION_COMPLETE",
+  "gitHubSync": {
+    "branch": "master",
+    "remote": "origin",
+    "trackingBranch": "origin/master",
+    "localHeadBefore": "ca54436",
+    "localHeadAfter": "",
+    "remoteHeadBefore": "ca54436",
+    "remoteHeadAfter": "",
+    "aheadBehind": "up to date",
+    "fetched": true,
+    "pullRebase": false,
+    "pushed": false,
+    "forcePush": false
+  },
+  "missingVerificationCompleted": {
+    "k26bIntegrationVerify": {
+      "command": "npx tsx scripts/verify-scheduler-config-settings-integration-k26-b.ts",
+      "result": "PASS (47/47)"
+    },
+    "npmRunLint": {
+      "command": "npm run lint",
+      "result": "PASS (184/136 +0/+0 vs K26-C baseline)",
+      "equivalenceNote": "package.json has \"lint\": \"eslint\" which calls the eslint binary with default args. Equivalent to `npx eslint .` (verified by matching output counts in this run)."
+    }
+  },
+  "verification": {
+    "k26dVerify": "39/39 PASS",
+    "k26cAudit": "32/32 PASS",
+    "k26aVerify": "47/47 PASS",
+    "k26bCloseoutVerify": "38/38 PASS",
+    "k26bIntegrationVerify": "47/47 PASS",
+    "k25CloseoutVerify": "38/38 PASS",
+    "k25cValidation": "PASS",
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "UP_TO_DATE (7 migrations)",
+    "build": "PASS (Compiled successfully)",
+    "lint": {
+      "errors": 184,
+      "warnings": 136,
+      "deltaVsBaseline": "+0/+0",
+      "command": "npx eslint . (equivalent to npm run lint)"
+    },
+    "authFoundation": {
+      "passed": 53,
+      "failed": 1,
+      "preExistingFailure": "ScheduleAdjustment ACTIVE count mismatch",
+      "fixAttempted": false
+    }
+  },
+  "modifiedFiles": [
+    {
+      "path": "docs/k26-static-time-slot-extraction.md",
+      "type": "modified",
+      "change": "appended Verification Complete Addendum section"
+    },
+    {
+      "path": "docs/k26-static-time-slot-extraction.json",
+      "type": "modified",
+      "change": "appended verificationCompleteAddendum field"
+    },
+    {
+      "path": "docs/k26-static-time-slot-extraction-verification-complete.md",
+      "type": "added",
+      "change": "new document for K26-D1 verification complete"
+    },
+    {
+      "path": "docs/k26-static-time-slot-extraction-verification-complete.json",
+      "type": "added",
+      "change": "new structured document for K26-D1 verification complete"
+    }
+  ],
+  "unmodifiedScope": [
+    "src/lib/schedule/time-slots.ts",
+    "src/types/schedule.ts",
+    "prisma/schema.prisma",
+    "prisma/migrations/**",
+    "prisma/dev.db",
+    "API 业务语义",
+    "frontend UI 功能",
+    "solver algorithm",
+    "src/lib/scheduler/score.ts",
+    "scheduler preview/apply",
+    "adjustment recommendation",
+    "room recommendation",
+    "importer/parser",
+    "RBAC permission model",
+    "K22/K23/K24/K25 expected",
+    "WorkTime schema/API/UI"
+  ],
+  "forbiddenActionsNotExecuted": [
+    "npx prisma migrate reset",
+    "npx prisma db push --force-reset",
+    "rm prisma/dev.db",
+    "running seed scripts",
+    "writing business data",
+    "force push"
+  ],
+  "blocking": false,
+  "k26dCanClose": true,
+  "recommendedNextStage": "K26-E-WORKTIME-SCHEMA-PLAN",
+  "finalConclusion": "K26-D static time-slot extraction is officially closed. Direct WorkTime settings UI is still BLOCKED. Next stage is K26-E-WORKTIME-SCHEMA-PLAN to evaluate Option B (SystemSetting JSON) vs Option C (independent WorkTime/TimeSlotConfig tables), score threshold parameterization, K22 score harness expected update, and historical 11-12/weekend data migration strategy."
+}

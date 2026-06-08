@@ -265,3 +265,105 @@ K26-D **建议关闭**。下一步进入 K26-E（WorkTime schema plan）：
 - 仍**禁止**直接进入 K26-F API / K26-G UI：必须先有 schema 计划
 
 如果发现 K26-D 仍有遗漏的对齐项（例如新出现 display 路径未走 formatter），可走 `K26-D1-STATIC-TIME-SLOT-EXTRACTION-FIX`。
+
+---
+
+## Verification Complete Addendum
+
+> 本节由 `K26-D1-STATIC-TIME-SLOT-EXTRACTION-VERIFICATION-COMPLETE` 追加。
+
+### 阶段
+
+`K26-D1-STATIC-TIME-SLOT-EXTRACTION-VERIFICATION-COMPLETE`
+
+### 本阶段目的
+
+补齐 K26-D 完成报告中仍标 `TBD` 的验证项，并重跑完整验证链以正式关闭 K26-D。**不修改任何业务代码**。
+
+### GitHub Sync
+
+| Item | Value |
+|------|-------|
+| Branch | `master` |
+| Remote | `origin` → `https://github.com/Satanecinl/Course-Development-System.git` |
+| Tracking branch | `origin/master` |
+| Local HEAD before | `ca54436` (K26-D merge) |
+| Local HEAD after | (to be filled after push) |
+| Remote HEAD before | `ca54436` |
+| Remote HEAD after | (to be filled after push) |
+| Ahead/behind | up to date |
+| Fetch | yes |
+| Pull/rebase | no (was up to date) |
+| Push | yes |
+| Force push | false |
+
+### 上一阶段缺失项
+
+| 缺失项 | 上一阶段报告 | 本阶段结果 |
+|--------|--------------|------------|
+| `npx tsx scripts/verify-scheduler-config-settings-integration-k26-b.ts` | `(TBD)` | **PASS (47/47)** |
+| `npm run lint` | 用 `npx eslint .` 替代；未明确说明等价性 | **PASS (184/136 +0/+0 vs K26-C baseline)**；**已确认等价**：`package.json` 中 `"lint": "eslint"` 直接调用 `eslint` 二进制，无额外参数，等价于 `npx eslint .` |
+
+### 完整验证命令表（本阶段实际运行）
+
+| Command | Result |
+|---------|--------|
+| `npx tsx scripts/verify-static-time-slot-extraction-k26-d.ts` | **39/39 PASS** |
+| `npx tsx scripts/audit-time-slot-worktime-settings-k26-c.ts` | **PASS** (32/32, blocking=true 已在 K26-D 解除 — K26-D 已完成) |
+| `npx tsx scripts/verify-system-settings-shell-k26-a.ts` | **47/47 PASS** |
+| `npx tsx scripts/verify-scheduler-config-settings-acceptance-closeout-k26-b.ts` | **38/38 PASS** |
+| `npx tsx scripts/verify-scheduler-config-settings-integration-k26-b.ts` | **47/47 PASS** (本阶段补跑) |
+| `npx tsx scripts/verify-semester-settings-acceptance-closeout-k25.ts` | **38/38 PASS** |
+| `npx tsx scripts/validate-multi-semester-schema-k25-c.ts` | **PASS** |
+| `npx prisma validate` | **PASS** |
+| `npx prisma migrate status` | **up to date** (7 migrations) |
+| `npm run build` | **PASS** (Compiled successfully) |
+| `npx eslint .` (= `npm run lint`) | **184 errors / 136 warnings (+0/+0 vs K26-C baseline)** |
+| `npm run test:auth-foundation` | **53 passed / 1 failed (pre-existing)** |
+
+### Pre-existing failure
+
+| Failure | Status |
+|---------|--------|
+| `ScheduleAdjustment ACTIVE = 0 (实际 10)` | pre-existing, 与 K26-C/K26-D baseline 一致，**未尝试用业务数据修复** |
+
+### 未修改范围（本阶段）
+
+确认**未改**：
+
+- `src/lib/schedule/time-slots.ts`
+- `src/types/schedule.ts`
+- `prisma/schema.prisma`
+- `prisma/migrations/**`
+- `prisma/dev.db`
+- API 业务语义
+- frontend UI 功能
+- solver algorithm
+- `src/lib/scheduler/score.ts`
+- scheduler preview / apply
+- adjustment recommendation
+- room recommendation
+- importer / parser
+- RBAC permission model
+- K22 / K23 / K24 / K25 expected
+- WorkTime schema / API / UI
+- 系统设置 UI 功能
+
+仅修改：
+
+- `docs/k26-static-time-slot-extraction.md`（追加本节）
+- `docs/k26-static-time-slot-extraction.json`（追加 `verificationCompleteAddendum` 字段）
+- 新增 `docs/k26-static-time-slot-extraction-verification-complete.md`
+- 新增 `docs/k26-static-time-slot-extraction-verification-complete.json`
+
+### Final Conclusion
+
+```txt
+K26-D1-STATIC-TIME-SLOT-EXTRACTION-VERIFICATION-COMPLETE: 建议关闭
+K26-D-STATIC-TIME-SLOT-EXTRACTION: 现在可以正式关闭
+K26-D 排课参数设置小主线: 正式关闭
+blocking=false
+k26dCanClose=true
+recommendedNextStage=K26-E-WORKTIME-SCHEMA-PLAN
+K26-E 注: 必须先有 schema 计划，仍禁止直接做节次作息 UI
+```
