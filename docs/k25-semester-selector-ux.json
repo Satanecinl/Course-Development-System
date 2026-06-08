@@ -6,10 +6,11 @@
     "remote": "origin",
     "remoteUrl": "git@github.com:Satanecinl/Course-Development-System.git",
     "trackingBranch": "origin/master",
-    "localHead": "(to be filled after commit)",
-    "remoteHead": "053c550",
-    "aheadBehind": "ahead 1 (K25-D2 not yet pushed) + K25-E changes",
-    "pushed": false,
+    "localHead": "f99b8bf",
+    "remoteHead": "f99b8bf",
+    "aheadBehind": "up to date",
+    "pushed": true,
+    "pushTarget": "origin/master",
     "forcePush": false
   },
   "semesterListSource": {
