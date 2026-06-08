@@ -1,6 +1,6 @@
 {
   "stage": "K25-J-SEMESTER-SETTINGS-E2E-MANUAL-TRIAL",
-  "status": "MANUAL_TRIAL_READY",
+  "status": "MANUAL_TRIAL_PASSED",
   "gitHubSync": {
     "branch": "master",
     "remote": "origin",
@@ -15,8 +15,10 @@
     "forcePush": false
   },
   "manualTrial": {
-    "status": "READY",
-    "requiresHumanValidation": true,
+    "status": "PASSED",
+    "requiresHumanValidation": false,
+    "manualValidationSource": "user-provided browser validation",
+    "manualValidationNote": "人工验证通过",
     "environment": {
       "url": "http://localhost:3000/admin/settings",
       "loginUser": "admin",

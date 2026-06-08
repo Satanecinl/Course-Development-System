@@ -189,7 +189,7 @@ function testManualDocs() {
   if (fileExists('docs/k25-semester-settings-e2e-manual-trial.json')) {
     const json = JSON.parse(fileRead('docs/k25-semester-settings-e2e-manual-trial.json'))
     assert(json.stage === 'K25-J-SEMESTER-SETTINGS-E2E-MANUAL-TRIAL', 'JSON stage correct')
-    assert(json.status === 'MANUAL_TRIAL_READY', 'JSON status is READY')
+    assert(json.status === 'MANUAL_TRIAL_READY' || json.status === 'MANUAL_TRIAL_PASSED', 'JSON status is READY or PASSED')
     assert(json.manualTrial?.cases?.length > 0, 'JSON has manual trial cases')
   }
 }

@@ -4,7 +4,15 @@
 
 本阶段是浏览器人工验证阶段。不新增功能、不改 schema / API / UI。验证 K25-I 系统设置学期管理 UI 是否可真实使用。
 
-**当前状态**: `manualTrial.status = READY` — 等待用户进行浏览器人工验证。
+**当前状态**: `manualTrial.status = PASSED` — 用户已确认浏览器人工验证通过。
+
+## Manual Validation Result
+
+- 浏览器人工验证：**PASSED**
+- 验证来源：用户反馈
+- 反馈原文：人工验证通过
+- K25-J readiness：已通过（56/56 PASS）
+- 当前可以进入 closeout
 
 ## 2. GitHub Sync Status
 

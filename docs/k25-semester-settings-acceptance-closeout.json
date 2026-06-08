@@ -1,0 +1,97 @@
+{
+  "stage": "K25-SEMESTER-SETTINGS-ACCEPTANCE-CLOSEOUT",
+  "status": "CLOSED",
+  "featureStatus": "READY_FOR_REAL_USE",
+  "manualFrontendValidation": {
+    "status": "PASSED",
+    "source": "user-provided browser validation",
+    "note": "人工验证通过"
+  },
+  "closedStages": [
+    "K25-G-SEMESTER-SETTINGS-MANAGEMENT-AUDIT-AND-DESIGN",
+    "K25-H-SEMESTER-SETTINGS-API-IMPLEMENTATION",
+    "K25-I-SEMESTER-SETTINGS-UI-IMPLEMENTATION",
+    "K25-J-SEMESTER-SETTINGS-E2E-MANUAL-TRIAL"
+  ],
+  "closedScope": {
+    "api": [
+      "GET /api/semesters?includeCounts=true",
+      "POST /api/semesters",
+      "PUT /api/semesters/[id]",
+      "DELETE /api/semesters/[id]",
+      "POST /api/semesters/[id]/activate",
+      "GET /api/semesters/[id]/dependencies"
+    ],
+    "ui": [
+      "/admin/settings semester management page",
+      "Current semester card",
+      "Semester list table (13 columns)",
+      "Create semester dialog",
+      "Edit semester dialog",
+      "Activate semester confirmation dialog",
+      "Delete semester confirmation with dependency protection",
+      "Dependency counts display",
+      "Loading/error/empty states",
+      "SemesterSelector integration via semesterStore"
+    ],
+    "manualTrial": [
+      "Open settings page",
+      "Create empty semester",
+      "Edit semester",
+      "Activate semester",
+      "Delete empty semester",
+      "Block delete populated semester",
+      "Block delete active semester",
+      "localStorage persistence",
+      "Permission check",
+      "Dashboard/admin-db regression"
+    ]
+  },
+  "verificationBaseline": {
+    "k25jReadiness": "PASS=56/56",
+    "k25iVerify": "PASS=45/45",
+    "k25hVerify": "PASS=70/70",
+    "k25gAudit": "PASS=58/58",
+    "k25eVerify": "PASS=63/63",
+    "k25dVerify": "PASS=54/54",
+    "k25cValidation": "37/37 PASS",
+    "prismaValidate": "PASS",
+    "migrateStatus": "up to date",
+    "build": "PASS",
+    "lint": "184 errors / 136 warnings",
+    "authFoundation": "53 passed / 1 failed (pre-existing)"
+  },
+  "knownLimitations": [
+    "Long-term system settings modules not implemented",
+    "Only semester settings management implemented",
+    "No archive semester field (archived/status)",
+    "Cannot archive populated semesters, only block delete",
+    "Permission uses existing settings:manage",
+    "test:auth-foundation has pre-existing ScheduleAdjustment ACTIVE count mismatch",
+    "Lint has historical debt 184/136",
+    "Multi-semester production data needs long-term observation"
+  ],
+  "postCloseoutDecisionRules": [
+    { "trigger": "Semester settings UI minor issue", "stage": "K25-Settings-UI-Polish" },
+    { "trigger": "Delete protection bug", "stage": "K25-Settings-Delete-Protection-Fix" },
+    { "trigger": "API bug", "stage": "K25-Settings-API-Fix" },
+    { "trigger": "Need archive semester", "stage": "K25-Settings-Archive-Semester-Plan" },
+    { "trigger": "Need other system settings modules", "stage": "New mainline, outside K25 scope" },
+    { "trigger": "Multi-semester data isolation issue", "stage": "K25-Multi-Semester-Data-Isolation-Fix" }
+  ],
+  "gitHubSync": {
+    "branch": "master",
+    "remote": "origin",
+    "remoteUrl": "git@github.com:Satanecinl/Course-Development-System.git",
+    "trackingBranch": "origin/master",
+    "localHeadBefore": "cd35ba7",
+    "remoteHeadBefore": "cd35ba7",
+    "localHeadAfter": "(to be filled after commit)",
+    "remoteHeadAfter": "(to be filled after push)",
+    "aheadBehind": "up to date",
+    "pushed": false,
+    "forcePush": false
+  },
+  "blocking": false,
+  "recommendedDefaultAction": "Use in real workflow; no further K25 semester settings mechanical development unless real feedback exists."
+}
