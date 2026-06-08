@@ -1,0 +1,126 @@
+{
+  "stage": "K25-G-SEMESTER-SETTINGS-MANAGEMENT-AUDIT-AND-DESIGN",
+  "status": "AUDIT_AND_DESIGN_COMPLETE",
+  "gitHubSync": {
+    "branch": "master",
+    "remote": "origin",
+    "remoteUrl": "git@github.com:Satanecinl/Course-Development-System.git",
+    "trackingBranch": "origin/master",
+    "localHeadBefore": "466a4fa",
+    "remoteHeadBefore": "466a4fa",
+    "localHeadAfter": "(to be filled after commit)",
+    "remoteHeadAfter": "(to be filled after push)",
+    "aheadBehind": "up to date",
+    "pushed": false,
+    "forcePush": false
+  },
+  "currentSchema": {
+    "model": "Semester",
+    "fields": ["id", "name", "code", "academicYear", "term", "startsAt", "endsAt", "isActive", "createdAt", "updatedAt"],
+    "relations": ["classGroups", "teachingTasks", "scheduleSlots", "scheduleAdjustments", "schedulingRuns", "schedulingConfigs", "importBatches"],
+    "supportsCreate": true,
+    "supportsRename": true,
+    "supportsDateEdit": true,
+    "supportsActivate": true,
+    "supportsDelete": true,
+    "supportsArchive": false,
+    "schemaChangeRequired": false,
+    "assessment": "Existing schema is sufficient for full CRUD + activate. No changes needed."
+  },
+  "dbSnapshot": {
+    "totalSemesters": 1,
+    "activeCount": 1,
+    "semesters": [
+      {
+        "id": 1,
+        "name": "既有数据默认学期",
+        "code": "LEGACY-DEFAULT",
+        "isActive": true,
+        "startsAt": null,
+        "endsAt": null,
+        "dependencies": {
+          "classGroups": 36,
+          "teachingTasks": 308,
+          "scheduleSlots": 440,
+          "scheduleAdjustments": 57,
+          "schedulingRuns": 77,
+          "schedulingConfigs": 1,
+          "importBatches": 37
+        }
+      }
+    ],
+    "emptySemesters": 0,
+    "safeDeletable": 0,
+    "observations": "Single legacy semester with all data. Cannot be deleted. No dates set."
+  },
+  "existingApiAudit": {
+    "getSemesters": { "exists": true, "readOnly": true, "authGate": false, "fields": ["id", "name", "code", "academicYear", "term", "startsAt", "endsAt", "isActive"] },
+    "postSemesters": { "exists": false },
+    "putSemestersId": { "exists": false },
+    "deleteSemestersId": { "exists": false },
+    "postSemestersIdActivate": { "exists": false },
+    "getSemestersIdDependencies": { "exists": false }
+  },
+  "settingsPageAudit": {
+    "path": "/admin/settings",
+    "file": "src/app/admin/settings/page.tsx",
+    "isPlaceholder": true,
+    "authComponent": "ProtectedShell",
+    "navPermission": "settings:manage",
+    "routePermission": "settings:manage",
+    "reusableComponents": ["ProtectedShell", "Dialog", "Button", "Input", "Label", "toast", "useHasPermission"]
+  },
+  "proposedApiDesign": [
+    { "method": "GET", "path": "/api/semesters", "status": "existing-enhance", "notes": "Add optional ?includeCounts=true for dependency counts" },
+    { "method": "POST", "path": "/api/semesters", "status": "new", "permission": "settings:manage", "notes": "Create semester with validation and optional isActive transaction" },
+    { "method": "PUT", "path": "/api/semesters/[id]", "status": "new", "permission": "settings:manage", "notes": "Edit semester fields with validation" },
+    { "method": "DELETE", "path": "/api/semesters/[id]", "status": "new", "permission": "settings:manage", "notes": "Delete empty semester with dependency protection" },
+    { "method": "POST", "path": "/api/semesters/[id]/activate", "status": "new", "permission": "settings:manage", "notes": "Set active semester in transaction" },
+    { "method": "GET", "path": "/api/semesters/[id]/dependencies", "status": "new", "permission": "data:read", "notes": "Dependency counts for UI display" }
+  ],
+  "proposedUiDesign": {
+    "page": "/admin/settings",
+    "structure": "Tab or section: 学期设置",
+    "tableColumns": ["学期名称", "学期代码", "起止日期", "是否当前", "教学任务数", "课表数", "调课记录", "导入批次", "操作"],
+    "dialogs": ["Create/Edit Semester", "Delete Confirmation", "Activate Confirmation"],
+    "currentSemesterCard": true
+  },
+  "deleteProtectionRules": [
+    "Block if any dependency count > 0 (ClassGroup, TeachingTask, ScheduleSlot, ScheduleAdjustment, SchedulingRun, SchedulingConfig, ImportBatch)",
+    "Block if semester is active (isActive = true)",
+    "Block if last remaining semester",
+    "Return dependency counts in error response for UI display"
+  ],
+  "activeSemesterRules": [
+    "At most 1 active semester at any time",
+    "Activate uses transaction: updateMany all false, then update target true",
+    "Create/edit with isActive=true uses same transaction pattern",
+    "Activate already-active is a no-op success",
+    "Activate non-existent returns 404"
+  ],
+  "permissionDesign": {
+    "viewSemesters": "data:read (existing, public)",
+    "createSemester": "settings:manage (admin-only)",
+    "editSemester": "settings:manage (admin-only)",
+    "deleteSemester": "settings:manage (admin-only, high-risk)",
+    "activateSemester": "settings:manage (admin-only, high-risk)",
+    "viewDependencies": "data:read",
+    "permissionDebt": "none — settings:manage already exists"
+  },
+  "outOfScope": [
+    "long-term system settings modules (排课参数, 节次作息, 教室规则, 调课规则, 导入规则, 备份, 审计日志)"
+  ],
+  "verification": {
+    "auditScript": "PASS=65 FAIL=0",
+    "k25eVerify": "PASS=64 FAIL=0",
+    "k25dVerify": "PASS=54 FAIL=0",
+    "k25cValidation": "37/37 PASS",
+    "prismaValidate": "PASS",
+    "migrateStatus": "up to date",
+    "build": "PASS",
+    "lint": "184 errors / 136 warnings (matches K25-E1 baseline)",
+    "authFoundation": "53 passed / 1 failed (pre-existing)"
+  },
+  "blocking": false,
+  "recommendedNextStage": "K25-H-SEMESTER-SETTINGS-API-IMPLEMENTATION"
+}
