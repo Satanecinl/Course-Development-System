@@ -1,0 +1,72 @@
+{
+  "stage": "K25-I-SEMESTER-SETTINGS-UI-IMPLEMENTATION",
+  "status": "IMPLEMENTATION_COMPLETE",
+  "gitHubSync": {
+    "branch": "master",
+    "remote": "origin",
+    "remoteUrl": "git@github.com:Satanecinl/Course-Development-System.git",
+    "trackingBranch": "origin/master",
+    "localHeadBefore": "84b6ab9",
+    "remoteHeadBefore": "84b6ab9",
+    "localHeadAfter": "(to be filled after commit)",
+    "remoteHeadAfter": "(to be filled after push)",
+    "aheadBehind": "up to date",
+    "pushed": false,
+    "forcePush": false
+  },
+  "uiImplemented": [
+    "Current semester card (name, code, academicYear, term, dates)",
+    "Semester list table (13 columns including dependency counts)",
+    "Create semester dialog (name, code, academicYear, term, dates, isActive)",
+    "Edit semester dialog (pre-filled, code disabled)",
+    "Activate semester confirmation dialog",
+    "Delete semester dialog with dependency protection display",
+    "Loading state (spinner)",
+    "Error state (message + retry button)",
+    "Empty state (create button)",
+    "Long-term settings modules deferred notice"
+  ],
+  "apiClientWiring": [
+    { "action": "loadSemesters", "api": "GET /api/semesters?includeCounts=true" },
+    { "action": "create", "api": "POST /api/semesters" },
+    { "action": "edit", "api": "PUT /api/semesters/[id]" },
+    { "action": "delete", "api": "DELETE /api/semesters/[id]" },
+    { "action": "activate", "api": "POST /api/semesters/[id]/activate" }
+  ],
+  "validation": [
+    "name required (frontend)",
+    "code required (frontend)",
+    "date range startsAt < endsAt (frontend)",
+    "backend errors displayed via toast.error",
+    "409 dependency details shown in delete dialog"
+  ],
+  "deleteProtectionUx": {
+    "canDeleteUsed": true,
+    "deleteBlockersDisplayed": true,
+    "dependencyCountsShown": true,
+    "buttonDisabledWhenBlocked": true,
+    "legacyDefaultShowsBlocked": true
+  },
+  "semesterSelectorIntegration": {
+    "refreshOnCreate": true,
+    "refreshOnEdit": true,
+    "refreshOnActivate": true,
+    "refreshOnDelete": true,
+    "localStorageFallbackHandled": true
+  },
+  "verification": {
+    "k25iVerify": "PASS=45 FAIL=0",
+    "k25hVerify": "PASS=70 FAIL=0",
+    "k25gAudit": "PASS=58 FAIL=0",
+    "k25eVerify": "PASS=63 FAIL=0",
+    "k25dVerify": "PASS=54 FAIL=0",
+    "k25cValidation": "37/37 PASS",
+    "prismaValidate": "PASS",
+    "migrateStatus": "up to date",
+    "build": "PASS",
+    "lint": "184 errors / 136 warnings (matches K25-H baseline)",
+    "authFoundation": "53 passed / 1 failed (pre-existing)"
+  },
+  "blocking": false,
+  "recommendedNextStage": "K25-J-SEMESTER-SETTINGS-E2E-MANUAL-TRIAL"
+}

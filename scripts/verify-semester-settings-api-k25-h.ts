@@ -249,10 +249,9 @@ function testNonGoals() {
   // No schema changes
   assert(fileExists('prisma/schema.prisma'), 'schema.prisma exists (not deleted)')
 
-  // No frontend settings UI
+  // Settings page — K25-H was API-only, K25-I implements UI
   if (fileExists('src/app/admin/settings/page.tsx')) {
-    const src = fileRead('src/app/admin/settings/page.tsx')
-    assert(/功能建设中/.test(src), 'settings page still placeholder')
+    console.log('  ℹ settings page exists (K25-I may have implemented UI)')
   }
 
   // No new migrations

@@ -132,7 +132,10 @@ function testFrontendAudit() {
   if (fileExists(settingsPage)) {
     const src = fileRead(settingsPage)
     assert(/系统设置/.test(src), 'page title is 系统设置')
-    assert(/功能建设中/.test(src), 'page is placeholder (功能建设中)')
+    // K25-G audit: at design time, page was placeholder. K25-I implements real UI.
+    const isPlaceholder = /功能建设中/.test(src)
+    const hasSemesterPanel = /SemesterSettingsPanel/.test(src)
+    assert(isPlaceholder || hasSemesterPanel, 'page is placeholder or has semester settings')
     assert(/ProtectedShell/.test(src), 'uses ProtectedShell for auth')
   }
 
