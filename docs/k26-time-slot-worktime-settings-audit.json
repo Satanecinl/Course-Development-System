@@ -1,0 +1,128 @@
+{
+  "stage": "K26-C-TIME-SLOT-WORKTIME-SETTINGS-AUDIT",
+  "status": "AUDIT_COMPLETE",
+  "gitHubSync": {
+    "branch": "master",
+    "remote": "origin",
+    "trackingBranch": "origin/master",
+    "localHeadBefore": "45f60cc",
+    "remoteHeadBefore": "45f60cc",
+    "localHeadAfter": "",
+    "remoteHeadAfter": "",
+    "aheadBehind": "up to date",
+    "pushed": false,
+    "forcePush": false
+  },
+  "currentTimeSlotModel": {
+    "slotIndexBase": "1-based",
+    "activeTeachingSlots": ["1-2节 (1)", "3-4节 (2)", "5-6节 (3)", "7-8节 (4)", "9-10节 (5)"],
+    "legacySlots": ["11-12节 (6) display-only", "中午 (7) display-only"],
+    "newRecommendationMaxSlot": 5,
+    "displayCompatibility": true,
+    "helper": "src/lib/schedule/time-slots.ts (K24-A4)",
+    "constants": "VALID_TEACHING_SLOT_INDEXES = [1, 2, 3, 4, 5]",
+    "dayOfWeek": {
+      "workingDays": [1, 2, 3, 4, 5],
+      "weekendDays": [6, 7],
+      "preferredDayValidation": "VALID_PREFERRED_DAY_VALUES = [1, 2, 3, 4, 5]"
+    },
+    "scoreThresholds": {
+      "SC3_extremeTime": "slotIndex >= 5 triggers -1 penalty",
+      "SC7_weekend": "dayOfWeek >= 6 triggers -15 penalty"
+    }
+  },
+  "dbSnapshot": {
+    "total": 440,
+    "bySlot": [
+      { "slotIndex": 1, "count": 111 },
+      { "slotIndex": 2, "count": 119 },
+      { "slotIndex": 3, "count": 88 },
+      { "slotIndex": 4, "count": 96 },
+      { "slotIndex": 5, "count": 24 },
+      { "slotIndex": 6, "count": 2 }
+    ],
+    "byDay": [
+      { "dayOfWeek": 1, "count": 95 },
+      { "dayOfWeek": 2, "count": 70 },
+      { "dayOfWeek": 3, "count": 82 },
+      { "dayOfWeek": 4, "count": 94 },
+      { "dayOfWeek": 5, "count": 78 },
+      { "dayOfWeek": 6, "count": 11 },
+      { "dayOfWeek": 7, "count": 10 }
+    ],
+    "legacySlotsGt5": 2,
+    "weekendSlotsGte6": 21,
+    "bySemester": [{ "semesterId": 1, "count": 440 }],
+    "distinctDays": [1, 2, 3, 4, 5, 6, 7],
+    "distinctSlots": [1, 2, 3, 4, 5, 6]
+  },
+  "sourceInventory": [
+    { "file": "src/lib/schedule/time-slots.ts", "assumption": "VALID_TEACHING_SLOT_INDEXES=[1..5]" },
+    { "file": "src/types/schedule.ts", "assumption": "SLOT_INDEX_MAP 包含 1-7 (display-only 6/7)" },
+    { "file": "src/components/schedule-grid.tsx", "assumption": "TIME_SLOTS 7 entries" },
+    { "file": "src/components/schedule-adjustment-dialog.tsx", "assumption": "DAYS, TIME_SLOTS + getTeachingSlotLabelOptions" },
+    { "file": "src/components/admin-db/schedule-slot-dialog.tsx", "assumption": "slotIndex number select" },
+    { "file": "src/lib/schedule/adjustment-plan-recommendations.ts", "assumption": "DEFAULT_DAYS_WORKING=[1..5], WEEKEND_DAYS=[6,7], getValidTeachingSlotIndexes" },
+    { "file": "src/lib/schedule/room-recommendations.ts", "assumption": "delegated to room helper, no slot filter" },
+    { "file": "src/lib/schedule/conflict-check.ts", "assumption": "读 row data, 无 range 假设" },
+    { "file": "src/lib/scheduler/score.ts", "assumption": "slotIndex>=5 (SC3), dayOfWeek>=6 (SC7) hardcoded" },
+    { "file": "src/lib/scheduler/solver.ts", "assumption": "读 row data, 无 range 过滤" },
+    { "file": "src/lib/import/importer.ts", "assumption": "slotIndex 来自 parser, 兼容历史" }
+  ],
+  "uiImpact": [
+    { "component": "schedule-grid.tsx", "needsConfig": true, "risk": "LOW (display only)" },
+    { "component": "schedule-adjustment-dialog.tsx", "needsConfig": true, "risk": "LOW (helper 切换)" },
+    { "component": "admin-db/schedule-slot-dialog.tsx", "needsConfig": true, "risk": "LOW" },
+    { "component": "admin-db/columns.ts", "needsConfig": true, "risk": "LOW" },
+    { "component": "dashboard/dashboard-content.tsx", "needsConfig": true, "risk": "LOW" },
+    { "component": "store/scheduleStore.ts", "needsConfig": true, "risk": "LOW" }
+  ],
+  "adjustmentConflictImpact": [
+    { "area": "adjustment-plan-recommendations", "risk": "MEDIUM", "note": "DEFAULT_DAYS_WORKING/WEEKEND_DAYS/VALID_PREFERRED_DAY 硬编码" },
+    { "area": "room-recommendations", "risk": "LOW", "note": "delegated, no range assumption" },
+    { "area": "conflict-check", "risk": "LOW", "note": "读 row data" },
+    { "area": "dry-run", "risk": "LOW", "note": "uses conflict-check" },
+    { "area": "teaching-task-mutation-guard", "risk": "LOW", "note": "读 row data" },
+    { "area": "schedule-adjustment client", "risk": "MEDIUM", "note": "preferred-day 过滤" }
+  ],
+  "schedulerScoreImpact": [
+    { "area": "SC3 extreme time", "severity": "HIGH", "note": "slotIndex>=5 硬编码" },
+    { "area": "SC7 weekend", "severity": "HIGH", "note": "dayOfWeek>=6 硬编码" },
+    { "area": "Solver candidate generation", "severity": "MEDIUM", "note": "无 range 过滤" },
+    { "area": "K22 score harness", "severity": "HIGH", "note": "expected 必变" },
+    { "area": "Class gap (SC8)", "severity": "LOW", "note": "仅依赖 slotIndex 距离" },
+    { "area": "Teacher day balance", "severity": "LOW" },
+    { "area": "SC9 room stability", "severity": "LOW" }
+  ],
+  "schemaOptions": [
+    {
+      "option": "A",
+      "name": "Constant Config File Only",
+      "description": "仅维护 label/start-end 常量；不支持运行时管理",
+      "pros": ["低风险", "无 migration"],
+      "cons": ["不满足系统设置 UI 真正可编辑"]
+    },
+    {
+      "option": "B",
+      "name": "System Config JSON Field",
+      "description": "单表 SystemSetting 存 JSON",
+      "pros": ["迁移小", "可快速进入 UI"],
+      "cons": ["类型安全弱", "版本管理复杂", "K22 score harness 需重大调整"]
+    },
+    {
+      "option": "C",
+      "name": "Independent WorkTime / TimeSlotConfig Tables",
+      "description": "WorkTimeConfig + TimeSlotDefinition + SemesterTimeSlotConfig + dayOfWeekRule",
+      "pros": ["per-semester", "启用/禁用节次", "起止时间", "午休", "周末", "历史兼容"],
+      "cons": ["migration 大", "solver 需过滤", "score 阈值需参数化", "K22 expected 必变"]
+    }
+  ],
+  "riskSummary": {
+    "high": 2,
+    "medium": 2,
+    "low": 2,
+    "info": 0
+  },
+  "blocking": true,
+  "recommendedNextStage": "K26-D-STATIC-TIME-SLOT-EXTRACTION"
+}
