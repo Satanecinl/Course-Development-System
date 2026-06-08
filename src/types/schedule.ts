@@ -25,6 +25,21 @@ export interface ScheduleViewData {
 
 export type ViewType = 'class' | 'teacher' | 'room'
 
+// K26-D: SLOT_INDEX_MAP / TIME_SLOTS / DAYS below remain the display-only
+// source for grid rendering, dashboard, conflict messages, and Excel
+// export. They include legacy entries (6 = 11-12节, 7 = 中午) for
+// historical ScheduleSlot row compatibility.
+//
+// For new operations (recommendation, selectable slot, preferred day,
+// room validation), use the K26-D unified helper at
+// '@/lib/schedule/time-slots' which exposes:
+//   - ACTIVE / LEGACY / DISPLAY slot constants
+//   - VALID_PREFERRED_DAY_VALUES / WEEKEND_DAY_VALUES
+//   - formatTeachingSlotLabel(slot) for safe display labels
+//   - getTeachingSlotOptions() for new-target dropdowns (active only)
+//   - getRecommendationSlotIndexes() for search spaces (active only)
+//
+// See docs/k26-static-time-slot-extraction.md for the full contract.
 export const SLOT_INDEX_MAP: Record<number, { label: string; start: number; end: number }> = {
   1: { label: '1-2节', start: 1, end: 2 },
   2: { label: '3-4节', start: 3, end: 4 },
