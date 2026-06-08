@@ -12,7 +12,7 @@
  *   8. Non-goals: no schema/migration/DB writes; no UI selector; no RBAC.
  *   9. K22/K23/K24 verify scripts untouched.
  */
-import { existsSync, readFileSync } from 'fs'
+import { existsSync, readFileSync, readdirSync } from 'fs'
 import { resolve } from 'path'
 
 const ROOT = resolve(__dirname, '..')
@@ -165,9 +165,8 @@ function testNonGoals() {
   // No new migration
   const migrationsDir = resolve(ROOT, 'prisma/migrations')
   if (existsSync(migrationsDir)) {
-    const { readdirSync } = require('fs') as typeof import('fs')
     const dirs = readdirSync(migrationsDir)
-    const k25d1 = dirs.filter((d: string) => d.includes('k25_d1') || d.includes('k25-d1') || d.includes('k25_d1_compat'))
+    const k25d1 = dirs.filter((d) => d.includes('k25_d1') || d.includes('k25-d1') || d.includes('k25_d1_compat'))
     assert(k25d1.length === 0, `no K25-D1 migration directory found (got ${k25d1.length})`)
   }
 

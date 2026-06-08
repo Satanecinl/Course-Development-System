@@ -1,0 +1,85 @@
+{
+  "stage": "K25-D1-SEMESTER-SCOPING-LINT-AND-COMPAT-CORRECTION",
+  "status": "CORRECTION_COMPLETE",
+  "date": "2026-06-08",
+  "k25dBaselineCommit": "c7b9da3",
+  "type": "Correction (no new features; lint fix + consumer compat)",
+  "lintCorrection": {
+    "k25cBaseline": "181/136",
+    "k25dBaseline": "184/136",
+    "k25d1Baseline": "184/136",
+    "newErrorsVsK25D": 0,
+    "newErrorsVsK25C": 3,
+    "newErrorsPreExisting": true,
+    "preExistingNotes": "The +3 vs K25-C errors are all 'Unexpected any' in pre-existing audit scripts (e.g., audit-k25-c-schema-implementation-scope.ts, audit-semester-query-scoping.ts). These are part of the pre-existing lint debt and are NOT introduced by K25-D1.",
+    "selfLintFixes": [
+      "verify-schedule-api-response-compat-k25-d1.ts: removed require('fs') usage, replaced with readdirSync top-level import"
+    ]
+  },
+  "scheduleApiCompatibility": {
+    "route": "/api/schedule",
+    "responseShape": "wrapped",
+    "wrappedShape": "{ items: ScheduleItem[], semesterId: number, semesterSource: 'query'|'header'|'body'|'activeFallback' }",
+    "sourceScanPaths": [
+      "src/store/scheduleStore.ts",
+      "src/app/dashboard/dashboard-content.tsx",
+      "src/components/schedule-grid.tsx",
+      "src/components/schedule-adjustment-dialog.tsx",
+      "src/app/admin/db/admin-db-content.tsx",
+      "src/lib/schedule/adjustment-client.ts"
+    ],
+    "consumersChecked": 6,
+    "rawArrayOnlyConsumers": 2,
+    "consumersFixed": [
+      {
+        "file": "src/store/scheduleStore.ts",
+        "location": "fetchSchedule: ~line 64-67",
+        "before": "const data = await res.json(); set({ scheduleItems: data })",
+        "after": "const data = await res.json(); const items = Array.isArray(data) ? data : data.items ?? []; set({ scheduleItems: items })",
+        "uiChange": "no",
+        "notes": "Defensive pattern: accepts both wrapped shape and raw array"
+      },
+      {
+        "file": "src/app/dashboard/dashboard-content.tsx",
+        "location": "fetchEffectiveSchedule: ~line 203-216",
+        "before": "const data = await res.json(); setEffectiveItems(data)",
+        "after": "const data = await res.json(); const items = Array.isArray(data) ? data : data.items ?? []; setEffectiveItems(items)",
+        "uiChange": "no",
+        "notes": "Defensive pattern: same as scheduleStore"
+      }
+    ],
+    "rawArrayOnlyConsumersRemaining": 0,
+    "compatible": true,
+    "compatApproach": "consumer-side defensive unwrap (Array.isArray ? data : data.items ?? [])"
+  },
+  "verification": {
+    "k25d1CompatVerify": "20/20 PASS",
+    "k25dMainVerify": "54/54 PASS (unchanged)",
+    "k25cValidate": "37/37 PASS (unchanged)",
+    "prismaValidate": "schema valid",
+    "prismaMigrateStatus": "Database schema is up to date",
+    "build": "PASS (31/31 routes)",
+    "lint": "184/136 (+0 vs K25-D baseline; +3 pre-existing any-errors in other audit scripts)",
+    "authFoundation": "53 passed / 1 pre-existing failure (NOT modified)"
+  },
+  "unmodifiedScope": {
+    "prismaSchema": "NOT modified",
+    "migrations": "NOT added (K25-C migration intact)",
+    "devDb": "NOT written",
+    "k25dApiScopingExpansion": "NOT done (K25-D scope closed)",
+    "k25eUiSelector": "NOT added (next stage)",
+    "frontendGlobalSelector": "NOT added",
+    "schedulerScoreSolver": "NOT modified",
+    "importerParser": "NOT modified",
+    "rbacPermissionModel": "NOT modified",
+    "courseTeacherRoomGlobalSemantics": "NOT modified",
+    "scheduleChangeLog": "NOT modified",
+    "k22k23k24VerifyExpected": "NOT modified",
+    "prismaMigrateReset": "NOT run",
+    "prismaDbPush": "NOT run",
+    "seed": "NOT run"
+  },
+  "blocking": false,
+  "recommendedNextStage": "K25-E-SEMESTER-SELECTOR-UX",
+  "recommendedNextStageRationale": "K25-C schema NOT NULL complete; K25-D API scoping fix done; K25-D1 compat verified. Next step is user-visible semester selector that uses X-Semester-Id / ?semesterId=, leveraging response.semesterSource to detect transitional fallback."
+}
