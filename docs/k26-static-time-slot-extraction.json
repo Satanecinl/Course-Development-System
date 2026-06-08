@@ -1,0 +1,187 @@
+{
+  "stage": "K26-D-STATIC-TIME-SLOT-EXTRACTION",
+  "status": "EXTRACTION_COMPLETE",
+  "gitHubSync": {
+    "branch": "k26-d-static-time-slot-extraction",
+    "remote": "origin",
+    "trackingBranch": "origin/master",
+    "localHeadBefore": "0e8c94a",
+    "localHeadAfter": "",
+    "aheadBehind": "up to date (no remote ahead)",
+    "pushed": false,
+    "forcePush": false
+  },
+  "parallelAgentInputs": {
+    "opencode": {
+      "branch": "k26-d-opencode-ui-adjustment-slot-scan",
+      "head": "0e8c94a",
+      "doc": "docs/k26-d-opencode-ui-adjustment-slot-source-scan.md",
+      "keyFindings": [
+        "K24-A4 统一 helper 已到位",
+        "plan-recommendations 已用 getValidTeachingSlotIndexes()",
+        "room-recommendations API 有 > 5 校验",
+        "preferredDayOfWeek 只接受 1-5",
+        "schedule-grid / dashboard / 调课弹窗 display-only",
+        "admin slot dialog 是 admin 特权 (保留 7 项)",
+        "高风险硬编码 0 处"
+      ],
+      "adopted": [
+        "在 types/schedule.ts 中加 K26-D 注释",
+        "把 formatTeachingSlotLabel 增强为支持 1-5 + 6 + 7 + unknown"
+      ],
+      "rejected": [
+        "adjustments.ts:48 收紧 > 6 → > 5 (会破坏 backward compat; opencode 自己说需评估影响)",
+        "admin schedule-slot dialog 收紧为 1-5 (opencode 明确建议保留 admin 特权)"
+      ]
+    },
+    "codex": {
+      "branch": "k26-d-codex-slot-verify-and-db-snapshot",
+      "head": "43aaf15",
+      "baseline": "0e8c94a",
+      "doc": "docs/k26-d-codex-slot-verify-notes.md",
+      "dbSnapshot": {
+        "total": 440,
+        "slotIndex6Count": 2,
+        "slotIndex7Count": 0,
+        "weekendCount": 21,
+        "semesterId": 1,
+        "fileSize": 3735552,
+        "mtimeUtc": "2026-06-08T07:53:30Z",
+        "unchanged": true
+      },
+      "verifyDesign": {
+        "groups": ["Helper 10", "Source 8", "DB 3", "Non-goal 6"],
+        "approach": "runtime equality + source read + sqlite3 mode=ro + git diff",
+        "adopted": true
+      },
+      "solverScoreStaticImpact": [
+        "solver.ts enumerates day=1..7, slot=1..6 (FROZEN)",
+        "score.ts SC3 slotIndex >= 5 (FROZEN)",
+        "score.ts SC7 dayOfWeek >= 6 (FROZEN)",
+        "K22 expected is non-goal (FROZEN)"
+      ],
+      "limitations": [
+        "git fetch --all --prune 因审批超时未执行 (CC 主线已确认本地 state + K26-C closeout 文档基线)"
+      ]
+    }
+  },
+  "helperContract": {
+    "module": "src/lib/schedule/time-slots.ts",
+    "constants": {
+      "VALID_TEACHING_SLOT_INDEXES": [1, 2, 3, 4, 5],
+      "LEGACY_DISPLAY_SLOT_INDEXES": [6, 7],
+      "ALL_DISPLAY_SLOT_INDEXES": [1, 2, 3, 4, 5, 6, 7],
+      "VALID_PREFERRED_DAY_VALUES": [1, 2, 3, 4, 5],
+      "WEEKEND_DAY_VALUES": [6, 7]
+    },
+    "functions": [
+      "getValidTeachingSlotIndexes",
+      "getLegacyDisplaySlotIndexes",
+      "getAllDisplaySlotIndexes",
+      "getRecommendationSlotIndexes",
+      "isValidTeachingSlotIndex",
+      "isLegacyDisplaySlotIndex",
+      "isActiveTeachingSlot",
+      "isRecommendationSlot",
+      "isLegacyDisplaySlot",
+      "getMaxValidTeachingSlotIndex",
+      "formatTeachingSlotLabel",
+      "getTeachingSlotOptions",
+      "getRecommendationSlotOptions",
+      "getTeachingSlotLabelOptions",
+      "isValidPreferredDayValue",
+      "isWeekendDayValue",
+      "isWeekday",
+      "isWeekend",
+      "getPreferredDayOptions",
+      "getWeekendDayOptions"
+    ]
+  },
+  "integrationChanges": {
+    "modified": [
+      "src/lib/schedule/time-slots.ts (扩展 helper)",
+      "src/types/schedule.ts (仅注释)"
+    ],
+    "added": [
+      "scripts/verify-static-time-slot-extraction-k26-d.ts",
+      "docs/k26-static-time-slot-extraction.md",
+      "docs/k26-static-time-slot-extraction.json"
+    ],
+    "cherryPickedFromCodexBranch": [
+      "docs/k26-d-codex-slot-verify-notes.md"
+    ],
+    "untrackedToCommitted": [
+      "docs/k26-d-opencode-ui-adjustment-slot-source-scan.md"
+    ]
+  },
+  "unmodifiedScope": [
+    "prisma/schema.prisma",
+    "prisma/migrations/**",
+    "prisma/dev.db",
+    "src/lib/scheduler/solver.ts",
+    "src/lib/scheduler/score.ts",
+    "src/lib/scheduler/score-breakdown.ts",
+    "src/lib/schedule/adjustment-plan-recommendations.ts",
+    "src/lib/schedule/room-recommendations.ts",
+    "src/lib/schedule/adjustments.ts",
+    "src/lib/schedule/conflict-check.ts",
+    "src/lib/schedule/conflict-rules.ts",
+    "src/components/**",
+    "src/app/**",
+    "src/lib/import/importer.ts",
+    "src/store/scheduleStore.ts",
+    "K22/K23/K24 expected files"
+  ],
+  "legacyCompatibility": {
+    "slotIndex6_11to12": {
+      "dbCount": 2,
+      "formatter": "11-12节",
+      "displayMap": "{ label: '11-12节', start: 11, end: 12 }",
+      "adminCanCreate": true,
+      "canBeAdjustedTo": true,
+      "canBeRecommendedAsNewTarget": false
+    },
+    "slotIndex7_zhongwu": {
+      "dbCount": 0,
+      "formatter": "中午",
+      "displayMap": "{ label: '中午', start: 12, end: 13 }",
+      "adminCanCreate": true,
+      "canBeAdjustedTo": true,
+      "canBeRecommendedAsNewTarget": false
+    },
+    "weekend_dayOfWeek67": {
+      "dbCount": 21,
+      "score7Penalty": -15,
+      "preferredDayAllowed": false,
+      "searchSpaceByDefault": false,
+      "explicitOptIn": "includeWeekend=true"
+    }
+  },
+  "nonGoals": [
+    "schema change",
+    "migration",
+    "DB data modification",
+    "API semantic change",
+    "solver algorithm change",
+    "score.ts change",
+    "scheduler preview/apply change",
+    "adjustment recommendation search space change",
+    "room recommendation change",
+    "UI functional change",
+    "RBAC change",
+    "importer/parser change",
+    "WorkTime settings UI",
+    "DB-configurable time slot",
+    "K22/K23/K24 expected change"
+  ],
+  "verification": {
+    "k26dVerify": "39/39 PASS",
+    "otherVerify": "to be run at closeout",
+    "prisma": "to be run at closeout",
+    "build": "to be run at closeout",
+    "lint": "to be run at closeout",
+    "authFoundation": "to be run at closeout"
+  },
+  "blocking": false,
+  "recommendedNextStage": "K26-E-WORKTIME-SCHEMA-PLAN"
+}
