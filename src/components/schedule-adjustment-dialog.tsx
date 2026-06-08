@@ -13,12 +13,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { DAYS, TIME_SLOTS } from '@/types/schedule'
-import { getTeachingSlotLabelOptions } from '@/lib/schedule/time-slots'
+import { getTeachingSlotLabelOptions, VALID_TEACHING_SLOT_INDEXES } from '@/lib/schedule/time-slots'
 import type { ScheduleViewData } from '@/types/schedule'
 import type { EntityOption } from '@/components/combobox'
 import type { ScheduleAdjustmentDryRunResult } from '@/types/schedule-adjustment'
 import { dryRunScheduleAdjustment, createScheduleAdjustment, fetchRoomRecommendations, fetchPlanRecommendations, type RoomRecommendationResult, type AdjustmentPlanRecommendationResult } from '@/lib/schedule/adjustment-client'
 import { useHasPermission } from '@/components/layout/current-user-context'
+import { resolveWorkTimeConfig } from '@/lib/settings/worktime-settings-client'
+import type { ResolvedWorkTimeConfig } from '@/types/worktime'
 
 interface ScheduleAdjustmentDialogProps {
   open: boolean
@@ -86,6 +88,9 @@ export function ScheduleAdjustmentDialog({
   // /api/schedule-adjustments/[id]/void remains the final security boundary.
   const canAdjust = useHasPermission('schedule:adjust')
 
+  // K26-I4: WorkTime state. Loaded from resolved endpoint; fallback to static.
+  const [workTime, setWorkTime] = useState<ResolvedWorkTimeConfig | null>(null)
+
   // Reset form when item changes
   useEffect(() => {
     if (item) {
@@ -112,6 +117,17 @@ export function ScheduleAdjustmentDialog({
       setPreferredPlanWeek(week)
     }
   }, [item, week])
+
+  // K26-I4: Load WorkTime config when dialog opens or item changes.
+  // Gracefully falls back to K26-D static defaults on API failure.
+  useEffect(() => {
+    if (!open) return
+    let cancelled = false
+    resolveWorkTimeConfig(undefined)
+      .then((resolved) => { if (!cancelled) setWorkTime(resolved) })
+      .catch(() => { if (!cancelled) setWorkTime(null) })
+    return () => { cancelled = true }
+  }, [open, item])
 
   if (!item) return null
 
@@ -384,7 +400,11 @@ export function ScheduleAdjustmentDialog({
                   }}
                   className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg bg-white"
                 >
-                  {DAYS.map((d) => (
+                  {/* K26-I4: filter days by WorkTime allowWeekend */}
+                  {DAYS.filter((d) => {
+                    if (d.value <= 5) return true
+                    return workTime?.config?.allowWeekend ?? false
+                  }).map((d) => (
                     <option key={d.value} value={d.value}>{d.label}</option>
                   ))}
                 </select>
@@ -429,6 +449,24 @@ export function ScheduleAdjustmentDialog({
                 placeholder="如：教师出差、教室维修等"
               />
             </div>
+
+            {/* K26-I4: WorkTime metadata / info strip */}
+            {workTime && (
+              <div className="rounded-lg p-2 text-xs text-gray-600 bg-gray-50 border border-gray-200 space-y-0.5" data-testid="k26-i4-worktime-info">
+                <p>
+                  作息配置：{workTime.source === 'database' ? '数据库' : '系统默认'}
+                  {workTime.config?.allowWeekend ? '（允许周末）' : '（仅工作日）'}
+                  ｜可选节次：{VALID_TEACHING_SLOT_INDEXES.map((i) => {
+                    const slot = workTime.config?.slots?.find((s: { slotIndex: number }) => s.slotIndex === i)
+                    return slot?.label ?? `${i}`
+                  }).join(' / ')}
+                </p>
+                <p className="text-gray-500">
+                  11-12节 / 中午仅用于历史显示，不可作为新调课目标。
+                  solver / score 尚未接入作息配置。
+                </p>
+              </div>
+            )}
 
             {/* K24-A1-UX: 高级选项开关（默认隐藏 K23-A 推荐教室 + 检查冲突） */}
             <div className="flex items-center gap-2">
