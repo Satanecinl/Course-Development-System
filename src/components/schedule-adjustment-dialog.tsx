@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { toast } from 'sonner'
 import {
   Dialog,
@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { DAYS, TIME_SLOTS } from '@/types/schedule'
-import { getTeachingSlotLabelOptions, VALID_TEACHING_SLOT_INDEXES } from '@/lib/schedule/time-slots'
+import { getTeachingSlotLabelOptions, formatTeachingSlotLabel, VALID_TEACHING_SLOT_INDEXES } from '@/lib/schedule/time-slots'
 import type { ScheduleViewData } from '@/types/schedule'
 import type { EntityOption } from '@/components/combobox'
 import type { ScheduleAdjustmentDryRunResult } from '@/types/schedule-adjustment'
@@ -88,8 +88,62 @@ export function ScheduleAdjustmentDialog({
   // /api/schedule-adjustments/[id]/void remains the final security boundary.
   const canAdjust = useHasPermission('schedule:adjust')
 
-  // K26-I4: WorkTime state. Loaded from resolved endpoint; fallback to static.
-  const [workTime, setWorkTime] = useState<ResolvedWorkTimeConfig | null>(null)
+  // K26-I4A: WorkTime state with static safe fallback (never null).
+  const [workTimeRaw, setWorkTimeRaw] = useState<ResolvedWorkTimeConfig | null>(null)
+  const [workTimeLoadError, setWorkTimeLoadError] = useState<string | null>(null)
+
+  // K26-I4A: Derived WorkTime with static safe fallback.
+  // When API fails or returns null, fallback matches K26-D static helper exactly.
+  const workTime = useMemo(() => {
+    if (workTimeRaw) return workTimeRaw
+    // Static safe fallback: slots 1-5 active teaching, slots 6/7 legacy, allowWeekend=false
+    return {
+      semesterId: 0,
+      source: 'staticFallback' as const,
+      config: {
+        id: 0,
+        semesterId: 0,
+        name: '安全默认',
+        isDefault: true,
+        allowWeekend: false,
+        lunchStart: '12:00',
+        lunchEnd: '13:00',
+        isActive: true,
+        version: 1,
+        effectiveFrom: null,
+        notes: 'K26-I4A static safe fallback',
+        createdAt: '',
+        updatedAt: '',
+        slots: VALID_TEACHING_SLOT_INDEXES.map((i) => ({
+          id: i,
+          workTimeConfigId: 0,
+          slotIndex: i,
+          label: formatTeachingSlotLabel(i),
+          startsAt: null,
+          endsAt: null,
+          isActive: true,
+          isTeachingSlot: true,
+          isLegacyDisplay: false,
+          sortOrder: i,
+        })),
+      },
+    } as ResolvedWorkTimeConfig
+  }, [workTimeRaw])
+
+  // K26-I4A: Derived allowed day options (shared by target day + preferredDay)
+  const allowedDayOptions = useMemo(() => {
+    return DAYS.filter((d) => d.value <= 5 || workTime.config?.allowWeekend)
+  }, [workTime.config?.allowWeekend])
+
+  // K26-I4A: Derived slot options from WorkTime active teaching slots.
+  // Not memoized — cheap computation on small array.
+  const slotOptions = workTime.config?.slots
+    ? workTime.config.slots
+        .filter((s: { isActive: boolean; isTeachingSlot: boolean; isLegacyDisplay: boolean }) =>
+          s.isActive && s.isTeachingSlot && !s.isLegacyDisplay)
+        .sort((a: { sortOrder: number }, b: { sortOrder: number }) => a.sortOrder - b.sortOrder)
+        .map((s: { slotIndex: number; label: string }) => ({ index: s.slotIndex, label: s.label }))
+    : getTeachingSlotLabelOptions()
 
   // Reset form when item changes
   useEffect(() => {
@@ -118,14 +172,24 @@ export function ScheduleAdjustmentDialog({
     }
   }, [item, week])
 
-  // K26-I4: Load WorkTime config when dialog opens or item changes.
-  // Gracefully falls back to K26-D static defaults on API failure.
+  // K26-I4A: Load WorkTime config when dialog opens or item changes.
+  // Falls back to K26-D static safe defaults on API failure (never null).
   useEffect(() => {
     if (!open) return
     let cancelled = false
     resolveWorkTimeConfig(undefined)
-      .then((resolved) => { if (!cancelled) setWorkTime(resolved) })
-      .catch(() => { if (!cancelled) setWorkTime(null) })
+      .then((resolved) => {
+        if (!cancelled) {
+          setWorkTimeRaw(resolved)
+          setWorkTimeLoadError(null)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setWorkTimeRaw(null)
+          setWorkTimeLoadError('作息配置加载失败，已使用安全默认作息：工作日 1-5 节次。')
+        }
+      })
     return () => { cancelled = true }
   }, [open, item])
 
@@ -400,11 +464,8 @@ export function ScheduleAdjustmentDialog({
                   }}
                   className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg bg-white"
                 >
-                  {/* K26-I4: filter days by WorkTime allowWeekend */}
-                  {DAYS.filter((d) => {
-                    if (d.value <= 5) return true
-                    return workTime?.config?.allowWeekend ?? false
-                  }).map((d) => (
+                  {/* K26-I4A: shared allowedDayOptions from WorkTime */}
+                  {allowedDayOptions.map((d) => (
                     <option key={d.value} value={d.value}>{d.label}</option>
                   ))}
                 </select>
@@ -420,8 +481,8 @@ export function ScheduleAdjustmentDialog({
                   }}
                   className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-lg bg-white"
                 >
-                  {/* K24-A4: only valid teaching slots 1-5 (1-2 .. 9-10节). 11-12节 hidden. */}
-                  {getTeachingSlotLabelOptions().map((t) => (
+                  {/* K26-I4A: slot options from WorkTime active teaching slots */}
+                  {slotOptions.map((t) => (
                     <option key={t.index} value={t.index}>{t.label}</option>
                   ))}
                 </select>
@@ -450,23 +511,21 @@ export function ScheduleAdjustmentDialog({
               />
             </div>
 
-            {/* K26-I4: WorkTime metadata / info strip */}
-            {workTime && (
-              <div className="rounded-lg p-2 text-xs text-gray-600 bg-gray-50 border border-gray-200 space-y-0.5" data-testid="k26-i4-worktime-info">
-                <p>
-                  作息配置：{workTime.source === 'database' ? '数据库' : '系统默认'}
-                  {workTime.config?.allowWeekend ? '（允许周末）' : '（仅工作日）'}
-                  ｜可选节次：{VALID_TEACHING_SLOT_INDEXES.map((i) => {
-                    const slot = workTime.config?.slots?.find((s: { slotIndex: number }) => s.slotIndex === i)
-                    return slot?.label ?? `${i}`
-                  }).join(' / ')}
-                </p>
-                <p className="text-gray-500">
-                  11-12节 / 中午仅用于历史显示，不可作为新调课目标。
-                  solver / score 尚未接入作息配置。
-                </p>
-              </div>
-            )}
+            {/* K26-I4A: WorkTime metadata / info strip — always shown (has static safe fallback) */}
+            <div className="rounded-lg p-2 text-xs text-gray-600 bg-gray-50 border border-gray-200 space-y-0.5" data-testid="k26-i4-worktime-info">
+              {workTimeLoadError && (
+                <p className="text-amber-700 font-medium">{workTimeLoadError}</p>
+              )}
+              <p>
+                作息配置：{workTime.source === 'database' ? '数据库' : '系统默认'}
+                {workTime.config?.allowWeekend ? '（允许周末）' : '（仅工作日）'}
+                ｜可选节次：{slotOptions.map((t) => t.label).join(' / ')}
+              </p>
+              <p className="text-gray-500">
+                11-12节 / 中午仅用于历史显示，不可作为新调课目标。
+                一键推荐 / 调课 / 推荐教室已接入作息配置；solver / score 尚未接入。
+              </p>
+            </div>
 
             {/* K24-A1-UX: 高级选项开关（默认隐藏 K23-A 推荐教室 + 检查冲突） */}
             <div className="flex items-center gap-2">
@@ -557,7 +616,7 @@ export function ScheduleAdjustmentDialog({
                 </select>
                 <span className="text-xs text-gray-500">（当前：第 {preferredPlanWeek} 周）</span>
               </div>
-              {/* K24-A5: explicit preferred-day selector. null = automatic. */}
+              {/* K24-A5 + K26-I4A: explicit preferred-day selector. null = automatic. */}
               <div className="flex items-center gap-2">
                 <Label className="text-xs whitespace-nowrap">优先星期</Label>
                 <select
@@ -571,11 +630,10 @@ export function ScheduleAdjustmentDialog({
                   aria-label="优先调课星期"
                 >
                   <option value="">自动匹配</option>
-                  <option value="1">周一</option>
-                  <option value="2">周二</option>
-                  <option value="3">周三</option>
-                  <option value="4">周四</option>
-                  <option value="5">周五</option>
+                  {/* K26-I4A: use same allowedDayOptions as target day */}
+                  {allowedDayOptions.map((d) => (
+                    <option key={d.value} value={d.value}>{d.label}</option>
+                  ))}
                 </select>
                 <span className="text-xs text-gray-500">
                   {preferredPlanDay == null

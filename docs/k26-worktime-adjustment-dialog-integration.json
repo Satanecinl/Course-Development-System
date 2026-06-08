@@ -71,5 +71,18 @@
     "authFoundation": "53 passed / 1 failed (pre-existing)"
   },
   "blocking": false,
-  "recommendedNextStage": "K26-I5-WORKTIME-ADJUSTMENT-DIALOG-MANUAL-TRIAL"
+  "recommendedNextStage": "K26-I5-WORKTIME-ADJUSTMENT-DIALOG-MANUAL-TRIAL",
+  "correctionAddendum": {
+    "stage": "K26-I4A-WORKTIME-ADJUSTMENT-DIALOG-CORRECTION",
+    "status": "CORRECTED",
+    "corrections": {
+      "slotOptionsFromWorkTimeActiveSlots": true,
+      "fallbackStaticSafe": true,
+      "preferredDayUsesAllowedDayOptions": true,
+      "lintBaselineReconciled": true
+    },
+    "blocking": false,
+    "k26i4CanClose": true,
+    "recommendedNextStage": "K26-I5-WORKTIME-ADJUSTMENT-DIALOG-MANUAL-TRIAL"
+  }
 }

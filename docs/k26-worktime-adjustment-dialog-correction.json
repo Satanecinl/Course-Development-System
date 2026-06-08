@@ -1,0 +1,58 @@
+{
+  "stage": "K26-I4A",
+  "name": "WORKTIME-ADJUSTMENT-DIALOG-CORRECTION",
+  "status": "CLOSED",
+  "date": "2026-06-08",
+  "summary": "Corrects K26-I4 dialog gaps: slot options from WorkTime active slots, static safe fallback, preferredDay uses allowedDayOptions.",
+  "corrections": {
+    "slotOptionsFromWorkTimeActiveSlots": true,
+    "fallbackStaticSafe": true,
+    "preferredDayUsesAllowedDayOptions": true,
+    "lintBaselineReconciled": true
+  },
+  "modifiedFiles": [
+    "src/components/schedule-adjustment-dialog.tsx",
+    "scripts/verify-worktime-adjustment-dialog-integration-k26-i4.ts",
+    "scripts/audit-worktime-recommendation-integration-k26-i.ts",
+    "scripts/verify-worktime-settings-ui-acceptance-closeout-k26-h.ts",
+    "docs/k26-worktime-adjustment-dialog-correction.md",
+    "docs/k26-worktime-adjustment-dialog-correction.json"
+  ],
+  "lintBaseline": {
+    "previousAcceptedBaseline": "185/146",
+    "k26i4IntroducedNewError": true,
+    "fixedByI4A": true,
+    "currentAcceptedBaseline": "185/146",
+    "blocking": false
+  },
+  "verification": {
+    "k26i4Verify": "49/49 PASS",
+    "k26i3Verify": "40/40 PASS",
+    "k26i2Verify": "45/45 PASS",
+    "k26i1Verify": "36/36 PASS",
+    "k26iAudit": "44/44 PASS",
+    "k26hCloseout": "52/52 PASS",
+    "h2aRuntime": "15/15 PASS",
+    "k26hUi": "43/43 PASS",
+    "k26gApi": "40/40 PASS",
+    "k26f1": "30/30 PASS",
+    "k26fValidation": "30/30 PASS",
+    "backfillDryRun": "0 missing",
+    "k26e": "34/34 PASS",
+    "k26d": "39/39 PASS",
+    "k26c": "32/32 PASS",
+    "k26a": "47/47 PASS",
+    "k26bCloseout": "38/38 PASS",
+    "k25Closeout": "38/38 PASS",
+    "k25cValidation": "PASS",
+    "k23a": "PASS",
+    "prismaValidate": "PASS",
+    "migrateStatus": "up to date",
+    "build": "PASS",
+    "lint": "185/146 (+0/+0)",
+    "authFoundation": "53 passed / 1 failed (pre-existing)"
+  },
+  "blocking": false,
+  "k26i4CanClose": true,
+  "recommendedNextStage": "K26-I5-WORKTIME-ADJUSTMENT-DIALOG-MANUAL-TRIAL"
+}

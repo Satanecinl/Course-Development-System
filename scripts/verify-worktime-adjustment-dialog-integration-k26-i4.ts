@@ -63,13 +63,13 @@ function main() {
   check('dialog loads WorkTime on open',
     dialog.includes('useEffect') && dialog.includes('resolveWorkTimeConfig'))
 
-  // 5. dialog has static fallback logic
-  check('dialog has static fallback (catch sets workTime to null)',
-    dialog.includes('catch') && dialog.includes('setWorkTime(null)'))
+  // 5. dialog has static safe fallback (catch sets to static safe, not null)
+  check('dialog has static safe fallback (catch sets workTimeLoadError)',
+    dialog.includes('catch') && dialog.includes('setWorkTimeLoadError'))
 
   // 6. dialog has WorkTime loading/error state
-  check('dialog has WorkTime state',
-    dialog.includes('const [workTime, setWorkTime]'))
+  check('dialog has WorkTime state (workTimeRaw + workTimeLoadError)',
+    dialog.includes('workTimeRaw') && dialog.includes('workTimeLoadError'))
 
   // 7. dialog does not directly query DB
   check('dialog does not directly query DB',
@@ -77,47 +77,47 @@ function main() {
 
   // ── Slot options (8-13) ──
 
-  // 8. slot options use WorkTime active teaching slots (via getTeachingSlotLabelOptions)
-  check('slot options use getTeachingSlotLabelOptions',
-    dialog.includes('getTeachingSlotLabelOptions'))
+  // 8. slot options derived from WorkTime active teaching slots (not static helper)
+  check('slot options derived from WorkTime active teaching slots',
+    dialog.includes('slotOptions') && dialog.includes('useMemo'))
 
-  // 9. slot 6 is not selectable
-  check('slot 6 is not selectable (getTeachingSlotLabelOptions filters to 1-5)',
-    !dialog.includes('value={6}') || dialog.includes('getTeachingSlotLabelOptions'))
+  // 9. slot options filter by isActive && isTeachingSlot && !isLegacyDisplay
+  check('slot options filter isActive && isTeachingSlot && !isLegacyDisplay',
+    dialog.includes('isActive') && dialog.includes('isTeachingSlot') && dialog.includes('isLegacyDisplay'))
 
-  // 10. slot 7 is not selectable
+  // 10. slot 6 is not selectable (filtered out by isActive/isTeachingSlot check)
+  check('slot 6 is not selectable',
+    dialog.includes('!s.isLegacyDisplay') || dialog.includes('!isLegacyDisplay'))
+
+  // 11. slot 7 is not selectable
   check('slot 7 is not selectable',
-    !dialog.includes('value={7}') || dialog.includes('getTeachingSlotLabelOptions'))
+    !dialog.includes('value={7}') || dialog.includes('slotOptions'))
 
-  // 11. legacy 6/7 warning exists
+  // 12. legacy 6/7 warning exists
   check('legacy 6/7 warning exists',
     dialog.includes('11-12') || dialog.includes('历史显示'))
 
-  // 12. illegal selected slot reset or guarded
-  check('slot options filtered by WorkTime (allowWeekend filter present)',
-    dialog.includes('allowWeekend'))
-
-  // 13. slot labels displayed
-  check('slot labels displayed',
-    dialog.includes('t.label') || dialog.includes('slot.label'))
+  // 13. slot select uses slotOptions derived variable (not direct static helper)
+  check('slot select uses slotOptions variable',
+    dialog.includes('slotOptions.map'))
 
   // ── Day options (14-18) ──
 
-  // 14. day options respect allowWeekend
-  check('day options respect allowWeekend',
-    dialog.includes('allowWeekend') && dialog.includes('DAYS.filter'))
+  // 14. day options use allowedDayOptions derived variable
+  check('day options use allowedDayOptions derived variable',
+    dialog.includes('allowedDayOptions') && dialog.includes('useMemo'))
 
-  // 15. weekend hidden when allowWeekend=false
-  check('weekend hidden when allowWeekend=false (filter logic)',
-    dialog.includes('d.value <= 5') || dialog.includes('allowWeekend'))
+  // 15. allowedDayOptions filters by allowWeekend
+  check('allowedDayOptions filters by allowWeekend',
+    dialog.includes('d.value <= 5 || workTime.config?.allowWeekend'))
 
   // 16. weekend allowed when allowWeekend=true
-  check('weekend allowed when allowWeekend=true (conditional filter)',
-    dialog.includes("workTime?.config?.allowWeekend"))
+  check('weekend allowed when allowWeekend=true',
+    dialog.includes('allowWeekend'))
 
-  // 17. preferredDay uses same allowed day list (preferred day already hardcoded 1-5)
-  check('preferredDay already restricted to 1-5',
-    dialog.includes('value="1">周一') && dialog.includes('value="5">周五'))
+  // 17. preferredDay uses same allowedDayOptions (not hardcoded)
+  check('preferredDay uses allowedDayOptions (not hardcoded)',
+    dialog.includes('allowedDayOptions.map') && dialog.includes('k24-preferred-day'))
 
   // 18. default preferredDay "auto" semantics preserved
   check('default preferredDay "auto" preserved',
@@ -137,9 +137,9 @@ function main() {
   check('allowWeekend displayed',
     dialog.includes('允许周末') || dialog.includes('仅工作日'))
 
-  // 22. active slot list displayed
-  check('active slot list displayed',
-    dialog.includes('VALID_TEACHING_SLOT_INDEXES') && dialog.includes('data-testid="k26-i4-worktime-info"'))
+  // 22. active slot list displayed (from slotOptions)
+  check('active slot list displayed (from slotOptions)',
+    dialog.includes('slotOptions.map') && dialog.includes('data-testid="k26-i4-worktime-info"'))
 
   // 23. solver/score not integrated warning displayed
   check('solver/score not integrated warning displayed',

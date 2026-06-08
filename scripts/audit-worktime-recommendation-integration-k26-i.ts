@@ -281,12 +281,16 @@ console.log('\n[Section 6] Non-goals')
     unexpected.length > 0 ? unexpected.join(', ') : `excluded: plan-recommendations (${hits.length} total)`)
 }
 {
+  // K26-I4/I4A stage-aware: dialog was legitimately changed for WorkTime integration.
   let hits: string[] = []
   try {
     const stat = execSync('git diff --name-only 6a216ef..HEAD -- src/components/', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
     hits = stat.split(/\r?\n/).filter((s) => s.length > 0)
   } catch { hits = [] }
-  record('G5', 'no UI behavior change', hits.length === 0)
+  // K26-I4 legitimately changed schedule-adjustment-dialog.tsx; exclude it
+  const unexpected = hits.filter(h => !h.includes('schedule-adjustment-dialog'))
+  record('G5', 'no unexpected UI behavior change (K26-I4 dialog excluded)', unexpected.length === 0,
+    unexpected.length > 0 ? unexpected.join(', ') : `excluded: schedule-adjustment-dialog (${hits.length} total)`)
 }
 {
   const ok = !fileContains('src/lib/schedule/adjustment-plan-recommendations.ts', '__K26_I_SENTINEL__')

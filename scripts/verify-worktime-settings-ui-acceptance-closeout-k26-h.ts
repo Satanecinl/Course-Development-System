@@ -202,12 +202,15 @@ console.log('\n[Section 4] Scope / non-goals')
     unexpected.length > 0 ? unexpected.join(', ') : `excluded: plan-recommendations (${hits.length} total)`)
 }
 {
+  // K26-I4/I4A stage-aware: dialog was legitimately changed for WorkTime integration.
   let hits: string[] = []
   try {
     const stat = execSync('git diff --name-only f39116b..HEAD -- src/components/', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
     hits = stat.split(/\r?\n/).filter((s) => s.length > 0)
   } catch { hits = [] }
-  record('N5', 'no UI feature change', hits.length === 0)
+  const unexpected = hits.filter(h => !h.includes('schedule-adjustment-dialog'))
+  record('N5', 'no unexpected UI feature change (K26-I4 dialog excluded)', unexpected.length === 0,
+    unexpected.length > 0 ? unexpected.join(', ') : `excluded: schedule-adjustment-dialog (${hits.length} total)`)
 }
 {
   const ok = !fileContains(f('src/lib/scheduler/solver.ts'), '__K26_H_CLOSEOUT__')
