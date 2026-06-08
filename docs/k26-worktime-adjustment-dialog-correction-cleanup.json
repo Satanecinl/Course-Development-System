@@ -1,0 +1,65 @@
+{
+  "stage": "K26-I4B",
+  "name": "WORKTIME-ADJUSTMENT-DIALOG-CORRECTION-CLEANUP",
+  "status": "CLOSED",
+  "date": "2026-06-08",
+  "summary": "Cleanup: lint baseline fixed (require→import), K26-H closeout verify justified, K26-I4 markdown addendum completed.",
+  "blockingIssuesResolved": {
+    "lintBaseline": {
+      "previousAccepted": "184/146",
+      "k26i4Introduced": "185/146 (require('fs') in verify script)",
+      "fixedByI4B": true,
+      "finalBaseline": "184/146"
+    },
+    "verifyScope": {
+      "k26hCloseoutN5": "KEPT — necessary (K26-I4 legitimately changed dialog)",
+      "justification": "Check still catches non-dialog UI changes",
+      "noWeakening": true
+    },
+    "markdownAddendum": {
+      "k26i4Md": true,
+      "k26i4Json": true
+    }
+  },
+  "modifiedFiles": [
+    "scripts/verify-worktime-adjustment-dialog-integration-k26-i4.ts",
+    "docs/k26-worktime-adjustment-dialog-integration.md",
+    "docs/k26-worktime-adjustment-dialog-integration.json",
+    "docs/k26-worktime-adjustment-dialog-correction.md",
+    "docs/k26-worktime-adjustment-dialog-correction.json",
+    "docs/k26-worktime-adjustment-dialog-correction-cleanup.md",
+    "docs/k26-worktime-adjustment-dialog-correction-cleanup.json"
+  ],
+  "verification": {
+    "k26i4Verify": "49/49 PASS",
+    "k26i3Verify": "40/40 PASS",
+    "k26i2Verify": "45/45 PASS",
+    "k26i1Verify": "36/36 PASS",
+    "k26iAudit": "44/44 PASS",
+    "k26hCloseout": "52/52 PASS",
+    "h2aRuntime": "15/15 PASS",
+    "k26hUi": "43/43 PASS",
+    "k26gApi": "40/40 PASS",
+    "k26f1": "30/30 PASS",
+    "k26fValidation": "30/30 PASS",
+    "backfillDryRun": "0 missing",
+    "k26e": "34/34 PASS",
+    "k26d": "39/39 PASS",
+    "k26c": "32/32 PASS",
+    "k26a": "47/47 PASS",
+    "k26bCloseout": "38/38 PASS",
+    "k25Closeout": "38/38 PASS",
+    "k25cValidation": "PASS",
+    "k23a": "PASS",
+    "prismaValidate": "PASS",
+    "migrateStatus": "up to date",
+    "build": "PASS",
+    "lint": "184/146 (+0/+0)",
+    "authFoundation": "53 passed / 1 failed (pre-existing)"
+  },
+  "blocking": false,
+  "k26i4bCanClose": true,
+  "k26i4aCanClose": true,
+  "k26i4CanClose": true,
+  "recommendedNextStage": "K26-I5-WORKTIME-ADJUSTMENT-DIALOG-MANUAL-TRIAL"
+}

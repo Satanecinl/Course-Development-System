@@ -116,3 +116,32 @@ Manual frontend validation recommended before closeout to verify:
 - Day dropdown filters correctly
 - WorkTime metadata displays correctly
 - Error messages appear correctly from backend
+
+---
+
+## Correction Addendum — K26-I4A / K26-I4B
+
+### K26-I4A Corrections
+
+| Item | Before (K26-I4) | After (K26-I4A) |
+|------|-----------------|-----------------|
+| Slot options | `getTeachingSlotLabelOptions()` (static) | `workTime.config.slots.filter(isActive && isTeachingSlot && !isLegacyDisplay)` |
+| API failure fallback | `setWorkTime(null)` → all 7 days | Static safe fallback (slots 1-5, allowWeekend=false) |
+| preferredDay | Hardcoded 1-5 options | `allowedDayOptions.map()` (shared with target day) |
+| Metadata display | Conditional `{workTime && ...}` | Always shown (has static fallback) |
+
+### K26-I4B Cleanup
+
+| Item | Result |
+|------|--------|
+| Lint baseline | 184/146 (K26-I3) → 185/146 (K26-I4 introduced require() in verify script) → 184/146 (I4B fixed require → import) |
+| +1 error source | `scripts/verify-worktime-adjustment-dialog-integration-k26-i4.ts` line 219: `require('fs')` |
+| Fixed by I4B | Yes — converted to ESM import |
+| K26-H closeout N5 modification | Necessary and justified (K26-I4 legitimately changed dialog) |
+| Final accepted baseline | **184 errors / 146 warnings** |
+
+### Final Status
+
+- `k26i4aCanClose = true`
+- `k26i4CanClose = true`
+- `recommendedNextStage = K26-I5-WORKTIME-ADJUSTMENT-DIALOG-MANUAL-TRIAL`

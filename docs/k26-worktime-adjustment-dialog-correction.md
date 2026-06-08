@@ -118,3 +118,15 @@ const workTime = useMemo(() => {
 - **K26-I4**: Now CLOSABLE (all 4 blocking issues resolved)
 - **Next stage**: `K26-I5-WORKTIME-ADJUSTMENT-DIALOG-MANUAL-TRIAL` (manual frontend validation)
 - **Solver/score**: Still prohibited until K26-J
+
+---
+
+## Cleanup Addendum — K26-I4B
+
+| Item | Result |
+|------|--------|
+| Lint baseline | 184/146 restored (require→import fix in I4 verify script) |
+| +1 error source | `scripts/verify-worktime-adjustment-dialog-integration-k26-i4.ts` line 219: `require('fs')` |
+| K26-H closeout N5 | Necessary and justified — kept |
+| K26-I4 `.md` addendum | Completed |
+| Final status | K26-I4A CLOSABLE, K26-I4 CLOSABLE |

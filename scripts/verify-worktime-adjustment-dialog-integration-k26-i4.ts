@@ -13,7 +13,7 @@
  *  - Non-goals (39-49)
  */
 
-import { readFileSync, existsSync } from 'fs'
+import { readFileSync, existsSync, readdirSync } from 'fs'
 import { join } from 'path'
 
 const projectRoot = join(__dirname, '..')
@@ -216,7 +216,6 @@ function main() {
     !fileContent('prisma/schema.prisma').includes('K26-I4'))
 
   // 40. no migration added
-  const { readdirSync } = require('fs')
   const migrationDir = join(projectRoot, 'prisma/migrations')
   const migrations = existsSync(migrationDir) ? readdirSync(migrationDir) : []
   check('no migration added', !migrations.some((m: string) => m.includes('k26_i4')))
