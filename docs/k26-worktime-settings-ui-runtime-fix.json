@@ -62,5 +62,9 @@
     "source": "user-provided browser validation",
     "note": "用户重启 dev server 后人工验证通过",
     "manualValidationRequired": false
+  },
+  "acceptanceCloseout": {
+    "stage": "K26-H-WORKTIME-SETTINGS-UI-ACCEPTANCE-CLOSEOUT",
+    "status": "CLOSED"
   }
 }

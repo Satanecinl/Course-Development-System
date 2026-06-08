@@ -89,3 +89,10 @@ npm run dev
 | config list 正常 | ✅ |
 | slot table 正常 | ✅ |
 | `manualValidationRequired` | **false** |
+
+---
+
+## Acceptance Closeout
+
+Acceptance closeout: K26-H-WORKTIME-SETTINGS-UI-ACCEPTANCE-CLOSEOUT
+Status: CLOSED

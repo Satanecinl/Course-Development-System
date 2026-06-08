@@ -1,0 +1,126 @@
+{
+  "stage": "K26-H-WORKTIME-SETTINGS-UI-ACCEPTANCE-CLOSEOUT",
+  "status": "CLOSED",
+  "featureStatus": "READY_FOR_REAL_USE",
+  "manualFrontendValidation": {
+    "status": "PASSED",
+    "source": "user-provided browser validation",
+    "note": "用户重启 dev server 后人工验证通过",
+    "manualValidationRequired": false,
+    "checks": [
+      "no more findMany error",
+      "WorkTime settings UI accessible",
+      "resolved card normal",
+      "config list normal",
+      "slot table normal",
+      "semester settings and scheduler config settings still switch"
+    ]
+  },
+  "runtimeIssue": {
+    "status": "RESOLVED",
+    "issue": "Cannot read properties of undefined (reading 'findMany')",
+    "rootCause": "stale Prisma Client singleton in dev server after schema migration",
+    "fix": "restart dev server (no code change)",
+    "runtimeDelegateVerify": "15/15 PASS"
+  },
+  "closedStages": [
+    {
+      "stage": "K26-H-WORKTIME-SETTINGS-UI",
+      "status": "CLOSED",
+      "notes": "WorkTime Settings UI implemented"
+    },
+    {
+      "stage": "K26-H2A-WORKTIME-SETTINGS-UI-PRISMA-DELEGATE-RUNTIME-FIX",
+      "status": "CLOSED",
+      "notes": "stale Prisma Client runtime issue resolved"
+    },
+    {
+      "stage": "K26-H1A-WORKTIME-SETTINGS-UI-VERIFICATION-COMPLETE",
+      "status": "CLOSED",
+      "notes": "verification completed and manual validation recorded"
+    }
+  ],
+  "closedScope": [
+    "settings module ready (time-slot-worktime status: ready)",
+    "WorkTimeSettingsPanel",
+    "resolved config card (database / staticFallback)",
+    "config list",
+    "slot table (7 slots with legacy 6/7 amber highlight)",
+    "create / edit (WorkTimeConfigFormDialog with slot editor)",
+    "delete (WorkTimeConfigDeleteDialog with protection error display)",
+    "activate / set default",
+    "loading / error / empty states",
+    "staticFallback warning",
+    "legacy 6/7 warning",
+    "no solver/score warning",
+    "semester integration (useSemesterStore)",
+    "API client (worktime-settings-client.ts)",
+    "validation display (frontend + backend errors)",
+    "delete protection error display"
+  ],
+  "verificationBaseline": {
+    "h2aRuntimeDelegateVerify": "15/15 PASS",
+    "k26hUiVerify": "43/43 PASS",
+    "k26gApiVerify": "40/40 PASS",
+    "k26f1PostSchemaRegression": "30/30 PASS",
+    "k26fValidation": "30/30 PASS",
+    "backfillDryRun": "PASS (0 missing)",
+    "k26ePlan": "34/34 PASS",
+    "k26dVerify": "39/39 PASS",
+    "k26cAudit": "32/32 PASS",
+    "k26aShell": "47/47 PASS",
+    "k26bCloseout": "38/38 PASS",
+    "k25Closeout": "38/38 PASS",
+    "k25cValidation": "PASS",
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "UP_TO_DATE (8 migrations)",
+    "build": "PASS",
+    "lint": {
+      "errors": 184,
+      "warnings": 136,
+      "deltaVsBaseline": "+0/+0"
+    },
+    "authFoundation": {
+      "passed": 53,
+      "failed": 1,
+      "preExistingFailure": "ScheduleAdjustment ACTIVE count mismatch"
+    }
+  },
+  "knownLimitations": [
+    "WorkTime settings UI only manages config (not solver/score/recommendation)",
+    "Not integrated with adjustment recommendation (K26-I)",
+    "Not integrated with room recommendation",
+    "Not integrated with solver candidate generation (K26-J)",
+    "Not integrated with score / SC3 / SC7 (K26-J)",
+    "SchedulingRun workTimeConfigSnapshot not yet populated (K26-J)",
+    "slotIndex 6/7 cannot be active teaching slots",
+    "used-by-run delete protection needs real snapshot data for full validation",
+    "lint historical debt 184/136",
+    "auth foundation pre-existing ScheduleAdjustment ACTIVE mismatch"
+  ],
+  "nonGoals": [
+    "schema change",
+    "migration",
+    "DB write",
+    "API semantic change",
+    "UI feature change",
+    "solver",
+    "score",
+    "scheduler preview/apply",
+    "adjustment recommendation",
+    "room recommendation",
+    "importer/parser",
+    "RBAC",
+    "K22/K23/K24/K25 expected change"
+  ],
+  "postCloseoutDecisionRules": [
+    { "scenario": "WorkTime settings UI small bug", "stage": "K26-H-UI-POLISH" },
+    { "scenario": "WorkTime API bug", "stage": "K26-G-API-FIX" },
+    { "scenario": "runtime Prisma delegate reappears", "stage": "K26-H2-RUNTIME-FIX" },
+    { "scenario": "recommendation integration", "stage": "K26-I-WORKTIME-RECOMMENDATION-INTEGRATION-AUDIT" },
+    { "scenario": "solver / score integration", "stage": "K26-J-WORKTIME-SOLVER-SCORE-INTEGRATION-AUDIT" }
+  ],
+  "blocking": false,
+  "recommendedDefaultAction": "Use settings UI for configuration management only.",
+  "recommendedNextStage": "K26-I-WORKTIME-RECOMMENDATION-INTEGRATION-AUDIT"
+}

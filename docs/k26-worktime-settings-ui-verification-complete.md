@@ -118,3 +118,10 @@ blocking=false
 recommendedNextStage=K26-H-WORKTIME-SETTINGS-UI-ACCEPTANCE-CLOSEOUT
 仍禁止接 solver/score/recommendation
 ```
+
+---
+
+## Acceptance Closeout
+
+Acceptance closeout: K26-H-WORKTIME-SETTINGS-UI-ACCEPTANCE-CLOSEOUT
+Status: CLOSED

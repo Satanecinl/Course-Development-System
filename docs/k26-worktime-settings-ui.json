@@ -161,5 +161,9 @@
     "k26h1aCanClose": true,
     "k26hCanClose": true,
     "recommendedNextStage": "K26-H-WORKTIME-SETTINGS-UI-ACCEPTANCE-CLOSEOUT"
+  },
+  "acceptanceCloseout": {
+    "stage": "K26-H-WORKTIME-SETTINGS-UI-ACCEPTANCE-CLOSEOUT",
+    "status": "CLOSED"
   }
 }
