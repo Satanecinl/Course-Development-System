@@ -1,0 +1,111 @@
+{
+  "stage": "K26-J-WORKTIME-SOLVER-SCORE-INTEGRATION-AUDIT",
+  "status": "CLOSED",
+  "date": "2026-06-08",
+  "summary": "Audit-only: WorkTime solver/score integration impact analysis, risk classification, contract design, stage planning.",
+  "auditOnly": true,
+  "noCodeChanges": true,
+  "findings": {
+    "solverCandidateGeneration": {
+      "status": "HARDCODED",
+      "dayRange": "1-7 (includes weekend)",
+      "slotRange": "1-6 (includes slot 6)",
+      "workTimeAware": false,
+      "risk": "HIGH"
+    },
+    "scoreSC3": {
+      "status": "HARDCODED",
+      "threshold": "slotIndex >= 5",
+      "workTimeAware": false,
+      "risk": "MEDIUM"
+    },
+    "scoreSC7": {
+      "status": "HARDCODED",
+      "threshold": "day >= 6",
+      "workTimeAware": false,
+      "risk": "MEDIUM"
+    },
+    "snapshotWrite": {
+      "schemaFieldExists": true,
+      "currentlyWritten": false,
+      "risk": "MEDIUM"
+    },
+    "k22Harness": {
+      "workTimeFixtures": false,
+      "risk": "HIGH"
+    },
+    "k21Config": {
+      "workTimeIntegrated": false,
+      "risk": "MEDIUM"
+    }
+  },
+  "risks": [
+    { "id": 1, "level": "HIGH", "description": "solver candidate generation may change all scheduling results" },
+    { "id": 2, "level": "HIGH", "description": "score full/delta must be consistent or LAHC accepts wrong moves" },
+    { "id": 3, "level": "MEDIUM", "description": "WorkTime settings change affects old SchedulingRun reproducibility" },
+    { "id": 4, "level": "MEDIUM", "description": "allowWeekend=true changes SC7/weekend penalty semantics" },
+    { "id": 5, "level": "MEDIUM", "description": "slot 6/7 historical display vs new generation boundary" },
+    { "id": 6, "level": "HIGH", "description": "K22 harness expected large-scale drift" },
+    { "id": 7, "level": "MEDIUM", "description": "K21 config UI and WorkTime snapshot relationship" },
+    { "id": 8, "level": "LOW", "description": "fallback inconsistency between recommendation and solver" },
+    { "id": 9, "level": "LOW", "description": "apply re-resolving WorkTime causes preview/apply inconsistency" },
+    { "id": 10, "level": "INFO", "description": "real usage trial risk" }
+  ],
+  "contracts": {
+    "ResolvedWorkTimeForSolver": "designed",
+    "WorkTimeForScore": "designed",
+    "snapshotContract": "designed",
+    "fallbackPolicy": "fail-fast in preview, no fallback in apply",
+    "previewApplyPolicy": "preview resolves+serializes, apply/rollback reads from snapshot"
+  },
+  "recommendedStages": [
+    { "stage": "K26-J1", "scope": "Harness plan: synthetic WorkTime fixtures, verify current static behavior" },
+    { "stage": "K26-J2", "scope": "Snapshot write: preview resolve WorkTime, write workTimeConfigSnapshot" },
+    { "stage": "K26-J3", "scope": "Candidate generation: allowed days/slots from snapshot, slot 6/7 excluded" },
+    { "stage": "K26-J4", "scope": "Score SC3/SC7: harness first, full/delta consistency, score update" },
+    { "stage": "K26-J5", "scope": "Manual real scheduling trial" }
+  ],
+  "verification": {
+    "k26jAudit": "48/48 PASS",
+    "k26iCloseout": "64/64 PASS",
+    "k26i4Verify": "49/49 PASS",
+    "k26i3Verify": "40/40 PASS",
+    "k26i2Verify": "45/45 PASS",
+    "k26i1Verify": "36/36 PASS",
+    "k26iAudit": "44/44 PASS",
+    "k26hCloseout": "52/52 PASS",
+    "h2aRuntime": "15/15 PASS",
+    "k26hUi": "43/43 PASS",
+    "k26gApi": "40/40 PASS",
+    "k26f1": "30/30 PASS",
+    "k26fValidation": "30/30 PASS",
+    "backfillDryRun": "0 missing",
+    "k26e": "34/34 PASS",
+    "k26d": "39/39 PASS",
+    "k26c": "32/32 PASS",
+    "k26a": "47/47 PASS",
+    "k26bCloseout": "38/38 PASS",
+    "k25Closeout": "38/38 PASS",
+    "k25cValidation": "PASS",
+    "k23a": "PASS",
+    "k22cHarness": "PASS",
+    "prismaValidate": "PASS",
+    "migrateStatus": "up to date",
+    "build": "PASS",
+    "lint": "184/146",
+    "authFoundation": "53 passed / 1 failed (pre-existing)"
+  },
+  "nonGoals": [
+    "schema change",
+    "migration",
+    "DB write",
+    "solver behavior change",
+    "score change",
+    "scheduler API behavior change",
+    "K22 expected change",
+    "WorkTime recommendation behavior change",
+    "UI change"
+  ],
+  "blocking": false,
+  "recommendedNextStage": "K26-J1-WORKTIME-SOLVER-SCORE-HARNESS-PLAN"
+}
