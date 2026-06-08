@@ -101,5 +101,31 @@
     "K22/K23/K24/K25 expected changes"
   ],
   "blocking": false,
-  "recommendedNextStage": "K26-G-WORKTIME-API-IMPLEMENTATION"
+  "recommendedNextStage": "K26-G-WORKTIME-API-IMPLEMENTATION",
+  "verificationAlignmentAddendum": {
+    "stage": "K26-F1-WORKTIME-SCHEMA-VERIFICATION-ALIGNMENT",
+    "status": "VERIFICATION_ALIGNED",
+    "previousFailures": [
+      "scripts/plan-worktime-schema-k26-e.ts (C1, C2, N1, N2)",
+      "scripts/verify-static-time-slot-extraction-k26-d.ts (N1, N2)"
+    ],
+    "failureRootCause": "K26-E/D assume no schema/migration changes; K26-F intentionally adds WorkTimeConfig/TimeSlotDefinition + migration",
+    "alignmentStrategy": "A+B (updated old scripts to stage-aware + added post-schema regression verify)",
+    "postSchemaRegression": {
+      "ran": true,
+      "script": "scripts/verify-worktime-post-schema-regression-k26-f1.ts",
+      "status": "30/30 PASS"
+    },
+    "k26ePlanVerify": {
+      "ran": true,
+      "status": "34/34 PASS (after alignment)"
+    },
+    "k26dVerify": {
+      "ran": true,
+      "status": "39/39 PASS (after alignment)"
+    },
+    "blocking": false,
+    "k26fCanClose": true,
+    "recommendedNextStage": "K26-G-WORKTIME-API-IMPLEMENTATION"
+  }
 }

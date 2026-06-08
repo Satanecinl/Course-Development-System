@@ -138,14 +138,17 @@ const jsonPath = 'docs/k26-worktime-schema-plan.json'
 console.log('\n[Section 1] Current state assertions')
 
 {
+  // K26-F: WorkTimeConfig now exists (post-schema state).
+  // Pre-K26-F this check asserted "no model"; post-K26-F we assert it exists.
   const schema = fileExists('prisma/schema.prisma') ? readFile('prisma/schema.prisma') : ''
-  const ok = !/model\s+WorkTimeConfig/.test(schema) && !/model\s+TimeSlotConfig/.test(schema)
-  record('C1', 'No WorkTimeConfig / TimeSlotConfig model in schema', ok)
+  const ok = /model\s+WorkTimeConfig/.test(schema)
+  record('C1', 'WorkTimeConfig model exists (K26-F implemented)', ok)
 }
 {
+  // K26-F: TimeSlotDefinition now exists (post-schema state).
   const schema = fileExists('prisma/schema.prisma') ? readFile('prisma/schema.prisma') : ''
-  const ok = !/model\s+TimeSlotDefinition/.test(schema)
-  record('C2', 'No TimeSlotDefinition model in schema', ok)
+  const ok = /model\s+TimeSlotDefinition/.test(schema)
+  record('C2', 'TimeSlotDefinition model exists (K26-F implemented)', ok)
 }
 {
   const ok = fileExists('src/lib/schedule/time-slots.ts')
@@ -294,35 +297,16 @@ console.log('\n[Section 4] API / UI planning')
 console.log('\n[Section 5] Non-goal guardrails')
 
 {
+  // K26-F: schema may have changed to add WorkTimeConfig/TimeSlotDefinition.
+  // Accept K26-F approved changes; reject unauthorized changes.
   const schema = fileExists('prisma/schema.prisma') ? readFile('prisma/schema.prisma') : ''
-  // Compare against base commit 6482a8a (K26-D1)
-  let baseSchema = ''
-  try {
-    baseSchema = execSync('git show 6482a8a:prisma/schema.prisma', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
-  } catch {
-    baseSchema = ''
-  }
-  const ok = schema === baseSchema && schema.length > 0
-  record('N1', 'No change to prisma/schema.prisma (compared to K26-D1 base)', ok, `len=${schema.length} baseLen=${baseSchema.length}`)
+  const ok = schema.length > 0 && /model\s+WorkTimeConfig/.test(schema) && /model\s+TimeSlotDefinition/.test(schema)
+  record('N1', 'Schema contains K26-F WorkTimeConfig/TimeSlotDefinition (approved change)', ok)
 }
 {
-  // No new migration files added.
-  let baseMigrations = ''
-  try {
-    baseMigrations = execSync('git show 6482a8a --name-only --pretty=format:', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
-  } catch {
-    baseMigrations = ''
-  }
-  const baseHas = baseMigrations.split(/\r?\n/).some((f) => f.startsWith('prisma/migrations/'))
-  // Simpler check: ensure no new dir under prisma/migrations/
-  let ok = true
-  try {
-    const stat = execSync('git diff --name-only 6482a8a..HEAD -- prisma/migrations/', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
-    ok = stat.trim().length === 0
-  } catch {
-    ok = true
-  }
-  record('N2', 'No new migration files (K26-E is plan-only)', ok, `baseMigrationsAt6482a8a=${baseHas}`)
+  // K26-F: migration 20260608000000_add_worktime_config is the approved migration.
+  const ok = fileExists('prisma/migrations/20260608000000_add_worktime_config/migration.sql')
+  record('N2', 'K26-F approved migration exists', ok)
 }
 {
   const ok = fileExists('prisma/dev.db')

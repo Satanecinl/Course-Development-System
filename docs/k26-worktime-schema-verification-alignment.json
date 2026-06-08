@@ -1,0 +1,106 @@
+{
+  "stage": "K26-F1-WORKTIME-SCHEMA-VERIFICATION-ALIGNMENT",
+  "status": "VERIFICATION_ALIGNED",
+  "gitHubSync": {
+    "branch": "master",
+    "remote": "origin",
+    "trackingBranch": "origin/master",
+    "localHeadBefore": "94ad835",
+    "localHeadAfter": "",
+    "remoteHeadBefore": "94ad835",
+    "remoteHeadAfter": "",
+    "aheadBehind": "up to date",
+    "fetched": true,
+    "pullRebase": false,
+    "pushed": false,
+    "forcePush": false
+  },
+  "priorVerificationFailures": [
+    {
+      "script": "scripts/plan-worktime-schema-k26-e.ts",
+      "failures": ["C1", "C2", "N1", "N2"],
+      "rootCause": "K26-E assumes no schema/migration changes; K26-F intentionally adds WorkTimeConfig/TimeSlotDefinition + migration"
+    },
+    {
+      "script": "scripts/verify-static-time-slot-extraction-k26-d.ts",
+      "failures": ["N1", "N2"],
+      "rootCause": "K26-D assumes no schema/migration changes; K26-F intentionally adds schema/migration"
+    }
+  ],
+  "alignmentStrategy": "A+B (updated old scripts to stage-aware + added post-schema regression verify)",
+  "alignmentChanges": {
+    "k26ePlanVerify": {
+      "C1": "Changed from 'No WorkTimeConfig' to 'WorkTimeConfig exists (K26-F implemented)'",
+      "C2": "Changed from 'No TimeSlotDefinition' to 'TimeSlotDefinition exists (K26-F implemented)'",
+      "N1": "Changed from 'No schema change' to 'Accept K26-F approved schema'",
+      "N2": "Changed from 'No migration added' to 'Accept K26-F approved migration'"
+    },
+    "k26dVerify": {
+      "N1": "Changed from 'No schema change' to 'Accept K26-F approved schema'",
+      "N2": "Changed from 'No migration added' to 'Accept K26-F approved migration'"
+    }
+  },
+  "postSchemaRegression": {
+    "script": "scripts/verify-worktime-post-schema-regression-k26-f1.ts",
+    "checks": {
+      "schemaMigration": 6,
+      "dbBackfill": 10,
+      "helperInvariants": 6,
+      "nonGoals": 8
+    },
+    "totalChecks": 30,
+    "status": "30/30 PASS"
+  },
+  "verification": {
+    "postSchemaRegression": "30/30 PASS",
+    "k26fValidation": "30/30 PASS",
+    "backfillDryRun": "PASS (0 missing)",
+    "k26ePlanVerify": "34/34 PASS (after alignment)",
+    "k26dVerify": "39/39 PASS (after alignment)",
+    "k26cAudit": "32/32 PASS",
+    "k26aVerify": "47/47 PASS",
+    "k26bCloseoutVerify": "38/38 PASS",
+    "k25CloseoutVerify": "38/38 PASS",
+    "k25cValidation": "PASS",
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "UP_TO_DATE (8 migrations)",
+    "build": "PASS",
+    "lint": {
+      "errors": 184,
+      "warnings": 136,
+      "deltaVsBaseline": "+0/+0"
+    },
+    "authFoundation": {
+      "passed": 53,
+      "failed": 1,
+      "preExistingFailure": "ScheduleAdjustment ACTIVE count mismatch"
+    }
+  },
+  "modifiedFiles": [
+    "scripts/plan-worktime-schema-k26-e.ts (updated N1/N2 to stage-aware)",
+    "scripts/verify-static-time-slot-extraction-k26-d.ts (updated N1/N2 to stage-aware)",
+    "scripts/verify-worktime-post-schema-regression-k26-f1.ts (new)",
+    "docs/k26-worktime-schema-implementation.md (appended addendum)",
+    "docs/k26-worktime-schema-implementation.json (appended addendum)",
+    "docs/k26-worktime-schema-verification-alignment.md (new)",
+    "docs/k26-worktime-schema-verification-alignment.json (new)"
+  ],
+  "unmodifiedScope": [
+    "prisma/schema.prisma",
+    "prisma/migrations/**",
+    "prisma/dev.db",
+    "API routes",
+    "frontend UI",
+    "solver algorithm",
+    "src/lib/scheduler/score.ts",
+    "scheduler preview/apply",
+    "adjustment recommendation",
+    "room recommendation",
+    "importer/parser",
+    "RBAC permission model",
+    "K22/K23/K24/K25 expected"
+  ],
+  "blocking": false,
+  "k26fCanClose": true,
+  "recommendedNextStage": "K26-G-WORKTIME-API-IMPLEMENTATION"
+}

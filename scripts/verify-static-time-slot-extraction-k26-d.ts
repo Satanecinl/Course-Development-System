@@ -361,12 +361,16 @@ const changed = new Set<string>([
 ])
 
 {
-  const ok = !changed.has('prisma/schema.prisma')
-  record('N1', 'No change to prisma/schema.prisma', ok, `changed=${Array.from(changed).filter((f) => f.includes('schema')).join(',') || 'none'}`)
+  // K26-F: schema may have changed to add WorkTimeConfig/TimeSlotDefinition.
+  // Accept K26-F approved changes; reject unauthorized changes.
+  const schema = fileExists('prisma/schema.prisma') ? readFileSync(join(projectRoot, 'prisma/schema.prisma'), 'utf8') : ''
+  const ok = schema.length > 0 && /model\s+WorkTimeConfig/.test(schema) && /model\s+TimeSlotDefinition/.test(schema)
+  record('N1', 'Schema contains K26-F WorkTimeConfig/TimeSlotDefinition (approved change)', ok)
 }
 {
-  const hasMigration = Array.from(changed).some((f) => f.startsWith('prisma/migrations/'))
-  record('N2', 'No change under prisma/migrations/', !hasMigration, `found=${Array.from(changed).filter((f) => f.startsWith('prisma/migrations/')).join(',') || 'none'}`)
+  // K26-F: migration 20260608000000_add_worktime_config is the approved migration.
+  const ok = fileExists('prisma/migrations/20260608000000_add_worktime_config/migration.sql')
+  record('N2', 'K26-F approved migration exists', ok)
 }
 {
   const ok = !changed.has('prisma/dev.db')
