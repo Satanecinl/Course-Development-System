@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { SETTINGS_MODULES, getStatusBadge, type SettingsModule } from '@/lib/settings/settings-modules'
 import { SettingsModuleCard } from '@/components/settings/settings-module-card'
 import { SemesterSettingsPanel } from '@/components/settings/semester-settings-panel'
+import { SchedulerConfigSettingsPanel } from '@/components/settings/scheduler-config-settings-panel'
 import { Badge } from '@/components/ui/badge'
 import { Settings, ArrowLeft } from 'lucide-react'
 
@@ -30,8 +31,10 @@ export function SettingsCenter() {
 
       {/* Right: Content area */}
       <main className="flex-1 min-w-0">
-        {currentModule?.status === 'ready' ? (
+        {currentModule?.key === 'semester-settings' ? (
           <SemesterSettingsContent />
+        ) : currentModule?.key === 'scheduler-config' ? (
+          <SchedulerConfigSettingsPanel />
         ) : currentModule ? (
           <PlannedModuleContent module={currentModule} onBack={() => setActiveModule('semester-settings')} />
         ) : null}

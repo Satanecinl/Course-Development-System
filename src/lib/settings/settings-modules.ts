@@ -32,12 +32,12 @@ export const SETTINGS_MODULES: SettingsModule[] = [
   {
     key: 'scheduler-config',
     title: '排课参数设置',
-    description: '管理自动排课默认迭代次数、LAHC window size、random seed、默认 SchedulingConfig、软约束开关和未来权重 preset。',
-    status: 'planned',
+    description: '管理自动排课默认迭代次数、LAHC window size、random seed、默认 SchedulingConfig。不包含 score 权重、节次作息和教室规则。',
+    status: 'ready',
     priority: 'P1',
-    recommendedStage: 'K26-B-SCHEDULER-CONFIG-SETTINGS-INTEGRATION',
+    recommendedStage: 'K26-B-COMPLETED',
     riskLevel: 'medium',
-    notes: '现有 SchedulingConfig 已有 API 和 preview/apply 流程，接入设置中心即可。',
+    notes: '复用 K21 已有 SchedulingConfig CRUD API，接入系统设置中心。',
   },
   {
     key: 'time-slot-worktime',

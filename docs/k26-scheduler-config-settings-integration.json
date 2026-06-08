@@ -1,0 +1,89 @@
+{
+  "stage": "K26-B-SCHEDULER-CONFIG-SETTINGS-INTEGRATION",
+  "status": "IMPLEMENTATION_COMPLETE",
+  "gitHubSync": {
+    "branch": "master",
+    "remote": "origin",
+    "trackingBranch": "origin/master",
+    "localHeadBefore": "c11a8ab",
+    "remoteHeadBefore": "c11a8ab",
+    "localHeadAfter": "",
+    "remoteHeadAfter": "",
+    "aheadBehind": "up to date",
+    "pushed": false,
+    "forcePush": false
+  },
+  "existingSchedulingConfigAudit": {
+    "model": "SchedulingConfig in prisma/schema.prisma",
+    "apiRoutes": {
+      "list": "src/app/api/admin/scheduler/configs/route.ts (GET, POST)",
+      "single": "src/app/api/admin/scheduler/configs/[id]/route.ts (GET, PUT, DELETE)"
+    },
+    "client": "src/lib/scheduler-config-client.ts",
+    "errorHandler": "src/lib/scheduler-config-errors.ts",
+    "types": "src/types/scheduling-config.ts",
+    "existingUI": {
+      "pickerPanel": "src/components/scheduler-config-panel.tsx",
+      "snapshotDisplay": "src/components/resolved-config-display.tsx"
+    },
+    "validation": "src/lib/scheduler/config.ts",
+    "permission": "schedule:adjust",
+    "deleteProtection": "409 CONFIG_IN_USE if SchedulingRun references configId",
+    "semesterScoped": true
+  },
+  "uiImplemented": [
+    "scheduler-config-settings-panel.tsx: table-based config list with info card",
+    "settings-center.tsx: routes scheduler-config to SchedulerConfigSettingsPanel",
+    "settings-modules.ts: scheduler-config status changed to ready",
+    "info-card: explains scope and non-goals",
+    "config-list: table with ID, name, maxIterations, lahcWindowSize, randomSeed, lockedSlotIds count, solverVersion, semesterId, createdAt",
+    "create: reuses ConfigFormDialog",
+    "edit: reuses ConfigFormDialog",
+    "delete: reuses DeleteConfigButton with CONFIG_IN_USE handling",
+    "loading-state: k26b-loading",
+    "error-state: k26b-error with retry",
+    "empty-state: k26b-empty with create button"
+  ],
+  "compatibility": {
+    "k21SolverConfigCapability": "intact",
+    "k22ScoreHarness": "unchanged",
+    "solverAlgorithm": "unchanged",
+    "scoreWeights": "not implemented",
+    "schedulerPreviewApply": "unchanged",
+    "k25SettingsShell": "intact",
+    "k26AShell": "intact"
+  },
+  "nonGoals": [
+    "schema changes",
+    "new migration",
+    "solver algorithm changes",
+    "score weights (hardWeights/softWeights)",
+    "soft constraint toggles",
+    "time-slot/worktime settings",
+    "room rule settings",
+    "adjustment rule settings",
+    "import rule settings",
+    "RBAC permission changes",
+    "data maintenance/backup",
+    "audit log"
+  ],
+  "verification": {
+    "k26bVerify": "47/47 PASS",
+    "k26aVerify": "47/47 PASS",
+    "k25CloseoutVerify": "38/38 PASS",
+    "k25IVerify": "45/45 PASS",
+    "k25HVerify": "70/70 PASS",
+    "k25EVerify": "63/63 PASS",
+    "k25CValidation": "37/37 PASS",
+    "k21ApiVerify": "PASS",
+    "k21PreviewVerify": "PASS",
+    "k21SnapshotVerify": "19/19 PASS",
+    "k21UiVerify": "22/22 PASS",
+    "prismaValidate": "PASS",
+    "migrateStatus": "up to date",
+    "build": "PASS",
+    "lint": "184 errors / 136 warnings (+0/+0 vs baseline)"
+  },
+  "blocking": false,
+  "recommendedNextStage": "K26-B1-SCHEDULER-CONFIG-SETTINGS-MANUAL-TRIAL"
+}
