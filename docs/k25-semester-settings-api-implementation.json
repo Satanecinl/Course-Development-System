@@ -8,8 +8,8 @@
     "trackingBranch": "origin/master",
     "localHeadBefore": "f4976e7",
     "remoteHeadBefore": "f4976e7",
-    "localHeadAfter": "(to be filled after commit)",
-    "remoteHeadAfter": "(to be filled after push)",
+    "localHeadAfter": "2d6c91c",
+    "remoteHeadAfter": "2d6c91c",
     "aheadBehind": "up to date",
     "pushed": false,
     "forcePush": false
