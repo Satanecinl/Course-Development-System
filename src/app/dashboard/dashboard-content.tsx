@@ -205,8 +205,11 @@ export default function DashboardContent() {
     try {
       const res = await fetch(`/api/schedule?week=${week}&applyAdjustments=true`)
       if (!res.ok) throw new Error('Failed to fetch')
+      // K25-D: /api/schedule returns { items, semesterId, semesterSource }.
+      // Extract items defensively to support both wrapped and raw-array shapes.
       const data = await res.json()
-      setEffectiveItems(data)
+      const items = Array.isArray(data) ? data : data.items ?? []
+      setEffectiveItems(items)
     } catch {
       toast.error('获取周课表失败')
       setEffectiveItems(null)

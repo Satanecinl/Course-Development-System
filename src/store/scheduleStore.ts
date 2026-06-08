@@ -63,8 +63,12 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
       const query = params.toString()
       const res = await fetch(`/api/schedule${query ? '?' + query : ''}`)
       if (!res.ok) throw new Error('Failed to fetch schedule')
+      // K25-D: /api/schedule now returns { items, semesterId, semesterSource }
+      // instead of a raw array. Extract items defensively so older call
+      // sites that still send raw arrays (e.g., in tests) keep working.
       const data = await res.json()
-      set({ scheduleItems: data, isLoading: false })
+      const items = Array.isArray(data) ? data : data.items ?? []
+      set({ scheduleItems: items, isLoading: false })
     } catch (err) {
       set({ error: String(err), isLoading: false })
     }
