@@ -176,8 +176,11 @@ console.log('\n[Section 2] Plan recommendation integration')
 console.log('\n[Section 3] Non-goals')
 
 {
-  const ok = !fileContains('src/lib/schedule/adjustments.ts', 'resolveWorkTimeConfigForSchedule')
-  record('N1', 'dry-run/apply unchanged', ok)
+  // K26-I2 stage-aware: dry-run/apply now have WorkTime guard via checkWorkTimeTargetAllowed.
+  // This is expected and does not invalidate K26-I1's work.
+  const hasI2Guard = fileContains('src/lib/schedule/adjustments.ts', 'checkWorkTimeTargetAllowed')
+  const ok = hasI2Guard || !fileContains('src/lib/schedule/adjustments.ts', 'resolveWorkTimeConfigForSchedule')
+  record('N1', 'dry-run/apply unchanged (or K26-I2 guard accepted)', ok)
 }
 {
   const ok = !fileContains('src/lib/schedule/room-recommendations.ts', 'resolveWorkTimeConfigForSchedule')

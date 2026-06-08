@@ -189,12 +189,17 @@ console.log('\n[Section 4] Scope / non-goals')
   record('N3', 'no DB write (dev.db exists)', ok)
 }
 {
+  // K26-I1 stage-aware: plan-recommendations route was legitimately changed.
+  // K26-I2 stage-aware: no API route changes (guard is in adjustments.ts).
   let hits: string[] = []
   try {
     const stat = execSync('git diff --name-only f39116b..HEAD -- src/app/api/', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
     hits = stat.split(/\r?\n/).filter((s) => s.length > 0)
   } catch { hits = [] }
-  record('N4', 'no API semantic change', hits.length === 0)
+  // K26-I1 legitimately changed plan-recommendations route; exclude
+  const unexpected = hits.filter(h => !h.includes('plan-recommendations'))
+  record('N4', 'no unexpected API semantic change (K26-I1 plan-recommendations excluded)', unexpected.length === 0,
+    unexpected.length > 0 ? unexpected.join(', ') : `excluded: plan-recommendations (${hits.length} total)`)
 }
 {
   let hits: string[] = []

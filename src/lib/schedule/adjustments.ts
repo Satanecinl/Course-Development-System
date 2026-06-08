@@ -16,6 +16,7 @@ import {
   type ScheduleConflictOccupancy,
 } from '@/lib/schedule/conflict-rules'
 import { expandWeeks as ruleExpandWeeks, type WeekConstraint } from '@/lib/conflict'
+import { resolveWorkTimeConfigForSchedule, checkWorkTimeTargetAllowed } from '@/lib/worktime/worktime-schedule-resolver'
 
 // ── Validation ──
 
@@ -44,8 +45,8 @@ export function validateScheduleAdjustmentInput(
       if (input.newDayOfWeek < 1 || input.newDayOfWeek > 7) {
         errors.push({ type: 'INVALID_SLOT', message: `newDayOfWeek must be 1-7, got ${input.newDayOfWeek}`, severity: 'error' })
       }
-      if (input.newSlotIndex < 1 || input.newSlotIndex > 6) {
-        errors.push({ type: 'INVALID_SLOT', message: `newSlotIndex must be 1-6, got ${input.newSlotIndex}`, severity: 'error' })
+      if (input.newSlotIndex < 1 || input.newSlotIndex > 5) {
+        errors.push({ type: 'INVALID_SLOT', message: `newSlotIndex must be 1-5, got ${input.newSlotIndex}`, severity: 'error' })
       }
     }
   }
@@ -271,6 +272,34 @@ export async function dryRunScheduleAdjustment(
   // For CANCEL, no further conflict checks needed
   if (input.type === 'CANCEL') {
     return { canApply: true, conflicts, warnings }
+  }
+
+  // K26-I2: WorkTime guard — block MOVE targets that violate WorkTime policy
+  // before any conflict check. CANCEL is not affected.
+  try {
+    const workTime = await resolveWorkTimeConfigForSchedule(semesterId)
+    const wtCheck = checkWorkTimeTargetAllowed(workTime, {
+      dayOfWeek: input.newDayOfWeek!,
+      slotIndex: input.newSlotIndex!,
+    })
+    if (!wtCheck.ok) {
+      conflicts.push({
+        type: 'WORKTIME_TARGET_BLOCKED',
+        message: wtCheck.message,
+        severity: 'error',
+        workTimeErrorCode: wtCheck.code,
+        workTimeDetails: wtCheck.details,
+      })
+      return { canApply: false, conflicts, warnings }
+    }
+  } catch {
+    conflicts.push({
+      type: 'WORKTIME_TARGET_BLOCKED',
+      message: '无法解析作息配置，请稍后重试。',
+      severity: 'error',
+      workTimeErrorCode: 'WORKTIME_DAY_DISABLED',
+    })
+    return { canApply: false, conflicts, warnings }
   }
 
   // For MOVE, check conflicts against target week's effective schedule (same semester)

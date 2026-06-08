@@ -134,15 +134,18 @@ console.log('\n[Section 2] Current behavior')
   record('B5', 'weekend handling source identified (caller flag)', ok)
 }
 {
-  // dry-run validity guard
+  // K26-I2: dry-run now has WorkTime guard via checkWorkTimeTargetAllowed in dryRunScheduleAdjustment.
   const ok = fileContains('src/lib/schedule/adjustments.ts', 'validateScheduleAdjustmentInput') &&
-    !fileContains('src/lib/schedule/adjustments.ts', 'resolveWorkTimeConfig')
-  record('B6', 'dry-run legality guard status identified (no WorkTime check)', ok)
+    (fileContains('src/lib/schedule/adjustments.ts', 'checkWorkTimeTargetAllowed') ||
+     !fileContains('src/lib/schedule/adjustments.ts', 'resolveWorkTimeConfig'))
+  record('B6', 'dry-run legality guard status identified (K26-I2: WorkTime guard active, or pre-I2: no WorkTime check)', ok)
 }
 {
+  // K26-I2: apply delegates to dryRun which now has WorkTime guard.
   const ok = fileContains('src/lib/schedule/adjustments.ts', 'createScheduleAdjustment') &&
-    !fileContains('src/lib/schedule/adjustments.ts', 'resolveWorkTimeConfig')
-  record('B7', 'apply legality guard status identified (no WorkTime check)', ok)
+    (fileContains('src/lib/schedule/adjustments.ts', 'checkWorkTimeTargetAllowed') ||
+     !fileContains('src/lib/schedule/adjustments.ts', 'resolveWorkTimeConfig'))
+  record('B7', 'apply legality guard status identified (K26-I2: WorkTime guard active via dryRun, or pre-I2: no WorkTime check)', ok)
 }
 {
   const ok = fileExists('src/lib/schedule/room-recommendations.ts') &&
@@ -263,12 +266,17 @@ console.log('\n[Section 6] Non-goals')
   record('G3', 'no DB write (dev.db exists)', ok)
 }
 {
+  // K26-I1 stage-aware: plan-recommendations route was legitimately changed for WorkTime integration.
+  // K26-I2 stage-aware: dry-run/apply route behavior unchanged (guard is in adjustments.ts, not routes).
   let hits: string[] = []
   try {
     const stat = execSync('git diff --name-only 6a216ef..HEAD -- src/app/api/', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
     hits = stat.split(/\r?\n/).filter((s) => s.length > 0)
   } catch { hits = [] }
-  record('G4', 'no API behavior change', hits.length === 0)
+  // K26-I1 legitimately changed plan-recommendations route; exclude it from the check
+  const unexpected = hits.filter(h => !h.includes('plan-recommendations'))
+  record('G4', 'no unexpected API behavior change (K26-I1 plan-recommendations route excluded)', unexpected.length === 0,
+    unexpected.length > 0 ? unexpected.join(', ') : `excluded: plan-recommendations (${hits.length} total)`)
 }
 {
   let hits: string[] = []
@@ -352,5 +360,21 @@ console.log('\nK26-I WORKTIME RECOMMENDATION INTEGRATION AUDIT PASS')
 console.log(`PASS=${pass} FAIL=0`)
 console.log(`HIGH=${highCount} MEDIUM=${mediumCount} LOW=${lowCount} INFO=${infoCount}`)
 console.log('blocking=false')
-console.log('recommendedNextStage=K26-I1-WORKTIME-PLAN-RECOMMENDATION-INTEGRATION')
+
+// Stage-aware recommendedNextStage detection
+const k26i1Done = fileContains('src/lib/schedule/adjustment-plan-recommendations.ts', 'resolveWorkTimeConfigForSchedule')
+const k26i2Done = fileContains('src/lib/schedule/adjustments.ts', 'checkWorkTimeTargetAllowed')
+const k26i3Done = fileContains('src/lib/schedule/room-recommendations.ts', 'checkWorkTimeTargetAllowed')
+
+let recommendedNextStage: string
+if (!k26i1Done) {
+  recommendedNextStage = 'K26-I1-WORKTIME-PLAN-RECOMMENDATION-INTEGRATION'
+} else if (!k26i2Done) {
+  recommendedNextStage = 'K26-I2-WORKTIME-ADJUSTMENT-DRY-RUN-APPLY-GUARD'
+} else if (!k26i3Done) {
+  recommendedNextStage = 'K26-I3-WORKTIME-ROOM-RECOMMENDATION-GUARD'
+} else {
+  recommendedNextStage = 'K26-I4-WORKTIME-FRONTEND-DIALOG-INTEGRATION'
+}
+console.log(`recommendedNextStage=${recommendedNextStage}`)
 process.exit(0)

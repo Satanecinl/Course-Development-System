@@ -1,0 +1,85 @@
+{
+  "stage": "K26-I2",
+  "name": "WORKTIME-ADJUSTMENT-DRY-RUN-APPLY-GUARD",
+  "status": "CLOSED",
+  "date": "2026-06-08",
+  "summary": "WorkTime guard for schedule adjustment dry-run/apply: blocks invalid slot/day targets before conflict check or DB write.",
+  "changes": {
+    "newFiles": [
+      "scripts/verify-worktime-adjustment-dry-run-apply-guard-k26-i2.ts",
+      "docs/k26-worktime-adjustment-dry-run-apply-guard.md",
+      "docs/k26-worktime-adjustment-dry-run-apply-guard.json"
+    ],
+    "modifiedFiles": [
+      "src/types/schedule-adjustment.ts",
+      "src/lib/worktime/worktime-schedule-resolver.ts",
+      "src/lib/schedule/adjustments.ts",
+      "scripts/audit-worktime-recommendation-integration-k26-i.ts",
+      "scripts/verify-worktime-plan-recommendation-integration-k26-i1.ts",
+      "scripts/verify-worktime-settings-ui-acceptance-closeout-k26-h.ts"
+    ],
+    "guardContract": {
+      "function": "checkWorkTimeTargetAllowed",
+      "location": "src/lib/worktime/worktime-schedule-resolver.ts",
+      "readOnly": true,
+      "errorCodes": [
+        "WORKTIME_SLOT_DISABLED",
+        "WORKTIME_SLOT_LEGACY_ONLY",
+        "WORKTIME_WEEKEND_DISABLED",
+        "WORKTIME_DAY_DISABLED"
+      ]
+    },
+    "validationChange": {
+      "file": "src/lib/schedule/adjustments.ts",
+      "function": "validateScheduleAdjustmentInput",
+      "before": "newSlotIndex ∈ [1, 6]",
+      "after": "newSlotIndex ∈ [1, 5]"
+    },
+    "dryRunChange": {
+      "file": "src/lib/schedule/adjustments.ts",
+      "function": "dryRunScheduleAdjustment",
+      "workTimeGuardPosition": "after semester resolution, before conflict check",
+      "cancelBypass": true
+    },
+    "applyChange": {
+      "file": "src/lib/schedule/adjustments.ts",
+      "function": "createScheduleAdjustment",
+      "mechanism": "delegates to dryRunScheduleAdjustment, blocked if canApply=false",
+      "directChange": false
+    }
+  },
+  "unmodifiedScope": [
+    "prisma/schema.prisma",
+    "prisma/migrations",
+    "room-recommendations.ts",
+    "schedule-adjustment-dialog.tsx",
+    "conflict-check.ts",
+    "conflict-rules.ts",
+    "solver",
+    "score.ts",
+    "K22/K23/K24/K25 expected"
+  ],
+  "verification": {
+    "k26i2Verify": "45/45 PASS",
+    "k26i1Verify": "36/36 PASS",
+    "k26iAudit": "44/44 PASS",
+    "k26hCloseout": "52/52 PASS",
+    "h2aRuntime": "15/15 PASS",
+    "k26hUi": "43/43 PASS",
+    "k26gApi": "40/40 PASS",
+    "k26f1": "30/30 PASS",
+    "k26fValidation": "30/30 PASS",
+    "backfillDryRun": "0 missing",
+    "k26e": "34/34 PASS",
+    "k26d": "39/39 PASS",
+    "k25Closeout": "38/38 PASS",
+    "k25cValidation": "PASS",
+    "prismaValidate": "PASS",
+    "migrateStatus": "up to date",
+    "build": "PASS",
+    "lint": "184 errors / 146 warnings (+0/+0)",
+    "authFoundation": "53 passed / 1 failed (pre-existing)"
+  },
+  "blocking": false,
+  "recommendedNextStage": "K26-I3-WORKTIME-ROOM-RECOMMENDATION-GUARD"
+}

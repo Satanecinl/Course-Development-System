@@ -12,6 +12,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { VALID_TEACHING_SLOT_INDEXES, LEGACY_DISPLAY_SLOT_INDEXES } from '@/lib/schedule/time-slots'
+import type { WorkTimeTargetErrorCode } from '@/types/schedule-adjustment'
 
 // ── Types ──
 
@@ -215,4 +216,102 @@ export function getAllowedWorkTimeCandidateSlots(
   workTime: ResolvedWorkTimeForSchedule
 ): number[] {
   return [...workTime.activeTeachingSlotIndexes]
+}
+
+// ── K26-I2: Target legality guard ──
+
+/**
+ * Result of checking whether a schedule adjustment target (day + slot) is
+ * allowed under the resolved WorkTime policy.
+ */
+export type WorkTimeTargetCheckResult =
+  | { ok: true }
+  | {
+      ok: false
+      code: WorkTimeTargetErrorCode
+      message: string
+      details?: Record<string, unknown>
+    }
+
+/**
+ * Checks whether a MOVE target (dayOfWeek + slotIndex) is legal under the
+ * resolved WorkTime configuration.
+ *
+ * Rules:
+ *  1. Day must be allowed: weekday (1-5) always OK; weekend (6/7) only if allowWeekend=true.
+ *  2. Slot must be in activeTeachingSlotIndexes.
+ *  3. Slot must not be a legacy display slot (6/7 or isLegacyDisplay).
+ *  4. Slot must not be inactive or non-teaching.
+ *
+ * This function is purely read-only and never writes to the DB.
+ */
+export function checkWorkTimeTargetAllowed(
+  workTime: ResolvedWorkTimeForSchedule,
+  target: { dayOfWeek: number; slotIndex: number }
+): WorkTimeTargetCheckResult {
+  const { dayOfWeek, slotIndex } = target
+
+  // 1. Day check
+  if (!workTime.weekdayValues.includes(dayOfWeek)) {
+    if (workTime.weekendDayValues.includes(dayOfWeek)) {
+      if (!workTime.allowWeekend) {
+        return {
+          ok: false,
+          code: 'WORKTIME_WEEKEND_DISABLED',
+          message: '当前作息配置不允许调课到周末。',
+          details: { dayOfWeek, allowWeekend: workTime.allowWeekend, source: workTime.source },
+        }
+      }
+      // allowWeekend=true → weekend day is allowed, fall through to slot check
+    } else {
+      return {
+        ok: false,
+        code: 'WORKTIME_DAY_DISABLED',
+        message: '当前作息配置不允许调课到该日期。',
+        details: { dayOfWeek, source: workTime.source },
+      }
+    }
+  }
+
+  // 2. Slot: legacy display (6/7) — catch before DB lookup
+  if (LEGACY_DISPLAY_SLOT_INDEXES.includes(slotIndex as 6 | 7)) {
+    return {
+      ok: false,
+      code: 'WORKTIME_SLOT_LEGACY_ONLY',
+      message: '该节次仅用于历史显示，不能作为新的调课目标。',
+      details: { slotIndex, source: workTime.source },
+    }
+  }
+
+  // 3. Slot: DB-level legacy display flag
+  const slotDef = workTime.slotsByIndex[slotIndex]
+  if (slotDef?.isLegacyDisplay) {
+    return {
+      ok: false,
+      code: 'WORKTIME_SLOT_LEGACY_ONLY',
+      message: '该节次仅用于历史显示，不能作为新的调课目标。',
+      details: { slotIndex, source: workTime.source },
+    }
+  }
+
+  // 4. Slot: not active teaching (inactive, non-teaching, or not in active list)
+  if (
+    !workTime.activeTeachingSlotIndexes.includes(slotIndex) ||
+    slotDef === undefined ||
+    !slotDef.isActive ||
+    !slotDef.isTeachingSlot
+  ) {
+    return {
+      ok: false,
+      code: 'WORKTIME_SLOT_DISABLED',
+      message: '当前作息配置不允许调课到该节次。',
+      details: {
+        slotIndex,
+        allowedSlotIndexes: workTime.activeTeachingSlotIndexes,
+        source: workTime.source,
+      },
+    }
+  }
+
+  return { ok: true }
 }
