@@ -1,0 +1,75 @@
+{
+  "stage": "K26-J5-WORKTIME-SOLVER-REAL-SCHEDULING-TRIAL",
+  "status": "PASSED",
+  "date": "2026-06-09",
+  "mode": "preview-only",
+  "trialResult": {
+    "runId": 85,
+    "semesterId": 1,
+    "hardScore": 0,
+    "softScore": -1428,
+    "blocking": false,
+    "changedSlots": 386,
+    "recommendedManualValidation": false
+  },
+  "workTimeSnapshot": {
+    "present": true,
+    "version": 1,
+    "source": "database",
+    "workTimeConfigId": 1,
+    "allowWeekend": false,
+    "candidateDays": [1, 2, 3, 4, 5],
+    "candidateSlots": [1, 2, 3, 4, 5],
+    "legacySlotsExcluded": true,
+    "resultSnapshotWorkTimePresent": true,
+    "snapshotReproducible": true
+  },
+  "scoreEvidence": {
+    "SC3count": 0,
+    "SC3penalty": 0,
+    "SC3lateSlots": [5],
+    "SC7count": 0,
+    "SC7penalty": 0,
+    "SC7weekendDays": [6, 7],
+    "roomConflictCount": 0,
+    "teacherConflictCount": 0,
+    "classGroupConflictCount": 0,
+    "capacityConflictCount": 0
+  },
+  "applyRollback": {
+    "executed": false,
+    "reason": "preview-only mode; apply is destructive, left to user decision"
+  },
+  "nonGoals": [
+    "schema unchanged",
+    "migration unchanged",
+    "DB committed unchanged",
+    "solver unchanged",
+    "score unchanged",
+    "K22 expected unchanged",
+    "recommendation unchanged",
+    "UI unchanged"
+  ],
+  "verification": {
+    "k26J5Trial": "PASS",
+    "k26J4ScoreVerify": "47/47 PASS",
+    "k26J3CandidateVerify": "53/53 PASS",
+    "k26J2SnapshotVerify": "52/52 PASS",
+    "k26J1Plan": "56/56 PASS",
+    "k26JAudit": "48/48 PASS",
+    "k26ICloseout": "64/64 PASS",
+    "k22CScoreHarness": "PASS (73/0/0/0)",
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "up to date (8 migrations)",
+    "build": "PASS",
+    "lint": "184 errors / 146 warnings (no new)",
+    "authFoundation": "53 passed / 1 failed (pre-existing)",
+    "gitStatusClean": true,
+    "localRemoteSynced": true
+  },
+  "recommendation": {
+    "status": "PASSED",
+    "nextStage": "MANUAL_FRONTEND_VALIDATION",
+    "manualFrontendValidationRequired": true
+  }
+}
