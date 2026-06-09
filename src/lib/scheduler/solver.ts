@@ -9,7 +9,12 @@ import type {
 import { isScoreBetter } from './types'
 import { calculateInitialScore, calculateDeltaScore } from './score'
 import { getTaskStudentCount } from './capacity'
-import { createSeededRandom, randInt } from './prng'
+import {
+  createSeededRandom,
+  randInt,
+  pickRandom,
+} from './prng'
+import type { SolverWorkTimeContract } from '@/lib/worktime/worktime-snapshot'
 
 /** 应用一次移动到状态，返回旧位置 */
 export function applyMove(
@@ -225,15 +230,32 @@ export interface SolveResult {
 
 /**
  * LAHC 求解器 — hard-first acceptance with compatibility checks
+ *
+ * K26-J3: accepts optional `workTime` contract. When provided, candidate
+ * day/slot generation uses `workTime.allowedDayOfWeeks` and
+ * `workTime.candidateSlotIndexes` instead of the legacy hardcoded ranges.
+ * When omitted, falls back to days [1..7] and slots [1..6] (backward
+ * compatible with existing tests and callsites).
  */
 export function solve(
   ctx: SchedulingContext,
   config: SolverConfig,
   onProgress?: (iteration: number, score: Score) => void,
+  workTime?: SolverWorkTimeContract,
 ): SolveResult {
   // Initialize seeded RNG
   const usedSeed = config.randomSeed ?? 0
   const rng = createSeededRandom(usedSeed)
+
+  // K26-J3: candidate day/slot arrays from WorkTime contract.
+  // When no contract is provided, falls back to the legacy ranges
+  // that were hardcoded before J3 (days 1-7, slots 1-6).
+  const candidateDays = workTime
+    ? workTime.allowedDayOfWeeks
+    : [1, 2, 3, 4, 5, 6, 7]
+  const candidateSlots = workTime
+    ? workTime.candidateSlotIndexes
+    : [1, 2, 3, 4, 5, 6]
 
   const state = buildInitialState(ctx)
   const currentScore = calculateInitialScore(ctx, state)
@@ -324,8 +346,10 @@ export function solve(
         const rooms = eligibleRoomsByTask.get(task.id) ?? []
         if (rooms.length === 0) continue
 
-        for (let day = 1; day <= 7 && !foundCandidate; day++) {
-          for (let si = 1; si <= 6 && !foundCandidate; si++) {
+        for (const day of candidateDays) {
+          if (foundCandidate) break
+          for (const si of candidateSlots) {
+            if (foundCandidate) break
             if (day === pos.dayOfWeek && si === pos.slotIndex) continue
             // Try the first eligible room
             const roomId = rooms[0].id
@@ -346,8 +370,10 @@ export function solve(
         // If first room didn't work, try other eligible rooms
         if (!foundCandidate && rooms.length > 1) {
           for (let ri = 1; ri < rooms.length && !foundCandidate; ri++) {
-            for (let day = 1; day <= 7 && !foundCandidate; day++) {
-              for (let si = 1; si <= 6 && !foundCandidate; si++) {
+            for (const day of candidateDays) {
+              if (foundCandidate) break
+              for (const si of candidateSlots) {
+                if (foundCandidate) break
                 if (day === pos.dayOfWeek && si === pos.slotIndex) continue
                 if (isPlacementHardCompatible(ctx, state, slotId, task, day, si, rooms[ri].id)) {
                   const move: Move = { slotId, newDay: day, newSlotIndex: si, newRoomId: rooms[ri].id }
@@ -405,12 +431,12 @@ export function solve(
             newSlotIndex = sourcePos.slotIndex
             newRoomId = eligibleRooms[randInt(rng, 0, eligibleRooms.length - 1)].id
           } else if (moveType === 'TIME_ONLY') {
-            newDay = randInt(rng, 1, 7)
-            newSlotIndex = randInt(rng, 1, 6)
+            newDay = pickRandom(rng, candidateDays)
+            newSlotIndex = pickRandom(rng, candidateSlots)
             newRoomId = sourcePos.roomId
           } else {
-            newDay = randInt(rng, 1, 7)
-            newSlotIndex = randInt(rng, 1, 6)
+            newDay = pickRandom(rng, candidateDays)
+            newSlotIndex = pickRandom(rng, candidateSlots)
             newRoomId = eligibleRooms[randInt(rng, 0, eligibleRooms.length - 1)].id
           }
 

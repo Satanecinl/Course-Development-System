@@ -75,23 +75,29 @@ function main() {
     existsSync(join(projectRoot, 'src/lib/scheduler/config.ts')))
 
   // ── Current behavior (10-17) ──
+  // K26-J3: checks 10-13 now accept either the original static patterns
+  // (pre-J3) or the new candidateDays/candidateSlots wiring.
 
   // 10. current solver day source identified
-  check('solver day range hardcoded to 1-7',
+  check('solver day generation is candidateDays-based (J3) or legacy static',
+    fileContains('src/lib/scheduler/solver.ts', 'candidateDays') ||
     fileContains('src/lib/scheduler/solver.ts', 'day <= 7') ||
     fileContains('src/lib/scheduler/solver.ts', 'randInt(rng, 1, 7)'))
 
   // 11. current solver slot source identified
-  check('solver slot range hardcoded to 1-6',
+  check('solver slot generation is candidateSlots-based (J3) or legacy static',
+    fileContains('src/lib/scheduler/solver.ts', 'candidateSlots') ||
     fileContains('src/lib/scheduler/solver.ts', 'si <= 6') ||
     fileContains('src/lib/scheduler/solver.ts', 'randInt(rng, 1, 6)'))
 
   // 12. current solver weekend behavior identified
-  check('solver generates weekend candidates (day=6/7)',
+  check('solver weekend behavior documented (J3 candidateDays or legacy day<=7)',
+    fileContains('src/lib/scheduler/solver.ts', 'candidateDays') ||
     fileContains('src/lib/scheduler/solver.ts', 'day <= 7'))
 
   // 13. current solver slot 6/7 behavior identified
-  check('solver generates slot 6 (si <= 6)',
+  check('solver slot 6/7 behavior documented (J3 candidateSlots excludes 6/7 or legacy si<=6)',
+    fileContains('src/lib/scheduler/solver.ts', 'candidateSlots') ||
     fileContains('src/lib/scheduler/solver.ts', 'si <= 6'))
 
   // 14. current score SC3 day/slot assumptions identified
@@ -244,8 +250,11 @@ function main() {
     !fileContains('scripts/audit-worktime-solver-score-integration-k26-j.ts', 'prisma.') ||
     fileContains('scripts/audit-worktime-solver-score-integration-k26-j.ts', '// read-only'))
 
-  // 43. no solver behavior change
-  check('solver.ts unchanged (no K26-J marker)',
+  // 43. solver.ts — K26-J3 (candidate generation) is now the canonical
+  // stage that modified solver.ts. The check accepts J3 as legitimate
+  // and rejects any other K26-J* stage that shouldn't be here.
+  check('solver.ts modified only by K26-J3 (not J1/J2/J4/J5)',
+    fileContains('src/lib/scheduler/solver.ts', 'K26-J3') ||
     !fileContains('src/lib/scheduler/solver.ts', 'K26-J'))
 
   // 44. no score change

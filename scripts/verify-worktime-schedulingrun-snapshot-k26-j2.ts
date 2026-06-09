@@ -283,11 +283,13 @@ async function main() {
   check('score.ts unchanged (no K26-J2 marker)',
     !fileContains('src/lib/scheduler/score.ts', 'K26-J2'))
 
-  // 36. solver candidate behavior unchanged
-  // Asserts the hardcoded day/slot ranges from K26-J are still present.
-  check('solver candidate behavior unchanged',
-    fileContains('src/lib/scheduler/solver.ts', 'day <= 7') ||
-    fileContains('src/lib/scheduler/solver.ts', 'randInt(rng, 1, 7)'))
+  // 36. solver candidate behavior — was static before J3, now WorkTime-aware.
+  // K26-J3 introduced candidateDays/candidateSlots from WorkTime contract.
+  // The check now accepts either the old patterns (pre-J3) or the new J3 wiring.
+  check('solver candidate behavior now J3-aware (candidateDays/candidateSlots)',
+    fileContains('src/lib/scheduler/solver.ts', 'candidateDays') &&
+    fileContains('src/lib/scheduler/solver.ts', 'candidateSlots') ||
+    fileContains('src/lib/scheduler/solver.ts', 'day <= 7'))
 
   // 37. score behavior unchanged
   // Asserts the hardcoded thresholds from K26-J are still present.

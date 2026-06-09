@@ -1,0 +1,138 @@
+{
+  "stage": "K26-J3-WORKTIME-SOLVER-CANDIDATE-GENERATION",
+  "status": "CLOSED",
+  "date": "2026-06-09",
+  "dependsOn": "K26-J2-WORKTIME-SCHEDULINGRUN-SNAPSHOT-WRITE (985528b)",
+  "scoreChanged": false,
+  "k22ExpectedChanged": false,
+  "noSchemaChange": true,
+  "noMigrationChange": true,
+  "noUiChange": true,
+  "noRecommendationChange": true,
+  "summary": "Solver candidate generation now uses WorkTime snapshot-derived allowed days and slots. toSolverWorkTimeContract computes candidateSlotIndexes excluding legacy 6/7. preview passes the contract to solve(). Exhaustive and random generation use candidateDays/candidateSlots arrays. Score unchanged. K22-C baseline preserved.",
+  "contractChanges": {
+    "newField": "candidateSlotIndexes: number[]",
+    "computeRule": "activeTeachingSlotIndexes minus legacyDisplaySlotIndexes, filter out 6/7, sorted+deduplicated",
+    "errorOnEmpty": "WORKTIME_CONTRACT_NO_CANDIDATE_SLOTS",
+    "legacyFallback": "createLegacyStaticSolverWorkTimeContract() for tests",
+    "daysPolicy": "allowedDayOfWeeks from snapshot (weekday-only or include weekend based on allowWeekend)"
+  },
+  "solverChanges": {
+    "function": "solve(ctx, config, onProgress?, workTime?)",
+    "newParam": "workTime?: SolverWorkTimeContract",
+    "exhaustiveDayRange": "for (const day of candidateDays)",
+    "exhaustiveSlotRange": "for (const si of candidateSlots)",
+    "randomDay": "pickRandom(rng, candidateDays)",
+    "randomSlot": "pickRandom(rng, candidateSlots)",
+    "noContractFallback": "candidateDays=[1..7], candidateSlots=[1..6] (backward compat)",
+    "deterministicSeedPreserved": true
+  },
+  "previewChanges": {
+    "buildsContract": "toSolverWorkTimeContract(workTimeSnapshot)",
+    "passesToSolver": "solve(ctx, config, undefined, solverWorkTimeContract)",
+    "noWorkTimeResolve": true,
+    "failFastOnInvalid": true
+  },
+  "fixtureCoverage": [
+    {
+      "name": "A STATIC_BASELINE",
+      "active": [1,2,3,4,5],
+      "legacy": [6,7],
+      "candidateDays": [1,2,3,4,5],
+      "candidateSlots": [1,2,3,4,5],
+      "keyAssertion": "default weekday-only, slots 1-5"
+    },
+    {
+      "name": "B SHORT_TEACHING_DAY",
+      "active": [1,2,3,4],
+      "legacy": [5,6,7],
+      "candidateDays": [1,2,3,4,5],
+      "candidateSlots": [1,2,3,4],
+      "keyAssertion": "slot 5 excluded from candidate"
+    },
+    {
+      "name": "C WEEKEND_ENABLED",
+      "active": [1,2,3,4,5],
+      "legacy": [6,7],
+      "candidateDays": [1,2,3,4,5,6,7],
+      "candidateSlots": [1,2,3,4,5],
+      "keyAssertion": "days include 6/7, slots still 1-5"
+    },
+    {
+      "name": "E LEGACY_SLOT_MALFORMED",
+      "active": [1,2,3,4,5,6],
+      "legacy": [6,7],
+      "candidateDays": [1,2,3,4,5],
+      "candidateSlots": [1,2,3,4,5],
+      "keyAssertion": "slot 6 excluded despite active"
+    }
+  ],
+  "harnessK": {
+    "script": "scripts/verify-worktime-solver-candidate-generation-k26-j3.ts",
+    "checks": 52,
+    "sections": {
+      "filesStructure": [1, 6],
+      "fixtureA": [7, 13],
+      "fixtureB": [14, 17],
+      "fixtureC": [18, 21],
+      "fixtureE": [22, 26],
+      "exhaustiveGeneration": [27, 31],
+      "randomGeneration": [32, 37],
+      "nonGoals": [38, 46],
+      "regression": [47, 52]
+    }
+  },
+  "nonGoals": [
+    "score.ts unchanged",
+    "SC3 unchanged",
+    "SC5 unchanged",
+    "SC7 unchanged",
+    "K22 expected unchanged",
+    "schema unchanged",
+    "migration unchanged",
+    "WorkTime API unchanged",
+    "recommendation unchanged",
+    "UI unchanged",
+    "score full/delta WorkTime alignment (J4 scope)",
+    "SchedulingRun snapshot schema (J2 scope)"
+  ],
+  "modifiedFiles": [
+    "src/lib/worktime/worktime-snapshot.ts (contract: add candidateSlotIndexes, toSolverWorkTimeContract, createLegacyStaticSolverWorkTimeContract)",
+    "src/lib/scheduler/solver.ts (candidate generation uses contract)",
+    "src/lib/scheduler/preview.ts (passes contract to solver)",
+    "scripts/verify-worktime-solver-candidate-generation-k26-j3.ts (NEW)",
+    "docs/k26-worktime-solver-candidate-generation.md (NEW)",
+    "docs/k26-worktime-solver-candidate-generation.json (NEW)"
+  ],
+  "verification": {
+    "verifyWorktimeSolverCandidateGenerationK26J3": "52/52 PASS",
+    "verifyWorktimeSchedulingrunSnapshotK26J2": "52/52 PASS",
+    "planWorktimeSolverScoreHarnessK26J1": "56/56 PASS",
+    "auditWorktimeSolverScoreIntegrationK26J": "48/48 PASS",
+    "k26ICloseout": "64/64 PASS",
+    "k26I4I3I2I1": "49+40+45+36 PASS",
+    "k26Iaudit": "44/44 PASS",
+    "k26Hcloseout": "52/52 PASS",
+    "k26H2A": "15/15 PASS",
+    "k26Hui": "43/43 PASS",
+    "k26Gapi": "40/40 PASS",
+    "k26F1": "30/30 PASS",
+    "k26Fvalidation": "30/30 PASS",
+    "k26FbackfillDryRun": "0 missing",
+    "k26E": "34/34 PASS",
+    "k26D": "39/39 PASS",
+    "k26C": "32/32 PASS",
+    "k26A": "47/47 PASS",
+    "k26Bcloseout": "38/38 PASS",
+    "k25closeout": "38/38 PASS",
+    "k25C": "PASS",
+    "k22CscoreHarness": "PASS (73/0/0/0)",
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "up to date (8 migrations)",
+    "build": "PASS",
+    "lint": "184 errors / 146 warnings (no new)",
+    "authFoundation": "53 passed / 1 failed (pre-existing)",
+    "gitStatusShortClean": true,
+    "localRemoteSynced": true
+  }
+}

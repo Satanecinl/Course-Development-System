@@ -16,6 +16,7 @@ import {
 import {
   buildAndSerializeWorkTimeSnapshot,
   toAdditiveMetadata,
+  toSolverWorkTimeContract,
   type SchedulingRunWorkTimeSnapshot,
   type WorkTimeSnapshotAdditiveMetadata,
 } from '@/lib/worktime/worktime-snapshot'
@@ -280,6 +281,11 @@ export async function createSchedulerPreview(
   }
 
   // 4. Run solver
+  // K26-J3: build the solver WorkTime contract from the snapshot.
+  // This is the canonical source for candidate generation; the solver
+  // uses `allowedDayOfWeeks` and `candidateSlotIndexes` from this
+  // contract instead of hardcoded ranges.
+  const solverWorkTimeContract = toSolverWorkTimeContract(workTimeSnapshot)
   const startedAt = new Date()
 
   const solveResult = solve(ctx, {
@@ -287,7 +293,7 @@ export async function createSchedulerPreview(
     lahcWindowSize,
     randomSeed,
     lockedSlotIds: new Set(lockedSlotIds),
-  })
+  }, undefined, solverWorkTimeContract)
   const completedAt = new Date()
   const durationMs = completedAt.getTime() - startedAt.getTime()
 

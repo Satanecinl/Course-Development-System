@@ -1,22 +1,18 @@
 /**
  * src/lib/worktime/worktime-snapshot.ts
  *
- * K26-J2: WorkTime snapshot serialization / parsing / validation for
- * `SchedulingRun.workTimeConfigSnapshot`.
+ * K26-J2/J3: WorkTime snapshot serialization / parsing / validation for
+ * `SchedulingRun.workTimeConfigSnapshot`, and solver contract builder.
  *
  * The snapshot is captured at preview time and carried forward by apply
  * and rollback. It is **the only** source of WorkTime policy that
  * apply / rollback consult — they must NOT re-resolve the current
- * WorkTimeConfig. This guarantees that a run can be reproduced
- * (and a later WorkTimeConfig change does not silently alter the
- * interpretation of the run's changes).
+ * WorkTimeConfig.
  *
- * Solver and score modules do NOT consume this snapshot directly. The
- * K26-J audit (`docs/k26-worktime-solver-score-integration-audit.md`)
- * defers solver/score integration to K26-J3 / K26-J4. The
- * `toSolverWorkTimeContract` helper is provided as a typed
- * conversion so that the eventual J3/J4 wiring has a stable
- * boundary to read from. It is NOT called by the solver today.
+ * K26-J3: The solver consumes the contract via `toSolverWorkTimeContract()`.
+ * The snapshot → contract conversion strips legacy slots and computes
+ * `candidateSlotIndexes` which the solver uses for exhaustive and
+ * random candidate generation.
  */
 
 import type { ResolvedWorkTimeForSchedule } from './worktime-schedule-resolver'
@@ -67,37 +63,101 @@ export interface WorkTimeSnapshotAdditiveMetadata {
   legacyDisplaySlotIndexes: number[]
 }
 
-// ── Solver contract stub (K26-J3 / J4 will consume) ──
+// ── Solver contract (K26-J3: consumed by solver.ts candidate generation) ──
 
 export interface SolverWorkTimeContract {
   semesterId: number
   source: WorkTimeSnapshotSource
   workTimeConfigId: number | null
   allowWeekend: boolean
+  /** All days the solver may generate candidates on (sorted, deduplicated). */
+  allowedDayOfWeeks: number[]
+  /**
+   * Slot indexes the solver may generate candidates on.
+   * Computed as `activeTeachingSlotIndexes` minus `legacyDisplaySlotIndexes`.
+   * Sorted, deduplicated, non-empty. Slot 6/7 are always excluded even if
+   * the DB erroneously marks them as active teaching.
+   */
+  candidateSlotIndexes: number[]
   activeTeachingSlotIndexes: number[]
   legacyDisplaySlotIndexes: number[]
-  allowedDayOfWeeks: number[]
   weekdayDayOfWeeks: number[]
   weekendDayOfWeeks: number[]
 }
 
 /**
- * Convert a snapshot into a solver-facing contract. NOT consumed by
- * the solver today; reserved for K26-J3 / J4 wiring.
+ * K26-J3: Build a solver-facing contract from a snapshot.
+ *
+ * Policy:
+ *  - candidateSlotIndexes = activeTeachingSlotIndexes \ legacyDisplaySlotIndexes
+ *  - Slot 6/7 are always excluded from candidateSlotIndexes even if active
+ *    (hard-coded guard against malformed DB data)
+ *  - allowedDayOfWeeks from snapshot (already sanitized at build time)
+ *  - Empty candidateSlotIndexes → fail-fast
+ *  - Empty allowedDayOfWeeks → fail-fast
  */
 export function toSolverWorkTimeContract(
   snap: SchedulingRunWorkTimeSnapshot
 ): SolverWorkTimeContract {
+  const legacySet = new Set<number>(snap.legacyDisplaySlotIndexes)
+  const candidateSlotIndexes = Array.from(
+    new Set(
+      snap.activeTeachingSlotIndexes.filter((s) => !legacySet.has(s))
+    )
+  ).sort((a, b) => a - b)
+
+  // Hard guard: even if active includes legacy, exclude 6/7
+  const finalCandidateSlots = candidateSlotIndexes.filter((s) => s <= 5)
+
+  if (finalCandidateSlots.length === 0) {
+    throw new WorkTimeSnapshotInvalidError(
+      'WORKTIME_CONTRACT_NO_CANDIDATE_SLOTS',
+      `No candidate slots remain after excluding legacy display slots. ` +
+      `activeTeachingSlotIndexes=${JSON.stringify(snap.activeTeachingSlotIndexes)}, ` +
+      `legacyDisplaySlotIndexes=${JSON.stringify(snap.legacyDisplaySlotIndexes)}.`,
+    )
+  }
+
+  const allowedDayOfWeeks = [...snap.allowedDayOfWeeks].sort((a, b) => a - b)
+  if (allowedDayOfWeeks.length === 0) {
+    throw new WorkTimeSnapshotInvalidError(
+      'WORKTIME_CONTRACT_NO_ALLOWED_DAYS',
+      'No allowed days remain on the contract.',
+    )
+  }
+
   return {
     semesterId: snap.semesterId,
     source: snap.source,
     workTimeConfigId: snap.workTimeConfigId,
     allowWeekend: snap.allowWeekend,
-    activeTeachingSlotIndexes: [...snap.activeTeachingSlotIndexes],
-    legacyDisplaySlotIndexes: [...snap.legacyDisplaySlotIndexes],
-    allowedDayOfWeeks: [...snap.allowedDayOfWeeks],
-    weekdayDayOfWeeks: [...snap.weekdayDayOfWeeks],
-    weekendDayOfWeeks: [...snap.weekendDayOfWeeks],
+    allowedDayOfWeeks,
+    candidateSlotIndexes: finalCandidateSlots,
+    activeTeachingSlotIndexes: [...snap.activeTeachingSlotIndexes].sort((a, b) => a - b),
+    legacyDisplaySlotIndexes: [...snap.legacyDisplaySlotIndexes].sort((a, b) => a - b),
+    weekdayDayOfWeeks: [...snap.weekdayDayOfWeeks].sort((a, b) => a - b),
+    weekendDayOfWeeks: [...snap.weekendDayOfWeeks].sort((a, b) => a - b),
+  }
+}
+
+/**
+ * K26-J3: Create a legacy static contract for tests and low-level
+ * solver invocations that don't go through the preview path.
+ *
+ * This matches the pre-J3 behavior: days 1-5, slots 1-5.
+ */
+export function createLegacyStaticSolverWorkTimeContract(): SolverWorkTimeContract {
+  return {
+    semesterId: 0,
+    source: 'staticFallback',
+    workTimeConfigId: null,
+    allowWeekend: false,
+    allowedDayOfWeeks: [1, 2, 3, 4, 5],
+    candidateSlotIndexes: [1, 2, 3, 4, 5],
+    activeTeachingSlotIndexes: [1, 2, 3, 4, 5],
+    legacyDisplaySlotIndexes: [6, 7],
+    weekdayDayOfWeeks: [1, 2, 3, 4, 5],
+    weekendDayOfWeeks: [6, 7],
   }
 }
 
