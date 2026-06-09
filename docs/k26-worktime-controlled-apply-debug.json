@@ -1,0 +1,59 @@
+{
+  "stage": "K26-K2-WORKTIME-CONTROLLED-APPLY-DEBUG",
+  "status": "ROOT_CAUSE_FOUND",
+  "date": "2026-06-09",
+  "rootCause": {
+    "classification": "APPLY_VALIDATION_CONTEXT_BUG",
+    "confidence": "HIGH",
+    "description": "apply.ts countConflictsByType only counts HC1-HC4, missing HC5/HC6 from the hardScore=-2000 error message",
+    "failingConstraint": "HC6_NON_AUTOMOTIVE_FORBID_LINXIAO",
+    "penaltyPerConflict": -1000,
+    "totalViolations": 2,
+    "sampleViolation": "林业法规与执法实务 (分类: NON_AUTOMOTIVE_ONLY) 不可在林校教室 林校304",
+    "affectedSlotId": 383,
+    "affectedRoomId": 23,
+    "affectedCourse": "林业法规与执法实务",
+    "fixDirection": "extend countConflictsByType to include HC5/HC6 or use hardScore in error message"
+  },
+  "currentDbState": {
+    "hardScore": -1000,
+    "softScore": -1565,
+    "hc1": 0,
+    "hc2": 0,
+    "hc3": 0,
+    "hc4": 0,
+    "hc5": 0,
+    "hc6": 1
+  },
+  "nonGoals": [
+    "schema unchanged",
+    "migration unchanged",
+    "DB committed",
+    "solver unchanged",
+    "score unchanged",
+    "apply unchanged (only diagnostic)",
+    "K22 expected unchanged",
+    "recommendation unchanged",
+    "UI unchanged"
+  ],
+  "verification": {
+    "k26K2DebugScript": "ROOT_CAUSE_FOUND (PASS checks only)",
+    "k26JCloseoutVerify": "52/52 PASS",
+    "k26J6ReadinessVerify": "50/50 PASS",
+    "k26J4ScoreVerify": "47/47 PASS",
+    "k26J3CandidateVerify": "53/53 PASS",
+    "k26J2SnapshotVerify": "52/52 PASS",
+    "k22CScoreHarness": "PASS (73/0/0/0)",
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "up to date (8 migrations)",
+    "build": "PASS",
+    "lint": "184/146",
+    "authFoundation": "53/1 (pre-existing)",
+    "gitStatusClean": true
+  },
+  "recommendation": {
+    "status": "ROOT_CAUSE_FOUND",
+    "nextStage": "K26-K3-APPLY-POST-VALIDATION-HC5-HC6-FIX",
+    "fixScope": "extend countConflictsByType to include HC5/HC6, improve error message, fix HC6 on slot 383"
+  }
+}
