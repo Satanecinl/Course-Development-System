@@ -1,0 +1,80 @@
+{
+  "stage": "K26-K3-APPLY-POST-VALIDATION-HC5-HC6-FIX",
+  "status": "K26_K3_PASSED",
+  "date": "2026-06-09",
+  "summary": "Extended countConflictsByType to include HC5/HC6, added extractTopHardConflict helper, enriched apply error messages with full HC1-HC6 breakdown plus top constraint detail (slot/task/room/course). Controlled trial re-run produced BLOCKED_WITH_EXPLICIT_HC6 with complete diagnostic output.",
+  "originalFailure": {
+    "previewRunId": 93,
+    "previewHardScore": 0,
+    "postApplyHardScore": -2000,
+    "oldBreakdown": "HC1=0 HC2=0 HC3=0 HC4=0",
+    "newBreakdown": "HC1=0 HC2=0 HC3=0 HC4=0 HC5=0 HC6=2",
+    "topConstraint": "HC6_NON_AUTOMOTIVE_FORBID_LINXIAO",
+    "affectedSlot": 244,
+    "affectedRoom": "林校305",
+    "affectedCourse": "职业素养",
+    "classification": "NON_AUTOMOTIVE_ONLY"
+  },
+  "implementation": {
+    "countConflictsByType": "Extended from {hc1,hc2,hc3,hc4} to HardConflictBreakdown {hc1-hc6}",
+    "extractTopHardConflict": "New helper — returns first HC detail with slotId/message",
+    "formatBreakdown": "New helper — formats full HC1-HC6 for error messages",
+    "errorMessages": "APPLY_POST_HARD_SCORE_NON_ZERO now includes topConstraint/affectedSlot/detail fields",
+    "conflictSummary": "Now includes HC5/HC6 in DB storage",
+    "ApplyResult": "Now includes hc5After/hc6After fields",
+    "scoreSemanticsUnchanged": true
+  },
+  "controlledTrial": {
+    "status": "BLOCKED_WITH_EXPLICIT_HC6",
+    "previewRunId": 93,
+    "previewHardScore": 0,
+    "softScore": -1428,
+    "candidateDays": [1, 2, 3, 4, 5],
+    "candidateSlots": [1, 2, 3, 4, 5],
+    "legacySlotsExcluded": true,
+    "postApplyHardScore": -2000,
+    "hc1": 0,
+    "hc2": 0,
+    "hc3": 0,
+    "hc4": 0,
+    "hc5": 0,
+    "hc6": 2,
+    "topConstraint": "HC6_NON_AUTOMOTIVE_FORBID_LINXIAO",
+    "affectedSlot": 244,
+    "affectedRoom": "林校305",
+    "affectedCourse": "职业素养",
+    "blockedStatus": "BLOCKED_WITH_EXPLICIT_HC6"
+  },
+  "verification": {
+    "k26K3VerifyScript": "PASS (31/31)",
+    "k26K2DebugScript": "PASS (13/13)",
+    "k26JCloseoutVerify": "52/52 PASS",
+    "j3CandidateVerify": "53/53 PASS",
+    "j2SnapshotVerify": "52/52 PASS",
+    "k22CScoreHarness": "PASS (73/0/0/0)",
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "up to date (8 migrations)",
+    "build": "PASS",
+    "lint": "184/146",
+    "authFoundation": "53/1 (pre-existing)",
+    "gitStatusClean": true
+  },
+  "nonGoals": [
+    "schema unchanged",
+    "migration unchanged",
+    "DB committed",
+    "solver unchanged",
+    "score semantics/weights unchanged",
+    "K22 expected unchanged",
+    "recommendation unchanged",
+    "UI unchanged",
+    "no manual DB edits"
+  ],
+  "recommendation": {
+    "k26K3Status": "PASSED",
+    "k26KControlledTrialStatus": "BLOCKED_WITH_EXPLICIT_HC6",
+    "blockedReason": "HC6 (linxiao specialty) is a real business rule violation — 2 non-automotive tasks assigned to linxiao rooms post-apply",
+    "recommendedNextStage": "K26-K4-DATA-RULE-CONTEXT-FIX — resolve HC6 violations via data adjustment or rule/context clarification",
+    "k27Eligible": false
+  }
+}

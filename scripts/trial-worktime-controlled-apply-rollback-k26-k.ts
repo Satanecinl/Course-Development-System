@@ -193,13 +193,54 @@ async function main() {
     })
     set('applySucceeded', true)
     set('applyRunId', applyResult.applyRunId)
+    set('applyHardScoreAfter', applyResult.hardScoreAfter)
+    set('applyHc1', applyResult.hc1After)
+    set('applyHc2', applyResult.hc2After)
+    set('applyHc3', applyResult.hc3After)
+    set('applyHc4', applyResult.hc4After)
+    set('applyHc5', applyResult.hc5After)
+    set('applyHc6', applyResult.hc6After)
     console.log(`  apply runId=${applyResult.applyRunId}, appliedSlots=${applyResult.appliedSlotCount}, hardScoreAfter=${applyResult.hardScoreAfter}`)
+    console.log(`  HC breakdown: HC1=${applyResult.hc1After} HC2=${applyResult.hc2After} HC3=${applyResult.hc3After} HC4=${applyResult.hc4After} HC5=${applyResult.hc5After} HC6=${applyResult.hc6After}`)
   } catch (e) {
-    console.error('ERROR: apply failed:', e instanceof Error ? e.message : String(e))
+    const errMsg = e instanceof Error ? e.message : String(e)
+    console.error('ERROR: apply failed:', errMsg)
+
+    // K26-K3: parse HC5/HC6 from the new enriched error message
+    const hcMatch = errMsg.match(/HC1=(\d+) HC2=(\d+) HC3=(\d+) HC4=(\d+) HC5=(\d+) HC6=(\d+)/)
+    if (hcMatch) {
+      set('applyHc1', Number(hcMatch[1]))
+      set('applyHc2', Number(hcMatch[2]))
+      set('applyHc3', Number(hcMatch[3]))
+      set('applyHc4', Number(hcMatch[4]))
+      set('applyHc5', Number(hcMatch[5]))
+      set('applyHc6', Number(hcMatch[6]))
+      console.log(`  HC breakdown: HC1=${hcMatch[1]} HC2=${hcMatch[2]} HC3=${hcMatch[3]} HC4=${hcMatch[4]} HC5=${hcMatch[5]} HC6=${hcMatch[6]}`)
+    }
+
+    // Extract topConstraint / affectedSlot from enriched error
+    const topMatch = errMsg.match(/topConstraint=(\S+)(?: affectedSlot=(\d+))?/)
+    if (topMatch) {
+      set('topConstraint', topMatch[1])
+      if (topMatch[2]) set('affectedSlot', topMatch[2])
+      console.log(`  topConstraint=${topMatch[1]}${topMatch[2] ? ` affectedSlot=${topMatch[2]}` : ''}`)
+    }
+
+    // Extract detail (course / room) from enriched error
+    const detailMatch = errMsg.match(/detail="([^"]+)"/)
+    if (detailMatch) {
+      set('topConflictDetail', detailMatch[1])
+      console.log(`  detail: ${detailMatch[1]}`)
+    }
+
+    // Determine BLOCKED sub-type
+    const isHc6Blocked = (output.applyHc6 ?? 0) !== 0
+    const blockedStatus = isHc6Blocked ? 'BLOCKED_WITH_EXPLICIT_HC6' : 'BLOCKED'
     set('applySucceeded', false)
     set('failedStep', 'apply')
+    set('blockedStatus', blockedStatus)
     set('restoreRecommendation', `Restore from backup: ${backupPath}`)
-    await outputResult('BLOCKED')
+    await outputResult(blockedStatus as 'PASS' | 'BLOCKED')
     await prisma.$disconnect()
     process.exit(1)
   }
@@ -293,20 +334,24 @@ async function main() {
   if (businessDataRestored && output.applySucceeded && output.rollbackSucceeded) {
     await outputResult('PASS')
   } else {
-    await outputResult('BLOCKED')
+    // K26-K3: if HC6 was the cause, use BLOCKED_WITH_EXPLICIT_HC6
+    const isHc6 = (output.applyHc6 ?? 0) !== 0
+    await outputResult(isHc6 ? 'BLOCKED_WITH_EXPLICIT_HC6' : 'BLOCKED')
     process.exit(1)
   }
 
   await prisma.$disconnect()
 }
 
-async function outputResult(status: 'PASS' | 'BLOCKED') {
+async function outputResult(status: 'PASS' | 'BLOCKED' | 'BLOCKED_WITH_EXPLICIT_HC6') {
   const lines = [
     '',
     '─'.repeat(60),
   ]
   if (status === 'PASS') {
     lines.push('K26-K CONTROLLED APPLY ROLLBACK TRIAL PASS')
+  } else if (status === 'BLOCKED_WITH_EXPLICIT_HC6') {
+    lines.push('K26-K CONTROLLED APPLY ROLLBACK TRIAL BLOCKED_WITH_EXPLICIT_HC6')
   } else {
     lines.push('K26-K CONTROLLED APPLY ROLLBACK TRIAL BLOCKED')
   }

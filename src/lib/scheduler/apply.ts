@@ -40,6 +40,8 @@ export interface ApplyResult {
   hc2After: number
   hc3After: number
   hc4After: number
+  hc5After: number
+  hc6After: number
   databaseFingerprintBefore: string
   databaseFingerprintAfter: string
   changeCount: number
@@ -52,17 +54,55 @@ export interface ApplyResult {
 
 // ── Helpers ──
 
+/** Full hard-constraint conflict breakdown — HC1 through HC6. */
+export interface HardConflictBreakdown {
+  hc1: number
+  hc2: number
+  hc3: number
+  hc4: number
+  hc5: number
+  hc6: number
+}
+
+/** Format breakdown for error messages / audit logs. */
+function formatBreakdown(b: HardConflictBreakdown): string {
+  return `HC1=${b.hc1} HC2=${b.hc2} HC3=${b.hc3} HC4=${b.hc4} HC5=${b.hc5} HC6=${b.hc6}`
+}
+
+/**
+ * K26-K3: Extended to count HC5 (room unavailable) and HC6 (linxiao
+ * specialty) in addition to HC1-HC4. This fixes the
+ * APPLY_VALIDATION_CONTEXT_BUG where post-apply validation only
+ * reported HC1-HC4 while hardScore included HC5/HC6 penalties.
+ */
 function countConflictsByType(
   details: { type: string }[],
-): { hc1: number; hc2: number; hc3: number; hc4: number } {
-  let hc1 = 0, hc2 = 0, hc3 = 0, hc4 = 0
+): HardConflictBreakdown {
+  let hc1 = 0, hc2 = 0, hc3 = 0, hc4 = 0, hc5 = 0, hc6 = 0
   for (const d of details) {
     if (d.type === 'HC1_ROOM_CONFLICT') hc1++
     else if (d.type === 'HC2_TEACHER_CONFLICT') hc2++
     else if (d.type === 'HC3_CLASS_CONFLICT') hc3++
     else if (d.type === 'HC4_CAPACITY') hc4++
+    else if (d.type === 'HC5_ROOM_UNAVAILABLE') hc5++
+    else if (d.type === 'HC6_NON_AUTOMOTIVE_FORBID_LINXIAO') hc6++
   }
-  return { hc1, hc2, hc3, hc4 }
+  return { hc1, hc2, hc3, hc4, hc5, hc6 }
+}
+
+/**
+ * K26-K3: Extract the first hard constraint detail (for error messages).
+ * Returns the first HC detail with slotId information when available.
+ */
+function extractTopHardConflict(
+  details: { type: string; message?: string; slotId?: number }[],
+): { constraint: string; slotId?: number; message?: string } | null {
+  for (const d of details) {
+    if (d.type.startsWith('HC')) {
+      return { constraint: d.type, slotId: d.slotId, message: d.message }
+    }
+  }
+  return null
 }
 
 /**
@@ -411,18 +451,25 @@ export async function applySchedulerPreview(
     const postCtx = await loadSchedulingContextWithClient(tx, semesterId)
     const postState = buildInitialState(postCtx)
     const postScore = calculateInitialScore(postCtx, postState)
-    const postDetails = calculateScoreWithDetails(postCtx, postState)
-    const postHc = countConflictsByType(postDetails.details)
+    const postScoreWithDetails = calculateScoreWithDetails(postCtx, postState)
+    const postHc = countConflictsByType(postScoreWithDetails.details)
 
     if (postScore.hardScore !== 0) {
+      // K26-K3: error message now includes full HC1-HC6 breakdown
+      // plus the top hard conflict detail (slot/task/room/course)
+      const topHc = extractTopHardConflict(postScoreWithDetails.details.filter(d => d.level === 'HARD'))
+      const topHcInfo = topHc
+        ? ` topConstraint=${topHc.constraint}${topHc.slotId != null ? ` affectedSlot=${topHc.slotId}` : ''}${topHc.message ? ` detail="${topHc.message}"` : ''}`
+        : ''
       throw new Error(
         `APPLY_POST_HARD_SCORE_NON_ZERO: hardScore=${postScore.hardScore} ` +
-        `HC1=${postHc.hc1} HC2=${postHc.hc2} HC3=${postHc.hc3} HC4=${postHc.hc4}`,
+        `${formatBreakdown(postHc)}${topHcInfo}`,
       )
     }
-    if (postHc.hc1 !== 0 || postHc.hc2 !== 0 || postHc.hc3 !== 0 || postHc.hc4 !== 0) {
+    if (postHc.hc1 !== 0 || postHc.hc2 !== 0 || postHc.hc3 !== 0 ||
+        postHc.hc4 !== 0 || postHc.hc5 !== 0 || postHc.hc6 !== 0) {
       throw new Error(
-        `APPLY_POST_HC_NON_ZERO: HC1=${postHc.hc1} HC2=${postHc.hc2} HC3=${postHc.hc3} HC4=${postHc.hc4}`,
+        `APPLY_POST_HC_NON_ZERO: ${formatBreakdown(postHc)}`,
       )
     }
 
@@ -474,11 +521,14 @@ export async function applySchedulerPreview(
           // Carry the config snapshot from the preview run
           ...(snapshot.config ? { config: snapshot.config } : {}),
         }),
+        // K26-K3: conflictSummary now includes HC5/HC6
         conflictSummary: JSON.stringify({
           HC1: postHc.hc1,
           HC2: postHc.hc2,
           HC3: postHc.hc3,
           HC4: postHc.hc4,
+          HC5: postHc.hc5,
+          HC6: postHc.hc6,
         }),
       },
     })
@@ -492,6 +542,8 @@ export async function applySchedulerPreview(
       hc2After: postHc.hc2,
       hc3After: postHc.hc3,
       hc4After: postHc.hc4,
+      hc5After: postHc.hc5,
+      hc6After: postHc.hc6,
       databaseFingerprintAfter: postFingerprint,
     }
   })
@@ -510,6 +562,8 @@ export async function applySchedulerPreview(
     hc2After: applyResult.hc2After,
     hc3After: applyResult.hc3After,
     hc4After: applyResult.hc4After,
+    hc5After: applyResult.hc5After,
+    hc6After: applyResult.hc6After,
     databaseFingerprintBefore,
     databaseFingerprintAfter: applyResult.databaseFingerprintAfter,
     changeCount: proposedChanges.length,
