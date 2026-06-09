@@ -1,0 +1,42 @@
+{
+  "stage": "K26-M1-ADJUSTMENT-RULE-SETTINGS-BASIC-IMPLEMENTATION",
+  "status": "CLOSED",
+  "date": "2026-06-09",
+  "summary": "Implemented read-only adjustment rules settings panel. Shows cross-week, weekend, WorkTime, recommendation, dry-run/apply guards, and safeguard status.",
+  "api": {
+    "path": "/api/admin/settings/adjustment-rules",
+    "method": "GET",
+    "permission": "settings:manage",
+    "readOnly": true
+  },
+  "ui": {
+    "panel": "AdjustmentRulesSettingsPanel",
+    "path": "/admin/settings → 调课规则设置",
+    "features": ["summary cards", "WorkTime context", "rules list", "safeguards", "read-only notice", "refresh"]
+  },
+  "rulesDisplayed": [
+    "crossWeekAdjustment",
+    "weekendAdjustment",
+    "recommendationUsesWorkTime",
+    "excludeLegacySlots",
+    "preferredDayOfWeek",
+    "defaultRecommendationLimit",
+    "dryRunWorkTimeGuard",
+    "dryRunConflictCheck",
+    "applyGuardRequiresConfirmation",
+    "noRoomAdjustmentAllowed"
+  ],
+  "verification": {
+    "k26M1Verify": "PASS",
+    "k26L1Verify": "PASS",
+    "k26KCloseout": "PASS",
+    "k22C": "73/0/0/0",
+    "build": "PASS",
+    "lint": "184/146",
+    "authFoundation": "53/1"
+  },
+  "recommendation": {
+    "k26M1Status": "CLOSED",
+    "recommendedNextStage": "K26-M2-ADJUSTMENT-RULE-SETTINGS-MANUAL-TRIAL"
+  }
+}

@@ -62,12 +62,12 @@ export const SETTINGS_MODULES: SettingsModule[] = [
   {
     key: 'adjustment-rules',
     title: '调课规则设置',
-    description: '管理跨周调课、周末调课、推荐方案数量、推荐排序偏好、默认隐藏高级工具和是否允许无教室调课。',
-    status: 'planned',
+    description: '查看跨周调课、周末调课、推荐方案、WorkTime guard、dry-run/apply 规则和安全限制。基础只读版。',
+    status: 'ready',
     priority: 'P1',
-    recommendedStage: 'K26-E-ADJUSTMENT-RULES-SETTINGS-AUDIT',
+    recommendedStage: 'K26-M1-BASIC',
     riskLevel: 'medium',
-    notes: '调课推荐已有 room-recommendations 和 plan-recommendations，接入设置中心。',
+    notes: '只读基础版。展示当前调课规则和 guard 状态，不提供编辑。',
   },
   {
     key: 'import-rules',
