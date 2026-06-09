@@ -1,0 +1,99 @@
+{
+  "stage": "K26-K4A-HC6-DATA-REPAIR",
+  "status": "K26_K4A_PASSED",
+  "date": "2026-06-09",
+  "summary": "Repaired existing HC6 violation: slot383 moved from room 23 (林校304) to room 31 (10-124). No solver/score/HC6 changes. K26-K controlled trial will now pass.",
+  "slot383PreRepair": {
+    "id": 383,
+    "teachingTaskId": 276,
+    "courseName": "林业法规与执法实务",
+    "teacher": "徐厚朴",
+    "classGroups": ["2024级林业技术1班"],
+    "studentCount": 27,
+    "dayOfWeek": 1,
+    "slotIndex": 2,
+    "roomId": 23,
+    "roomName": "林校304",
+    "isLinxiaoRoom": true,
+    "specialtyClassification": "NON_AUTOMOTIVE_ONLY",
+    "hc6Penalty": -1000
+  },
+  "slot383PostRepair": {
+    "roomId": 31,
+    "roomName": "10-124",
+    "isLinxiaoRoom": false,
+    "specialtyClassification": "NON_AUTOMOTIVE_ONLY",
+    "hc6Penalty": 0
+  },
+  "candidateAnalysis": {
+    "totalCandidates": 53,
+    "accepted": 17,
+    "rejected": 36,
+    "top5Accepted": [
+      "room 31 (10-124) cap=30",
+      "room 37 (11-504) cap=33",
+      "room 16 (11-209) cap=37",
+      "room 47 (11-328 或 11-105) cap=38",
+      "room 48 (11-204 或 12-111) cap=38"
+    ],
+    "selectedRoom": "room 31 (10-124) cap=30 type=NORMAL",
+    "selectionCriteria": "smallest non-Linxiao room, not occupied at same day/slotIdx, capacity >= 27, no HC1-HC6 conflicts"
+  },
+  "mutation": "UPDATE ScheduleSlot SET roomId=31 WHERE id=383",
+  "dataSafety": {
+    "backupPath": "prisma/dev.db.backup-before-k26-k4a-slot383-repair-2026-06-09T08-04-38-179Z",
+    "backupCommitted": false,
+    "slotCountUnchanged": true,
+    "onlySlot383Changed": true,
+    "noOtherTablesModified": true
+  },
+  "controlledTrial": {
+    "status": "PASS",
+    "previewRunId": 148,
+    "previewHardScoreAfter": 0,
+    "previewSoftScoreAfter": -1417,
+    "previewBlocked": false,
+    "applyAttempted": true,
+    "applyRunId": 149,
+    "applyHardScoreAfter": 0,
+    "applyHc1": 0, "applyHc2": 0, "applyHc3": 0, "applyHc4": 0, "applyHc5": 0, "applyHc6": 0,
+    "rollbackRunId": 150,
+    "rollbackHardScoreAfter": 0,
+    "businessDataRestored": true,
+    "acceptableAuditDrift": true,
+    "solverIntroducedHC6": 0,
+    "existingDbHC6": 0
+  },
+  "verification": {
+    "k26K4AVerify": "32/32 PASS (after docs created)",
+    "k26K4CVerify": "PASS",
+    "k26K4Verify": "PASS",
+    "k26K3Verify": "PASS",
+    "k26K2Debug": "PASS",
+    "k26JCloseout": "PASS",
+    "j3Candidate": "PASS",
+    "j2Snapshot": "PASS",
+    "k22CScoreHarness": "73/0/0/0",
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "up to date",
+    "build": "PASS",
+    "lint": "184/146 (baseline)",
+    "authFoundation": "53/1 (pre-existing)",
+    "gitStatus": "clean (prisma/dev.db modified locally, not committed)"
+  },
+  "nonGoals": [
+    "schema unchanged",
+    "migration unchanged",
+    "solver unchanged",
+    "score semantics unchanged",
+    "HC6 penalty unchanged (-1000)",
+    "K22 expected unchanged",
+    "no exception mechanism",
+    "no batch repairs",
+    "prisma/dev.db not committed"
+  ],
+  "recommendation": {
+    "k26K4AStatus": "PASSED",
+    "recommendedNextStage": "K26-K-CONTROLLED-APPLY-ROLLBACK-TRIAL"
+  }
+}

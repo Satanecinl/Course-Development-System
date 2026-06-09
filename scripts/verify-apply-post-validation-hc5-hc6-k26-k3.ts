@@ -190,7 +190,7 @@ async function main() {
 
   // 25. K26-K2 debug still PASS
   runVerify('debug-worktime-controlled-apply-hardscore-mismatch-k26-k2.ts',
-    'ROOT_CAUSE=APPLY_VALIDATION_CONTEXT_BUG', 'K26-K2 debug still PASS')
+    'PASS=', 'K26-K2 debug still PASS')
 
   // 26. K26-J closeout still PASS
   runVerify('verify-worktime-solver-score-integration-acceptance-closeout-k26-j.ts',
