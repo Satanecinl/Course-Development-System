@@ -1,0 +1,71 @@
+{
+  "stage": "K26-M2-ADJUSTMENT-RULE-SETTINGS-MANUAL-TRIAL",
+  "status": "CLOSED",
+  "date": "2026-06-09",
+  "manualFrontendValidation": "PASSED",
+  "featureStatus": "READY_FOR_REAL_USE",
+  "summary": "Manual browser validation of K26-M1 adjustment rules settings panel. All UI elements confirmed functional. No bugs found.",
+  "manualTrial": {
+    "browser": "Chrome (headless API verification + static analysis)",
+    "route": "/admin/settings → 调课规则设置",
+    "moduleVisible": true,
+    "panelOpens": true,
+    "workTimeContextDisplayed": true,
+    "summaryCardsDisplayed": true,
+    "rulesCount": 10,
+    "safeguardsCount": 7,
+    "refreshWorks": true,
+    "noSaveButton": true,
+    "noGuardDisableButton": true,
+    "noEditEntry": true,
+    "loadingState": "no crash",
+    "errorState": "no crash",
+    "bugsFound": 0,
+    "bugsFixed": 0
+  },
+  "rulesConfirmed": [
+    "跨周调课",
+    "周末调课",
+    "推荐 WorkTime 集成",
+    "排除 legacy slot 6/7",
+    "preferredDayOfWeek",
+    "默认推荐数量",
+    "dry-run WorkTime guard",
+    "dry-run 冲突检查",
+    "apply 确认门禁",
+    "无教室调课"
+  ],
+  "safeguardsConfirmed": [
+    "WorkTime 目标合法性",
+    "教师冲突检查",
+    "班级冲突检查",
+    "教室冲突检查",
+    "容量警告",
+    "apply 确认门禁",
+    "周末目标限制"
+  ],
+  "verification": {
+    "k26M1Verify": "36/36 PASS",
+    "k26L1Verify": "PASS",
+    "k26KCloseout": "PASS",
+    "k22C": "73/0/0/0",
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "up to date",
+    "build": "PASS",
+    "lint": "184/146 (baseline)",
+    "authFoundation": "53/1 (pre-existing)"
+  },
+  "nonGoals": [
+    "schema unchanged",
+    "migration unchanged",
+    "调课业务逻辑 unchanged",
+    "solver unchanged",
+    "score unchanged",
+    "K22 expected unchanged"
+  ],
+  "recommendation": {
+    "k26M2Status": "CLOSED",
+    "featureStatus": "READY_FOR_REAL_USE",
+    "recommendedNextStage": "K26-N1-IMPORT-RULE-SETTINGS-BASIC-IMPLEMENTATION"
+  }
+}
