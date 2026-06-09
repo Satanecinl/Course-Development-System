@@ -1,0 +1,96 @@
+{
+  "stage": "K26-K-CONTROLLED-APPLY-ROLLBACK-ACCEPTANCE-CLOSEOUT",
+  "status": "CLOSED",
+  "date": "2026-06-09",
+  "featureStatus": "READY_FOR_REAL_USE",
+  "technicalReadiness": "PASS",
+  "controlledApplyRollbackTrial": "PASSED",
+  "summary": "K26-K controlled apply/rollback is formally closed. All HC6 violations resolved: solver no longer generates HC6 (K4C), preview correctly reports hardScore (K4), and last existing DB violation repaired (K4A). Trial passes with hardScore=0, HC1-HC6 all zero.",
+  "blockerResolutionChain": {
+    "K26-K2": {
+      "commit": "f659caa",
+      "finding": "APPLY_VALIDATION_CONTEXT_BUG — countConflictsByType only counts HC1-HC4, masking HC5/HC6"
+    },
+    "K26-K3": {
+      "commit": "e0fbab0",
+      "fix": "Extended countConflictsByType to include HC5/HC6, added extractTopHardConflict helper"
+    },
+    "K26-K4": {
+      "commit": "0b6c10f",
+      "fix": "preview.ts scoreAfter now uses re-scored bestDetails instead of solver accumulated bestScore"
+    },
+    "K26-K4C": {
+      "commit": "720893a",
+      "fix": "Solver isPlacementHardCompatible now rejects non-automotive/mixed tasks in Linxiao rooms"
+    },
+    "K26-K4A": {
+      "commit": "4934c10",
+      "fix": "Data repair: slot383 roomId 23 (林校304) → 31 (10-124)"
+    }
+  },
+  "controlledTrial": {
+    "status": "PASS",
+    "previewRunId": 151,
+    "previewHardScoreAfter": 0,
+    "previewSoftScoreAfter": -1417,
+    "previewBlocked": false,
+    "applyRunId": 152,
+    "postApplyHardScore": 0,
+    "applyHc1": 0, "applyHc2": 0, "applyHc3": 0, "applyHc4": 0, "applyHc5": 0, "applyHc6": 0,
+    "rollbackRunId": 153,
+    "rollbackHardScoreAfter": 0,
+    "businessDataRestored": true,
+    "acceptableAuditDrift": true,
+    "solverIntroducedHC6": 0,
+    "existingDbHC6": 0,
+    "slotsChanged": 384,
+    "rollbackSlotsRestored": 384
+  },
+  "crossEnvironmentNote": {
+    "prismaDevDbLocalOnly": true,
+    "repairScript": "scripts/repair-hc6-existing-slot383-k26-k4a.ts",
+    "dryRunCommand": "npx tsx scripts/repair-hc6-existing-slot383-k26-k4a.ts --dry-run",
+    "applyCommand": "npx tsx scripts/repair-hc6-existing-slot383-k26-k4a.ts --apply",
+    "verifyCommand": "npx tsx scripts/verify-hc6-data-repair-k26-k4a.ts",
+    "productionCaution": "Run dry-run first; do not commit dev.db or backups; production must have backup; do not blindly use roomId 31 if slot IDs differ"
+  },
+  "verification": {
+    "closeoutVerify": "33/33 PASS",
+    "k4aVerify": "PASS",
+    "k4cVerify": "PASS",
+    "k4Verify": "PASS",
+    "k3Verify": "PASS",
+    "k2Debug": "PASS",
+    "controlledTrial": "PASS",
+    "k26JCloseout": "52/52 PASS",
+    "j3Candidate": "53/53 PASS",
+    "j2Snapshot": "52/52 PASS",
+    "k22CScoreHarness": "73/0/0/0",
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "up to date (8 migrations)",
+    "build": "PASS",
+    "lint": "184/146 (330 problems)",
+    "authFoundation": "53/1 (pre-existing)",
+    "gitStatus": "prisma/dev.db not tracked by git; no uncommitted source changes"
+  },
+  "nonGoals": [
+    "schema unchanged",
+    "migration unchanged",
+    "solver unchanged (after K4C)",
+    "score unchanged (after K4)",
+    "apply/rollback semantics unchanged",
+    "HC6 penalty unchanged (-1000)",
+    "HC6 not downgraded",
+    "K22 expected unchanged",
+    "K27 not entered"
+  ],
+  "recommendation": {
+    "k26KStatus": "CLOSED",
+    "featureStatus": "READY_FOR_REAL_USE",
+    "technicalReadiness": "PASS",
+    "controlledApplyRollbackTrial": "PASSED",
+    "canEnterK27": false,
+    "k22ExpectedUpdated": false,
+    "recommendedNextStage": "K26-L-CAMPUS-ROOM-RULE-SETTINGS-READMODEL-AND-ROADMAP"
+  }
+}
