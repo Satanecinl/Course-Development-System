@@ -1,0 +1,64 @@
+{
+  "stage": "K26-K-CONTROLLED-APPLY-ROLLBACK-TRIAL",
+  "status": "BLOCKED",
+  "date": "2026-06-09",
+  "mode": "controlled-apply-rollback",
+  "trialResult": {
+    "previewRunId": 90,
+    "applyRunId": null,
+    "rollbackRunId": null,
+    "previewSucceeded": true,
+    "applySucceeded": false,
+    "rollbackSucceeded": null,
+    "blockedAtStep": "apply",
+    "errorMessage": "APPLY_POST_HARD_SCORE_NON_ZERO: hardScore=-2000 HC1=0 HC2=0 HC3=0 HC4=0"
+  },
+  "findings": {
+    "previewHardScore": 0,
+    "postApplyHardScore": -2000,
+    "discrepancy": "preview reports hardScore=0 but post-apply validation finds -2000 in hard conflicts",
+    "likelyCause": "HC5/HC6 delta inconsistency between preview and post-apply scoring paths, or apply transaction conflicts not caught by preview"
+  },
+  "safety": {
+    "backupPaths": [
+      "prisma/dev.db.backup-before-k26-k-controlled-apply-rollback-2026-06-09T04-27-34-285Z",
+      "prisma/dev.db.backup-before-k26-k-controlled-apply-rollback-2026-06-09T04-29-01-876Z"
+    ],
+    "backupCommitted": false,
+    "businessDataRestored": true,
+    "businessDataRestoredReason": "apply transaction rolled back when post-apply validation failed",
+    "acceptableAuditDrift": true,
+    "auditDriftDetails": "only preview run row was added (1 SchedulingRun)"
+  },
+  "nonGoals": [
+    "schema unchanged",
+    "migration unchanged",
+    "DB committed",
+    "solver unchanged",
+    "score unchanged",
+    "K22 expected unchanged",
+    "recommendation unchanged",
+    "UI unchanged"
+  ],
+  "verification": {
+    "k26KControlledTrial": "BLOCKED",
+    "k26JCloseoutVerify": "52/52 PASS",
+    "k26J6ReadinessVerify": "50/50 PASS",
+    "k26J4ScoreVerify": "47/47 PASS",
+    "k26J3CandidateVerify": "53/53 PASS",
+    "k26J2SnapshotVerify": "52/52 PASS",
+    "k22CScoreHarness": "PASS (73/0/0/0)",
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "up to date (8 migrations)",
+    "build": "PASS",
+    "lint": "184 errors / 146 warnings (no new)",
+    "authFoundation": "53 passed / 1 failed (pre-existing)",
+    "gitStatusClean": true
+  },
+  "recommendation": {
+    "status": "BLOCKED",
+    "nextStage": "K26-K2-WORKTIME-CONTROLLED-APPLY-DEBUG",
+    "nextStageOnPass": "K27-SYSTEM-WIDE-REAL-USAGE-TRIAL-PLAN",
+    "criticalFinding": "preview vs post-apply hardScore mismatch must be debugged before system-wide trial"
+  }
+}
