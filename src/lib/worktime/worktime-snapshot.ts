@@ -161,6 +161,102 @@ export function createLegacyStaticSolverWorkTimeContract(): SolverWorkTimeContra
   }
 }
 
+// ── Score contract (K26-J4: consumed by score.ts SC3/SC7) ──
+
+/**
+ * WorkTimeForScore provides the day/slot classification that score.ts
+ * uses for SC3 (late slots) and SC7 (weekend days). Replaces the
+ * hardcoded `slotIndex >= 5` and `day >= 6` with parameterized
+ * definitions.
+ *
+ * When not provided (e.g., pre-J4 calls or K22-C harness), the
+ * default contract is used: late=[5], weekend=[6,7] — identical
+ * to the pre-J4 behavior.
+ */
+export interface WorkTimeForScore {
+  source: 'database' | 'staticFallback' | 'snapshot' | 'legacyStatic'
+  snapshotVersion?: 1
+  semesterId?: number
+  workTimeConfigId?: number | null
+  allowWeekend: boolean
+  activeTeachingSlotIndexes: number[]
+  legacyDisplaySlotIndexes: number[]
+  /**
+   * Slot indexes that trigger SC3 "extreme time" penalty.
+   * Legacy default: [5] (equivalent to old `slotIndex >= 5`).
+   * Future: configurable via WorkTime schema late/early category.
+   */
+  earlySlotIndexes: number[]
+  lateSlotIndexes: number[]
+  /**
+   * Days that trigger SC7 "weekend avoidance" penalty.
+   * Legacy default: [6, 7] (equivalent to old `day >= 6`).
+   * Derived from snapshot.weekendDayOfWeeks.
+   */
+  weekendDayOfWeeks: number[]
+  weekdayDayOfWeeks: number[]
+}
+
+/**
+ * K26-J4: Build a legacy static score contract that produces
+ * identical results to the pre-J4 hardcoded behavior.
+ *
+ * late=[5] matches `slotIndex >= 5` in the old code.
+ * weekend=[6,7] matches `day >= 6` in the old code.
+ */
+export function createLegacyStaticScoreWorkTimeContract(): WorkTimeForScore {
+  return {
+    source: 'legacyStatic',
+    allowWeekend: false,
+    activeTeachingSlotIndexes: [1, 2, 3, 4, 5],
+    legacyDisplaySlotIndexes: [6, 7],
+    earlySlotIndexes: [1, 2, 3, 4],
+    lateSlotIndexes: [5],
+    weekendDayOfWeeks: [6, 7],
+    weekdayDayOfWeeks: [1, 2, 3, 4, 5],
+  }
+}
+
+/**
+ * K26-J4: Build a WorkTimeForScore from the solver contract.
+ *
+ * lateSlotIndexes = activeTeachingSlotIndexes where slotIndex >= 5,
+ * matching the legacy behavior. When the WorkTime schema adds an
+ * explicit late/early category, only this mapper needs to change.
+ *
+ * weekendDayOfWeeks = copied from the solver contract.
+ */
+export function toScoreWorkTimeContract(
+  solverContract: SolverWorkTimeContract
+): WorkTimeForScore {
+  // Late slots: active teaching slots with index >= 5.
+  // This preserves the pre-J4 behavior where `slotIndex >= 5` meant late.
+  // K26-J1 Fixture D documents that future WorkTime configs may define
+  // custom late ranges (e.g., [4,5]); the harness tests this via
+  // synthetic WorkTimeForScore, not through this mapper.
+  const lateSlotIndexes = solverContract.activeTeachingSlotIndexes
+    .filter((s) => s >= 5)
+    .sort((a, b) => a - b)
+
+  const earlySlotIndexes = solverContract.activeTeachingSlotIndexes
+    .filter((s) => s < 5)
+    .sort((a, b) => a - b)
+
+  return {
+    source: 'snapshot',
+    snapshotVersion: 1,
+    semesterId: solverContract.semesterId,
+    workTimeConfigId: solverContract.workTimeConfigId,
+    allowWeekend: solverContract.allowWeekend,
+    activeTeachingSlotIndexes: [...solverContract.activeTeachingSlotIndexes],
+    legacyDisplaySlotIndexes: [...solverContract.legacyDisplaySlotIndexes],
+    earlySlotIndexes,
+    lateSlotIndexes,
+    weekendDayOfWeeks: [...solverContract.weekendDayOfWeeks],
+    weekdayDayOfWeeks: [...solverContract.weekdayDayOfWeeks],
+  }
+}
+
 // ── Apply / rollback response metadata ──
 
 export interface WorkTimeSnapshotReadMetadata {

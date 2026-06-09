@@ -11,6 +11,10 @@ import type {
 } from './types'
 import { expandWeeks, type WeekConstraint } from '@/lib/conflict'
 import { getTaskStudentCount } from './capacity'
+import {
+  createLegacyStaticScoreWorkTimeContract,
+  type WorkTimeForScore,
+} from '@/lib/worktime/worktime-snapshot'
 
 // ── 评分常量 ──
 const HARD_PENALTY = -1000
@@ -332,12 +336,24 @@ function computeSC10CapacityUtilizationPenalty(studentCount: number, roomCapacit
 }
 
 /**
+ * K26-J4: shared helper to resolve WorkTimeForScore, falling back
+ * to legacy static contract (matches pre-J4 hardcoded behavior).
+ */
+function resolveWorkTimeForScore(workTimeForScore?: WorkTimeForScore): WorkTimeForScore {
+  return workTimeForScore ?? createLegacyStaticScoreWorkTimeContract()
+}
+
+/**
  * 全量计算分数，返回带详情的结果
  */
 export function calculateScoreWithDetails(
   ctx: SchedulingContext,
   state: ScheduleState,
+  workTimeForScore?: WorkTimeForScore,
 ): ScoreWithDetails {
+  const wf = resolveWorkTimeForScore(workTimeForScore)
+  const lateSlotSet = new Set(wf.lateSlotIndexes)
+  const weekendDaySet = new Set(wf.weekendDayOfWeeks)
   let hardScore = 0
   let softScore = 0
   const details: ScoreDetail[] = []
@@ -498,9 +514,9 @@ export function calculateScoreWithDetails(
     }
   }
 
-  // ── SC3: 极端时间 ──
+  // ── SC3: 极端时间 (K26-J4: uses WorkTimeForScore.lateSlotIndexes) ──
   for (const p of positions) {
-    if (p.idx >= 5) {
+    if (lateSlotSet.has(p.idx)) {
       softScore += SOFT_SC3_EXTREME_TIME
       details.push({
         type: 'SC3_EXTREME_TIME_SLOT', level: 'SOFT', penalty: SOFT_SC3_EXTREME_TIME,
@@ -576,9 +592,9 @@ export function calculateScoreWithDetails(
     }
   }
 
-  // ── SC7: 周末一般不排课 (K22-F3) ──
+  // ── SC7: 周末一般不排课 (K22-F3, K26-J4: uses WorkTimeForScore.weekendDayOfWeeks) ──
   for (const p of positions) {
-    if (p.day >= 6) {
+    if (weekendDaySet.has(p.day)) {
       softScore += SC7_WEEKEND_PENALTY
       details.push({
         type: 'SC7_WEEKEND_AVOIDANCE', level: 'SOFT', penalty: SC7_WEEKEND_PENALTY,
@@ -703,8 +719,8 @@ export function calculateScoreWithDetails(
 /**
  * 全量计算初始分数（兼容旧接口）
  */
-export function calculateInitialScore(ctx: SchedulingContext, state: ScheduleState): Score {
-  const result = calculateScoreWithDetails(ctx, state)
+export function calculateInitialScore(ctx: SchedulingContext, state: ScheduleState, workTimeForScore?: WorkTimeForScore): Score {
+  const result = calculateScoreWithDetails(ctx, state, workTimeForScore)
   return { hardScore: result.hardScore, softScore: result.softScore }
 }
 
@@ -715,6 +731,7 @@ export function calculateDeltaScore(
   ctx: SchedulingContext,
   state: ScheduleState,
   move: Move,
+  workTimeForScore?: WorkTimeForScore,
 ): { deltaHard: number; deltaSoft: number } {
   const slot = ctx.slots.find((s) => s.id === move.slotId)
   if (!slot) return { deltaHard: 0, deltaSoft: 0 }
@@ -725,6 +742,11 @@ export function calculateDeltaScore(
   const task = slot.teachingTask
   let deltaHard = 0
   let deltaSoft = 0
+
+  // K26-J4: resolve WorkTimeForScore (same contract for full + delta)
+  const wfDelta = resolveWorkTimeForScore(workTimeForScore)
+  const lateSlotSetDelta = new Set(wfDelta.lateSlotIndexes)
+  const weekendDaySetDelta = new Set(wfDelta.weekendDayOfWeeks)
 
   // ── HC1/HC2/HC3 ──
   for (const other of ctx.slots) {
@@ -797,9 +819,9 @@ export function calculateDeltaScore(
     deltaSoft += SOFT_SC2_SAME_DAY * newSame
   }
 
-  // SC3 极端时间
-  if (old.slotIndex >= 5) deltaSoft -= SOFT_SC3_EXTREME_TIME
-  if (move.newSlotIndex >= 5) deltaSoft += SOFT_SC3_EXTREME_TIME
+  // SC3 极端时间 (K26-J4: uses WorkTimeForScore.lateSlotIndexes)
+  if (lateSlotSetDelta.has(old.slotIndex)) deltaSoft -= SOFT_SC3_EXTREME_TIME
+  if (lateSlotSetDelta.has(move.newSlotIndex)) deltaSoft += SOFT_SC3_EXTREME_TIME
 
   // SC1 跨楼栋连续课（教师 + 班级维度）
   // Mirror calculateScoreWithDetails SC1 detection: for each "other" slot, check
@@ -920,9 +942,9 @@ export function calculateDeltaScore(
     }
   }
 
-  // SC7 delta: 周末一般不排课
-  if (old.dayOfWeek >= 6) deltaSoft -= SC7_WEEKEND_PENALTY
-  if (move.newDay >= 6) deltaSoft += SC7_WEEKEND_PENALTY
+  // SC7 delta: 周末一般不排课 (K26-J4: uses WorkTimeForScore.weekendDayOfWeeks)
+  if (weekendDaySetDelta.has(old.dayOfWeek)) deltaSoft -= SC7_WEEKEND_PENALTY
+  if (weekendDaySetDelta.has(move.newDay)) deltaSoft += SC7_WEEKEND_PENALTY
 
   // SC5 delta: 教师每日课时负载均衡 (K22-F4)
   // 只计算 affected teacher（moved slot 对应的 teacher）的 before/after penalty

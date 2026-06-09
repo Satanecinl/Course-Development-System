@@ -291,14 +291,14 @@ async function main() {
     fileContains('src/lib/scheduler/solver.ts', 'candidateSlots') ||
     fileContains('src/lib/scheduler/solver.ts', 'day <= 7'))
 
-  // 37. score behavior unchanged
-  // Asserts the hardcoded thresholds from K26-J are still present.
-  check('score SC3 behavior unchanged (slotIndex >= 5)',
+  // 37. score SC3 behavior — J4 introduced WorkTimeForScore alignment.
+  check('score SC3: legacy idx>=5 or J4 lateSlotSet.has pattern present',
     fileContains('src/lib/scheduler/score.ts', 'idx >= 5') ||
-    fileContains('src/lib/scheduler/score.ts', 'slotIndex >= 5'))
-  check('score SC7 behavior unchanged (day >= 6)',
+    fileContains('src/lib/scheduler/score.ts', 'lateSlotSet.has'))
+  // 38. score SC7 behavior — J4 introduced WorkTimeForScore alignment.
+  check('score SC7: legacy day>=6 or J4 weekendDaySet.has pattern present',
     fileContains('src/lib/scheduler/score.ts', 'day >= 6') ||
-    fileContains('src/lib/scheduler/score.ts', 'dayOfWeek >= 6'))
+    fileContains('src/lib/scheduler/score.ts', 'weekendDaySet.has'))
 
   // 38. K22 expected unchanged (K22-C harness script untouched)
   check('K22 expected unchanged (K22-C harness untouched)',

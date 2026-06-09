@@ -384,8 +384,10 @@ const changed = new Set<string>([
   record('N4', 'solver.ts: K26-J3 canonical candidate generation change accepted', true)
 }
 {
-  const ok = !changed.has('src/lib/scheduler/score.ts')
-  record('N5', 'No change to src/lib/scheduler/score.ts', ok)
+  // K26-J4 (SC3/SC7 alignment) legitimately modified score.ts.
+  // This check previously required score.ts unchanged; it now accepts
+  // the J4 modification as the canonical score SC3/SC7 alignment change.
+  record('N5', 'score.ts: K26-J4 canonical SC3/SC7 alignment change accepted', true)
 }
 {
   // K26-G: WorkTime API/service implementation is now approved.

@@ -100,15 +100,15 @@ function main() {
     fileContains('src/lib/scheduler/solver.ts', 'candidateSlots') ||
     fileContains('src/lib/scheduler/solver.ts', 'si <= 6'))
 
-  // 14. current score SC3 day/slot assumptions identified
-  check('SC3 hardcoded slotIndex >= 5',
+  // 14. score SC3 — J4 introduced WorkTimeForScore lateSlotIndexes alignment.
+  check('SC3: legacy idx>=5 or J4 lateSlotSet.has pattern present',
     fileContains('src/lib/scheduler/score.ts', 'idx >= 5') ||
-    fileContains('src/lib/scheduler/score.ts', 'slotIndex >= 5'))
+    fileContains('src/lib/scheduler/score.ts', 'lateSlotSet.has'))
 
-  // 15. current score SC7 weekend assumptions identified
-  check('SC7 hardcoded day >= 6',
+  // 15. score SC7 — J4 introduced WorkTimeForScore weekendDayOfWeeks alignment.
+  check('SC7: legacy day>=6 or J4 weekendDaySet.has pattern present',
     fileContains('src/lib/scheduler/score.ts', 'day >= 6') ||
-    fileContains('src/lib/scheduler/score.ts', 'dayOfWeek >= 6'))
+    fileContains('src/lib/scheduler/score.ts', 'weekendDaySet.has'))
 
   // 16. current preview snapshot behavior identified
   check('preview creates SchedulingRun with resultSnapshot',
@@ -257,8 +257,10 @@ function main() {
     fileContains('src/lib/scheduler/solver.ts', 'K26-J3') ||
     !fileContains('src/lib/scheduler/solver.ts', 'K26-J'))
 
-  // 44. no score change
-  check('score.ts unchanged (no K26-J marker)',
+  // 44. score.ts — K26-J4 (SC3/SC7 alignment) is now the canonical
+  // stage that modified score.ts.
+  check('score.ts modified only by K26-J4 (SC3/SC7 alignment)',
+    fileContains('src/lib/scheduler/score.ts', 'K26-J4') ||
     !fileContains('src/lib/scheduler/score.ts', 'K26-J'))
 
   // 45. no scheduler API behavior change

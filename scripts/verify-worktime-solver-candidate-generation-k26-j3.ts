@@ -322,17 +322,20 @@ function main() {
   check('score.ts unchanged (no K26-J3 marker)',
     !fileContains('src/lib/scheduler/score.ts', 'K26-J3'))
 
-  // 39. SC3 unchanged (slotIndex >= 5 still hardcoded in score.ts)
-  check('SC3 unchanged (idx >= 5 still in score.ts)',
-    fileContains('src/lib/scheduler/score.ts', 'idx >= 5'))
+  // 39. SC3 — J4 introduced WorkTimeForScore lateSlotIndexes alignment.
+  // Accept either the old hardcoded pattern or the new lateSlotSet.has pattern.
+  check('SC3: legacy idx>=5 or J4 lateSlotSet.has pattern present',
+    fileContains('src/lib/scheduler/score.ts', 'idx >= 5') ||
+    fileContains('src/lib/scheduler/score.ts', 'lateSlotSet.has'))
 
   // 40. SC5 unchanged
   check('SC5 unchanged (TEACHING_DAYS still in score.ts)',
     fileContains('src/lib/scheduler/score.ts', 'TEACHING_DAYS'))
 
-  // 41. SC7 unchanged
-  check('SC7 unchanged (day >= 6 still in score.ts)',
-    fileContains('src/lib/scheduler/score.ts', 'day >= 6'))
+  // 41. SC7 — J4 introduced WorkTimeForScore weekendDayOfWeeks alignment.
+  check('SC7: legacy day>=6 or J4 weekendDaySet.has pattern present',
+    fileContains('src/lib/scheduler/score.ts', 'day >= 6') ||
+    fileContains('src/lib/scheduler/score.ts', 'weekendDaySet.has'))
 
   // 42. K22 expected unchanged
   check('K22 expected unchanged (K22-C harness untouched)',

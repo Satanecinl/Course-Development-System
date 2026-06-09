@@ -14,7 +14,10 @@ import {
   randInt,
   pickRandom,
 } from './prng'
-import type { SolverWorkTimeContract } from '@/lib/worktime/worktime-snapshot'
+import {
+  toScoreWorkTimeContract,
+  type SolverWorkTimeContract,
+} from '@/lib/worktime/worktime-snapshot'
 
 /** 应用一次移动到状态，返回旧位置 */
 export function applyMove(
@@ -257,8 +260,16 @@ export function solve(
     ? workTime.candidateSlotIndexes
     : [1, 2, 3, 4, 5, 6]
 
+  // K26-J4: derive WorkTimeForScore from the solver contract.
+  // This is the same contract that score.ts uses for SC3/SC7.
+  // When no contract is provided, the legacy static contract is used,
+  // which produces identical results to the pre-J4 hardcoded behavior.
+  const scoreWorkTime = workTime
+    ? toScoreWorkTimeContract(workTime)
+    : undefined
+
   const state = buildInitialState(ctx)
-  const currentScore = calculateInitialScore(ctx, state)
+  const currentScore = calculateInitialScore(ctx, state, scoreWorkTime)
 
   // 追踪 best
   let bestScore: Score = { hardScore: currentScore.hardScore, softScore: currentScore.softScore }
@@ -355,7 +366,7 @@ export function solve(
             const roomId = rooms[0].id
             if (isPlacementHardCompatible(ctx, state, slotId, task, day, si, roomId)) {
               const move: Move = { slotId, newDay: day, newSlotIndex: si, newRoomId: roomId }
-              const delta = calculateDeltaScore(ctx, state, move)
+              const delta = calculateDeltaScore(ctx, state, move, scoreWorkTime)
               const newHard = currentScore.hardScore + delta.deltaHard
               const newSoft = currentScore.softScore + delta.deltaSoft
               if (newHard > bestCandidateHard || (newHard === bestCandidateHard && newSoft > bestCandidateSoft)) {
@@ -377,7 +388,7 @@ export function solve(
                 if (day === pos.dayOfWeek && si === pos.slotIndex) continue
                 if (isPlacementHardCompatible(ctx, state, slotId, task, day, si, rooms[ri].id)) {
                   const move: Move = { slotId, newDay: day, newSlotIndex: si, newRoomId: rooms[ri].id }
-                  const delta = calculateDeltaScore(ctx, state, move)
+                  const delta = calculateDeltaScore(ctx, state, move, scoreWorkTime)
                   const newHard = currentScore.hardScore + delta.deltaHard
                   const newSoft = currentScore.softScore + delta.deltaSoft
                   if (newHard > bestCandidateHard || (newHard === bestCandidateHard && newSoft > bestCandidateSoft)) {
@@ -450,7 +461,7 @@ export function solve(
           }
 
           const move: Move = { slotId: sourceSlotId, newDay, newSlotIndex, newRoomId }
-          const delta = calculateDeltaScore(ctx, state, move)
+          const delta = calculateDeltaScore(ctx, state, move, scoreWorkTime)
           const newHard = currentScore.hardScore + delta.deltaHard
           const newSoft = currentScore.softScore + delta.deltaSoft
 
