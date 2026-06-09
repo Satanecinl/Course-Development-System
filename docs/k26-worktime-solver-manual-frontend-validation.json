@@ -1,0 +1,72 @@
+{
+  "stage": "K26-J6-WORKTIME-SOLVER-MANUAL-FRONTEND-VALIDATION",
+  "status": "PENDING_USER_VALIDATION",
+  "date": "2026-06-09",
+  "dependsOn": "K26-J5-WORKTIME-SOLVER-REAL-SCHEDULING-TRIAL (b954ab7)",
+  "technicalReadiness": "PASS",
+  "manualValidationRequired": true,
+  "trialSource": {
+    "commit": "b954ab7",
+    "runId": 85,
+    "mode": "preview-only",
+    "semesterId": 1,
+    "workTimeConfigId": 1,
+    "hardScore": 0,
+    "softScore": -1428,
+    "blocking": false,
+    "changedSlots": 386,
+    "candidateDays": [1, 2, 3, 4, 5],
+    "candidateSlots": [1, 2, 3, 4, 5],
+    "allowWeekend": false,
+    "legacySlotsExcluded": true,
+    "workTimeSnapshotPresent": true,
+    "workTimeSnapshotVersion": 1,
+    "workTimeSource": "database",
+    "snapshotReproducible": true
+  },
+  "checklist": {
+    "previewVisibility": "user must verify at /admin/scheduler/history",
+    "workTimeEvidence": "resultSnapshot.workTime accessible via API",
+    "scheduleGridEvidence": "user must verify at /dashboard",
+    "scoreEvidence": "hardScore=0, SC3=0, SC7=0, blocking=false",
+    "businessAcceptance": "PENDING_USER_VALIDATION"
+  },
+  "uiRoutes": {
+    "schedulerDashboard": "src/app/admin/scheduler/page.tsx",
+    "schedulerHistory": "src/app/admin/scheduler/history/page.tsx",
+    "scheduleGrid": "src/app/dashboard/dashboard-content.tsx",
+    "runDetailApi": "src/app/api/admin/scheduler/runs/[id]/route.ts",
+    "scoreBreakdown": "src/app/admin/scheduler/scheduler-content.tsx",
+    "workTimeDisplay": "embedded in resultSnapshot.workTime (no dedicated component)"
+  },
+  "applyRollback": {
+    "executed": false,
+    "policy": "default preview-only; apply requires separate stage K26-J7",
+    "backupRequired": true
+  },
+  "verification": {
+    "k26J6ReadinessVerify": "50/50 PASS",
+    "k26J5Trial": "PASS (runId=85)",
+    "k26J4ScoreVerify": "47/47 PASS",
+    "k26J3CandidateVerify": "53/53 PASS",
+    "k26J2SnapshotVerify": "52/52 PASS",
+    "k22CScoreHarness": "PASS (73/0/0/0)",
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "up to date (8 migrations)",
+    "build": "PASS",
+    "lint": "184 errors / 146 warnings (no new)",
+    "authFoundation": "53 passed / 1 failed (pre-existing)",
+    "gitStatusClean": true,
+    "localRemoteSynced": true
+  },
+  "recommendation": {
+    "status": "PENDING_USER_VALIDATION",
+    "nextStageOnPass": "K26-J-WORKTIME-SOLVER-SCORE-INTEGRATION-ACCEPTANCE-CLOSEOUT",
+    "nextStageOnFail": "K26-J6A-WORKTIME-SOLVER-FRONTEND-VALIDATION-FIX-PLAN",
+    "userPagesToCheck": [
+      "/admin/scheduler/history (preview run)",
+      "/admin/scheduler (scheduler content + score breakdown)",
+      "/dashboard (schedule grid)"
+    ]
+  }
+}
