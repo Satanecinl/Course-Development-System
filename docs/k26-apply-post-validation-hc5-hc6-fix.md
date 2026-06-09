@@ -157,3 +157,16 @@ k27Eligible=false
 ```
 
 K26-K3 **passes**: the apply post-validation breakdown now fully covers HC1-HC6, error messages are diagnostic, and the controlled trial clearly identifies HC6 as the blocker with complete slot/room/course detail.
+
+## 10. Verification Addendum (K26-K3A)
+
+K26-K3A lint reconciliation completed:
+
+* K26-K3 originally reported lint `184 errors / 147 warnings`
+* Investigation confirmed `184/146` baseline is current (the extra warning was a transient state from the K22-C harness regeneration)
+* **Final lint baseline restored**: `184 errors / 146 warnings` (= 330 problems)
+* K26-K3 visibility fix unchanged
+* Controlled trial still `BLOCKED_WITH_EXPLICIT_HC6`
+* K26-K still BLOCKED
+* No baseline upgrade needed
+* No code changes required for lint recovery

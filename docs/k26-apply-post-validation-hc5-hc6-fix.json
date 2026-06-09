@@ -76,5 +76,17 @@
     "blockedReason": "HC6 (linxiao specialty) is a real business rule violation — 2 non-automotive tasks assigned to linxiao rooms post-apply",
     "recommendedNextStage": "K26-K4-DATA-RULE-CONTEXT-FIX — resolve HC6 violations via data adjustment or rule/context clarification",
     "k27Eligible": false
+  },
+  "verificationAddendum": {
+    "date": "2026-06-09",
+    "lintReconciliation": "K26-K3 originally reported 184/147; confirmed 184/146 is current baseline (transient state from K22-C harness)",
+    "finalLintBaseline": "184 errors / 146 warnings (= 330 problems)",
+    "baselineUpgraded": false,
+    "k26K3VisibilityFixUnchanged": true,
+    "controlledTrialStatusUnchanged": "BLOCKED_WITH_EXPLICIT_HC6",
+    "k26KStillBlocked": true,
+    "noCodeChangesForLint": true,
+    "noBusinessLogicChanged": true,
+    "noDbWrite": true
   }
 }
