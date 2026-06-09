@@ -1,0 +1,41 @@
+{
+  "stage": "K26-N1-IMPORT-RULE-SETTINGS-BASIC-IMPLEMENTATION",
+  "status": "CLOSED",
+  "date": "2026-06-09",
+  "summary": "Implemented read-only import rules settings panel. Shows import batch stats, cross-cohort detection/approval, source evidence fields, import override/duplicate strategy, and recent ImportBatch table.",
+  "api": {
+    "path": "/api/admin/settings/import-rules",
+    "method": "GET",
+    "permission": "settings:manage",
+    "readOnly": true
+  },
+  "ui": {
+    "panel": "ImportRulesSettingsPanel",
+    "path": "/admin/settings → 导入规则设置",
+    "features": ["summary cards", "source evidence status", "rules list", "safeguards", "recent ImportBatch table", "read-only notice", "refresh"]
+  },
+  "rulesDisplayed": [
+    "defaultImportSemester",
+    "crossCohortDetection",
+    "crossCohortApproval",
+    "sourceEvidenceFields",
+    "sourceEvidenceForwardFillOnly",
+    "overrideImport",
+    "duplicateImport",
+    "importConfirmation"
+  ],
+  "verification": {
+    "k26N1Verify": "PASS",
+    "k26M1Verify": "PASS",
+    "k26L1Verify": "PASS",
+    "k26KCloseout": "PASS",
+    "k22C": "73/0/0/0",
+    "build": "PASS",
+    "lint": "184/146",
+    "authFoundation": "53/1"
+  },
+  "recommendation": {
+    "k26N1Status": "CLOSED",
+    "recommendedNextStage": "K26-N2-IMPORT-RULE-SETTINGS-MANUAL-TRIAL"
+  }
+}

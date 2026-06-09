@@ -72,12 +72,12 @@ export const SETTINGS_MODULES: SettingsModule[] = [
   {
     key: 'import-rules',
     title: '导入规则设置',
-    description: '管理默认导入学期、跨年级合班审批、source evidence 保留策略、导入覆盖策略和重复导入策略。',
-    status: 'planned',
+    description: '查看默认导入学期、跨年级合班、source evidence、覆盖/重复导入策略和最近导入批次。基础只读版。',
+    status: 'ready',
     priority: 'P1',
-    recommendedStage: 'K26-F-IMPORT-RULES-SETTINGS-AUDIT',
+    recommendedStage: 'K26-N1-BASIC',
     riskLevel: 'medium',
-    notes: '导入管线已有 quality-classifier 和 importer，接入设置中心。',
+    notes: '只读基础版。展示导入相关规则和数据状态，不提供编辑。',
   },
   {
     key: 'rbac-settings',

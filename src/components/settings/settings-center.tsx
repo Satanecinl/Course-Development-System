@@ -8,6 +8,7 @@ import { SchedulerConfigSettingsPanel } from '@/components/settings/scheduler-co
 import { WorkTimeSettingsPanel } from '@/components/settings/worktime-settings-panel'
 import { CampusRoomRulesSettingsPanel } from '@/components/settings/campus-room-rules-settings-panel'
 import { AdjustmentRulesSettingsPanel } from '@/components/settings/adjustment-rules-settings-panel'
+import { ImportRulesSettingsPanel } from '@/components/settings/import-rules-settings-panel'
 import { Badge } from '@/components/ui/badge'
 import { Settings, ArrowLeft } from 'lucide-react'
 
@@ -44,6 +45,8 @@ export function SettingsCenter() {
           <CampusRoomRulesSettingsPanel />
         ) : currentModule?.key === 'adjustment-rules' ? (
           <AdjustmentRulesSettingsPanel />
+        ) : currentModule?.key === 'import-rules' ? (
+          <ImportRulesSettingsPanel />
         ) : currentModule ? (
           <PlannedModuleContent module={currentModule} onBack={() => setActiveModule('semester-settings')} />
         ) : null}
