@@ -303,9 +303,12 @@ export async function createSchedulerPreview(
   const bestDetails = calculateScoreWithDetails(ctx, solveResult.bestState)
   const hcAfter = countConflictsByType(bestDetails.details)
 
+  // K26-K4: Use the re-scored values from calculateScoreWithDetails instead
+  // of the solver's accumulated bestScore. The solver tracks score via delta
+  // accumulation which may drift from the true score of bestState.
   const scoreAfter = {
-    hardScore: solveResult.bestScore.hardScore,
-    softScore: solveResult.bestScore.softScore,
+    hardScore: bestDetails.hardScore,
+    softScore: bestDetails.softScore,
   }
 
   // K22-L2: compute structured score breakdown for UI
@@ -318,7 +321,9 @@ export async function createSchedulerPreview(
   const changedSlotCount = proposedChanges.length
 
   // 7. Determine blocked status
-  const blocked = solveResult.bestScore.hardScore !== 0 ||
+  // K26-K4: Use re-scored scoreAfter (from bestDetails) for blocked check,
+  // not the solver's accumulated bestScore which may drift.
+  const blocked = scoreAfter.hardScore !== 0 ||
     hcAfter.hc1 !== 0 || hcAfter.hc2 !== 0 || hcAfter.hc3 !== 0 || hcAfter.hc4 !== 0
 
   const blockReasons: string[] = []

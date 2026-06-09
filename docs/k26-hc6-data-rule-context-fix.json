@@ -1,0 +1,103 @@
+{
+  "stage": "K26-K4-DATA-RULE-CONTEXT-FIX",
+  "status": "K26_K4_PASSED",
+  "date": "2026-06-09",
+  "summary": "Diagnosed root cause of K26-K BLOCKED status: PREVIEW_SCORING_ACCUMULATED_DELTA_MISMATCH. The solver's accumulated bestScore drifts from the true calculateScoreWithDetails of bestState. Fixed preview.ts to use re-scored bestDetails for scoreAfter and blocked check. Controlled trial now correctly reports BLOCKED_WITH_EXPLICIT_HC6.",
+  "rootCauseType": "PREVIEW_SCORING_ACCUMULATED_DELTA_MISMATCH",
+  "rootCauseConfidence": "HIGH",
+  "rootCauseEvidence": "Applying preview proposed changes gives hardScore=-2000 (HC6=2) but preview originally reported hardScore=0",
+  "fix": {
+    "type": "code-only",
+    "files": ["src/lib/scheduler/preview.ts"],
+    "changes": [
+      "scoreAfter now uses bestDetails.hardScore/softScore (from calculateScoreWithDetails) instead of solveResult.bestScore",
+      "blocked check now uses scoreAfter.hardScore !== 0 instead of solveResult.bestScore.hardScore !== 0"
+    ],
+    "dataRepairAttempted": false,
+    "exceptionMechanismDesigned": false
+  },
+  "controlledTrial": {
+    "status": "BLOCKED_WITH_EXPLICIT_HC6",
+    "previewRunId": 100,
+    "previewHardScoreAfter": -2000,
+    "previewSoftScoreAfter": -1431,
+    "applyAttempted": false,
+    "applyRunId": null,
+    "rollbackRunId": null,
+    "businessDataRestored": "N/A (no changes made)",
+    "backupPath": "dev.db.backup-before-k26-k-controlled-apply-rollback-2026-06-09T06-57-44-824Z"
+  },
+  "slotContext": {
+    "slot244": {
+      "courseName": "职业素养",
+      "teacher": "孙文哲",
+      "currentRoomId": null,
+      "proposedRoomId": 21,
+      "proposedRoomName": "林校305",
+      "classGroups": ["2024级智能轧钢技术1班", "2024级智能轧钢技术2班", "2024级机电一体化技术1班"],
+      "specialtyClassification": "NON_AUTOMOTIVE_ONLY",
+      "isLinxiaoRoom": true,
+      "hc6Expected": true,
+      "source": "PREVIEW_RESULT (solver-introduced)"
+    },
+    "slot383": {
+      "courseName": "林业法规与执法实务",
+      "teacher": "徐厚朴",
+      "currentRoomId": 23,
+      "currentRoomName": "林校304",
+      "proposedRoomId": 23,
+      "classGroups": ["2024级林业技术1班"],
+      "specialtyClassification": "NON_AUTOMOTIVE_ONLY",
+      "isLinxiaoRoom": true,
+      "hc6Expected": true,
+      "source": "EXISTING_DB (pre-existing violation)"
+    }
+  },
+  "hc6Classifier": {
+    "linxiaoRoomRule": "room.name.includes('林校') OR room.building.includes('林校')",
+    "automotiveClassGroupRule": "classGroup name contains 汽车/车辆/新能源/智能网联/汽修",
+    "nonAutomotiveClassGroupRule": "classGroup name doesn't contain automotive keywords",
+    "mixedClassGroupRule": "Triggers HC6 if any non-automotive classGroup exists AND assigned to Linxiao",
+    "courseNameRemarkRule": "ONLY used when classGroup is empty; cannot override classGroup hard rule",
+    "exceptionMechanism": "none",
+    "falsePositiveRisk": "LOW",
+    "falseNegativeRisk": "LOW"
+  },
+  "nonGoals": [
+    "schema unchanged",
+    "migration unchanged",
+    "DB committed",
+    "solver algorithm unchanged (only preview.ts scoring reporting)",
+    "score semantics/weights unchanged",
+    "K22 expected unchanged",
+    "HC6 not downgraded",
+    "no manual DB edits",
+    "no exception mechanism"
+  ],
+  "verification": {
+    "k26K4VerifyScript": "PASS",
+    "k26K4AuditScript": "PASS (diagnostic)",
+    "k26K3Verify": "36/36 PASS",
+    "k26K2Debug": "13/13 PASS",
+    "k26JCloseout": "52/52 PASS",
+    "j3Candidate": "53/53 PASS",
+    "j2Snapshot": "52/52 PASS",
+    "k22CScoreHarness": "PASS (73/0/0/0)",
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "up to date (8 migrations)",
+    "build": "PASS",
+    "lint": "184/146 (baseline)",
+    "authFoundation": "53/1 (pre-existing)",
+    "gitStatusClean": true
+  },
+  "recommendation": {
+    "k26K4Status": "PASSED",
+    "k26KControlledTrialStatus": "BLOCKED_WITH_EXPLICIT_HC6",
+    "rootCauseType": "PREVIEW_SCORING_ACCUMULATED_DELTA_MISMATCH",
+    "blockedReason": "HC6 violations are real: slot244 (职业素养 in 林校305) solver-introduced + slot383 (林业法规 in 林校304) pre-existing",
+    "recommendedNextStage": "K26-K4A-HC6-DATA-REPAIR (resolve HC6 via data fix) OR K26-K4C-SOLVER-HC6-AWARE (add HC5/HC6 to isPlacementHardCompatible)",
+    "k27Eligible": false,
+    "k22ExpectedChanged": false,
+    "hc6Downgraded": false
+  }
+}

@@ -144,7 +144,15 @@ async function main() {
     console.log(`  preview runId=${preview.runId}, hardScore=${preview.scoreAfter.hardScore}, blocking=${preview.blocked}`)
 
     if (preview.scoreAfter.hardScore !== 0) {
-      console.error('ERROR: Preview has hard conflicts, cannot apply safely')
+      // K26-K4: Preview correctly reports hard conflicts (HC5/HC6).
+      // This is expected when the solver's best state has violations.
+      console.log(`  Preview blocked: hardScore=${preview.scoreAfter.hardScore}`)
+      set('applySucceeded', false)
+      set('failedStep', 'preview-blocked')
+      set('blockedStatus', 'BLOCKED_WITH_EXPLICIT_HC6')
+      set('previewHardScoreAfter', preview.scoreAfter.hardScore)
+      await outputResult('BLOCKED_WITH_EXPLICIT_HC6' as 'PASS' | 'BLOCKED')
+      await prisma.$disconnect()
       process.exit(1)
     }
   } else if (reuseRunId != null) {
