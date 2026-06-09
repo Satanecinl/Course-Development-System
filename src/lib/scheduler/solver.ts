@@ -8,6 +8,7 @@ import type {
 } from './types'
 import { isScoreBetter } from './types'
 import { calculateInitialScore, calculateDeltaScore } from './score'
+import { classifySpecialty, computeHC6Penalty, isLinxiaoRoomName } from './score'
 import { getTaskStudentCount } from './capacity'
 import {
   createSeededRandom,
@@ -129,6 +130,15 @@ function isPlacementHardCompatible(
   // HC4: capacity check
   const studentInfo = getTaskStudentCount(movingTask, ctx)
   if (studentInfo.studentCount > proposedRoom.capacity) return false
+
+  // K26-K4C: HC6 — non-automotive / mixed / unknown task cannot be placed in a
+  // Linxiao room. Mirrors score.ts HC6 penalty computation. Reuses the same
+  // helper so classifier semantics stay in sync.
+  const isLx = isLinxiaoRoomName(proposedRoom)
+  if (isLx) {
+    const cls = classifySpecialty(movingTask)
+    if (computeHC6Penalty(cls, true) < 0) return false
+  }
 
   const movingClassGroupIds = new Set(movingTask.taskClasses.map(tc => tc.classGroupId))
 

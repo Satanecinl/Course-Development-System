@@ -113,10 +113,10 @@ function isRoomAvailable(
 // ── HC6 / SC6 / SC7: 专业教室约束与周末约束 ──
 
 // K22-F2A: 汽车专业关键词（classGroup membership 为主信号，courseName/remark 为辅助）
-const AUTOMOTIVE_KEYWORDS = ['汽车', '车辆', '新能源', '智能网联', '汽修']
+export const AUTOMOTIVE_KEYWORDS = ['汽车', '车辆', '新能源', '智能网联', '汽修']
 
 /** 判断教室是否为林校 (K22-F2: strict keyword "林校" only) */
-function isLinxiaoRoomName(room: RoomWithAvailability): boolean {
+export function isLinxiaoRoomName(room: RoomWithAvailability): boolean {
   if (room.name.includes('林校')) return true
   if (room.building && room.building.includes('林校')) return true
   return false
@@ -126,14 +126,14 @@ function isLinxiaoRoomName(room: RoomWithAvailability): boolean {
  * K22-F2A 5-class specialty classification.
  * classGroup membership 是 primary hard-rule signal；courseName / remark 只是 auxiliary。
  */
-type SpecialtyClassification =
+export type SpecialtyClassification =
   | 'AUTOMOTIVE_ONLY'
   | 'NON_AUTOMOTIVE_ONLY'
   | 'MIXED_AUTOMOTIVE_AND_NON_AUTOMOTIVE'
   | 'NO_CLASSGROUP_AUX_AUTOMOTIVE_SIGNAL'
   | 'UNKNOWN_NO_SIGNAL'
 
-function classifySpecialty(task: TaskWithRelations): SpecialtyClassification {
+export function classifySpecialty(task: TaskWithRelations): SpecialtyClassification {
   const cgs = task.taskClasses.map(tc => tc.classGroup.name)
   // Case 1: no classGroup membership at all
   if (cgs.length === 0) {
@@ -151,7 +151,7 @@ function classifySpecialty(task: TaskWithRelations): SpecialtyClassification {
 }
 
 /** 计算 HC6 penalty: 非汽车专业/混合/未知任务在 Linxiao 教室 */
-function computeHC6Penalty(cls: SpecialtyClassification, isLx: boolean): number {
+export function computeHC6Penalty(cls: SpecialtyClassification, isLx: boolean): number {
   if (!isLx) return 0
   if (cls === 'AUTOMOTIVE_ONLY') return 0
   return HC6_NON_AUTOMOTIVE_LINXIAO_PENALTY

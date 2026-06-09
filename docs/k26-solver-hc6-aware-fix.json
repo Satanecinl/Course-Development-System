@@ -1,0 +1,86 @@
+{
+  "stage": "K26-K4C-SOLVER-HC6-AWARE",
+  "status": "K26_K4C_PASSED",
+  "date": "2026-06-09",
+  "summary": "Added HC6 check to solver's isPlacementHardCompatible. Solver no longer introduces HC6 violations. Controlled trial now reports HC6=1 (down from 2) — the remaining is the pre-existing slot383.",
+  "fix": {
+    "files": ["src/lib/scheduler/solver.ts", "src/lib/scheduler/score.ts"],
+    "scoreChanges": ["exported AUTOMOTIVE_KEYWORDS, isLinxiaoRoomName, classifySpecialty, computeHC6Penalty, SpecialtyClassification"],
+    "solverChanges": ["imported HC6 helpers from score.ts", "added HC6 check in isPlacementHardCompatible: if room is Linxiao and task classification triggers HC6, reject placement"],
+    "semanticsUnchanged": true
+  },
+  "solverPathsCovered": [
+    "Exhaustive search (first room)",
+    "Exhaustive search (other rooms)",
+    "Random ROOM_ONLY",
+    "Random TIME_ONLY (no room change)",
+    "Random TIME_AND_ROOM"
+  ],
+  "hc6Policy": {
+    "nonAutomotive + Linxiao": "rejected",
+    "mixed + Linxiao": "rejected",
+    "automotiveOnly + Linxiao": "allowed",
+    "nonAutomotive + non-Linxiao": "allowed",
+    "mixed + non-Linxiao": "allowed",
+    "automotiveOnly + non-Linxiao": "allowed",
+    "nullRoom": "handled by proposedRoomId === 0 check (no effect)"
+  },
+  "controlledTrial": {
+    "status": "BLOCKED_WITH_EXPLICIT_HC6",
+    "previewRunId": 114,
+    "previewHardScoreAfter": -1000,
+    "previewSoftScoreAfter": -1426,
+    "applyAttempted": false,
+    "hc1": 0,
+    "hc2": 0,
+    "hc3": 0,
+    "hc4": 0,
+    "hc5": 0,
+    "hc6": 1,
+    "solverIntroducedHC6": 0,
+    "existingDbHC6": 1,
+    "existingDbSlot": 383,
+    "existingDbRoom": "林校304",
+    "existingDbCourse": "林业法规与执法实务",
+    "businessDataRestored": "N/A (no changes)",
+    "backupPath": "dev.db.backup-before-k26-k-controlled-apply-rollback-2026-06-09T07-38-38-739Z"
+  },
+  "verification": {
+    "k26K4CVerify": "34/36 (2 pre-existing — docs not yet at first run)",
+    "k26K4Verify": "32/32 PASS",
+    "k26K3Verify": "36/36 PASS",
+    "k26K2Debug": "13/13 PASS",
+    "k26JCloseout": "52/52 PASS",
+    "j3Candidate": "53/53 PASS",
+    "j2Snapshot": "52/52 PASS",
+    "k22CScoreHarness": "73/0/0/0",
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "up to date (8 migrations)",
+    "build": "PASS",
+    "lint": "184/146 (baseline)",
+    "authFoundation": "53/1 (pre-existing)",
+    "gitStatusClean": true
+  },
+  "nonGoals": [
+    "schema unchanged",
+    "migration unchanged",
+    "DB committed",
+    "score weights/HC6 penalty unchanged",
+    "K22 expected unchanged",
+    "recommendation unchanged",
+    "UI unchanged",
+    "slot383 not fixed (out of scope)",
+    "no DB data repair",
+    "no exception mechanism designed"
+  ],
+  "recommendation": {
+    "k26K4CStatus": "PASSED",
+    "k26KControlledTrialStatus": "BLOCKED_WITH_EXPLICIT_HC6",
+    "rootCauseType": "PREVIEW_SCORING_ACCUMULATED_DELTA_MISMATCH (fixed in K4) + EXISTING_DB_HC6 (slot383, pre-existing)",
+    "blockedReason": "slot383 (林业法规与执法实务 in 林校304) is a pre-existing HC6 violation in the current DB",
+    "recommendedNextStage": "K26-K4A-HC6-DATA-REPAIR (resolve slot383 via data fix)",
+    "k27Eligible": false,
+    "k22ExpectedChanged": false,
+    "hc6Downgraded": false
+  }
+}
