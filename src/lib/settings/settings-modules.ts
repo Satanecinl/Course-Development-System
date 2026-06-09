@@ -52,12 +52,12 @@ export const SETTINGS_MODULES: SettingsModule[] = [
   {
     key: 'campus-room-rules',
     title: '校区 / 教室规则设置',
-    description: '管理林校教室、汽车专业规则、教室容量、教室类型、实训室/机房/普通教室和校区通勤规则。该模块可能需要 schema 支撑。',
-    status: 'coming-soon',
+    description: '查看林校教室、教室容量类型、HC5/HC6 违规检查结果和当前 hard rule 说明。基础只读版。',
+    status: 'ready',
     priority: 'P2',
-    recommendedStage: 'K26-D-CAMPUS-ROOM-RULES-SCHEMA-PLAN',
-    riskLevel: 'high',
-    notes: '可能需要新增 schema 字段或 model。',
+    recommendedStage: 'K26-L1-BASIC',
+    riskLevel: 'medium',
+    notes: '只读基础版。HC6 hard rule 不可关闭。',
   },
   {
     key: 'adjustment-rules',

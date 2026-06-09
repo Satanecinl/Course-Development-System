@@ -1,0 +1,50 @@
+{
+  "stage": "K26-L1-CAMPUS-ROOM-RULE-SETTINGS-BASIC-IMPLEMENTATION",
+  "status": "CLOSED",
+  "date": "2026-06-09",
+  "summary": "Implemented read-only campus room rules settings panel in system settings center. Shows Linxiao rooms, capacity/type summary, HC5/HC6 violations, and hard rule descriptions.",
+  "api": {
+    "path": "/api/admin/settings/campus-room-rules",
+    "method": "GET",
+    "permission": "settings:manage",
+    "readOnly": true,
+    "returns": ["summary", "rules", "rooms", "violations"]
+  },
+  "ui": {
+    "panel": "CampusRoomRulesSettingsPanel",
+    "path": "/admin/settings → 校区/教室规则设置",
+    "features": ["summary cards", "rule descriptions", "HC5/HC6 violations", "Linxiao room table", "read-only notice", "refresh button"],
+    "noSaveButton": true,
+    "noCloseHC6Button": true
+  },
+  "settingsModule": {
+    "key": "campus-room-rules",
+    "title": "校区 / 教室规则设置",
+    "status": "ready",
+    "wasStatus": "coming-soon"
+  },
+  "verification": {
+    "k26L1Verify": "PASS",
+    "k26KCloseout": "PASS",
+    "k22C": "73/0/0/0",
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "up to date",
+    "build": "PASS",
+    "lint": "184/146 (baseline)",
+    "authFoundation": "53/1 (pre-existing)"
+  },
+  "nonGoals": [
+    "schema unchanged",
+    "migration unchanged",
+    "score semantics unchanged",
+    "HC6 penalty unchanged",
+    "no rule toggles",
+    "no editable hard rule",
+    "no data repair",
+    "K22 expected unchanged"
+  ],
+  "recommendation": {
+    "k26L1Status": "CLOSED",
+    "recommendedNextStage": "K26-L2-CAMPUS-ROOM-RULE-SETTINGS-MANUAL-TRIAL"
+  }
+}
