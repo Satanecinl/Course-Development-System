@@ -77,11 +77,6 @@ function buildState(slots: SlotWithRelations[]): ScheduleState {
   return { assignments, originalAssignments: new Map(assignments) }
 }
 
-function hashSlots(slots: { id: number; dayOfWeek: number; slotIndex: number; roomId: number | null }[]): string {
-  return [...slots].sort((a, b) => a.id - b.id)
-    .map(s => `${s.id}:${s.dayOfWeek}:${s.slotIndex}:${s.roomId ?? 0}`).join('|')
-}
-
 async function main() {
   // ── 1. Read K26-K trial evidence ──
   const trialJsonPath = join(projectRoot, 'docs/k26-worktime-controlled-apply-rollback-trial.json')
@@ -111,9 +106,7 @@ async function main() {
     try {
       const snapshot = JSON.parse(previewRun.resultSnapshot) as Record<string, unknown>
       const proposedChanges = snapshot.proposedChanges as Array<Record<string, unknown>> | undefined
-      const scoreBefore = snapshot.scoreBefore as Record<string, unknown> | undefined
       const scoreAfter = snapshot.scoreAfter as Record<string, unknown> | undefined
-      const hcBefore = snapshot.hcBefore as Record<string, unknown> | undefined
       const hcAfter = snapshot.hcAfter as Record<string, unknown> | undefined
 
       check('resultSnapshot has proposedChanges', Array.isArray(proposedChanges), `${proposedChanges?.length ?? 0} changes`)

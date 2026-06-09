@@ -127,3 +127,20 @@ hardScore=-2000 source:
 4. **安全**: 任何 apply 修复必须在独立阶段进行，有 backup + rollback 验证。
 
 **当前 K26-K 仍为 BLOCKED** — 无法直接 apply 直到 root cause 被修复。
+
+## 11. Verification Addendum (K26-K2A)
+
+K26-K2A 补充验证完成：
+
+* lint 回到 `184 errors / 146 warnings`（清理了 debug script 中 3 个 unused vars/import）
+* J3 candidate verify：`53/53 PASS`
+* J2 snapshot verify：`52/52 PASS`
+* J closeout verify：`52/52 PASS`
+* K22-C score harness：PASS (`73/0/0/0`)
+* Prisma validate：PASS，migrate status：up to date
+* build：PASS
+* auth foundation：`53 passed / 1 failed`（pre-existing）
+* K26-K2 root cause finding 不变
+* K26-K 仍 BLOCKED
+* 下一阶段仍为 K26-K3
+* 未改业务逻辑，未写 DB
