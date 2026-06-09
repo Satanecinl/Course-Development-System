@@ -5,6 +5,13 @@ import {
   computeSemesterScopedFingerprint,
   type PreviewProposedChange,
 } from './preview'
+import {
+  readWorkTimeSnapshotFromRun,
+  toReadMetadata,
+  type SchedulingRunWorkTimeSnapshot,
+  type WorkTimeSnapshotReadMetadata,
+  WorkTimeSnapshotInvalidError,
+} from '@/lib/worktime/worktime-snapshot'
 import type {
   SchedulingContext,
   SlotWithRelations,
@@ -37,6 +44,10 @@ export interface ApplyResult {
   databaseFingerprintAfter: string
   changeCount: number
   durationMs: number
+  // K26-J2: WorkTime snapshot metadata carried from the preview run.
+  // Apply does NOT re-resolve the current WorkTime; the snapshot on
+  // the preview run is the single source of truth for this apply.
+  workTimeSnapshot: WorkTimeSnapshotReadMetadata
 }
 
 // ── Helpers ──
@@ -206,6 +217,30 @@ export async function applySchedulerPreview(
     throw new Error('PREVIEW_RUN_MISSING_SEMESTER_ID: Cannot apply a preview that has no semesterId.')
   }
 
+  // 3b. K26-J2: read WorkTime snapshot from preview run.
+  //
+  // Compatibility policy:
+  //  - If the preview run has no snapshot field at all (legacy run
+  //    created before K26-J2), the apply path proceeds but the
+  //    response marks `present: false`. Apply/rollback do not consult
+  //    the snapshot today (solver/score are not WorkTime-aware), so
+  //    missing snapshot is non-fatal at the apply layer.
+  //  - If the preview run has a snapshot field but it is malformed
+  //    (wrong version, invalid JSON, etc.), apply fails fast.
+  //  - In both branches, apply never re-resolves the current
+  //    WorkTimeConfig; the snapshot is the single source of truth
+  //    for this run.
+  let workTimeSnapshot: SchedulingRunWorkTimeSnapshot | null = null
+  try {
+    workTimeSnapshot = readWorkTimeSnapshotFromRun(previewRun)
+  } catch (e) {
+    if (e instanceof WorkTimeSnapshotInvalidError) {
+      throw new Error(`PREVIEW_WORKTIME_SNAPSHOT_INVALID: ${e.code} ${e.message}`)
+    }
+    throw e
+  }
+  const workTimeSnapshotMetadata = toReadMetadata(workTimeSnapshot)
+
   // 4. Parse proposed changes from resultSnapshot
   // K21-FIX-F: extract config sub-object (resolved config snapshot from preview)
   let snapshot: {
@@ -241,6 +276,14 @@ export async function applySchedulerPreview(
   if (previewRun.changedSlotCount !== proposedChanges.length) {
     throw new Error('PREVIEW_CHANGED_SLOT_COUNT_MISMATCH')
   }
+
+  // K26-J2: carry the raw WorkTime snapshot JSON forward to the
+  // apply run. We use the raw JSON (not the parsed object) so the
+  // wire representation is byte-identical to what the preview run
+  // persisted. This is intentionally a verbatim copy; apply does
+  // not mutate or "re-serialize" the snapshot.
+  const carriedWorkTimeSnapshotJson =
+    workTimeSnapshot != null ? previewRun.workTimeConfigSnapshot : null
 
   // 5. Compute current semester-scoped database fingerprint
   const currentSlots = await prisma.scheduleSlot.findMany({
@@ -292,6 +335,8 @@ export async function applySchedulerPreview(
         databaseFingerprint: databaseFingerprintBefore,
         changedSlotCount: proposedChanges.length,
         solverVersion: SOLVER_VERSION,
+        // K26-J2: carry the preview's WorkTime snapshot forward.
+        workTimeConfigSnapshot: carriedWorkTimeSnapshotJson,
       },
     })
 
@@ -416,11 +461,16 @@ export async function applySchedulerPreview(
         databaseFingerprint: postFingerprint,
         // K21-FIX-F: carry the preview's resolved config snapshot forward
         // so apply/rollback chains are reproducible from any one of the runs.
+        // K26-J2: also carry the parsed WorkTime snapshot's additive
+        // metadata (or `null` when the preview run is legacy and
+        // had no snapshot) so audit / UI can render the policy that
+        // was in effect at preview time.
         resultSnapshot: JSON.stringify({
           postScore,
           postHc,
           proposedChangesApplied: proposedChanges.length,
           previewRunId: previewRun.id,
+          workTime: workTimeSnapshotMetadata,
           // Carry the config snapshot from the preview run
           ...(snapshot.config ? { config: snapshot.config } : {}),
         }),
@@ -464,5 +514,6 @@ export async function applySchedulerPreview(
     databaseFingerprintAfter: applyResult.databaseFingerprintAfter,
     changeCount: proposedChanges.length,
     durationMs,
+    workTimeSnapshot: workTimeSnapshotMetadata,
   }
 }

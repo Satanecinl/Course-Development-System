@@ -124,9 +124,13 @@ function main() {
     !fileContains('src/lib/scheduler/score.ts', 'WorkTimeConfig') &&
     !fileContains('src/lib/scheduler/score.ts', 'activeTeachingSlot'))
 
-  // 20. snapshot/reproducibility gap documented
-  check('workTimeConfigSnapshot never written',
-    !fileContains('src/lib/scheduler/preview.ts', 'workTimeConfigSnapshot:'))
+  // 20. snapshot/reproducibility gap — was "never written" at J audit time.
+  // K26-J2 (SchedulingRun Snapshot Write) legitimately writes
+  // workTimeConfigSnapshot via preview.ts. The check now accepts the
+  // J2 wiring as the canonical "now written" state.
+  check('workTimeConfigSnapshot is now written by J2 (K26-J2 stage-aware)',
+    fileContains('src/lib/scheduler/preview.ts', 'workTimeConfigSnapshot: workTimeSnapshotJson') &&
+    fileContains('docs/k26-worktime-schedulingrun-snapshot-write.md', 'Snapshot Write'))
 
   // 21. K22 harness gap documented
   check('K22 harness has no WorkTime fixtures',

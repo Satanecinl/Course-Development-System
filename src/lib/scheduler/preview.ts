@@ -9,6 +9,16 @@ import {
   buildWireBreakdown,
   type ResultSnapshotScoreBreakdown,
 } from './score-breakdown'
+import {
+  resolveWorkTimeConfigForSchedule,
+  type ResolvedWorkTimeForSchedule,
+} from '@/lib/worktime/worktime-schedule-resolver'
+import {
+  buildAndSerializeWorkTimeSnapshot,
+  toAdditiveMetadata,
+  type SchedulingRunWorkTimeSnapshot,
+  type WorkTimeSnapshotAdditiveMetadata,
+} from '@/lib/worktime/worktime-snapshot'
 import type { SchedulingContext, ScheduleState, SlotWithRelations } from './types'
 
 // ── Types ──
@@ -62,6 +72,21 @@ export interface PreviewResult {
   // K22-L2: additive score breakdown (HC1-HC6, SC1-SC10, MIN_PERT)
   // embedded in resultSnapshot.scoreBreakdown and echoed back for live preview.
   scoreBreakdown: ResultSnapshotScoreBreakdown
+
+  // K26-J2: WorkTime snapshot metadata for run reproducibility.
+  // The full snapshot is persisted on SchedulingRun.workTimeConfigSnapshot;
+  // this projection is embedded in the response so the UI can render it.
+  workTimeSnapshot: {
+    present: true
+    version: SchedulingRunWorkTimeSnapshot['version']
+    source: SchedulingRunWorkTimeSnapshot['source']
+    workTimeConfigId: number | null
+    workTimeConfigName: string | null
+    allowWeekend: boolean
+    activeTeachingSlotIndexes: number[]
+    legacyDisplaySlotIndexes: number[]
+    serializedAt: string
+  }
 }
 
 // ── Helpers ──
@@ -200,6 +225,36 @@ export async function createSchedulerPreview(
   // 0. Resolve semester
   const semester = await resolveSchedulerSemester({ semesterId: options.semesterId })
 
+  // 0a. K26-J2: resolve WorkTime for the semester and capture a
+  // stable snapshot. The snapshot is persisted on
+  // `SchedulingRun.workTimeConfigSnapshot` and carried forward by
+  // apply/rollback. Solver/score do NOT consult the snapshot today
+  // (K26-J3/J4 deferred); this is purely a persistence + audit
+  // channel at this stage.
+  const workTimeResolved: ResolvedWorkTimeForSchedule =
+    await resolveWorkTimeConfigForSchedule(semester.id)
+  let workTimeConfigId: number | null = null
+  let workTimeConfigName: string | null = null
+  if (workTimeResolved.source === 'database') {
+    const cfg = await prisma.workTimeConfig.findFirst({
+      where: { semesterId: semester.id, isDefault: true, isActive: true },
+      select: { id: true, name: true },
+    })
+    if (cfg) {
+      workTimeConfigId = cfg.id
+      workTimeConfigName = cfg.name
+    }
+  }
+  const { snapshot: workTimeSnapshot, json: workTimeSnapshotJson } =
+    buildAndSerializeWorkTimeSnapshot({
+      semesterId: semester.id,
+      workTimeConfigId,
+      workTimeConfigName,
+      resolved: workTimeResolved,
+    })
+  const workTimeAdditive: WorkTimeSnapshotAdditiveMetadata =
+    toAdditiveMetadata(workTimeSnapshot)
+
   // 1. Load scheduling context (scoped by semester)
   const ctx = await loadSchedulingContext({ semesterId: semester.id })
 
@@ -275,6 +330,7 @@ export async function createSchedulerPreview(
   // 8. Build result snapshot for SchedulingRun.resultSnapshot
   // K21-FIX-F: add config sub-object with resolved config (source: CONFIG/INLINE/DEFAULT/MIXED)
   // K22-L2: add scoreBreakdown sub-object (HC1-HC6, SC1-SC10, MIN_PERT)
+  // K26-J2: add workTime sub-object with snapshot additive metadata
   const resultSnapshot = JSON.stringify({
     scoreBefore,
     scoreAfter,
@@ -289,6 +345,7 @@ export async function createSchedulerPreview(
     semesterCode: semester.code,
     semesterName: semester.name,
     scoreBreakdown,
+    workTime: workTimeAdditive,
     config: options.resolvedConfigSnapshot ?? {
       configId: null,
       name: null,
@@ -358,6 +415,11 @@ export async function createSchedulerPreview(
       hc3After: hcAfter.hc3,
       hc4After: hcAfter.hc4,
       resultSnapshot,
+      // K26-J2: persist the captured WorkTime snapshot. Apply/rollback
+      // read this field instead of re-resolving the current WorkTime
+      // configuration. The snapshot is immutable for the lifetime of
+      // the run.
+      workTimeConfigSnapshot: workTimeSnapshotJson,
       conflictSummary,
       databaseFingerprint,
       previewExpiresAt: previewExpiresAt ?? undefined,
@@ -389,5 +451,16 @@ export async function createSchedulerPreview(
     semesterCode: semester.code,
     semesterName: semester.name,
     scoreBreakdown,
+    workTimeSnapshot: {
+      present: true,
+      version: workTimeSnapshot.version,
+      source: workTimeSnapshot.source,
+      workTimeConfigId: workTimeSnapshot.workTimeConfigId,
+      workTimeConfigName: workTimeSnapshot.workTimeConfigName,
+      allowWeekend: workTimeSnapshot.allowWeekend,
+      activeTeachingSlotIndexes: workTimeSnapshot.activeTeachingSlotIndexes,
+      legacyDisplaySlotIndexes: workTimeSnapshot.legacyDisplaySlotIndexes,
+      serializedAt: workTimeSnapshot.serializedAt,
+    },
   }
 }

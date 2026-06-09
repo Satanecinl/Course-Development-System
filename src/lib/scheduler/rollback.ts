@@ -4,6 +4,13 @@ import { calculateInitialScore, calculateScoreWithDetails } from './score'
 import {
   computeSemesterScopedFingerprint,
 } from './preview'
+import {
+  readWorkTimeSnapshotFromRun,
+  toReadMetadata,
+  type SchedulingRunWorkTimeSnapshot,
+  type WorkTimeSnapshotReadMetadata,
+  WorkTimeSnapshotInvalidError,
+} from '@/lib/worktime/worktime-snapshot'
 import type {
   SchedulingContext,
   SlotWithRelations,
@@ -36,6 +43,10 @@ export interface RollbackResult {
   databaseFingerprintAfter: string
   changeCount: number
   durationMs: number
+  // K26-J2: WorkTime snapshot metadata carried from the apply run.
+  // Rollback does NOT re-resolve the current WorkTime; the snapshot
+  // on the apply run is the single source of truth for this rollback.
+  workTimeSnapshot: WorkTimeSnapshotReadMetadata
 }
 
 // ── Helpers ──
@@ -208,6 +219,26 @@ export async function rollbackSchedulerApply(
     }
   }
 
+  // 3c. K26-J2: read the WorkTime snapshot carried on the apply run.
+  //
+  // Compatibility policy mirrors apply.ts:
+  //  - Legacy runs (pre-K26-J2) with no snapshot → proceed; response
+  //    marks `present: false`. Rollback never re-resolves current
+  //    WorkTime, and the solver/score path is unchanged.
+  //  - Runs with malformed snapshot → fail fast.
+  let rollbackWorkTimeSnapshot: SchedulingRunWorkTimeSnapshot | null = null
+  try {
+    rollbackWorkTimeSnapshot = readWorkTimeSnapshotFromRun(applyRun)
+  } catch (e) {
+    if (e instanceof WorkTimeSnapshotInvalidError) {
+      throw new Error(`APPLY_WORKTIME_SNAPSHOT_INVALID: ${e.code} ${e.message}`)
+    }
+    throw e
+  }
+  const rollbackWorkTimeSnapshotMetadata = toReadMetadata(rollbackWorkTimeSnapshot)
+  const carriedRollbackWorkTimeSnapshotJson =
+    rollbackWorkTimeSnapshot != null ? applyRun.workTimeConfigSnapshot : null
+
   // 4. Check no existing completed rollback for this apply run
   const existingRollback = await prisma.schedulingRun.findFirst({
     where: {
@@ -293,6 +324,9 @@ export async function rollbackSchedulerApply(
         databaseFingerprint: databaseFingerprintBefore,
         changedSlotCount: applyChanges.length,
         solverVersion: SOLVER_VERSION,
+        // K26-J2: carry the apply run's WorkTime snapshot forward
+        // so the rollback run is reproducible end-to-end.
+        workTimeConfigSnapshot: carriedRollbackWorkTimeSnapshotJson,
       },
     })
 
@@ -404,11 +438,13 @@ export async function rollbackSchedulerApply(
         hc4After: postHc.hc4,
         databaseFingerprint: postFingerprint,
         // K21-FIX-F: carry apply's config snapshot forward (audit / reproducibility)
+        // K26-J2: also carry WorkTime snapshot additive metadata.
         resultSnapshot: JSON.stringify({
           postScore,
           postHc,
           changesRestored: applyChanges.length,
           applyRunId: applyRun.id,
+          workTime: rollbackWorkTimeSnapshotMetadata,
           ...(applyConfigSnapshot ? { config: applyConfigSnapshot } : {}),
         }),
         conflictSummary: JSON.stringify({
@@ -460,5 +496,6 @@ export async function rollbackSchedulerApply(
     databaseFingerprintAfter: rollbackResult.databaseFingerprintAfter,
     changeCount: applyChanges.length,
     durationMs,
+    workTimeSnapshot: rollbackWorkTimeSnapshotMetadata,
   }
 }

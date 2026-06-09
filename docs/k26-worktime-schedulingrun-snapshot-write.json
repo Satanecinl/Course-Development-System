@@ -1,0 +1,172 @@
+{
+  "stage": "K26-J2-WORKTIME-SCHEDULINGRUN-SNAPSHOT-WRITE",
+  "status": "CLOSED",
+  "date": "2026-06-09",
+  "dependsOn": "K26-J1-WORKTIME-SOLVER-SCORE-HARNESS-PLAN (9862278)",
+  "solverChanged": false,
+  "scoreChanged": false,
+  "k22ExpectedChanged": false,
+  "noSchemaChange": true,
+  "noMigrationChange": true,
+  "noUiChange": true,
+  "noRecommendationChange": true,
+  "noDbContentCommit": true,
+  "summary": "Implements preview-write / apply-read / rollback-read for SchedulingRun.workTimeConfigSnapshot. New helper src/lib/worktime/worktime-snapshot.ts provides build/serialize/parse/validate + stub toSolverWorkTimeContract. preview.ts resolves WorkTime and writes the snapshot. apply.ts and rollback.ts read the snapshot from the previous run, never re-resolve WorkTime, and carry the raw JSON forward. Apply/rollback response gains workTimeSnapshot metadata. K22-C baseline preserved.",
+  "githubSync": {
+    "branch": "master",
+    "remote": "origin",
+    "remoteUrl": "git@github.com:Satanecinl/Course-Development-System.git",
+    "localHeadBefore": "9862278",
+    "localHeadAfter": "<J2 commit>",
+    "remoteHeadAfter": "<J2 commit>",
+    "push": true,
+    "forcePush": false
+  },
+  "snapshotContract": {
+    "version": 1,
+    "versionConstant": "WORKTIME_SNAPSHOT_VERSION",
+    "sourceValues": ["database", "staticFallback"],
+    "fields": [
+      "version",
+      "source",
+      "semesterId",
+      "workTimeConfigId",
+      "workTimeConfigName",
+      "allowWeekend",
+      "activeTeachingSlotIndexes",
+      "legacyDisplaySlotIndexes",
+      "allowedDayOfWeeks",
+      "weekdayDayOfWeeks",
+      "weekendDayOfWeeks",
+      "slotsByIndex",
+      "serializedAt"
+    ],
+    "modulePath": "src/lib/worktime/worktime-snapshot.ts",
+    "errorCodes": [
+      "WORKTIME_SNAPSHOT_MISSING",
+      "WORKTIME_SNAPSHOT_INVALID_JSON",
+      "WORKTIME_SNAPSHOT_WRONG_VERSION",
+      "WORKTIME_SNAPSHOT_MISSING_ACTIVE_SLOTS",
+      "WORKTIME_SNAPSHOT_LEGACY_IN_ACTIVE",
+      "WORKTIME_SNAPSHOT_LEGACY_ONLY_ACTIVE",
+      "WORKTIME_SNAPSHOT_VALIDATION_FAILED"
+    ]
+  },
+  "previewFlow": {
+    "steps": [
+      "resolveSchedulerSemester",
+      "resolveWorkTimeConfigForSchedule",
+      "if (database) prisma.workTimeConfig.findFirst for id+name",
+      "buildAndSerializeWorkTimeSnapshot",
+      "write workTimeConfigSnapshot on SchedulingRun",
+      "embed toAdditiveMetadata in resultSnapshot.workTime",
+      "return workTimeSnapshot in PreviewResult"
+    ],
+    "failFast": true,
+    "fallbackPolicy": "DB → static fallback (K26-D); preview allows fallback; apply/rollback only read snapshot"
+  },
+  "applyFlow": {
+    "readField": "previewRun.workTimeConfigSnapshot",
+    "neverResolvesCurrentWorkTime": true,
+    "missingSnapshot": "compatibility path, response present=false",
+    "invalidSnapshot": "throw PREVIEW_WORKTIME_SNAPSHOT_INVALID",
+    "carriesRawJsonToApplyRun": true,
+    "additiveResultField": "resultSnapshot.workTime",
+    "responseField": "ApplyResult.workTimeSnapshot"
+  },
+  "rollbackFlow": {
+    "readField": "applyRun.workTimeConfigSnapshot",
+    "neverResolvesCurrentWorkTime": true,
+    "missingSnapshot": "compatibility path, response present=false",
+    "invalidSnapshot": "throw APPLY_WORKTIME_SNAPSHOT_INVALID",
+    "carriesRawJsonToRollbackRun": true,
+    "additiveResultField": "resultSnapshot.workTime",
+    "responseField": "RollbackResult.workTimeSnapshot"
+  },
+  "harnessM": {
+    "script": "scripts/verify-worktime-schedulingrun-snapshot-k26-j2.ts",
+    "checks": 48,
+    "sections": {
+      "filesStructure": [1, 6],
+      "previewSnapshot": [7, 20],
+      "applyRollbackSnapshot": [21, 26],
+      "reproducibility": [27, 33],
+      "nonGoals": [34, 42],
+      "verification": [43, 48]
+    },
+    "liveTest": {
+      "createsSchedulingConfigName": "K26-J2-SNAPSHOT-VERIFY",
+      "createsRun": true,
+      "cleanupInFinally": true,
+      "cleanupInCrashHandler": true,
+      "assertsDbDrift": true
+    }
+  },
+  "compatibility": {
+    "legacyRunsNoSnapshot": "apply/rollback treat as present=false; behavior identical to K26-J1",
+    "k21SchedulerConfig": "unaffected; resultSnapshot.config still flows through apply/rollback chain",
+    "oldResultSnapshotReaders": "resultSnapshot.workTime is additive; old parsers ignore unknown fields",
+    "newRunReadByOldService": "K26-J1 service has no knowledge of workTimeConfigSnapshot field — no behavior change",
+    "schedulingConfigVsWorkTimeSnapshot": "two independent fields: resultSnapshot.config (K21-FIX-F) and workTimeConfigSnapshot (K26-J2)"
+  },
+  "nonGoals": [
+    "solver candidate generation",
+    "score SC3 / SC5 / SC7 behavior",
+    "LAHC move generation",
+    "schema change",
+    "migration",
+    "DB write to dev.db as commit",
+    "K22 expected change",
+    "K22-C harness change",
+    "recommendation behavior change",
+    "dry-run / apply adjustment behavior",
+    "WorkTime Settings UI",
+    "WorkTime API semantics",
+    "adjustment dialog UI",
+    "solver actually consuming snapshot",
+    "score actually consuming snapshot",
+    "reset / force-reset / seed"
+  ],
+  "modifiedFiles": [
+    "src/lib/worktime/worktime-snapshot.ts (NEW)",
+    "src/lib/scheduler/preview.ts",
+    "src/lib/scheduler/apply.ts",
+    "src/lib/scheduler/rollback.ts",
+    "scripts/verify-worktime-schedulingrun-snapshot-k26-j2.ts (NEW)",
+    "docs/k26-worktime-schedulingrun-snapshot-write.md (NEW)",
+    "docs/k26-worktime-schedulingrun-snapshot-write.json (NEW)"
+  ],
+  "verification": {
+    "verifyWorktimeSchedulingrunSnapshotK26J2": "PASS",
+    "planWorktimeSolverScoreHarnessK26J1": "56/56 PASS",
+    "auditWorktimeSolverScoreIntegrationK26J": "48/48 PASS",
+    "k26ICloseout": "64/64 PASS",
+    "k26I4": "49/49 PASS",
+    "k26I3": "40/40 PASS",
+    "k26I2": "45/45 PASS",
+    "k26I1": "36/36 PASS",
+    "k26Iaudit": "44/44 PASS",
+    "k26Hcloseout": "52/52 PASS",
+    "k26H2A": "15/15 PASS",
+    "k26Hui": "43/43 PASS",
+    "k26Gapi": "40/40 PASS",
+    "k26F1": "30/30 PASS",
+    "k26Fvalidation": "30/30 PASS",
+    "k26FbackfillDryRun": "0 missing",
+    "k26E": "34/34 PASS",
+    "k26D": "39/39 PASS",
+    "k26C": "32/32 PASS",
+    "k26A": "47/47 PASS",
+    "k26Bcloseout": "38/38 PASS",
+    "k25closeout": "38/38 PASS",
+    "k25C": "PASS",
+    "k22CscoreHarness": "PASS (73/0/0/0)",
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "up to date (8 migrations)",
+    "build": "PASS",
+    "lint": "184 errors / 146 warnings (no new)",
+    "authFoundation": "53 passed / 1 failed (pre-existing)",
+    "gitStatusShortClean": true,
+    "localRemoteSynced": true
+  }
+}
