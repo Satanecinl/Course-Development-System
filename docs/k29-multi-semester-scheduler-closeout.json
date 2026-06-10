@@ -1,0 +1,86 @@
+{
+  "stage": "K29-MULTI-SEMESTER-SCHEDULER-CLOSEOUT",
+  "status": "CLOSED",
+  "date": "2026-06-10",
+  "featureStatus": "READY_FOR_REAL_USE",
+  "implementationStage": "K29-A",
+  "manualTrialStage": "K29-B",
+  "manualTrialStatus": "PASSED",
+  "schedulerPageSemesterSelector": true,
+  "previewUsesSelectedSemesterId": true,
+  "applyUsesRunSemesterId": true,
+  "rollbackUsesRunSemesterId": true,
+  "readinessUsesSelectedSemesterId": true,
+  "noDataSemesterBlocked": true,
+  "k22ExpectedUpdated": false,
+  "schemaChanged": false,
+  "migrationsChanged": false,
+  "dbCommitted": false,
+  "rbacAuthChanged": false,
+  "solverScoreChanged": false,
+  "workTimeChanged": false,
+  "schedulerLogicChanged": false,
+  "adjustmentFlowChanged": false,
+  "importerParserChanged": false,
+  "uiFunctionalityChanged": false,
+  "newApiAdded": false,
+  "newPackageJsonScriptsAdded": false,
+  "lintBaseline": {
+    "errors": 185,
+    "warnings": 149,
+    "note": "same as K29-A baseline; closeout added no new lint issues"
+  },
+  "validation": {
+    "k29CloseoutVerify": "20/20 PASS",
+    "k29aVerify": "23/23 PASS",
+    "k22cScoreRegression": "73/0/0/0 PASS",
+    "k26Closeout": "106/106 PASS",
+    "k28cVerify": "PASS (updated for K29-A)",
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "9 migrations, up to date",
+    "build": "PASS",
+    "lint": "334 (185 errors / 149 warnings) — same as K29-A baseline",
+    "authFoundation": "61/1 pre-existing"
+  },
+  "semesterBehavior": {
+    "preview": "body.semesterId (UI sends selectedSemesterId)",
+    "apply": "previewRun.semesterId (DB record)",
+    "rollback": "applyRun.semesterId (DB record)",
+    "lockableSlots": "?semesterId= query param (UI)",
+    "configs": "semesterId prop (UI)",
+    "readiness": "?semesterId= query param (UI)",
+    "runList": "?semesterId= query param (UI)"
+  },
+  "crossSemesterSafety": {
+    "previewSemesterValidatedBy": "resolveSchedulerSemester",
+    "applySemesterFrom": "previewRun.semesterId (DB)",
+    "rollbackSemesterFrom": "applyRun.semesterId (DB)",
+    "scheduleSlotWritesScopedBy": "run.semesterId"
+  },
+  "dataSourceAssumption": "imported or manual teaching plan (TeachingTask + ClassGroup + Room + Teacher)",
+  "browserValidationSummary": [
+    "/admin/scheduler can switch semesters",
+    "readiness updates when semester changes",
+    "preview uses selected semesterId",
+    "SchedulingRun.semesterId is correctly persisted",
+    "no-data semester blocks preview with clear message",
+    "apply/rollback still derive from run.semesterId",
+    "cross-semester risk is controlled"
+  ],
+  "knownFollowUps": [
+    "/admin/scheduler/history page has no semester selector (UI-only; runs API supports ?semesterId=)",
+    "current DB has only one active semester with TeachingTask data; full multi-semester safety is code-verified",
+    "lint baseline is 185 errors / 149 warnings (3 new warnings from K29-A, all in new code)"
+  ],
+  "filesAdded": [
+    "scripts/verify-multi-semester-scheduler-closeout-k29.ts",
+    "docs/k29-multi-semester-scheduler-closeout.md",
+    "docs/k29-multi-semester-scheduler-closeout.json"
+  ],
+  "filesModified": [],
+  "recommendation": {
+    "k29Status": "CLOSED",
+    "featureStatus": "READY_FOR_REAL_USE",
+    "recommendedNextStage": "K28-B-USER-ADJUSTMENT-APPROVAL-FLOW-MANUAL-TRIAL"
+  }
+}
