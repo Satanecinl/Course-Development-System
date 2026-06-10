@@ -1,0 +1,121 @@
+{
+  "stage": "K26-SYSTEM-SETTINGS-BASIC-CLOSEOUT",
+  "status": "CLOSED",
+  "date": "2026-06-10",
+  "featureStatus": "READY_FOR_REAL_USE",
+  "summary": "Closeout of the system settings basic version. All nine modules are READY_FOR_REAL_USE. This stage only records closed state, adds a static-only closeout verify script, and archives this document. No new functionality, no business-logic changes, no schema/migration/DB changes.",
+  "modules": {
+    "semester": "READY_FOR_REAL_USE",
+    "schedulerConfig": "READY_FOR_REAL_USE",
+    "workTime": "READY_FOR_REAL_USE",
+    "campusRoomRules": "READY_FOR_REAL_USE",
+    "adjustmentRules": "READY_FOR_REAL_USE",
+    "importRules": "READY_FOR_REAL_USE",
+    "permissionRoles": "READY_FOR_REAL_USE",
+    "dataMaintenance": "READY_FOR_REAL_USE",
+    "auditLogs": "READY_FOR_REAL_USE"
+  },
+  "moduleKeyMap": {
+    "semester": "semester-settings",
+    "schedulerConfig": "scheduler-config",
+    "workTime": "time-slot-worktime",
+    "campusRoomRules": "campus-room-rules",
+    "adjustmentRules": "adjustment-rules",
+    "importRules": "import-rules",
+    "permissionRoles": "rbac-settings",
+    "dataMaintenance": "data-maintenance",
+    "auditLogs": "audit-log"
+  },
+  "moduleApiPaths": {
+    "semester": "reuses /api/semesters (K25-H/I)",
+    "schedulerConfig": "reuses /api/admin/scheduler/... (K21-FIX-F / K26-B)",
+    "workTime": "reuses /api/admin/worktime-configs/* (K26-G)",
+    "campusRoomRules": "GET /api/admin/settings/campus-room-rules (K26-L1)",
+    "adjustmentRules": "GET /api/admin/settings/adjustment-rules (K26-M1)",
+    "importRules": "GET /api/admin/settings/import-rules (K26-N1)",
+    "permissionRoles": "GET /api/admin/settings/permission-roles (K26-O1)",
+    "dataMaintenance": "GET /api/admin/settings/data-maintenance (K26-P1)",
+    "auditLogs": "GET /api/admin/settings/audit-logs (K26-Q1)"
+  },
+  "readOnlyInvariantsEnforced": {
+    "noSaveButtonsInReadOnlyPanels": true,
+    "noDeleteButtonsInReadOnlyPanels": true,
+    "noCleanupButtonsInReadOnlyPanels": true,
+    "noExportButtonsInReadOnlyPanels": true,
+    "noMigrateResetButtonsInReadOnlyPanels": true,
+    "noDbPushForceResetButtonsInReadOnlyPanels": true,
+    "dataMaintenanceDestructiveActionsEnabledFalse": true,
+    "auditLogsReadOnlyTrue": true,
+    "auditLogsUnifiedSchemaExistsFalse": true,
+    "permissionRolesExcludesPasswordHash": true,
+    "permissionRolesExcludesTokenHash": true,
+    "permissionRolesExcludesSessionFields": true
+  },
+  "manualValidation": {
+    "semester": "closed in K25-H/I (K25-CLOSED)",
+    "schedulerConfig": "closed in K26-B (K26-B-COMPLETED)",
+    "workTime": "closed in K26-H (K26-H-COMPLETED)",
+    "campusRoomRules": "manually verified in K26-L2",
+    "adjustmentRules": "manually verified in K26-M2",
+    "importRules": "manually cross-checked in K26-N1",
+    "permissionRoles": "manually verified in K26-O1",
+    "dataMaintenance": "manually verified in K26-P1",
+    "auditLogs": "manually verified in K26-Q1"
+  },
+  "technicalValidation": {
+    "closeoutVerify": "PASS (106/106)",
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "up to date (8 migrations)",
+    "build": "PASS",
+    "lint": "330 problems (184 errors + 146 warnings, baseline preserved)",
+    "authFoundation": "53 passed / 1 pre-existing failed (ScheduleAdjustment ACTIVE=0)"
+  },
+  "knownLimitations": [
+    "HC6 hard rule is not toggleable in campus-room-rules (K26-L1 design)",
+    "adjustment-rules does not yet consult WorkTime config (K26-I known gap; K26-I1..I4 scheduled)",
+    "import-rules: source evidence only forward-fills on new imports (K20-FIX-B design)",
+    "permission-roles: UserRole / RolePermission have no updatedAt / operator",
+    "data-maintenance: no one-click backup / restore / cleanup / fix (destructive disabled by design)",
+    "audit-logs: no unified AuditLog table (planned, not implemented)",
+    "auth foundation: ScheduleAdjustment ACTIVE = 0 (actual 10) pre-existing"
+  ],
+  "notImplemented": [
+    "unified AuditLog schema / model",
+    "audit log export / cleanup / retention policy",
+    "one-click backup / restore UI",
+    "migration reset / db push --force-reset UI",
+    "HC6 toggle UI",
+    "historical source-evidence backfill",
+    "UserRole / RolePermission operator tracking"
+  ],
+  "k22ExpectedUpdated": false,
+  "k22ExpectedFiles": [
+    "docs/k22-score-default-snapshot.json",
+    "docs/k22-score-regression-harness-implementation.json"
+  ],
+  "schemaChanged": false,
+  "migrationsChanged": false,
+  "dbCommitted": false,
+  "schedulerSolverScoreChanged": false,
+  "workTimeLogicChanged": false,
+  "adjustmentLogicChanged": false,
+  "importerParserChanged": false,
+  "rbacAuthSemanticsChanged": false,
+  "systemSettingsUIFunctionalChange": false,
+  "newApiAdded": false,
+  "newPackageJsonScriptsAdded": false,
+  "newAuditWriteLogicAdded": false,
+  "newDestructiveApiAdded": false,
+  "seedAuthChanged": false,
+  "filesAdded": [
+    "scripts/verify-system-settings-basic-closeout-k26.ts",
+    "docs/k26-system-settings-basic-closeout.md",
+    "docs/k26-system-settings-basic-closeout.json"
+  ],
+  "filesModified": [],
+  "recommendation": {
+    "k26SystemSettingsBasicStatus": "CLOSED",
+    "featureStatus": "READY_FOR_REAL_USE",
+    "recommendedNextStage": "K27-SYSTEM-WIDE-REAL-USAGE-TRIAL"
+  }
+}
