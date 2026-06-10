@@ -151,6 +151,56 @@ export function rejectAdjustmentRequest(requestId: number, reviewNote: string) {
   )
 }
 
+// K28-A2: Plan recommendations for USER request flow
+
+export interface PlanRecommendationRequest {
+  scheduleSlotId: number
+  preferredWeek?: number
+  preferredDayOfWeek?: number | null
+  limit?: number
+}
+
+export interface PlanRecommendationPlan {
+  targetWeek: number
+  targetDayOfWeek: number
+  targetSlotIndex: number
+  roomId: number
+  roomName: string
+  building: string | null
+  capacity: number
+  score: number
+  reasons: string[]
+  warnings: string[]
+  isPreferredWeek: boolean
+  isPreferredDay: boolean
+}
+
+export interface PlanRecommendationResult {
+  ok: boolean
+  minimumSatisfied: boolean
+  plans: PlanRecommendationPlan[]
+  preferredWeekAvailable: boolean
+  preferredDayAvailable: boolean
+  searched?: {
+    preferredWeek: number
+    preferredWeekPlanCount: number
+    fallbackPlanCount: number
+    preferredDayOfWeek: number | null
+    preferredDayPlanCount: number
+    sameWeekOtherDayPlanCount: number
+  }
+  message?: string
+  workTimeSource?: string
+  allowWeekend?: boolean
+}
+
+export function fetchUserPlanRecommendations(payload: PlanRecommendationRequest) {
+  return postJson<PlanRecommendationResult>(
+    '/api/schedule-adjustment-requests/recommendations',
+    payload,
+  )
+}
+
 export function getAdjustmentRequestErrorMessage(code: string): string {
   switch (code) {
     case 'UNAUTHENTICATED':

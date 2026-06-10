@@ -1,0 +1,65 @@
+{
+  "stage": "K28-A2-USER-ADJUSTMENT-REQUEST-PLAN-RECOMMENDATION",
+  "status": "CLOSED",
+  "date": "2026-06-10",
+  "summary": "Added one-click plan recommendation to USER adjustment request dialog. Reuses K24 findAdjustmentPlanRecommendations via new USER-safe API. USER can select preferred week/day, get ranked plans, click '使用该方案' to fill target fields. No DB writes. No schedule:adjust permission for USER.",
+  "api": {
+    "path": "POST /api/schedule-adjustment-requests/recommendations",
+    "permission": "adjustment-request:create",
+    "reuses": "findAdjustmentPlanRecommendations (read-only)",
+    "dbWrites": false,
+    "createsAdjustmentRequest": false,
+    "createsScheduleAdjustment": false,
+    "modifiesScheduleSlot": false
+  },
+  "ui": {
+    "component": "UserAdjustmentRequestDialog",
+    "features": [
+      "preferredWeek selector (1-20)",
+      "preferredDayOfWeek selector (1-5 or auto)",
+      "一键推荐调课方案 button",
+      "three-bucket plan list (首选日期/同周其他日期/备选周)",
+      "使用该方案 button per plan (fills target fields only)",
+      "preferredWeek badge / preferredDay badge on plans"
+    ],
+    "pickPlanBehavior": "fills targetWeek, newDayOfWeek, newSlotIndex, newRoomId; clears stale dry-run; does NOT submit"
+  },
+  "reusedK24Capabilities": [
+    "findAdjustmentPlanRecommendations",
+    "WorkTime guard (slot 6/7 excluded, weekend gated)",
+    "HC6 Linxiao policy",
+    "conflict check (room/teacher/classGroup)",
+    "preferredWeek-first sorting",
+    "preferredDayOfWeek-first sorting",
+    "three-bucket plan ranking",
+    "cross-week self-occupancy gate"
+  ],
+  "schemaChanged": false,
+  "rbacChanged": false,
+  "k22ExpectedChanged": false,
+  "verification": {
+    "k28a2Verify": "26/26 PASS",
+    "k28aVerify": "67/67 PASS",
+    "k28a1Verify": "17/17 PASS",
+    "k26Closeout": "106/106 PASS",
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "9 migrations, up to date",
+    "build": "PASS",
+    "lint": "331 (185/146) — same as K28-A baseline",
+    "authFoundation": "61/1 pre-existing"
+  },
+  "filesAdded": [
+    "src/app/api/schedule-adjustment-requests/recommendations/route.ts",
+    "scripts/verify-user-adjustment-request-plan-recommendation-k28-a2.ts",
+    "docs/k28-user-adjustment-request-plan-recommendation.md",
+    "docs/k28-user-adjustment-request-plan-recommendation.json"
+  ],
+  "filesModified": [
+    "src/lib/schedule/adjustment-request-client.ts",
+    "src/components/schedule/user-adjustment-request-dialog.tsx"
+  ],
+  "recommendation": {
+    "k28A2Status": "CLOSED",
+    "recommendedNextStage": "K28-B-USER-ADJUSTMENT-APPROVAL-FLOW-MANUAL-TRIAL"
+  }
+}

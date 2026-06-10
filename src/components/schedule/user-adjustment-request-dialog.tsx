@@ -2,6 +2,7 @@
 
 // src/components/schedule/user-adjustment-request-dialog.tsx
 // K28-A: USER-side "申请调课" dialog.
+// K28-A2: Added "一键推荐调课方案" (plan recommendation) feature.
 // Submits a PENDING ScheduleAdjustmentRequest. Does NOT mutate the
 // official ScheduleSlot, and does NOT create an ACTIVE ScheduleAdjustment.
 
@@ -17,8 +18,9 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
 import { DAYS } from '@/types/schedule'
-import { getTeachingSlotLabelOptions, formatTeachingSlotLabel } from '@/lib/schedule/time-slots'
+import { getTeachingSlotLabelOptions, formatTeachingSlotLabel, VALID_PREFERRED_DAY_VALUES } from '@/lib/schedule/time-slots'
 import type { ScheduleViewData } from '@/types/schedule'
 import type { EntityOption } from '@/components/combobox'
 import {
@@ -26,6 +28,9 @@ import {
   submitAdjustmentRequest,
   getAdjustmentRequestErrorMessage,
   type AdjustmentRequestDryRunResult,
+  fetchUserPlanRecommendations,
+  type PlanRecommendationPlan,
+  type PlanRecommendationResult,
 } from '@/lib/schedule/adjustment-request-client'
 
 interface UserAdjustmentRequestDialogProps {
@@ -35,6 +40,10 @@ interface UserAdjustmentRequestDialogProps {
   item: ScheduleViewData | null
   roomOptions: EntityOption[]
   onSubmitted: () => void
+}
+
+function planKey(p: PlanRecommendationPlan) {
+  return `${p.targetWeek}|${p.targetDayOfWeek}|${p.targetSlotIndex}|${p.roomId}`
 }
 
 export function UserAdjustmentRequestDialog({
@@ -55,6 +64,15 @@ export function UserAdjustmentRequestDialog({
   const [dryRunResult, setDryRunResult] = useState<AdjustmentRequestDryRunResult | null>(null)
   const [submitLoading, setSubmitLoading] = useState(false)
 
+  // K28-A2: plan recommendation state
+  const [planLoading, setPlanLoading] = useState(false)
+  const [planResult, setPlanResult] = useState<PlanRecommendationResult | null>(null)
+  const [planError, setPlanError] = useState<string | null>(null)
+  const [preferredPlanWeek, setPreferredPlanWeek] = useState(week)
+  const [preferredPlanDay, setPreferredPlanDay] = useState<number | null>(null)
+  const [selectedPlanKey, setSelectedPlanKey] = useState<string | null>(null)
+  const [planListOpen, setPlanListOpen] = useState(false)
+
   useEffect(() => {
     if (open && item) {
       setTargetWeek(week)
@@ -63,6 +81,13 @@ export function UserAdjustmentRequestDialog({
       setNewRoomId(item.roomId ?? null)
       setReason('')
       setDryRunResult(null)
+      // K28-A2: reset plan state
+      setPlanResult(null)
+      setPlanError(null)
+      setPreferredPlanWeek(week)
+      setPreferredPlanDay(null)
+      setSelectedPlanKey(null)
+      setPlanListOpen(false)
     }
   }, [open, week, item])
 
@@ -91,6 +116,46 @@ export function UserAdjustmentRequestDialog({
         </DialogContent>
       </Dialog>
     )
+  }
+
+  // K28-A2: plan recommendation handler
+  const handleRecommendPlans = async () => {
+    setPlanLoading(true)
+    setPlanResult(null)
+    setPlanError(null)
+    setSelectedPlanKey(null)
+    try {
+      const result = await fetchUserPlanRecommendations({
+        scheduleSlotId: slotId,
+        preferredWeek: preferredPlanWeek,
+        preferredDayOfWeek: preferredPlanDay,
+        limit: 5,
+      })
+      setPlanResult(result)
+      if (!result.ok) {
+        setPlanError(result.message ?? '推荐方案获取失败')
+      } else if (result.plans.length === 0) {
+        toast.info('暂无可用推荐方案，请手动选择目标时间/教室')
+      } else {
+        toast.success(`找到 ${result.plans.length} 个推荐方案`)
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'UNKNOWN'
+      setPlanError(getAdjustmentRequestErrorMessage(msg))
+    } finally {
+      setPlanLoading(false)
+    }
+  }
+
+  // K28-A2: apply a selected plan — fill target fields only, do NOT submit
+  const handlePickPlan = (plan: PlanRecommendationPlan) => {
+    setTargetWeek(plan.targetWeek)
+    setNewDayOfWeek(plan.targetDayOfWeek)
+    setNewSlotIndex(plan.targetSlotIndex)
+    setNewRoomId(plan.roomId)
+    setSelectedPlanKey(planKey(plan))
+    setDryRunResult(null) // clear stale dry-run
+    toast.info('已填入推荐目标，请执行冲突检查后提交')
   }
 
   const handleDryRun = async () => {
@@ -151,9 +216,14 @@ export function UserAdjustmentRequestDialog({
   const roomName = (item as { roomName?: string | null }).roomName ?? null
   const courseName = (item as { courseName?: string }).courseName ?? ''
 
+  // Group plans into buckets
+  const preferredDayPlans = planResult?.plans.filter((p) => p.isPreferredDay) ?? []
+  const sameWeekOtherDayPlans = planResult?.plans.filter((p) => !p.isPreferredDay && p.isPreferredWeek) ?? []
+  const fallbackPlans = planResult?.plans.filter((p) => !p.isPreferredDay && !p.isPreferredWeek) ?? []
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>申请调课</DialogTitle>
         </DialogHeader>
@@ -168,6 +238,96 @@ export function UserAdjustmentRequestDialog({
             {formatTeachingSlotLabel(item.slotIndex)} ·
             教室 {roomName ?? '（未指定）'}
           </p>
+        </div>
+
+        {/* K28-A2: Plan recommendation entry */}
+        <div className="rounded border border-purple-200 bg-purple-50 p-3 space-y-2">
+          <p className="text-xs font-medium text-purple-800">一键推荐调课方案</p>
+          <div className="flex flex-wrap items-end gap-2">
+            <div>
+              <Label htmlFor="req-plan-week" className="text-xs">首选周</Label>
+              <Input
+                id="req-plan-week"
+                type="number"
+                min={1}
+                max={20}
+                className="h-8 w-20 text-xs"
+                value={preferredPlanWeek}
+                onChange={(e) => setPreferredPlanWeek(Number(e.target.value))}
+              />
+            </div>
+            <div>
+              <Label htmlFor="req-plan-day" className="text-xs">首选星期</Label>
+              <select
+                id="req-plan-day"
+                className="flex h-8 rounded-md border border-gray-200 bg-white px-2 text-xs"
+                value={preferredPlanDay ?? ''}
+                onChange={(e) => setPreferredPlanDay(e.target.value === '' ? null : Number(e.target.value))}
+              >
+                <option value="">自动匹配</option>
+                {VALID_PREFERRED_DAY_VALUES.map((dayVal) => {
+                  const dayInfo = DAYS.find((d) => d.value === dayVal)
+                  return <option key={dayVal} value={dayVal}>{dayInfo?.label ?? `星期${dayVal}`}</option>
+                })}
+              </select>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs border-purple-300 text-purple-700 hover:bg-purple-100"
+              onClick={handleRecommendPlans}
+              disabled={planLoading}
+            >
+              {planLoading ? '搜索方案中...' : '一键推荐调课方案'}
+            </Button>
+          </div>
+
+          {/* Plan error */}
+          {planError && (
+            <p className="text-xs text-red-600">{planError}</p>
+          )}
+
+          {/* Plan results */}
+          {planResult && planResult.ok && (
+            <div className="space-y-2">
+              {planResult.plans.length === 0 ? (
+                <p className="text-xs text-gray-500">暂无可用推荐方案，请手动选择目标时间/教室</p>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className="text-xs text-purple-700 hover:underline"
+                    onClick={() => setPlanListOpen(!planListOpen)}
+                  >
+                    {planListOpen ? '收起' : `展开 ${planResult.plans.length} 个方案`}
+                    {planResult.searched && (
+                      <span className="text-purple-500 ml-1">
+                        （首选周 {planResult.searched.preferredWeekPlanCount} / 备选周 {planResult.searched.fallbackPlanCount}）
+                      </span>
+                    )}
+                  </button>
+
+                  {planListOpen && (
+                    <div className="space-y-1 max-h-48 overflow-y-auto">
+                      {/* Preferred day plans */}
+                      {preferredDayPlans.length > 0 && (
+                        <PlanBucket label="首选日期方案" plans={preferredDayPlans} selectedKey={selectedPlanKey} onPick={handlePickPlan} />
+                      )}
+                      {/* Same-week other-day plans */}
+                      {sameWeekOtherDayPlans.length > 0 && (
+                        <PlanBucket label="同周其他日期方案" plans={sameWeekOtherDayPlans} selectedKey={selectedPlanKey} onPick={handlePickPlan} />
+                      )}
+                      {/* Fallback plans */}
+                      {fallbackPlans.length > 0 && (
+                        <PlanBucket label="备选周方案" plans={fallbackPlans} selectedKey={selectedPlanKey} onPick={handlePickPlan} />
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Target position */}
@@ -284,5 +444,55 @@ export function UserAdjustmentRequestDialog({
         </p>
       </DialogContent>
     </Dialog>
+  )
+}
+
+// ── Plan bucket sub-component ──
+
+function PlanBucket({
+  label,
+  plans,
+  selectedKey,
+  onPick,
+}: {
+  label: string
+  plans: PlanRecommendationPlan[]
+  selectedKey: string | null
+  onPick: (plan: PlanRecommendationPlan) => void
+}) {
+  return (
+    <div>
+      <p className="text-[10px] font-medium text-purple-600 mb-0.5">{label} ({plans.length})</p>
+      {plans.map((p) => {
+        const key = planKey(p)
+        const isSelected = key === selectedKey
+        return (
+          <div
+            key={key}
+            className={`flex items-center gap-1.5 rounded px-2 py-1 text-[11px] border ${
+              isSelected
+                ? 'border-purple-400 bg-purple-100'
+                : 'border-gray-200 bg-white hover:bg-purple-50'
+            }`}
+          >
+            <span className="flex-1 text-gray-700">
+              第 {p.targetWeek} 周 · {DAYS.find((d) => d.value === p.targetDayOfWeek)?.label ?? `星期${p.targetDayOfWeek}`} ·
+              {formatTeachingSlotLabel(p.targetSlotIndex)} · {p.roomName}
+              {p.isPreferredWeek && <Badge className="ml-1 text-[9px] bg-purple-100 text-purple-700 border-purple-200">首选周</Badge>}
+              {p.isPreferredDay && <Badge className="ml-1 text-[9px] bg-blue-100 text-blue-700 border-blue-200">首选日</Badge>}
+            </span>
+            <Button
+              type="button"
+              variant={isSelected ? 'default' : 'outline'}
+              size="sm"
+              className="h-5 text-[10px] px-1.5"
+              onClick={() => onPick(p)}
+            >
+              使用该方案
+            </Button>
+          </div>
+        )
+      })}
+    </div>
   )
 }
