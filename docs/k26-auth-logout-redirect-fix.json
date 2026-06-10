@@ -1,0 +1,62 @@
+{
+  "stage": "K26-Q2A-AUTH-LOGOUT-REDIRECT-FIX",
+  "status": "CLOSED",
+  "date": "2026-06-10",
+  "bug": {
+    "symptom": "Clicking '退出' redirected to http://localhost/login (port 80) and showed ERR_CONNECTION_REFUSED instead of returning to the dev server's /login page on port 3000.",
+    "rootCause": "The /logout route hardcoded the redirect base URL to 'http://localhost' (no port). `new URL('/login', 'http://localhost')` produced 'http://localhost/login', which defaults to port 80. The dev server runs on port 3000, so the browser's GET to port 80 failed.",
+    "wrongCode": "return NextResponse.redirect(new URL('/login', 'http://localhost'))",
+    "fixedCode": "return NextResponse.redirect(new URL('/login', request.url))",
+    "filesChanged": [
+      "src/app/(auth)/logout/route.ts"
+    ]
+  },
+  "fix": {
+    "approach": "Accept the NextRequest in the GET handler and derive the redirect target from request.url so the browser is sent back to /login on the same origin + port.",
+    "signatureBefore": "export async function GET() { ... }",
+    "signatureAfter": "export async function GET(request: NextRequest) { ... }",
+    "redirectBefore": "NextResponse.redirect(new URL('/login', 'http://localhost'))",
+    "redirectAfter": "NextResponse.redirect(new URL('/login', request.url))",
+    "preservesOrigin": true,
+    "preservesPort": true,
+    "noHardcodedLocalhost": true,
+    "noHardcodedProductionDomain": true
+  },
+  "scope": {
+    "logoutRoute": "modified",
+    "sessionRevoke": "unchanged",
+    "cookieNames": "unchanged",
+    "cookieDeletionOptions": "unchanged",
+    "appHeaderLogoutLink": "unchanged (still href=\"/logout\")",
+    "requirePermission": "unchanged",
+    "permissionMatrix": "unchanged",
+    "rbacSemantics": "unchanged",
+    "loginFlow": "unchanged"
+  },
+  "schemaMigrationChanged": false,
+  "dbChanged": false,
+  "k22ExpectedChanged": false,
+  "rbacAuthSemanticsChanged": false,
+  "newPackageJsonScriptsAdded": false,
+  "verification": {
+    "staticVerify": "PASS (17/17)",
+    "browserManual": "required (npm run dev, login, click 退出, expect http://localhost:3000/login)",
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "up to date",
+    "build": "PASS",
+    "lint": "184/146 baseline (330 problems)",
+    "authFoundation": "53 passed / 1 pre-existing failed"
+  },
+  "filesAdded": [
+    "scripts/verify-auth-logout-redirect-k26-q2a.ts",
+    "docs/k26-auth-logout-redirect-fix.md",
+    "docs/k26-auth-logout-redirect-fix.json"
+  ],
+  "filesModified": [
+    "src/app/(auth)/logout/route.ts"
+  ],
+  "recommendation": {
+    "k26Q2aStatus": "CLOSED",
+    "recommendedNextStage": "K27-SYSTEM-WIDE-REAL-USAGE-TRIAL"
+  }
+}
