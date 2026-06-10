@@ -1,0 +1,54 @@
+{
+  "stage": "K28-C-SEMESTER-SWITCHING-MODE-VERIFICATION",
+  "status": "VERIFIED",
+  "date": "2026-06-10",
+  "summary": "Read-only verification of how the scheduler/adjustment/USER-request flows handle semesters. Classified each flow's mode (A. ACTIVE_SEMESTER_ONLY, B. GLOBAL_SELECTOR, C. PAGE_SELECTOR, D. API_ONLY, E. CROSS_SEMESTER_RISK). No schema/DB/business-logic changes.",
+  "answers": {
+    "schedulerPageHasSemesterSelector": false,
+    "adjustmentRequestPageHasSemesterSelector": false,
+    "myRequestsPageHasSemesterSelector": false,
+    "apiSupportsSemesterId": true,
+    "crossSemesterRisk": "MEDIUM",
+    "schedulerMode": "A_ACTIVE_SEMESTER_ONLY",
+    "adminAdjustmentMode": "D_API_ONLY",
+    "userRequestMode": "E_CROSS_SEMESTER_RISK_FOR_MINE_LISTING"
+  },
+  "modeClassification": {
+    "/admin/scheduler": "A_ACTIVE_SEMESTER_ONLY",
+    "/dashboard": "B_GLOBAL_SELECTOR",
+    "/my-adjustment-requests": "E_CROSS_SEMESTER_RISK",
+    "/admin/adjustment-requests": "D_API_ONLY",
+    "scheduler_preview_apply_rollback": "A_ACTIVE_SEMESTER_ONLY",
+    "adjustment_dry_run_apply_void_plan_rec": "D_API_ONLY",
+    "user_request_dry_run_submit_recommend": "D_API_ONLY",
+    "user_request_mine": "E_CROSS_SEMESTER_RISK",
+    "admin_request_list": "D_API_ONLY",
+    "admin_request_approve": "A_ACTIVE_SEMESTER_ONLY (uses request.semesterId from DB row)"
+  },
+  "crossSemesterRiskDetails": {
+    "USER_submit_approve": "LOW (prevented by sourceSlot.semesterId === resolved.id check in service)",
+    "USER_dry_run_recommend": "LOW (uses active semester; source slot check on submit/approve prevents writes)",
+    "USER_mine_listing": "HIGH (returns ALL semesters for the user; no page-level filter)",
+    "ADMIN_list_page": "MEDIUM (returns ALL semesters; page doesn't expose ?semesterId= filter)",
+    "Scheduler": "LOW (uses unique active semester; apply/rollback derive from run record)"
+  },
+  "apisSupportingSemesterIdButNotUsedByPages": [
+    "/api/schedule-adjustment-requests (POST submit)",
+    "/api/schedule-adjustment-requests/recommendations (POST)",
+    "/api/admin/schedule-adjustment-requests (GET list ?semesterId=)",
+    "/api/schedule-adjustments/plan-recommendations (POST admin)",
+    "/api/schedule-adjustments (POST/GET adjust)",
+    "/api/admin/scheduler/preview (POST)"
+  ],
+  "verification": {
+    "k28cVerify": "33/33 PASS",
+    "k28aVerify": "67/67 PASS",
+    "k28a2Verify": "26/26 PASS",
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "9 migrations, up to date",
+    "build": "PASS",
+    "lint": "331 (185/146) — same as K28-A baseline",
+    "authFoundation": "61/1 pre-existing"
+  },
+  "recommendedNextStage": "K28-D-SEMESTER-SWITCHING-UX-IMPLEMENTATION (if UX requires per-page semester selector) OR K28-B-USER-ADJUSTMENT-APPROVAL-FLOW-MANUAL-TRIAL (if current behavior is acceptable)"
+}
