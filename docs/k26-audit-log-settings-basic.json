@@ -1,0 +1,71 @@
+{
+  "stage": "K26-Q1-AUDIT-LOG-SETTINGS-BASIC-IMPLEMENTATION",
+  "status": "CLOSED",
+  "date": "2026-06-10",
+  "summary": "Implemented read-only audit log settings panel. Aggregates existing local audit sources (SchedulingRun / SchedulerRunChange / ScheduleAdjustment / ImportBatch / ScheduleChangeLog / Semester / UserRole / audit-scripts / K26 docs), shows operation coverage status, recent activity, and unified-audit-log limitations. No unified AuditLog table added. No write endpoints. No schema/DB/RBAC changes.",
+  "api": {
+    "path": "/api/admin/settings/audit-logs",
+    "method": "GET",
+    "permission": "settings:manage",
+    "readOnly": true,
+    "unifiedAuditLogSchemaExists": false
+  },
+  "ui": {
+    "panel": "AuditLogsSettingsPanel",
+    "path": "/admin/settings → 审计日志",
+    "features": [
+      "summary cards (audit sources / covered / partial / uncovered)",
+      "unifiedAuditLogSchemaExists=false marker (hardcoded)",
+      "11 audit sources (10 existing + 1 planned unified)",
+      "15 operation coverage rows (covered / partial / planned / not-covered)",
+      "recent activity table (last 15 from 5 source types)",
+      "6 unified audit limitations",
+      "7 read-only safety rules",
+      "top + bottom read-only notices",
+      "refresh button (only)",
+      "loading / error / empty states"
+    ]
+  },
+  "auditSourcesDisplayed": [
+    "scheduling-run",
+    "scheduler-run-change",
+    "schedule-adjustment",
+    "import-batch",
+    "schedule-change-log",
+    "semester-timestamps",
+    "user-role-timestamps",
+    "worktime-config-timestamps",
+    "audit-scripts",
+    "k26-docs",
+    "unified-audit-log"
+  ],
+  "operationCoverageCategories": [
+    "covered",
+    "partial",
+    "planned",
+    "not-covered"
+  ],
+  "readOnlyRestrictions": [
+    "no save button",
+    "no delete button",
+    "no cleanup button",
+    "no export button",
+    "no create unified AuditLog button",
+    "no PUT / POST / DELETE / PATCH handlers",
+    "readOnly: true hardcoded",
+    "unifiedAuditLogSchemaExists: false hardcoded"
+  ],
+  "schemaMigrationChanged": false,
+  "dbChanged": false,
+  "rbacSemanticsChanged": false,
+  "seedAuthChanged": false,
+  "solverScoreImporterParserChanged": false,
+  "k22ExpectedChanged": false,
+  "destructiveApiAdded": false,
+  "packageJsonScriptsAdded": false,
+  "auditWriteLogicAdded": false,
+  "recommendation": {
+    "k26Q1Status": "CLOSED",
+    "recommendedNextStage": "K26-Q2-AUDIT-LOG-SETTINGS-MANUAL-TRIAL"
+  }
+}

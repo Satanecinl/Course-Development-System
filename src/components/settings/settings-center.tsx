@@ -11,6 +11,7 @@ import { AdjustmentRulesSettingsPanel } from '@/components/settings/adjustment-r
 import { ImportRulesSettingsPanel } from '@/components/settings/import-rules-settings-panel'
 import { PermissionRolesSettingsPanel } from '@/components/settings/permission-roles-settings-panel'
 import { DataMaintenanceSettingsPanel } from '@/components/settings/data-maintenance-settings-panel'
+import { AuditLogsSettingsPanel } from '@/components/settings/audit-logs-settings-panel'
 import { Badge } from '@/components/ui/badge'
 import { Settings, ArrowLeft } from 'lucide-react'
 
@@ -53,6 +54,8 @@ export function SettingsCenter() {
           <PermissionRolesSettingsPanel />
         ) : currentModule?.key === 'data-maintenance' ? (
           <DataMaintenanceSettingsPanel />
+        ) : currentModule?.key === 'audit-log' ? (
+          <AuditLogsSettingsPanel />
         ) : currentModule ? (
           <PlannedModuleContent module={currentModule} onBack={() => setActiveModule('semester-settings')} />
         ) : null}

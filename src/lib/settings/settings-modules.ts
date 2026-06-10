@@ -102,12 +102,12 @@ export const SETTINGS_MODULES: SettingsModule[] = [
   {
     key: 'audit-log',
     title: '审计日志',
-    description: '记录学期变更、导入、调课、排课运行等关键操作。需要单独设计审计事件模型。',
-    status: 'roadmap',
+    description: '查看现有局部审计来源 (SchedulingRun / SchedulerRunChange / ScheduleAdjustment / ImportBatch / ScheduleChangeLog / Semester / UserRole / 审计脚本 / K26 文档)、关键操作覆盖状态、最近活动摘要和统一审计日志待办。基础只读版。',
+    status: 'ready',
     priority: 'P3',
-    recommendedStage: 'K26-I-AUDIT-LOG-SETTINGS-ROADMAP',
+    recommendedStage: 'K26-Q1-BASIC',
     riskLevel: 'high',
-    notes: '需要新增审计事件 model 和记录机制。',
+    notes: '只读基础版。统一 AuditLog schema 未实现 (unifiedAuditLogSchemaExists=false)。不提供删除/清理/导出/保存入口。',
   },
 ]
 
