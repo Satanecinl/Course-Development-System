@@ -10,6 +10,7 @@ import { CampusRoomRulesSettingsPanel } from '@/components/settings/campus-room-
 import { AdjustmentRulesSettingsPanel } from '@/components/settings/adjustment-rules-settings-panel'
 import { ImportRulesSettingsPanel } from '@/components/settings/import-rules-settings-panel'
 import { PermissionRolesSettingsPanel } from '@/components/settings/permission-roles-settings-panel'
+import { DataMaintenanceSettingsPanel } from '@/components/settings/data-maintenance-settings-panel'
 import { Badge } from '@/components/ui/badge'
 import { Settings, ArrowLeft } from 'lucide-react'
 
@@ -50,6 +51,8 @@ export function SettingsCenter() {
           <ImportRulesSettingsPanel />
         ) : currentModule?.key === 'rbac-settings' ? (
           <PermissionRolesSettingsPanel />
+        ) : currentModule?.key === 'data-maintenance' ? (
+          <DataMaintenanceSettingsPanel />
         ) : currentModule ? (
           <PlannedModuleContent module={currentModule} onBack={() => setActiveModule('semester-settings')} />
         ) : null}

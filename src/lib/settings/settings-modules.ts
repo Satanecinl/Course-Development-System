@@ -92,12 +92,12 @@ export const SETTINGS_MODULES: SettingsModule[] = [
   {
     key: 'data-maintenance',
     title: '数据维护与备份',
-    description: '管理数据库备份、导出数据、清理空学期、清理历史临时导入、异常数据检查、孤儿记录修复和 migration 状态查看。',
-    status: 'roadmap',
+    description: '查看数据库状态、备份与恢复说明、数据导出能力、清理能力、异常数据检查、migration 状态和安全操作规则。基础只读版。',
+    status: 'ready',
     priority: 'P3',
-    recommendedStage: 'K26-H-DATA-MAINTENANCE-SETTINGS-ROADMAP',
+    recommendedStage: 'K26-P1-BASIC',
     riskLevel: 'high',
-    notes: '需要单独设计备份和清理策略。',
+    notes: '只读基础版。destructiveActionsEnabled=false，无任何破坏性写 API。',
   },
   {
     key: 'audit-log',

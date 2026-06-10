@@ -1,0 +1,59 @@
+{
+  "stage": "K26-P1-DATA-MAINTENANCE-BACKUP-SETTINGS-BASIC-IMPLEMENTATION",
+  "status": "CLOSED",
+  "date": "2026-06-10",
+  "summary": "Implemented read-only data maintenance & backup settings panel. Shows DB status, backup/restore guide, data export capability, cleanup capability, anomaly data checks, migration status, safeguards, known checks catalogue, and explicit safety rules. destructiveActionsEnabled=false is hardcoded. No write endpoints, no destructive actions, no schema/DB/RBAC changes.",
+  "api": {
+    "path": "/api/admin/settings/data-maintenance",
+    "method": "GET",
+    "permission": "settings:manage",
+    "readOnly": true,
+    "destructiveActionsEnabled": false
+  },
+  "ui": {
+    "panel": "DataMaintenanceSettingsPanel",
+    "path": "/admin/settings → 数据维护与备份",
+    "features": [
+      "summary cards (database type, migration count, known checks, destructive flag)",
+      "6 maintenance sections (database/backup/export/cleanup/anomaly/migration)",
+      "safeguards (hard/warning/info severity)",
+      "known checks catalogue with last-known status",
+      "explicit safety rules block",
+      "destructiveActionsEnabled=false marker (hardcoded)",
+      "top + bottom read-only notices",
+      "refresh button (only)",
+      "loading / error / empty states"
+    ]
+  },
+  "sectionsDisplayed": [
+    "database-status",
+    "backup-and-restore",
+    "data-export",
+    "cleanup-capability",
+    "anomaly-data-checks",
+    "migration-status"
+  ],
+  "destructiveActionsDisabled": [
+    "no save button",
+    "no one-click backup button",
+    "no one-click restore button",
+    "no one-click cleanup button",
+    "no one-click fix button",
+    "no migrate reset button",
+    "no db push --force-reset button",
+    "no PUT / POST / DELETE / PATCH handlers",
+    "destructiveActionsEnabled=false hardcoded"
+  ],
+  "schemaMigrationChanged": false,
+  "dbChanged": false,
+  "rbacSemanticsChanged": false,
+  "seedAuthChanged": false,
+  "solverScoreImporterParserChanged": false,
+  "k22ExpectedChanged": false,
+  "destructiveApiAdded": false,
+  "packageJsonScriptsAdded": false,
+  "recommendation": {
+    "k26P1Status": "CLOSED",
+    "recommendedNextStage": "K26-P2-DATA-MAINTENANCE-SETTINGS-MANUAL-TRIAL"
+  }
+}
