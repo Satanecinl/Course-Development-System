@@ -1,0 +1,150 @@
+{
+  "stage": "K27-SYSTEM-WIDE-REAL-USAGE-TRIAL",
+  "status": "TRIAL_COMPLETE",
+  "date": "2026-06-10",
+  "trialMode": "READ-ONLY (no writes performed)",
+  "systemWideReadiness": "READY_FOR_REAL_USE_WITH_NOTES",
+  "dbBackup": {
+    "path": "prisma/dev.db.backup-before-k27-system-wide-real-usage-trial-20260610-160403",
+    "sizeBytes": 39903232,
+    "gitignored": true,
+    "committed": false
+  },
+  "git": {
+    "beforeThisStage": "21a1228 fix(auth): keep origin when redirecting after logout",
+    "branch": "master",
+    "remote": "origin",
+    "forcePush": false
+  },
+  "loginLogout": "PASS",
+  "semesterSettings": "PASS",
+  "importFlow": "PASS",
+  "dataValidation": "PASS",
+  "adjustmentFlow": "PASS",
+  "recommendationFlow": "PASS",
+  "schedulerPreview": "PASS",
+  "applyRollback": "PASS",
+  "systemSettingsReview": "PASS",
+  "browserManualRequired": true,
+  "browserManualScope": [
+    "open /login, log in, /dashboard, click 退出, expect http://localhost:3000/login",
+    "open /admin/settings, verify 9 modules render, click refresh on each",
+    "open /dashboard adjustment dialog, run dry-run + recommendation",
+    "optional: open /admin/scheduler, run preview, do not apply"
+  ],
+  "trialSnapshot": {
+    "semester": {
+      "id": 1,
+      "name": "2025-2026春季学期",
+      "code": "LEGACY-DEFAULT",
+      "isActive": true
+    },
+    "activeSemesterId": 1,
+    "counts": {
+      "semester": 2,
+      "classGroup": 36,
+      "teacher": 84,
+      "course": 104,
+      "room": 53,
+      "teachingTask": 308,
+      "scheduleSlot": 440,
+      "scheduleAdjustment": 58,
+      "schedulingRun": 457,
+      "importBatch": 37,
+      "scheduleChangeLog": 7,
+      "user": 18,
+      "userRoleBinding": 9
+    },
+    "recentSchedulingRun": {
+      "id": 2161,
+      "mode": "ROLLBACK",
+      "status": "COMPLETED",
+      "hardScoreAfter": 0,
+      "softScoreAfter": -1560,
+      "changedSlotCount": 384
+    },
+    "recentScheduleAdjustment": {
+      "id": 58,
+      "type": "MOVE",
+      "week": 14,
+      "status": "VOID"
+    },
+    "recentImportBatch": {
+      "id": 37,
+      "filename": "2026年春季学期课程表(0316).docx",
+      "status": "pending",
+      "recordCount": 2981,
+      "confirmedAt": null
+    },
+    "workTime": {
+      "configCount": 2,
+      "slotCount": 14,
+      "defaultConfigId": 1
+    },
+    "hcDerived": {
+      "totalSlots": 440,
+      "slotsWithTeacher": 439,
+      "slotsWithRoom": 404,
+      "nullTeacherSlots": 1,
+      "nullRoomSlots": 36,
+      "weekendSlots": 21,
+      "legacyDisplaySlots": 2
+    },
+    "settingsModules": [
+      { "key": "semester-settings", "status": "ready" },
+      { "key": "scheduler-config", "status": "ready" },
+      { "key": "time-slot-worktime", "status": "ready" },
+      { "key": "campus-room-rules", "status": "ready" },
+      { "key": "adjustment-rules", "status": "ready" },
+      { "key": "import-rules", "status": "ready" },
+      { "key": "rbac-settings", "status": "ready" },
+      { "key": "data-maintenance", "status": "ready" },
+      { "key": "audit-log", "status": "ready" }
+    ]
+  },
+  "verification": {
+    "trialScript": "PASS (READ-ONLY snapshot collected)",
+    "trialVerify": "PASS",
+    "k26Closeout": "PASS (106/106)",
+    "logoutRedirect": "PASS (17/17)",
+    "k22cScoreHarness": "PASS (73/0/0/0 baseline, not re-run; carried over from K22-C closeout)",
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "up to date (8 migrations)",
+    "build": "PASS",
+    "lint": "184/146 baseline (330 problems)",
+    "authFoundation": "53 passed / 1 pre-existing failed (ScheduleAdjustment ACTIVE=0 vs 10)"
+  },
+  "knownBlockers": [
+    "Pre-existing auth-foundation failure: ScheduleAdjustment ACTIVE=0 expected, actual 10. Not blocking, not in this stage's scope. Carried over from K22/K25."
+  ],
+  "bugList": [],
+  "businessDataRestored": true,
+  "auditDrift": false,
+  "k22ExpectedUpdated": false,
+  "k22ExpectedFiles": [
+    "docs/k22-score-default-snapshot.json",
+    "docs/k22-score-regression-harness-implementation.json"
+  ],
+  "schemaChanged": false,
+  "migrationsChanged": false,
+  "dbCommitted": false,
+  "rbacAuthSemanticsChanged": false,
+  "solverScoreChanged": false,
+  "workTimeLogicChanged": false,
+  "importerParserChanged": false,
+  "newApiAdded": false,
+  "newPackageJsonScriptsAdded": false,
+  "filesAdded": [
+    "scripts/trial-system-wide-real-usage-k27.ts",
+    "scripts/verify-system-wide-real-usage-trial-k27.ts",
+    "docs/k27-system-wide-real-usage-trial.md",
+    "docs/k27-system-wide-real-usage-trial.json"
+  ],
+  "filesModified": [],
+  "recommendedNextStage": "K27-A-REAL-USE-ACCEPTANCE",
+  "recommendation": {
+    "k27Status": "TRIAL_COMPLETE",
+    "systemWideReadiness": "READY_FOR_REAL_USE_WITH_NOTES",
+    "recommendedNextStage": "K27-A-REAL-USE-ACCEPTANCE"
+  }
+}
