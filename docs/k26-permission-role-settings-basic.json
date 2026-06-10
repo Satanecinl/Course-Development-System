@@ -1,0 +1,75 @@
+{
+  "stage": "K26-O1-PERMISSION-ROLE-SETTINGS-BASIC-IMPLEMENTATION",
+  "status": "CLOSED",
+  "date": "2026-06-10",
+  "summary": "Implemented read-only permission & role settings panel. Shows RBAC summary cards, role list, permission list grouped by category, role-permission matrix, user-role binding overview, and key permission status. No schema, migration, RBAC semantic, or write-path changes.",
+  "api": {
+    "path": "/api/admin/settings/permission-roles",
+    "method": "GET",
+    "permission": "settings:manage",
+    "readOnly": true
+  },
+  "ui": {
+    "panel": "PermissionRolesSettingsPanel",
+    "path": "/admin/settings → 权限与角色设置",
+    "features": [
+      "summary cards (roleCount, permissionKeyCount, userCount, userRoleBindingCount, systemSettingManagers, adjustmentManagers, importManagers, userManagers)",
+      "role list with builtIn flag, permission count, user count",
+      "permission list grouped by category, with critical flag",
+      "role-permission matrix (check / cross icons)",
+      "user-role binding overview (id, username, displayName, isActive, roles) — no sensitive fields",
+      "key permission status (which roles hold each critical permission)",
+      "read-only notice (top + bottom)",
+      "refresh button",
+      "loading / error / empty states"
+    ]
+  },
+  "rolesDisplayed": [
+    "ADMIN",
+    "USER",
+    "DATA_EXPORTER"
+  ],
+  "permissionsDisplayed": [
+    "schedule:view",
+    "schedule:adjust",
+    "schedule:write",
+    "data:read",
+    "data:write",
+    "data:delete",
+    "data:export",
+    "import:manage",
+    "settings:manage",
+    "users:manage",
+    "diagnostics:view",
+    "teaching-task:write"
+  ],
+  "matrixDisplayed": true,
+  "userRoleOverview": true,
+  "sensitiveFieldsExcluded": [
+    "passwordHash",
+    "tokenHash",
+    "sessionToken",
+    "email",
+    "phone",
+    "expiresAt",
+    "revokedAt"
+  ],
+  "readOnlyLimitations": [
+    "no save button",
+    "no edit role button",
+    "no edit permission button",
+    "no edit user-role binding button",
+    "no PUT / POST / DELETE handlers",
+    "module is builtIn: true for all roles"
+  ],
+  "schemaMigrationChanged": false,
+  "rbacSemanticsChanged": false,
+  "seedAuthChanged": false,
+  "dbChanged": false,
+  "solverScoreImporterParserChanged": false,
+  "k22ExpectedChanged": false,
+  "recommendation": {
+    "k26O1Status": "CLOSED",
+    "recommendedNextStage": "K26-O2-PERMISSION-ROLE-SETTINGS-MANUAL-TRIAL"
+  }
+}

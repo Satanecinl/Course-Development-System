@@ -9,6 +9,7 @@ import { WorkTimeSettingsPanel } from '@/components/settings/worktime-settings-p
 import { CampusRoomRulesSettingsPanel } from '@/components/settings/campus-room-rules-settings-panel'
 import { AdjustmentRulesSettingsPanel } from '@/components/settings/adjustment-rules-settings-panel'
 import { ImportRulesSettingsPanel } from '@/components/settings/import-rules-settings-panel'
+import { PermissionRolesSettingsPanel } from '@/components/settings/permission-roles-settings-panel'
 import { Badge } from '@/components/ui/badge'
 import { Settings, ArrowLeft } from 'lucide-react'
 
@@ -47,6 +48,8 @@ export function SettingsCenter() {
           <AdjustmentRulesSettingsPanel />
         ) : currentModule?.key === 'import-rules' ? (
           <ImportRulesSettingsPanel />
+        ) : currentModule?.key === 'rbac-settings' ? (
+          <PermissionRolesSettingsPanel />
         ) : currentModule ? (
           <PlannedModuleContent module={currentModule} onBack={() => setActiveModule('semester-settings')} />
         ) : null}

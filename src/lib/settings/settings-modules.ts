@@ -82,12 +82,12 @@ export const SETTINGS_MODULES: SettingsModule[] = [
   {
     key: 'rbac-settings',
     title: '权限与角色设置',
-    description: '管理角色、权限和用户角色绑定。semester-scoped RBAC 暂不实现。',
-    status: 'roadmap',
+    description: '查看当前 RBAC 角色、权限、角色-权限矩阵、用户-角色绑定概览和关键权限状态。基础只读版。',
+    status: 'ready',
     priority: 'P3',
-    recommendedStage: 'K26-G-RBAC-SETTINGS-ROADMAP',
+    recommendedStage: 'K26-O1-BASIC',
     riskLevel: 'high',
-    notes: '当前 RBAC 已有 admin/users 页面，设置中心集成为后续规划。',
+    notes: '只读基础版。展示当前 RBAC 配置，不提供编辑。schema 未变，沿用 settings:manage 权限。',
   },
   {
     key: 'data-maintenance',
