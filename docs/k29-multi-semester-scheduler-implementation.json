@@ -1,0 +1,71 @@
+{
+  "stage": "K29-A-MULTI-SEMESTER-SCHEDULER-IMPLEMENTATION",
+  "status": "CLOSED",
+  "date": "2026-06-10",
+  "summary": "Added semester switching to auto-scheduling page. Scheduler UI now uses SemesterSelector + useSemesterStore. Preview sends selected semesterId. Configs/lockable slots scoped by semester. New readiness API shows data status per semester. Backend was already semester-aware; gap was frontend only.",
+  "uiChanges": [
+    "scheduler-content.tsx: imports SemesterSelector + useSemesterStore + withSemesterQuery",
+    "scheduler-content.tsx: SemesterSelector in page header",
+    "scheduler-content.tsx: readiness display (counts, blockers, warnings, canPreview)",
+    "scheduler-content.tsx: preview body includes semesterId: currentSemesterId",
+    "scheduler-content.tsx: SolverConfigPanel receives semesterId={currentSemesterId}",
+    "scheduler-content.tsx: lockable slots fetched with withSemesterQuery",
+    "scheduler-content.tsx: both lockable slots and readiness re-load on semester change",
+    "scheduler-content.tsx: page state resets on semester change"
+  ],
+  "apiChanges": [
+    "GET /api/admin/scheduler/readiness?semesterId=N (new, read-only)",
+    "Preview POST body now includes semesterId (backend already accepted it)"
+  ],
+  "backendChanges": "none — all backend APIs were already semester-aware",
+  "semesterScoping": {
+    "preview": "body.semesterId (UI sends selected semester; falls back to active)",
+    "apply": "previewRun.semesterId from DB record (safe, no external input)",
+    "rollback": "applyRun.semesterId from DB record (safe, no external input)",
+    "lockableSlots": "?semesterId= query param (UI sends selected semester)",
+    "configs": "semesterId prop to SolverConfigPanel",
+    "readiness": "?semesterId= query param (read-only)",
+    "runList": "?semesterId= query param (already existed)"
+  },
+  "crossSemesterSafety": {
+    "previewSemesterId": "from selectedSemesterId, validated by resolveSchedulerSemester",
+    "applyUsesRunSemesterId": true,
+    "rollbackUsesTargetRunSemesterId": true,
+    "selectedSemesterMismatchHandling": "apply/rollback derive from run record, not from UI state",
+    "scheduleSlotWritesScopedBySemester": true
+  },
+  "schemaChanged": false,
+  "rbacChanged": false,
+  "k22ExpectedChanged": false,
+  "verification": {
+    "k29aVerify": "23/23 PASS",
+    "k28aVerify": "67/67 PASS",
+    "k28a2Verify": "26/26 PASS",
+    "k28a1Verify": "17/17 PASS",
+    "k28cVerify": "PASS (updated to accept SemesterSelector)",
+    "k26Closeout": "106/106 PASS",
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "9 migrations, up to date",
+    "build": "PASS",
+    "lint": "334 (185/149) — error count same as baseline, +3 warnings",
+    "authFoundation": "61/1 pre-existing"
+  },
+  "knownLimitations": [
+    "run history page (/admin/scheduler/history) does not have semester selector",
+    "current DB has only one active semester with TeachingTask data"
+  ],
+  "filesAdded": [
+    "src/app/api/admin/scheduler/readiness/route.ts",
+    "scripts/verify-multi-semester-scheduler-k29-a.ts",
+    "docs/k29-multi-semester-scheduler-implementation.md",
+    "docs/k29-multi-semester-scheduler-implementation.json"
+  ],
+  "filesModified": [
+    "src/app/admin/scheduler/scheduler-content.tsx",
+    "scripts/verify-semester-switching-mode-k28-c.ts"
+  ],
+  "recommendation": {
+    "k29aStatus": "CLOSED",
+    "recommendedNextStage": "K29-B-MULTI-SEMESTER-SCHEDULER-MANUAL-TRIAL"
+  }
+}

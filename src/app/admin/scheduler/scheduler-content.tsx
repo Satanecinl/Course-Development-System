@@ -23,6 +23,7 @@ import {
   Lock,
   Search,
   X,
+  ShieldAlert,
 } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -39,6 +40,8 @@ import {
 import { SolverConfigPanel } from '@/components/scheduler-config-panel'
 import { ResolvedConfigDisplay } from '@/components/resolved-config-display'
 import { ScoreBreakdownDisplay } from '@/components/score-breakdown-display'
+import { SemesterSelector } from '@/components/semester-selector'
+import { useSemesterStore, withSemesterQuery } from '@/store/semesterStore'
 import { toFriendlyError } from '@/lib/scheduler-config-errors'
 import type { ResolvedConfigSnapshot } from '@/types/scheduling-config'
 import type { ResultSnapshotScoreBreakdown } from '@/lib/scheduler/score-breakdown'
@@ -162,6 +165,9 @@ const DAY_NAMES = ['', '周一', '周二', '周三', '周四', '周五', '周六
 // ── Component ──
 
 export default function SchedulerContent() {
+  // K29-A: semester scoping
+  const { currentSemesterId, currentSemesterName, isActiveSemester, loaded: semestersLoaded, fetchSemesters } = useSemesterStore()
+
   const [state, setState] = useState<PageState>('idle')
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
@@ -208,15 +214,27 @@ export default function SchedulerContent() {
   const [lockSearchQuery, setLockSearchQuery] = useState('')
   const [showLockSection, setShowLockSection] = useState(true)
 
-  // Load lockable slots on mount
+  // K29-A: readiness state for selected semester
+  const [readinessData, setReadinessData] = useState<{
+    canPreview: boolean
+    blockers: string[]
+    warnings: string[]
+    counts: Record<string, number>
+    latestImportBatch: { id: number; filename: string; status: string; recordCount: number | null } | null
+    latestSchedulingRun: { id: number; mode: string; status: string; hardScoreAfter: number | null } | null
+  } | null>(null)
+  const [readinessLoading, setReadinessLoading] = useState(false)
+
+  // K29-A: ensure semesters are loaded
   useEffect(() => {
-    loadLockableSlots()
-  }, [])
+    if (!semestersLoaded) fetchSemesters()
+  }, [semestersLoaded, fetchSemesters])
 
   const loadLockableSlots = async () => {
     setLockableSlotsLoading(true)
     try {
-      const res = await fetch('/api/admin/scheduler/lockable-slots')
+      const url = withSemesterQuery('/api/admin/scheduler/lockable-slots', currentSemesterId)
+      const res = await fetch(url)
       const data = await res.json()
       if (data.success) {
         setLockableSlots(data.data.items)
@@ -227,6 +245,31 @@ export default function SchedulerContent() {
       console.error('Failed to load lockable slots:', e)
     } finally {
       setLockableSlotsLoading(false)
+    }
+  }
+
+  // K29-A: load readiness for selected semester
+  const loadReadiness = async () => {
+    if (currentSemesterId == null) return
+    setReadinessLoading(true)
+    try {
+      const url = withSemesterQuery('/api/admin/scheduler/readiness', currentSemesterId)
+      const res = await fetch(url)
+      const data = await res.json()
+      if (data.success) {
+        setReadinessData({
+          canPreview: data.canPreview,
+          blockers: data.blockers,
+          warnings: data.warnings,
+          counts: data.counts,
+          latestImportBatch: data.latestImportBatch,
+          latestSchedulingRun: data.latestSchedulingRun,
+        })
+      }
+    } catch {
+      // readiness is informational, not critical
+    } finally {
+      setReadinessLoading(false)
     }
   }
 
@@ -359,6 +402,10 @@ export default function SchedulerContent() {
       }
 
       const body: Record<string, unknown> = {}
+      // K29-A: include semesterId for multi-semester support
+      if (currentSemesterId != null) {
+        body.semesterId = currentSemesterId
+      }
       if (selectedConfigId != null) {
         body.configId = selectedConfigId
       }
@@ -522,6 +569,48 @@ export default function SchedulerContent() {
     })
   }
 
+  // K29-A: reload lockable slots + readiness + reset state when semester changes
+  // Placed after function declarations to avoid "accessed before declaration" lint.
+  // Uses inline fetch to avoid react-hooks/set-state-in-effect lint rule.
+  useEffect(() => {
+    if (currentSemesterId == null) return
+
+    // Reset page state on semester change
+    if (state !== 'idle') {
+      resetAll()
+    }
+
+    // Load lockable slots for the selected semester
+    let cancelled = false
+    setLockableSlotsLoading(true)
+    fetch(withSemesterQuery('/api/admin/scheduler/lockable-slots', currentSemesterId))
+      .then((r) => r.json())
+      .then((data) => { if (!cancelled && data.success) setLockableSlots(data.data.items) })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setLockableSlotsLoading(false) })
+
+    // Load readiness for the selected semester
+    setReadinessLoading(true)
+    fetch(withSemesterQuery('/api/admin/scheduler/readiness', currentSemesterId))
+      .then((r) => r.json())
+      .then((data) => {
+        if (!cancelled && data.success) {
+          setReadinessData({
+            canPreview: data.canPreview,
+            blockers: data.blockers,
+            warnings: data.warnings,
+            counts: data.counts,
+            latestImportBatch: data.latestImportBatch,
+            latestSchedulingRun: data.latestSchedulingRun,
+          })
+        }
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setReadinessLoading(false) })
+
+    return () => { cancelled = true }
+  }, [currentSemesterId])
+
   // ── Render ──
 
   return (
@@ -533,13 +622,85 @@ export default function SchedulerContent() {
           <h2 className="text-xl font-bold text-gray-900">自动排课</h2>
           <Badge variant="secondary">管理员</Badge>
         </div>
-        <Link href="/admin/scheduler/history">
-          <Button variant="outline" size="sm">
-            <History className="w-4 h-4 mr-1.5" />
-            运行历史
-          </Button>
-        </Link>
+        <div className="flex items-center gap-3">
+          {/* K29-A: Semester selector */}
+          <SemesterSelector showFallbackWarning={false} />
+          <Link href="/admin/scheduler/history">
+            <Button variant="outline" size="sm">
+              <History className="w-4 h-4 mr-1.5" />
+              运行历史
+            </Button>
+          </Link>
+        </div>
       </div>
+
+      {/* K29-A: Semester readiness display */}
+      {currentSemesterId != null && (
+        <div className="bg-white rounded-lg border border-gray-200 p-4 mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Calendar className="w-4 h-4 text-blue-500" />
+            <span className="text-sm font-medium text-gray-900">
+              学期数据状态：{currentSemesterName ?? `#${currentSemesterId}`}
+            </span>
+            {!isActiveSemester && (
+              <Badge className="text-xs bg-amber-100 text-amber-700 border-amber-200">非激活学期</Badge>
+            )}
+            {readinessLoading && (
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />
+            )}
+          </div>
+          {readinessData ? (
+            <div className="text-xs space-y-1">
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-gray-600">
+                <span>教学任务: <b>{readinessData.counts.teachingTasks}</b></span>
+                <span>现有课表: <b>{readinessData.counts.scheduleSlots}</b></span>
+                <span>班级: <b>{readinessData.counts.classGroups}</b></span>
+                <span>教室: <b>{readinessData.counts.rooms}</b></span>
+                <span>教师: <b>{readinessData.counts.teachers}</b></span>
+                <span>导入批次: <b>{readinessData.counts.importBatches}</b></span>
+                <span>历史排课: <b>{readinessData.counts.schedulingRuns}</b></span>
+              </div>
+              {!isActiveSemester && (
+                <p className="text-amber-600 font-medium">
+                  ⚠ 当前正在为非当前学期排课，请确认数据来源正确。apply/rollback 将严格作用于所选 run 的学期。
+                </p>
+              )}
+              {readinessData.blockers.length > 0 && (
+                <div className="rounded bg-red-50 border border-red-200 p-2 mt-1">
+                  {readinessData.blockers.map((b, i) => (
+                    <p key={i} className="text-red-700 flex items-start gap-1">
+                      <ShieldAlert className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                      {b}
+                    </p>
+                  ))}
+                </div>
+              )}
+              {readinessData.warnings.length > 0 && (
+                <div className="rounded bg-amber-50 border border-amber-200 p-2 mt-1">
+                  {readinessData.warnings.map((w, i) => (
+                    <p key={i} className="text-amber-700 flex items-start gap-1">
+                      <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                      {w}
+                    </p>
+                  ))}
+                </div>
+              )}
+              {!readinessData.canPreview && (
+                <p className="text-red-600 font-medium mt-1">
+                  ❌ 当前学期数据不足，无法执行 preview。请先导入或手动添加教学计划。
+                </p>
+              )}
+              {readinessData.canPreview && readinessData.warnings.length === 0 && (
+                <p className="text-green-600 font-medium mt-1">
+                  ✅ 数据就绪，可以执行 preview。
+                </p>
+              )}
+            </div>
+          ) : !readinessLoading && (
+            <p className="text-xs text-gray-400">加载学期数据状态中...</p>
+          )}
+        </div>
+      )}
 
       {/* Description */}
       <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
@@ -590,7 +751,7 @@ export default function SchedulerContent() {
 
       {/* K21-FIX-G: Solver Config Panel (configId + overrides) */}
       <SolverConfigPanel
-        semesterId={null}
+        semesterId={currentSemesterId}
         selectedConfigId={selectedConfigId}
         onSelectedConfigChange={setSelectedConfigId}
         onResolvedConfigChange={setResolvedConfigForOverride}

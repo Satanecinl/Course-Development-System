@@ -66,31 +66,33 @@ function main() {
 
   // ═══════════════════════════════════════════════════════════════════
   // 1. SCHEDULER PAGE: /admin/scheduler
+  // K29-A: semester selector now added to scheduler page.
   // ═══════════════════════════════════════════════════════════════════
   const schedulerContentPath = join(projectRoot, 'src/app/admin/scheduler/scheduler-content.tsx')
   const schedulerContentSrc = safeReadText(schedulerContentPath)
   const hasSchedulerSemesterSelector = schedulerContentSrc.includes('SemesterSelector')
   const hasSchedulerUseSemesterStore = schedulerContentSrc.includes('useSemesterStore') || schedulerContentSrc.includes('useSemester')
+  check('scheduler page has SemesterSelector (K29-A: now added)', hasSchedulerSemesterSelector)
+  check('scheduler page uses useSemesterStore (K29-A: now uses)', hasSchedulerUseSemesterStore)
   const schedulerFlow: FlowMode = {
     flow: '/admin/scheduler',
     pageHasSemesterSelector: hasSchedulerSemesterSelector,
-    apiSupportsSemesterId: false, // preview body has no semesterId
-    apiUsesActiveFallback: true,  // preview/apply/rollback all use active
+    apiSupportsSemesterId: true,    // K29-A: preview body now includes semesterId
+    apiUsesActiveFallback: true,    // fallback to active if no semesterId
     crossSemesterRisk: 'LOW',
     mode: 'UNKNOWN',
     evidence: [
       hasSchedulerSemesterSelector
-        ? 'scheduler page has SemesterSelector'
+        ? 'scheduler page has SemesterSelector (K29-A)'
         : 'scheduler page has NO SemesterSelector',
       hasSchedulerUseSemesterStore
-        ? 'scheduler page uses useSemesterStore'
+        ? 'scheduler page uses useSemesterStore (K29-A)'
         : 'scheduler page does NOT use useSemesterStore',
-      'preview/apply/rollback all resolve active semester via resolveSchedulerSemester({})',
+      'preview API now accepts semesterId in body (K29-A)',
+      'apply/rollback still derive semester from run record (safe)',
     ],
   }
   classifyFlow(schedulerFlow)
-  check('scheduler page has no SemesterSelector', !hasSchedulerSemesterSelector, hasSchedulerSemesterSelector ? 'unexpected' : 'OK')
-  check('scheduler API uses active semester only (no semesterId in body)', !schedulerContentSrc.includes('semesterId') || schedulerContentSrc.match(/semesterId=\{null\}/) !== null)
 
   // ═══════════════════════════════════════════════════════════════════
   // 2. SCHEDULER API: /api/admin/scheduler/preview
@@ -248,11 +250,12 @@ function main() {
   console.log('─'.repeat(60))
   console.log('Mode classification:')
   console.log('─'.repeat(60))
-  console.log('  /admin/scheduler              : A_ACTIVE_SEMESTER_ONLY')
+  console.log('  /admin/scheduler              : B_GLOBAL_SELECTOR (K29-A: SemesterSelector added)')
   console.log('  /dashboard                    : B_GLOBAL_SELECTOR (uses SemesterSelector + useSemesterStore + withSemesterQuery)')
   console.log('  /my-adjustment-requests       : ' + userRequestPage.mode)
   console.log('  /admin/adjustment-requests    : ' + adminRequestPage.mode)
-  console.log('  Scheduler preview/apply/rollback: A_ACTIVE_SEMESTER_ONLY (derive from active or run record)')
+  console.log('  Scheduler preview              : B_GLOBAL_SELECTOR (K29-A: accepts semesterId in body)')
+  console.log('  Scheduler apply/rollback       : A_ACTIVE_SEMESTER_ONLY (derive from run record, safe)')
   console.log('  USER request dry-run/submit/recommendations: D_API_ONLY (semesterId optional in body, dry-run uses active fallback)')
   console.log('  USER request mine                : E_CROSS_SEMESTER_RISK (no semester filter, returns ALL)')
   console.log('  ADMIN request list                : D_API_ONLY (optional ?semesterId=, page never sets it)')
