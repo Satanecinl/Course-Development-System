@@ -1,0 +1,113 @@
+{
+  "stage": "K28-A-USER-ADJUSTMENT-APPROVAL-FLOW-IMPLEMENTATION",
+  "status": "CLOSED",
+  "date": "2026-06-10",
+  "summary": "Implemented user adjustment request → admin approval workflow. USER can submit PENDING requests; ADMIN reviews with re-dry-run before approving. ScheduleAdjustmentRequest model tracks submittedBy/reviewedBy. 7 new API routes, 3 new permissions, 2 new pages.",
+  "schemaChanges": {
+    "newModel": "ScheduleAdjustmentRequest",
+    "migration": "20260610000000_add_schedule_adjustment_request",
+    "fields": [
+      "semesterId", "sourceScheduleSlotId", "teachingTaskId",
+      "sourceWeek", "sourceDayOfWeek", "sourceSlotIndex", "sourceRoomId",
+      "targetWeek", "targetDayOfWeek", "targetSlotIndex", "targetRoomId",
+      "status (PENDING|APPROVED|REJECTED|CANCELLED)",
+      "submittedByUserId", "submittedByNameSnapshot", "submittedByRoleSnapshot",
+      "reviewedByUserId", "reviewedByNameSnapshot", "reviewedAt", "reviewNote",
+      "approvedAdjustmentId (unique FK to ScheduleAdjustment)",
+      "reason", "createdAt", "updatedAt"
+    ]
+  },
+  "rbacChanges": {
+    "newPermissions": [
+      "adjustment-request:create",
+      "adjustment-request:review",
+      "adjustment-request:read"
+    ],
+    "roleMapping": {
+      "ADMIN": "all 15 permissions (gains adjustment-request:create/review/read)",
+      "USER": "data:read + schedule:view + adjustment-request:create + adjustment-request:read (gains schedule:view and 2 new perms)",
+      "DATA_EXPORTER": "data:read + data:export (unchanged)"
+    }
+  },
+  "apiRoutes": {
+    "user": [
+      "POST /api/schedule-adjustment-requests/dry-run (adjustment-request:create)",
+      "POST /api/schedule-adjustment-requests (adjustment-request:create)",
+      "GET /api/schedule-adjustment-requests/mine (adjustment-request:read)",
+      "POST /api/schedule-adjustment-requests/[id]/cancel (adjustment-request:create)"
+    ],
+    "admin": [
+      "GET /api/admin/schedule-adjustment-requests (adjustment-request:review)",
+      "POST /api/admin/schedule-adjustment-requests/[id]/approve (adjustment-request:review)",
+      "POST /api/admin/schedule-adjustment-requests/[id]/reject (adjustment-request:review)"
+    ]
+  },
+  "uiChanges": {
+    "newComponents": [
+      "src/components/schedule/user-adjustment-request-dialog.tsx",
+      "src/app/my-adjustment-requests/page.tsx (USER)",
+      "src/app/admin/adjustment-requests/page.tsx (ADMIN)"
+    ],
+    "modifiedComponents": [
+      "src/app/dashboard/dashboard-content.tsx (USER opens request dialog instead of adjustment dialog)",
+      "src/lib/auth/navigation.ts (adds 我的调课申请 + 调课审批)",
+      "src/components/layout/app-sidebar.tsx (adds scroll-text + check-circle icons)",
+      "src/lib/auth/route-permissions.ts (adds new routes)"
+    ]
+  },
+  "businessRules": {
+    "submitDoesNotMutateScheduleSlot": true,
+    "submitDoesNotCreateActiveScheduleAdjustment": true,
+    "approveReRunsDryRun": true,
+    "rejectDoesNotMutateOfficialSchedule": true,
+    "submittedByRecorded": true,
+    "reviewedByRecorded": true,
+    "cancelOnlyOwnPending": true,
+    "workTimeGuard": true,
+    "hc6Guard": true,
+    "semesterScoping": true
+  },
+  "verification": {
+    "k28aVerify": "PASS (67/67)",
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "up to date (9 migrations)",
+    "typeScript": "PASS (npx tsc --noEmit clean)",
+    "build": "PASS",
+    "lint": "331 problems (185 errors, 146 warnings) — +1 delta from baseline, same accepted pattern as existing ScheduleAdjustmentDialog",
+    "authFoundation": "61 passed / 1 pre-existing failed (ScheduleAdjustment ACTIVE=0). USER permission count updated from 1 to 4.",
+    "k26Closeout": "106/106 PASS"
+  },
+  "schemaChanged": true,
+  "migrationsChanged": true,
+  "dbChanged": false,
+  "rbacSemanticsChanged": true,
+  "k22ExpectedChanged": false,
+  "filesAdded": [
+    "prisma/migrations/20260610000000_add_schedule_adjustment_request/migration.sql",
+    "src/app/api/schedule-adjustment-requests/dry-run/route.ts",
+    "src/app/api/schedule-adjustment-requests/route.ts",
+    "src/app/api/schedule-adjustment-requests/mine/route.ts",
+    "src/app/api/schedule-adjustment-requests/[id]/cancel/route.ts",
+    "src/app/api/admin/schedule-adjustment-requests/route.ts",
+    "src/app/api/admin/schedule-adjustment-requests/[id]/approve/route.ts",
+    "src/app/api/admin/schedule-adjustment-requests/[id]/reject/route.ts",
+    "src/lib/schedule/adjustment-request-service.ts",
+    "src/lib/schedule/adjustment-request-client.ts",
+    "src/components/schedule/user-adjustment-request-dialog.tsx",
+    "src/app/my-adjustment-requests/page.tsx",
+    "src/app/admin/adjustment-requests/page.tsx",
+    "scripts/verify-user-adjustment-approval-flow-k28-a.ts",
+    "docs/k28-user-adjustment-approval-flow-implementation.md",
+    "docs/k28-user-adjustment-approval-flow-implementation.json"
+  ],
+  "filesModified": [
+    "prisma/schema.prisma",
+    "src/lib/auth/types.ts",
+    "src/lib/auth/navigation.ts",
+    "src/lib/auth/route-permissions.ts",
+    "src/components/layout/app-sidebar.tsx",
+    "src/app/dashboard/dashboard-content.tsx",
+    "scripts/seed-auth.ts"
+  ],
+  "recommendedNextStage": "K28-B-USER-ADJUSTMENT-APPROVAL-FLOW-MANUAL-TRIAL"
+}

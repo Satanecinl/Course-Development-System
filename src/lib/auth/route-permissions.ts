@@ -14,6 +14,12 @@ const ROUTE_RULES: RouteRule[] = [
   // Dashboard — schedule management
   { pattern: /^\/dashboard/, permissions: ['schedule:view'] },
 
+  // USER: My adjustment requests
+  { pattern: /^\/my-adjustment-requests/, permissions: ['adjustment-request:read'] },
+
+  // Admin: adjustment request review console
+  { pattern: /^\/admin\/adjustment-requests/, permissions: ['adjustment-request:review'] },
+
   // Admin scheduler (auto-scheduling console + history)
   { pattern: /^\/admin\/scheduler/, permissions: ['schedule:adjust'] },
 

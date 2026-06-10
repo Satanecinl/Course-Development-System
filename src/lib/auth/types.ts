@@ -36,6 +36,10 @@ export const ALL_PERMISSIONS = [
   'users:manage',
   'diagnostics:view',
   'teaching-task:write',
+  // K28-A: User Adjustment Approval Flow
+  'adjustment-request:create',
+  'adjustment-request:review',
+  'adjustment-request:read',
 ] as const
 
 export type PermissionKey = (typeof ALL_PERMISSIONS)[number]

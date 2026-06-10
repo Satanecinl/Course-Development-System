@@ -112,10 +112,17 @@ async function main() {
       }
     }
 
-    assert(userPermissions.size === 1, 'user 仅拥有 1 个权限')
+    // K28-A: USER now has 4 permissions:
+    // data:read + schedule:view + adjustment-request:create + adjustment-request:read
+    assert(userPermissions.size === 4, 'user 拥有 4 个权限 (data:read, schedule:view, adjustment-request:create, adjustment-request:read)')
     assert(userPermissions.has('data:read'), 'user 拥有 data:read')
+    assert(userPermissions.has('schedule:view'), 'user 拥有 schedule:view (K28-A)')
+    assert(userPermissions.has('adjustment-request:create'), 'user 拥有 adjustment-request:create (K28-A)')
+    assert(userPermissions.has('adjustment-request:read'), 'user 拥有 adjustment-request:read (K28-A)')
     assert(!userPermissions.has('data:write'), 'user 不拥有 data:write')
     assert(!userPermissions.has('users:manage'), 'user 不拥有 users:manage')
+    assert(!userPermissions.has('schedule:adjust'), 'user 不拥有 schedule:adjust')
+    assert(!userPermissions.has('adjustment-request:review'), 'user 不拥有 adjustment-request:review')
   }
 
   // ─── 3. Password Verification Tests ───────────────────────────

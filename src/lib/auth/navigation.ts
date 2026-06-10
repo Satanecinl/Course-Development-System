@@ -13,7 +13,8 @@ export interface NavItem {
 /**
  * Main navigation items.
  * Each item requires a specific permission to be visible.
- * Admin (all permissions) sees everything; USER (data:read only) sees only "数据管理".
+ * Admin (all permissions) sees everything; USER (data:read + schedule:view +
+ * adjustment-request:*) sees dashboard / data / my-requests.
  */
 export const NAV_ITEMS: NavItem[] = [
   {
@@ -23,10 +24,22 @@ export const NAV_ITEMS: NavItem[] = [
     icon: 'layout-dashboard',
   },
   {
+    label: '我的调课申请',
+    href: '/my-adjustment-requests',
+    permission: 'adjustment-request:read',
+    icon: 'scroll-text',
+  },
+  {
     label: '数据管理',
     href: '/data',
     permission: 'data:read',
     icon: 'database',
+  },
+  {
+    label: '调课审批',
+    href: '/admin/adjustment-requests',
+    permission: 'adjustment-request:review',
+    icon: 'check-circle',
   },
   {
     label: '自动排课',

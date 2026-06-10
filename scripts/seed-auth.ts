@@ -86,24 +86,35 @@ async function main() {
   }
   console.log(`   ✅ ADMIN → all ${ALL_PERMISSIONS.length} permissions`)
 
-  // USER gets only data:read
-  const dataReadPerm = permissionRecords.get('data:read')!
-  await prisma.rolePermission.upsert({
-    where: {
-      roleId_permissionId: {
-        roleId: userRole.id,
-        permissionId: dataReadPerm.id,
+  // USER (K28-A): data:read + schedule:view + adjustment-request:create + adjustment-request:read
+  // schedule:view allows USER to see the schedule dashboard
+  // adjustment-request:create allows USER to submit adjustment requests
+  // adjustment-request:read allows USER to view their own requests
+  const userPerms = [
+    permissionRecords.get('data:read')!,
+    permissionRecords.get('schedule:view')!,
+    permissionRecords.get('adjustment-request:create')!,
+    permissionRecords.get('adjustment-request:read')!,
+  ]
+  for (const perm of userPerms) {
+    await prisma.rolePermission.upsert({
+      where: {
+        roleId_permissionId: {
+          roleId: userRole.id,
+          permissionId: perm.id,
+        },
       },
-    },
-    update: {},
-    create: {
-      roleId: userRole.id,
-      permissionId: dataReadPerm.id,
-    },
-  })
-  console.log('   ✅ USER → data:read')
+      update: {},
+      create: {
+        roleId: userRole.id,
+        permissionId: perm.id,
+      },
+    })
+  }
+  console.log(`   ✅ USER → data:read, schedule:view, adjustment-request:create, adjustment-request:read`)
 
   // DATA_EXPORTER gets data:read + data:export
+  const dataReadPerm = permissionRecords.get('data:read')!
   const dataExportPerm = permissionRecords.get('data:export')!
   for (const perm of [dataReadPerm, dataExportPerm]) {
     await prisma.rolePermission.upsert({
@@ -239,6 +250,10 @@ function getPermissionDescription(key: string): string {
     'users:manage': '管理用户',
     'diagnostics:view': '查看诊断',
     'teaching-task:write': '写入教学任务',
+    // K28-A
+    'adjustment-request:create': '提交调课申请',
+    'adjustment-request:review': '审批调课申请',
+    'adjustment-request:read': '查看调课申请',
   }
   return descriptions[key] ?? key
 }

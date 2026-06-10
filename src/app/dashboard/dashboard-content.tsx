@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { ScheduleSidebar } from '@/components/schedule-sidebar'
 import { ScheduleGrid } from '@/components/schedule-grid'
 import { ScheduleAdjustmentDialog } from '@/components/schedule-adjustment-dialog'
+import { UserAdjustmentRequestDialog } from '@/components/schedule/user-adjustment-request-dialog'
 import { SemesterSelector } from '@/components/semester-selector'
 import { useScheduleStore } from '@/store/scheduleStore'
 import { useSemesterStore, withSemesterQuery } from '@/store/semesterStore'
@@ -183,6 +184,9 @@ export default function DashboardContent() {
   const [voidExecuting, setVoidExecuting] = useState(false)
   // K14-FIX-A: schedule:adjust gates the void submission.
   const canAdjust = useHasPermission('schedule:adjust')
+  // K28-A: USER-side request dialog state
+  const canRequestAdjustment = useHasPermission('adjustment-request:create')
+  const [requestDialogOpen, setRequestDialogOpen] = useState(false)
 
   // 初始化加载实体选项
   useEffect(() => {
@@ -295,6 +299,12 @@ export default function DashboardContent() {
   function handleAdjust(item: ScheduleViewData) {
     if (selectedWeek === 'ALL') {
       toast.error('请在具体周次视图下调课', { description: '先选择某一具体周次，再点击调课按钮' })
+      return
+    }
+    // K28-A: USER (no schedule:adjust) opens the request dialog instead.
+    if (!canAdjust && canRequestAdjustment) {
+      setAdjustItem(item)
+      setRequestDialogOpen(true)
       return
     }
     setAdjustItem(item)
@@ -477,6 +487,19 @@ export default function DashboardContent() {
           if (selectedWeek !== 'ALL') {
             fetchEffectiveSchedule(selectedWeek as number)
           }
+        }}
+      />
+
+      {/* K28-A: USER 调课申请弹窗 (PENDING-only) */}
+      <UserAdjustmentRequestDialog
+        open={requestDialogOpen}
+        onOpenChange={setRequestDialogOpen}
+        week={selectedWeek === 'ALL' ? 1 : selectedWeek}
+        item={adjustItem}
+        roomOptions={allRoomOptions}
+        onSubmitted={() => {
+          // No need to refresh the schedule — the request does not mutate it.
+          // A small refresh still ensures the local "applied" filter is consistent.
         }}
       />
 

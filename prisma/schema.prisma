@@ -23,6 +23,7 @@ model Semester {
   teachingTasks       TeachingTask[]
   scheduleSlots       ScheduleSlot[]
   scheduleAdjustments ScheduleAdjustment[]
+  adjustmentRequests  ScheduleAdjustmentRequest[]
   schedulingRuns      SchedulingRun[]
   schedulingConfigs   SchedulingConfig[]
   importBatches       ImportBatch[]
@@ -95,6 +96,7 @@ model TeachingTask {
   semester      Semester            @relation(fields: [semesterId], references: [id])
   scheduleSlots ScheduleSlot[]
   taskClasses   TeachingTaskClass[]
+  adjustmentRequests ScheduleAdjustmentRequest[]
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
 
@@ -115,6 +117,7 @@ model ScheduleSlot {
   semesterId     Int
   semester       Semester            @relation(fields: [semesterId], references: [id])
   adjustments    ScheduleAdjustment[]
+  adjustmentRequests ScheduleAdjustmentRequest[]
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
 
@@ -140,7 +143,68 @@ model ScheduleAdjustment {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
+  // K28-A: back-reference to the approval request that created this adjustment
+  approvalRequest ScheduleAdjustmentRequest? @relation("ApprovalRequestAdjustment")
+
   @@index([semesterId])
+}
+
+// ─── K28-A: User Adjustment Approval Flow ─────────────────────────
+//
+// SQLite does not support native enums, so we use a String with a
+// documented value set: PENDING | APPROVED | REJECTED | CANCELLED.
+
+model ScheduleAdjustmentRequest {
+  id                     Int      @id @default(autoincrement())
+
+  semesterId             Int
+  sourceScheduleSlotId   Int
+  teachingTaskId         Int
+
+  // Source position (snapshot at submission time, for display)
+  sourceWeek             Int?
+  sourceDayOfWeek        Int?
+  sourceSlotIndex        Int?
+  sourceRoomId           Int?
+
+  // Target position (request to move / cancel)
+  targetWeek             Int
+  targetDayOfWeek        Int
+  targetSlotIndex        Int
+  targetRoomId           Int?
+
+  reason                 String?
+  status                 String   @default("PENDING") // PENDING | APPROVED | REJECTED | CANCELLED
+
+  // Submitter
+  submittedByUserId      Int
+  submittedByNameSnapshot String?
+  submittedByRoleSnapshot String?
+
+  // Reviewer
+  reviewedByUserId       Int?
+  reviewedByNameSnapshot String?
+  reviewedAt             DateTime?
+  reviewNote             String?
+
+  // Linked approved adjustment (set on APPROVED)
+  approvedAdjustmentId   Int? @unique
+
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  semester               Semester @relation(fields: [semesterId], references: [id])
+  sourceScheduleSlot     ScheduleSlot @relation(fields: [sourceScheduleSlotId], references: [id])
+  teachingTask           TeachingTask @relation(fields: [teachingTaskId], references: [id])
+  submittedBy            User     @relation("SubmittedScheduleAdjustmentRequests", fields: [submittedByUserId], references: [id])
+  reviewedBy             User?    @relation("ReviewedScheduleAdjustmentRequests", fields: [reviewedByUserId], references: [id])
+  approvedAdjustment     ScheduleAdjustment? @relation("ApprovalRequestAdjustment", fields: [approvedAdjustmentId], references: [id])
+
+  @@index([semesterId])
+  @@index([status])
+  @@index([submittedByUserId])
+  @@index([reviewedByUserId])
+  @@index([sourceScheduleSlotId])
 }
 
 model TeachingTaskClass {
@@ -335,6 +399,9 @@ model User {
   userRoles      UserRole[]
   sessions       Session[]
   schedulingRuns SchedulingRun[]
+
+  submittedAdjustmentRequests  ScheduleAdjustmentRequest[] @relation("SubmittedScheduleAdjustmentRequests")
+  reviewedAdjustmentRequests   ScheduleAdjustmentRequest[] @relation("ReviewedScheduleAdjustmentRequests")
 }
 
 model Role {
