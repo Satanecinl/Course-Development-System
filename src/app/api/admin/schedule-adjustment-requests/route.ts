@@ -26,7 +26,10 @@ export async function GET(request: NextRequest) {
       items: result.items.map(serializeItem),
     })
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error'
+    const isPrismaDelegateError = error instanceof TypeError && error.message.includes('findMany')
+    const message = isPrismaDelegateError
+      ? 'Prisma Client 需要重新生成，请重启开发服务器 (npx prisma generate && npm run dev)'
+      : error instanceof Error ? '获取调课申请列表失败' : '获取调课申请列表失败'
     return NextResponse.json(
       { success: false, error: 'INTERNAL', message },
       { status: 500 },

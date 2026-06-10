@@ -1,0 +1,41 @@
+{
+  "stage": "K28-A1-MY-ADJUSTMENT-REQUESTS-FINDMANY-FIX",
+  "status": "CLOSED",
+  "date": "2026-06-10",
+  "bug": {
+    "symptom": "USER opens /my-adjustment-requests → '请求失败: Cannot read properties of undefined (reading findMany)'",
+    "rootCause": "Stale Prisma Client: dev server held old query_engine-windows.dll.node, preventing prisma generate from replacing it. prisma.scheduleAdjustmentRequest was undefined at runtime.",
+    "fix": "Kill dev server → prisma generate → restart. Added defensive error handling to mine/list API routes.",
+    "affectedRoute": "GET /api/schedule-adjustment-requests/mine",
+    "affectedUI": "/my-adjustment-requests",
+    "prismaGenerateRequired": true,
+    "devServerRestartRequired": true
+  },
+  "filesChanged": [
+    "src/app/api/schedule-adjustment-requests/mine/route.ts",
+    "src/app/api/admin/schedule-adjustment-requests/route.ts",
+    "scripts/verify-user-adjustment-request-mine-fix-k28-a1.ts",
+    "docs/k28-user-adjustment-request-mine-fix.md",
+    "docs/k28-user-adjustment-request-mine-fix.json"
+  ],
+  "schemaChanged": false,
+  "migrationsChanged": false,
+  "dbChanged": false,
+  "rbacChanged": false,
+  "k22ExpectedChanged": false,
+  "verification": {
+    "k28a1Verify": "17/17 PASS",
+    "k28aVerify": "67/67 PASS",
+    "k26Closeout": "106/106 PASS",
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "9 migrations, up to date",
+    "build": "PASS",
+    "lint": "331 (185/146) — same as K28-A baseline",
+    "authFoundation": "61/1 pre-existing",
+    "prismaDelegateRuntimeCheck": "PASS (scheduleAdjustmentRequest.findMany is a function, count returns 0)"
+  },
+  "recommendation": {
+    "k28A1Status": "CLOSED",
+    "recommendedNextStage": "K28-B-USER-ADJUSTMENT-APPROVAL-FLOW-MANUAL-TRIAL"
+  }
+}
