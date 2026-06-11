@@ -1,0 +1,80 @@
+{
+  "stage": "K31-B",
+  "feature": "adjustment-request-pages-back-nav-fix",
+  "bug": "调课审批 / 我的调课申请 页面缺少返回 /dashboard 的入口，且无 ProtectedShell 包裹的侧边栏",
+  "rootCause": "K28-A 引入的 page.tsx 是顶层 client component，没有像其它 admin 页面一样用 ProtectedShell 包裹，也没有显式返回按钮",
+  "fix": {
+    "scope": "minimum — back button only (no layout restructure per K31-B instructions)",
+    "filesChanged": [
+      "src/app/my-adjustment-requests/page.tsx",
+      "src/app/admin/adjustment-requests/page.tsx"
+    ],
+    "filesAdded": [
+      "scripts/verify-adjustment-request-pages-back-nav-k31-b.ts",
+      "docs/k31-adjustment-request-pages-back-nav-fix.md",
+      "docs/k31-adjustment-request-pages-back-nav-fix.json"
+    ],
+    "codeChanges": {
+      "userPage": {
+        "location": "src/app/my-adjustment-requests/page.tsx",
+        "addedImports": ["Link from 'next/link'", "ArrowLeft from 'lucide-react'"],
+        "addedJsx": "<Link href=\"/dashboard\"><Button variant=\"outline\" size=\"sm\" aria-label=\"返回排课展示\"><ArrowLeft className=\"w-4 h-4 mr-1.5\" />返回排课展示</Button></Link>",
+        "placement": "page header right side, before refresh button"
+      },
+      "adminPage": {
+        "location": "src/app/admin/adjustment-requests/page.tsx",
+        "addedImports": ["Link from 'next/link'", "ArrowLeft from 'lucide-react'"],
+        "addedJsx": "same as user page",
+        "placement": "page header right side, before status filter select"
+      }
+    },
+    "frontendChanges": "navigation only — no business logic, no API, no DB, no RBAC"
+  },
+  "permissions": {
+    "noNewRbac": true,
+    "noRoleElevation": true,
+    "userPageHasNoAdminLink": true,
+    "adminPageUnchangedAccess": true,
+    "backTarget": "/dashboard (统一)"
+  },
+  "schemaChanges": false,
+  "migrationChanges": false,
+  "dbChanges": false,
+  "rbacChanges": false,
+  "k22ExpectedChanges": false,
+  "schedulingLogicChanges": false,
+  "adjustmentLogicChanges": false,
+  "layoutRestructured": false,
+  "protectedShellWrapping": "not changed — out of scope per 'minimum fix' instruction",
+  "verification": {
+    "k31BVerify": {
+      "pass": 17,
+      "fail": 0,
+      "blocking": false,
+      "command": "npx tsx scripts/verify-adjustment-request-pages-back-nav-k31-b.ts",
+      "result": "K31-B ADJUSTMENT REQUEST PAGES BACK-NAV FIX VERIFY PASS"
+    },
+    "prismaValidate": "PASS (expected, will run)",
+    "prismaMigrateStatus": "up to date (expected)",
+    "build": "PASS (expected, will run)",
+    "lint": "baseline 188/154 (no new errors/warnings expected)",
+    "authFoundation": "61/1 pre-existing",
+    "k28Closeout": "PASS (will run)",
+    "k31AVerify": "PASS (will run)"
+  },
+  "knownLimitations": [
+    "Pages still outside ProtectedShell — global sidebar/header not visible on these two routes",
+    "K31-B is minimum-fix only; ProtectedShell wrapping left for a future stage (K31-C recommended)"
+  ],
+  "manualTrialRequired": true,
+  "manualTrialNotes": [
+    "Login as ADMIN → /admin/adjustment-requests → see '返回排课展示' top-right → click → confirm /dashboard",
+    "Login as USER → /my-adjustment-requests → see '返回排课展示' top-right → click → confirm /dashboard",
+    "Confirm USER page does not show any /admin/* link",
+    "Confirm status filter / refresh on ADMIN page still works",
+    "Confirm refresh button on USER page still works"
+  ],
+  "recommendedNextStage": "K31-C (optional) — split page.tsx into server page + client content, wrap with ProtectedShell to expose global sidebar/header. Layout-only, no business impact.",
+  "featureStatus": "READY_FOR_REAL_USE",
+  "canClose": true
+}

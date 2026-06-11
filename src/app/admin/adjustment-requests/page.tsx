@@ -5,6 +5,7 @@
 // and allows approve / reject with optional / required reviewNote.
 
 import { useEffect, useState, useCallback } from 'react'
+import Link from 'next/link'
 import { toast } from 'sonner'
 import {
   RefreshCw,
@@ -15,6 +16,7 @@ import {
   Info,
   ThumbsUp,
   ThumbsDown,
+  ArrowLeft,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -121,6 +123,15 @@ export default function AdminAdjustmentRequestsPage() {
           <Badge className="text-xs bg-rose-100 text-rose-700 border-rose-200">ADMIN</Badge>
         </div>
         <div className="flex items-center gap-2">
+          {/* K31-B: back-to-dashboard navigation. The page is a top-level route
+              outside the ProtectedShell, so the sidebar is not present; this
+              button is the only way back to the timetable view. */}
+          <Link href="/dashboard">
+            <Button variant="outline" size="sm" aria-label="返回排课展示">
+              <ArrowLeft className="w-4 h-4 mr-1.5" />
+              返回排课展示
+            </Button>
+          </Link>
           <select
             className="flex h-9 rounded-md border border-gray-200 bg-white px-2 text-sm"
             value={statusFilter}
