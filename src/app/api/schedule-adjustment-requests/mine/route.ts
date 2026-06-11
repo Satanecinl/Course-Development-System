@@ -39,6 +39,7 @@ function serializeItem(r: Awaited<ReturnType<typeof listMyAdjustmentRequests>>['
     semesterName: r.semester?.name,
     semesterCode: r.semester?.code,
     sourceScheduleSlotId: r.sourceScheduleSlotId,
+    sourceWeek: r.sourceWeek ?? null, // K32-A3: 返回 sourceWeek
     sourceDayOfWeek: r.sourceDayOfWeek,
     sourceSlotIndex: r.sourceSlotIndex,
     sourceRoomId: r.sourceRoomId,
@@ -51,6 +52,7 @@ function serializeItem(r: Awaited<ReturnType<typeof listMyAdjustmentRequests>>['
     targetDayOfWeek: r.targetDayOfWeek,
     targetSlotIndex: r.targetSlotIndex,
     targetRoomId: r.targetRoomId,
+    targetRoomName: null as string | null, // K32-A3: target room name 未在 list 查询中 include，暂为 null
     reason: r.reason,
     submittedByUserId: r.submittedByUserId,
     submittedByDisplayName: r.submittedByNameSnapshot ?? r.submittedBy?.displayName ?? '',

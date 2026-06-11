@@ -11,6 +11,8 @@ export interface AdjustmentRequestListItem {
   semesterName?: string
   semesterCode?: string
   sourceScheduleSlotId: number
+  /** K32-A3: source week for display（历史数据可能为 null） */
+  sourceWeek: number | null
   sourceDayOfWeek: number | null
   sourceSlotIndex: number | null
   sourceRoomId: number | null
@@ -21,6 +23,8 @@ export interface AdjustmentRequestListItem {
   targetDayOfWeek: number
   targetSlotIndex: number
   targetRoomId: number | null
+  /** K32-A3: target room name for display */
+  targetRoomName?: string | null
   reason: string | null
   submittedByUserId: number
   submittedByDisplayName: string

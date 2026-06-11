@@ -21,6 +21,11 @@ import {
   type AdjustmentRequestListItem,
   type AdjustmentRequestStatus,
 } from '@/lib/schedule/adjustment-request-client'
+// K32-A3: 共享位置 formatter，确保 ADMIN/USER 两个列表格式统一
+import {
+  formatSourcePosition,
+  formatTargetPosition,
+} from '@/lib/schedule/adjustment-request-display'
 
 const STATUS_MAP: Record<AdjustmentRequestStatus, { label: string; color: string; icon: React.ReactNode }> = {
   PENDING: { label: '待审批', color: 'bg-amber-100 text-amber-700 border-amber-200', icon: <Info className="w-3 h-3" /> },
@@ -189,14 +194,10 @@ export default function MyAdjustmentRequestsContent() {
                       )}
                     </td>
                     <td className="py-2 px-3 text-xs text-gray-700">
-                      第 {r.sourceDayOfWeek ?? '?'} 天 ·
-                      节次 {r.sourceSlotIndex ?? '?'} ·
-                      {r.sourceRoomName ? ` ${r.sourceRoomName}` : ' 未指定教室'}
+                      {formatSourcePosition(r)}
                     </td>
                     <td className="py-2 px-3 text-xs text-gray-700">
-                      第 {r.targetWeek} 周 ·
-                      星期 {r.targetDayOfWeek} ·
-                      节次 {r.targetSlotIndex}
+                      {formatTargetPosition(r)}
                     </td>
                     <td className="py-2 px-3 text-xs text-gray-600 max-w-[180px] truncate" title={r.reason ?? ''}>
                       {r.reason ?? '—'}

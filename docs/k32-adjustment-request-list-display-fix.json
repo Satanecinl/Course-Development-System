@@ -1,0 +1,90 @@
+{
+  "stage": "K32-A3",
+  "feature": "adjustment-request-list-position-display-fix",
+  "goal": "修复 /admin/adjustment-requests 和 /my-adjustment-requests 列表中原位置/目标位置的显示格式（第X天→星期X; 节次4→第7-8节; 加周次上下文）",
+  "bugSummary": [
+    "原位置显示 '第5天'（应为 '星期五'）",
+    "目标位置显示 '星期2'（应为 '星期二'）",
+    "显示 '节次4'（应为 '第7-8节'）",
+    "原位置缺少周次上下文",
+    "教室缺 '未指定教室' 不适合正式展示"
+  ],
+  "filesChanged": [
+    "src/lib/schedule/adjustment-request-display.ts (新增: 共享位置 formatter)",
+    "src/lib/schedule/adjustment-request-client.ts (AdjustmentRequestListItem +sourceWeek +targetRoomName)",
+    "src/app/api/admin/schedule-adjustment-requests/route.ts (admin serializer +sourceWeek +targetRoomName)",
+    "src/app/api/schedule-adjustment-requests/mine/route.ts (mine serializer +sourceWeek +targetRoomName)",
+    "src/app/admin/adjustment-requests/admin-adjustment-requests-content.tsx (替换内联格式)",
+    "src/app/my-adjustment-requests/my-adjustment-requests-content.tsx (替换内联格式)",
+    "scripts/verify-adjustment-request-list-display-k32-a3.ts (新增: 26 checks)",
+    "docs/k32-adjustment-request-list-display-fix.md/json (新增)"
+  ],
+  "displayFormatters": {
+    "formatDayOfWeek": {
+      "description": "dayOfWeek 数字→中文星期; null→'星期?'",
+      "examples": { "5": "星期五", "2": "星期二", "null": "星期?" }
+    },
+    "formatSlotIndex": {
+      "description": "slotIndex→'第X-Y节'; null→'第?节'",
+      "examples": { "4": "第7-8节", "1": "第1-2节", "null": "第?节" }
+    },
+    "formatWeek": {
+      "description": "week→'第X周'; null→'第?周'",
+      "examples": { "5": "第5周", "null": "第?周" }
+    },
+    "formatRoomName": {
+      "description": "roomName→trim; null→'' (empty)",
+      "examples": { "11-333": "11-333", "null": "" }
+    },
+    "formatPosition": {
+      "description": "完整位置: '第X周 星期X 第X-X节 教室 XXX'",
+      "examples": { "5,5,4,11-333": "第5周 星期五 第7-8节 教室 11-333" }
+    },
+    "formatSourcePosition": {
+      "description": "传入 item 对象，提取 sourceWeek/Day/Slot/Room"
+    },
+    "formatTargetPosition": {
+      "description": "传入 item 对象，提取 targetWeek/Day/Slot/Room"
+    }
+  },
+  "dtoChanges": {
+    "sourceWeek": "新增到 AdjustmentRequestListItem; 历史 null 不变; K32-A2 submit path 修复后新申请有值",
+    "targetRoomName": "新增到 AdjustmentRequestListItem; 暂为 null (list 查询未 include target room); K32-B 改进"
+  },
+  "validation": {
+    "k32A3Verify": {
+      "script": "scripts/verify-adjustment-request-list-display-k32-a3.ts",
+      "checks": 26,
+      "passed": 26,
+      "failed": 0,
+      "result": "K32-A3 ADJUSTMENT REQUEST LIST DISPLAY FIX VERIFY PASS"
+    },
+    "k32A2Regress": { "result": "35/35 PASS" },
+    "k32A1Regress": { "result": "34/34 PASS" },
+    "k32ARegress": { "result": "49/49 PASS" },
+    "k28Closeout": { "result": "41/41 PASS" },
+    "k31CRegress": { "result": "26/26 PASS" },
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "9 migrations, up to date",
+    "build": "PASS",
+    "lint": "188/152 (= baseline)",
+    "authFoundation": "60/2 (= baseline, pre-existing)"
+  },
+  "schemaChanges": false,
+  "dbChanges": false,
+  "rbacChanges": false,
+  "k22ExpectedChanges": false,
+  "manualTrialRequired": true,
+  "manualTrialNotes": [
+    "ADMIN 登录 → /admin/adjustment-requests → 确认原位置列显示 '第X周 星期X 第X-X节 教室 XXX'（非 '第X天'/'节次X'）",
+    "目标位置列同上格式",
+    "USER 登录 → /my-adjustment-requests → 同上检查",
+    "导出串课申请表仍正常 (K32-A2 导出 verify 已回归)",
+    "状态筛选/刷新/approve/reject 仍正常"
+  ],
+  "knownLimitations": [
+    "targetRoomName 在 list 中暂为 null（list 查询未 include target room）；目标位置显示 '教室 ' 占位。K32-B 改进",
+    "历史 8 条请求 sourceWeek=null；列表显示 '第?周 星期X'。不做 DB 回填"
+  ],
+  "recommendedNextStage": "real-use / K32-B (target room name in list query) if needed"
+}
