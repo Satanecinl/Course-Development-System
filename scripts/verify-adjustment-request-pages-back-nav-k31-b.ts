@@ -74,8 +74,13 @@ function main() {
   const userPage = join(projectRoot, 'src/app/my-adjustment-requests/page.tsx')
   check('USER page file exists', existsSync(userPage))
 
+  // K31-C: logic moved to a sibling *-content.tsx. Read BOTH and combine so
+  // the assertion passes whether the project uses the inline page (K31-B
+  // layout) or the page+content split (K31-C layout).
+  const userContent = join(projectRoot, 'src/app/my-adjustment-requests/my-adjustment-requests-content.tsx')
+  const userSrc = [userPage, userContent].map(safeReadText).join('\n')
+
   // 2-6. USER page checks
-  const userSrc = safeReadText(userPage)
   check('USER page has Link href="/dashboard"', hasLinkToDashboard(userSrc))
   check('USER page back button text contains "返回"', hasBackText(userSrc))
   check('USER page has ArrowLeft icon (or aria-label for back)',
@@ -90,8 +95,11 @@ function main() {
   const adminPage = join(projectRoot, 'src/app/admin/adjustment-requests/page.tsx')
   check('ADMIN page file exists', existsSync(adminPage))
 
+  // K31-C: same — read both page and content
+  const adminContent = join(projectRoot, 'src/app/admin/adjustment-requests/admin-adjustment-requests-content.tsx')
+  const adminSrc = [adminPage, adminContent].map(safeReadText).join('\n')
+
   // 8-11. ADMIN page checks
-  const adminSrc = safeReadText(adminPage)
   check('ADMIN page has Link href="/dashboard"', hasLinkToDashboard(adminSrc))
   check('ADMIN page back button text contains "返回"', hasBackText(adminSrc))
   check('ADMIN page preserves status filter (select + setStatusFilter)',
@@ -133,13 +141,11 @@ function main() {
   console.log('  featureStatus: READY_FOR_REAL_USE')
   console.log('  manualTrialRequired: yes — click the back button at /admin/adjustment-requests')
   console.log('    and /my-adjustment-requests, confirm it returns to /dashboard')
-  console.log('  knownLimitations: pages remain outside ProtectedShell, so the global')
-  console.log('    sidebar is still not present on these two routes. K31-B is the')
-  console.log('    minimum-fix (back button) only; ProtectedShell wrapping is left')
-  console.log('    to a future stage.')
-  console.log('  recommendedNextStage: K31-C (optional) — wrap both pages in')
-  console.log('    ProtectedShell so they share the global sidebar/header. This is a')
-  console.log('    layout-only change with no business logic impact.')
+  console.log('  knownLimitations: pages may now be inside ProtectedShell (K31-C). The')
+  console.log('    back button is preserved as an in-content shortcut; the global')
+  console.log('    sidebar also exposes 排课展示 for the same destination.')
+  console.log('  recommendedNextStage: K31-C closeout (wrap both pages in')
+  console.log('    ProtectedShell so they share the global sidebar/header).')
   console.log('═'.repeat(70))
   console.log(
     failed.length === 0

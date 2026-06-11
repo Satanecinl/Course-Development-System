@@ -1,0 +1,83 @@
+{
+  "stage": "K31-C",
+  "feature": "adjustment-request-pages-protected-shell-integration",
+  "goal": "将 /my-adjustment-requests 和 /admin/adjustment-requests 接入全局 ProtectedShell / 全局侧边栏布局",
+  "layoutStrategy": "server page + client content split (matching existing /admin/db and /admin/users pattern)",
+  "serverClientSplit": {
+    "userPage": {
+      "page": "src/app/my-adjustment-requests/page.tsx (server, wraps with ProtectedShell)",
+      "content": "src/app/my-adjustment-requests/my-adjustment-requests-content.tsx ('use client')"
+    },
+    "adminPage": {
+      "page": "src/app/admin/adjustment-requests/page.tsx (server, wraps with ProtectedShell)",
+      "content": "src/app/admin/adjustment-requests/admin-adjustment-requests-content.tsx ('use client')"
+    },
+    "rationale": "ProtectedShell is a server component (uses cookies(), redirect, getCurrentUser). Client pages cannot use server-only features; the split is the project's established pattern."
+  },
+  "fix": {
+    "filesChanged": [
+      "src/app/my-adjustment-requests/page.tsx (server wrapper)",
+      "src/app/admin/adjustment-requests/page.tsx (server wrapper)",
+      "scripts/verify-adjustment-request-pages-back-nav-k31-b.ts (stage-aware: reads page+content)"
+    ],
+    "filesAdded": [
+      "src/app/my-adjustment-requests/my-adjustment-requests-content.tsx",
+      "src/app/admin/adjustment-requests/admin-adjustment-requests-content.tsx",
+      "scripts/verify-adjustment-request-pages-protected-shell-k31-c.ts",
+      "docs/k31-adjustment-request-pages-protected-shell.md",
+      "docs/k31-adjustment-request-pages-protected-shell.json"
+    ],
+    "codeChanges": {
+      "userPageServer": "import ProtectedShell, import content component, render <ProtectedShell><Content/></ProtectedShell>",
+      "userPageContent": "原 page.tsx 的全部 client 逻辑平移到 *-content.tsx，仅修改函数名 + 顶部 'use client'",
+      "adminPageServer": "同上",
+      "adminPageContent": "同上"
+    },
+    "navigationConfig": "unchanged — K28 阶段已配置 我的调课申请 + 调课审批",
+    "k31BBackButton": "preserved in content files (left of H1) per K31-C instructions"
+  },
+  "permissions": {
+    "noNewRbac": true,
+    "noRoleElevation": true,
+    "userPageHasNoAdminLink": true,
+    "adminPageUnchangedAccess": true,
+    "userSidebarNoAdminOnly": "filterNavItems 自动按权限过滤"
+  },
+  "schemaChanges": false,
+  "migrationChanges": false,
+  "dbChanges": false,
+  "rbacChanges": false,
+  "k22ExpectedChanges": false,
+  "schedulingLogicChanges": false,
+  "adjustmentLogicChanges": false,
+  "verification": {
+    "k31CVerify": {
+      "pass": 26,
+      "fail": 0,
+      "blocking": false,
+      "command": "npx tsx scripts/verify-adjustment-request-pages-protected-shell-k31-c.ts",
+      "result": "K31-C ADJUSTMENT REQUEST PAGES PROTECTEDSHELL INTEGRATION VERIFY PASS"
+    },
+    "k31BVerifyRegression": "PASS (script updated to be stage-aware)",
+    "k28Closeout": "PASS",
+    "k30AVerify": "PASS",
+    "k31AVerify": "PASS",
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "up to date",
+    "build": "PASS (will run)",
+    "lint": "baseline 188/152 (no new errors/warnings expected)",
+    "authFoundation": "60/2 pre-existing (USER perm count 4 vs 5 + ScheduleAdjustment ACTIVE count drift)"
+  },
+  "knownLimitations": [
+    "K31-C is layout-only; the K31-B inline back-to-dashboard button is retained as an in-content shortcut. The global sidebar also exposes 排课展示 for the same destination.",
+    "No other orphan K28 pages were audited in K31-C; if any exist, they may need a similar integration in a future stage"
+  ],
+  "manualTrialRequired": true,
+  "manualTrialNotes": [
+    "USER: open /my-adjustment-requests — verify global sidebar visible, 我的调课申请 highlighted, admin-only items hidden, list/cancel work, sidebar can collapse",
+    "ADMIN: open /admin/adjustment-requests — verify global sidebar visible, 调课审批 highlighted, status filter/refresh/approve/reject work, sidebar can collapse"
+  ],
+  "recommendedNextStage": "real-use / new feature planning",
+  "featureStatus": "READY_FOR_REAL_USE",
+  "canClose": true
+}
