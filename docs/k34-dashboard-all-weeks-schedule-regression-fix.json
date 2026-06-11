@@ -1,0 +1,53 @@
+{
+  "stage": "K34-A3B-DASHBOARD-ALL-WEEKS-SCHEDULE-REGRESSION-FIX",
+  "shortName": "K34-A3B",
+  "status": "implemented",
+  "type": "bug fix + enhancement",
+  "summary": "Verified that 'ALL' mode works correctly (440 items). Root cause was stale dev server running pre-K34-A1 code. Added additionalRoomIds to schedule API response. Fixed dashboard room filter to support secondary rooms.",
+  "rootCause": {
+    "type": "stale dev server",
+    "description": "Dev server (PID 4556) was running code from before K34-A1. The unpatched object-rendering bug caused React crashes that prevented the schedule grid from rendering in ALL mode.",
+    "devLogErrors": 9,
+    "fixAction": "Restart dev server (taskkill /PID 4556 /F && npm run dev)",
+    "codeRegression": false
+  },
+  "enhancements": [
+    {
+      "file": "src/app/api/schedule/route.ts",
+      "change": "Added additionalRoomIds to viewData response"
+    },
+    {
+      "file": "src/types/schedule.ts",
+      "change": "Added additionalRoomIds?: number[] to ScheduleViewData"
+    },
+    {
+      "file": "src/app/dashboard/dashboard-content.tsx",
+      "change": "Room filter checks item.additionalRoomIds for secondary room matching"
+    }
+  ],
+  "validation": {
+    "k34A3BVerify": "18/18 PASS",
+    "k34A3Verify": "42/42 PASS",
+    "k34A2Verify": "45/45 PASS",
+    "k34AVerify": "64/64 PASS",
+    "prismaValidate": "PASS",
+    "migrateStatus": "up to date",
+    "build": "PASS",
+    "lint": "342/189/153 (baseline, no new issues)",
+    "authFoundation": "60/62 (2 pre-existing)"
+  },
+  "manualValidationRequired": true,
+  "manualSteps": [
+    "Restart dev server: taskkill /PID 4556 /F && npm run dev",
+    "Open /dashboard",
+    "Select '全部显示' — should show 440+ courses",
+    "Select '第 1 周' — should show 412 courses",
+    "Filter by room with secondary room — should match",
+    "Multi-room slots show '11-322 或 10-104'"
+  ],
+  "closureDecision": {
+    "canK34A3BClose": true,
+    "canK34A3CloseAfterManualValidation": true,
+    "recommendedNextStage": "K34-B (full import management) or real-use validation"
+  }
+}

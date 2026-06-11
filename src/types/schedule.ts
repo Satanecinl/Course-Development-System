@@ -6,6 +6,8 @@ export interface ScheduleViewData {
   teacherName: string | null
   roomName: string | null
   roomBuilding: string | null
+  // K34-A3B: secondary room IDs for room filter
+  additionalRoomIds?: number[]
   classNames: string[]
   dayOfWeek: number
   slotIndex: number

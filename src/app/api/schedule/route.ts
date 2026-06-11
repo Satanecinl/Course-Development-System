@@ -113,6 +113,9 @@ export async function GET(request: NextRequest) {
           : slot.room.name
         : null,
       roomBuilding: slot.room?.building ?? null,
+      // K34-A3B: expose secondary room IDs so the dashboard room filter
+      // can match on both primary and secondary rooms.
+      additionalRoomIds: slot.additionalRooms.map((ar) => ar.roomId),
       classNames: slot.teachingTask.taskClasses.map((tc) => tc.classGroup.name),
       classGroupIds: slot.teachingTask.taskClasses.map((tc) => tc.classGroup.id),
       dayOfWeek: slot.dayOfWeek,

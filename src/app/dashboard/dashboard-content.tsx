@@ -136,7 +136,10 @@ function applyViewFilter(
       case 'teacher':
         return getItemTeacherId(item) === viewTargetId
       case 'room':
-        return getItemRoomId(item) === viewTargetId
+        // K34-A3B: match on primary OR secondary room.
+        if (getItemRoomId(item) === viewTargetId) return true
+        if (item.additionalRoomIds?.includes(viewTargetId)) return true
+        return false
       default:
         return true
     }
