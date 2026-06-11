@@ -1,0 +1,61 @@
+{
+  "stage": "K34-A3C-DASHBOARD-SECONDARY-ROOM-FILTER-FIX",
+  "shortName": "K34-A3C",
+  "status": "implemented",
+  "type": "bug fix",
+  "summary": "Fixed secondary room filter in dashboard (all-week + single-week) and Excel export. The single-week path's Prisma query did not include additionalRooms, so additionalRoomIds was missing from the response. Now both paths return additionalRoomIds and the room filter matches primary OR secondary rooms.",
+  "rootCause": {
+    "secondaryRoomFilterRootCause": "getEffectiveScheduleForWeek (single-week API path) did not include additionalRooms in its Prisma query, so additionalRoomIds was never returned. The dashboard room filter for single-week could only match item.roomId (primary), missing secondary rooms.",
+    "affectedFiles": [
+      "src/lib/schedule/adjustments.ts",
+      "src/app/api/export/excel/route.ts"
+    ],
+    "whyPrimaryRoomWorked": "The Prisma where.roomId = targetId query matched primary room. The in-memory filter also matched item.roomId === targetId. Both paths worked for primary rooms.",
+    "whySecondaryRoomFailed": "The single-week path didn't include additionalRooms, so additionalRoomIds was undefined. The filter item.additionalRoomIds?.includes(targetId) returned false (undefined?.includes = false). The all-week path worked after K34-A3B but single-week still failed."
+  },
+  "solution": {
+    "filesModified": [
+      {
+        "file": "src/lib/schedule/adjustments.ts",
+        "change": "getEffectiveScheduleForWeek now includes additionalRooms in Prisma query, emits additionalRoomIds, and builds composite roomName"
+      },
+      {
+        "file": "src/app/api/export/excel/route.ts",
+        "change": "Prisma include additionalRooms, in-memory room filter checks additionalRoomIds, secondary-room Prisma query for missing slots, composite cell text"
+      }
+    ],
+    "filesCreated": [
+      "scripts/verify-dashboard-secondary-room-filter-k34-a3c.ts"
+    ]
+  },
+  "validation": {
+    "k34A3CVerify": "20/20 PASS",
+    "k34A3BVerify": "18/18 PASS",
+    "k34A3Verify": "42/42 PASS",
+    "k34A2Verify": "45/45 PASS",
+    "k34AVerify": "64/64 PASS",
+    "prismaValidate": "PASS",
+    "migrateStatus": "up to date",
+    "build": "PASS",
+    "lint": "344/190/154 (baseline, no new issues)",
+    "authFoundation": "60/62 (2 pre-existing)",
+    "k22C": "68 pass, 5 FAIL (pre-existing from K34-A3 combined capacity, NOT a K34-A3C regression)",
+    "k26K4C": "scoreSemanticsChanged=false, hc6PenaltyChanged=false, k22ExpectedChanged=false"
+  },
+  "manualValidationRequired": true,
+  "manualSteps": [
+    "Restart dev server: taskkill /PID 4556 /F && npm run dev",
+    "Open /dashboard",
+    "Select '全部显示'",
+    "Filter by room 11-322 — multi-room course shows",
+    "Filter by room 10-104 — same multi-room course shows",
+    "Select 第1周",
+    "Filter by room 10-104 — same multi-room course still shows",
+    "Export Excel with room 10-104 — multi-room course in export"
+  ],
+  "closureDecision": {
+    "canK34A3CClose": true,
+    "canK34A3CloseAfterManualValidation": true,
+    "recommendedNextStage": "K22-C fixture update (out of scope for K34-A3C) or K34-B"
+  }
+}

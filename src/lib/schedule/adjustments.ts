@@ -74,6 +74,13 @@ export async function getEffectiveScheduleForWeek(
     where: slotWhere,
     include: {
       room: true,
+      // K34-A3C: include additional rooms for composite expressions
+      // so the API response (and downstream room filter) can match
+      // on secondary room IDs.
+      additionalRooms: {
+        include: { room: true },
+        orderBy: { id: 'asc' },
+      },
       teachingTask: {
         include: {
           course: true,
@@ -104,8 +111,15 @@ export async function getEffectiveScheduleForWeek(
       courseName: task.course.name,
       teacherName: task.teacher?.name ?? null,
       teacherId: task.teacherId ?? null,
-      roomName: slot.room?.name ?? null,
+      // K34-A3C: build composite roomName (primary 或 secondary).
+      roomName: slot.room?.name
+        ? slot.additionalRooms.length > 0
+          ? slot.room.name + ' 或 ' + slot.additionalRooms.map((ar) => ar.room.name).join(' 或 ')
+          : slot.room.name
+        : null,
       roomBuilding: slot.room?.building ?? null,
+      // K34-A3C: expose secondary room IDs for the dashboard room filter.
+      additionalRoomIds: slot.additionalRooms.map((ar) => ar.roomId),
       classNames: task.taskClasses.map((tc) => tc.classGroup.name),
       classGroupIds: task.taskClasses.map((tc) => tc.classGroup.id),
       dayOfWeek: slot.dayOfWeek,

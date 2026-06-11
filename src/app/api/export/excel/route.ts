@@ -75,7 +75,10 @@ export async function GET(request: NextRequest) {
             return item.teacherId === targetId
           }
           if (viewType === 'room') {
-            return item.roomId === targetId
+            // K34-A3C: match on primary OR secondary room.
+            if (item.roomId === targetId) return true
+            if (item.additionalRoomIds?.includes(targetId)) return true
+            return false
           }
           return true
         })
@@ -199,13 +202,21 @@ export async function GET(request: NextRequest) {
       } else if (viewType === 'teacher') {
         where.teachingTask = { teacherId: targetId }
       } else if (viewType === 'room') {
-        where.roomId = targetId }
+        // K34-A3C: also match slots whose secondary rooms include the
+        // target. The Prisma where clause on ScheduleSlot.roomId is
+        // exact-match only; the secondary-room match is done after the
+        // query. First, fetch by primary roomId, then union with
+        // additional-room matches in JS below.
+        where.roomId = targetId
+      }
     }
 
     const slots = await prisma.scheduleSlot.findMany({
       where,
       include: {
         room: true,
+        // K34-A3C: include additional rooms for composite expressions.
+        additionalRooms: { include: { room: true }, orderBy: { id: 'asc' } },
         teachingTask: {
           include: {
             course: true,
@@ -216,6 +227,40 @@ export async function GET(request: NextRequest) {
       },
       orderBy: [{ dayOfWeek: 'asc' }, { slotIndex: 'asc' }],
     })
+
+    // K34-A3C: when filtering by room, also include slots where the
+    // target room appears as a secondary room. Fetched separately to
+    // avoid changing the primary Prisma where clause semantics.
+    if (viewType === 'room' && targetId) {
+      const secondarySlots = await prisma.scheduleSlot.findMany({
+        where: {
+          semesterId: semester.id,
+          roomId: { not: targetId },
+          additionalRooms: { some: { roomId: targetId } },
+        },
+        include: {
+          room: true,
+          additionalRooms: { include: { room: true }, orderBy: { id: 'asc' } },
+          teachingTask: {
+            include: {
+              course: true,
+              teacher: true,
+              taskClasses: { include: { classGroup: true } },
+            },
+          },
+        },
+        orderBy: [{ dayOfWeek: 'asc' }, { slotIndex: 'asc' }],
+      })
+      // Merge into slots, dedup by slotId
+      const seen = new Set(slots.map((s) => s.id))
+      for (const s of secondarySlots) {
+        if (!seen.has(s.id)) {
+          slots.push(s)
+          seen.add(s.id)
+        }
+      }
+      slots.sort((a, b) => a.dayOfWeek - b.dayOfWeek || a.slotIndex - b.slotIndex)
+    }
 
     // 2. 获取视图标题
     let sheetTitle = `${semester.name} 课程表`
@@ -288,7 +333,13 @@ export async function GET(request: NextRequest) {
           }).join('/')}]`
         : ''
 
-      const cellText = `${task.course.name}${weekLabel}\n${task.teacher?.name || '待定'}\n${slot.room?.name || ''}${classLabel}`
+      // K34-A3C: composite room name (primary 或 secondary).
+      const roomDisplay = slot.room?.name
+        ? slot.additionalRooms.length > 0
+          ? slot.room.name + ' 或 ' + slot.additionalRooms.map((ar) => ar.room.name).join(' 或 ')
+          : slot.room.name
+        : ''
+      const cellText = `${task.course.name}${weekLabel}\n${task.teacher?.name || '待定'}\n${roomDisplay}${classLabel}`
       if (grid[row][col]) {
         grid[row][col] += `\n${'─'.repeat(8)}\n${cellText}`
       } else {
