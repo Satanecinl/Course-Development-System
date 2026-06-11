@@ -155,7 +155,8 @@ npx tsx scripts/verify-score-regression-harness-k22-c.ts         # 73/73 PASS
 
 ## 推荐下一阶段
 
-- 真实使用 / K32-B 视情况：如要补"所属部门"字段可加 `User.department` + migration。
+- 真实使用 / K32-A1 layout alignment fix（已完成 → 见 `docs/k32-adjustment-application-form-layout-fix.md`）
+- 视情况 K32-B（如需补"所属部门"字段可加 `User.department` + migration）
 
 ## 关闭判断
 

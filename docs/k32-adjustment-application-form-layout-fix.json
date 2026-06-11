@@ -1,0 +1,143 @@
+{
+  "stage": "K32-A1",
+  "feature": "adjustment-application-form-layout-alignment-fix",
+  "goal": "修复 K32-A 导出表格的'原位置 → 未指定'等技术化表述，改为正式申请表的'由...；串至...'形式",
+  "manualFailureFromK32A": [
+    "串课情况字段过于技术化（'原位置 ... → ...' 不像正式申请表）",
+    "未优先展示具体日期（如 3月2日）",
+    "B6:B9 强制清空，未保留模板默认占位",
+    "调（串）课原因强制换行",
+    "签名区写 ISO 日期破坏 '年 月 日' 模板",
+    "target room fallback 用 '未指定' 不适合正式表单"
+  ],
+  "formatChanges": {
+    "transferSituation": {
+      "before": "原位置 星期一 1-2节 教室 11-321 → 第12周 星期二 5-6节 教室 未指定",
+      "after": "由星期五 第1-2节 教室 11-321；串至 5月26日 第5-6节 教室 11-321",
+      "formatter": "buildFormalAdjustmentSituation(req) -> `由${sourcePart}；串至 ${targetPart}`"
+    },
+    "dateCalculation": {
+      "priority": [
+        "1. semester.startsAt + (week-1)*7 + (dayOfWeek-1) days -> 'M月D日'",
+        "2. '第X周 星期Y' fallback (when startsAt null)",
+        "3. '星期Y' (when startsAt null AND week null)"
+      ],
+      "function": "formatDateFromSemester(startsAt, week, dayOfWeek) -> string | null",
+      "samples": [
+        { "startsAt": "2026-03-09T00:00:00Z", "week": 1, "dayOfWeek": 1, "out": "3月9日" },
+        { "startsAt": "2026-03-09T00:00:00Z", "week": 12, "dayOfWeek": 2, "out": "5月26日" },
+        { "startsAt": "2026-03-09T00:00:00Z", "week": 5, "dayOfWeek": 5, "out": "4月10日" },
+        { "startsAt": null, "week": 5, "dayOfWeek": 1, "out": null }
+      ]
+    },
+    "slotFormat": {
+      "before": "1-2节 (no prefix)",
+      "after": "第1-2节 (with 第 prefix)",
+      "function": "slotIndexToRange(slotIndex) -> string",
+      "map": {
+        "1": "1-2", "2": "3-4", "3": "5-6", "4": "7-8", "5": "9-10", "6": "11-12"
+      }
+    },
+    "roomFallback": {
+      "before": "'未指定' for target room when targetRoomId == null",
+      "after": "source room name (business semantic: most adjustments only change time, not room); empty string when both source and target are missing"
+    },
+    "B5_B9Region": {
+      "before": "B5 = real, B6:B9 forced empty",
+      "after": "B5 = real formal '由...；串至...', B6:B9 = preserved template default (由   月   日 第   节 教室       ；串至   月   日 第   节 教室)"
+    },
+    "reasonCell": {
+      "before": "'调（串）课原因：\\n<reason>' (forced newline)",
+      "after": "'调（串）课原因：<reason>' (single line)"
+    },
+    "signatureCell": {
+      "before": "'签名：  （导出日期：2026-06-11）' (overwrote template, broke '年 月 日' format)",
+      "after": "Preserved template default '签名：      年   月   日' (teacher hand-writes date after printing)"
+    }
+  },
+  "cellMapping": {
+    "B2": "申请教师 — unchanged (K32-A)",
+    "B3": "学期 — unchanged (K32-A)",
+    "B4": "课程名称 — unchanged (K32-A)",
+    "D2": "所属部门 — empty (User.department not in K28 schema)",
+    "D3": "授课年级专业 — unchanged (K32-A)",
+    "D4": "上课地点 — source room name (K32-A)",
+    "B5": "buildFormalAdjustmentSituation(req) — NEW (K32-A1)",
+    "B6": "preserved from template — NEW (K32-A1)",
+    "B7": "preserved from template — NEW (K32-A1)",
+    "B8": "preserved from template — NEW (K32-A1)",
+    "B9": "preserved from template — NEW (K32-A1)",
+    "A10": "调（串）课原因：<reason> single line — CHANGED (K32-A1)",
+    "C10": "preserved from template '签名：      年   月   日' — CHANGED (K32-A1)"
+  },
+  "templatePreservation": {
+    "merges": "10 before = 10 after (preserved)",
+    "a1Font": "{\"bold\":true,\"size\":22,\"name\":\"宋体\",\"charset\":134} (preserved)",
+    "rowHeights": "unchanged (not modified)",
+    "columnWidths": "unchanged (not modified)",
+    "borders": "unchanged (not modified)"
+  },
+  "fieldSourcePolicy": "原始调课信息优先使用 ScheduleAdjustmentRequest 的 snapshot / source* / target* 字段；关联表只用于补 name。禁止用当前 ScheduleSlot 实时状态覆盖历史申请。semester.startsAt 来自 Semester model（K32-A1 在 loadRequestForExport 中显式 select）。",
+  "validation": {
+    "k32A1Verify": {
+      "script": "scripts/verify-adjustment-application-form-layout-k32-a1.ts",
+      "checks": 34,
+      "passed": 34,
+      "failed": 0,
+      "result": "K32-A1 ADJUSTMENT APPLICATION FORM LAYOUT ALIGNMENT FIX VERIFY PASS"
+    },
+    "k32ARegress": {
+      "script": "scripts/verify-adjustment-application-form-export-k32-a.ts",
+      "result": "K32-A ADJUSTMENT APPLICATION FORM EXPORT VERIFY PASS (49/49)",
+      "stageAwareUpdate": "knownLimitations updated to reflect K32-A1 source-room fallback; closing line now points to K32-A1"
+    },
+    "k28Closeout": { "result": "K28 USER ADJUSTMENT APPROVAL FLOW CLOSEOUT VERIFY PASS (41/41)" },
+    "k31CVerify": { "result": "K31-C ADJUSTMENT REQUEST PAGES PROTECTEDSHELL INTEGRATION VERIFY PASS (26/26)" },
+    "k31ARegress": { "result": "K31-A SCHEDULE EXPORT CURRENT FILTER FIX VERIFY PASS (24/24)" },
+    "k22CRegress": { "result": "K22-C SCORE REGRESSION HARNESS VERIFY PASS (73/73)" },
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "9 migrations, up to date",
+    "build": "PASS",
+    "lint": "188/152 (= baseline, no new errors/warnings)",
+    "authFoundation": "60/2 (= baseline, 2 failures are pre-existing)"
+  },
+  "integrationSample": {
+    "path": "scripts/k32-a-sample/sample-2.xlsx",
+    "gitignored": true,
+    "targetId": 2,
+    "targetStatus": "APPROVED",
+    "b5": "由星期五 第1-2节 教室 11-223；串至 5月26日 第5-6节 教室 11-223",
+    "b6_b9": "preserved from template (由   月   日 第   节 教室       ；串至   月   日 第   节 教室)",
+    "a10": "调（串）课原因：未填写",
+    "c10": "签名：            年   月   日",
+    "dbHashUnchanged": {
+      "scheduleAdjustmentRequest": "8 (hash unchanged)",
+      "scheduleSlot": "440 (hash unchanged)",
+      "scheduleAdjustment": "65 (hash unchanged)"
+    }
+  },
+  "schemaChanges": false,
+  "migrationChanges": false,
+  "dbChanges": false,
+  "rbacChanges": false,
+  "k22ExpectedChanges": false,
+  "schedulingLogicChanges": false,
+  "adjustmentLogicChanges": false,
+  "manualTrialRequired": true,
+  "manualTrialNotes": [
+    "USER 登录 → /my-adjustment-requests → 选一条记录 → '导出串课申请表' → 打开 xlsx",
+    "确认 B5 是 '由...；串至...' 正式格式",
+    "确认 B6:B9 是模板默认占位（不强制清空）",
+    "确认 A10 调课原因单行",
+    "确认 C10 签名保留 '年 月 日'",
+    "确认模板边框/合并/字体未变",
+    "ADMIN 登录 → /admin/adjustment-requests → 同上",
+    "确认越权 403：USER 不能导别人，USER 不能命中 ADMIN route"
+  ],
+  "knownLimitations": [
+    "所属部门 字段 K28 schema 未存 (User 无 department 字段)，模板原样保留为空白",
+    "target room name 在不改 schema 的前提下无法单独取到，K32-A1 用 source room 兜底",
+    "sourceWeek 字段 K28 service 层始终写 null（adjustment-request-service.ts:133），源位置 fallback 到 '星期Y'（不写 '第?周'）；完整源周次需要回到 K28 service 层修复，不在 K32-A1 范围"
+  ],
+  "recommendedNextStage": "real-use / K32-B (User.department field) if needed"
+}

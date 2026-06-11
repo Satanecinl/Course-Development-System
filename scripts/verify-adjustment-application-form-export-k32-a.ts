@@ -378,15 +378,16 @@ async function main() {
   console.log('    /admin/adjustment-requests, click "导出串课申请表" on each row, confirm xlsx')
   console.log('    downloads with correct fields and template format preserved.')
   console.log('  knownLimitations: 所属部门 字段当前 K28 schema 未存，模板原样保留为空白。')
-  console.log('    target room name 在不改 schema 的前提下无法单独取到，fallback 为 "未指定"。')
+  console.log('    target room name 在不改 schema 的前提下无法单独取到（K32-A1 已用 source room 兜底）。')
   console.log('    USER 越权 403 动态验证依赖浏览器 E2E（k28-b 阶段已覆盖 service 路径语义）。')
-  console.log('  recommendedNextStage: real-use / K32-B (e.g. add User.department field) if needed')
+  console.log('  recommendedNextStage: K32-A1 layout alignment fix (then real-use)')
   console.log('═'.repeat(70))
   console.log(
     failed.length === 0
       ? '\nK32-A ADJUSTMENT APPLICATION FORM EXPORT VERIFY PASS'
       : '\nK32-A ADJUSTMENT APPLICATION FORM EXPORT VERIFY FAIL',
   )
+  console.log('  (stage-aware: K32-A 关注 export pipeline；layout 由 K32-A1 验证)')
   process.exit(failed.length === 0 ? 0 : 1)
 }
 

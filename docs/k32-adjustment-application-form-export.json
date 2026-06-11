@@ -1,4 +1,12 @@
 {
+  "stageAware": {
+    "k32A1LayoutFix": {
+      "status": "FOLLOWED_UP",
+      "script": "scripts/verify-adjustment-application-form-layout-k32-a1.ts",
+      "doc": "docs/k32-adjustment-application-form-layout-fix.md/json",
+      "summary": "K32-A1 修复了 K32-A 的 layout/format 问题（'原位置 → 未指定' → '由...；串至...'），K32-A 自身脚本保持 49/49 仍 PASS"
+    }
+  },
   "stage": "K32-A",
   "feature": "adjustment-application-form-export",
   "goal": "从调课申请/审批记录中导出《串课申请表》Excel，使用 templates/串课申请表模板.xlsx 模板填充",

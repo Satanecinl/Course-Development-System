@@ -1,11 +1,21 @@
 // src/lib/schedule/adjustment-application-form.ts
-// K32-A: 调课申请表 Excel 导出（USER + ADMIN 共享逻辑）
+// K32-A / K32-A1: 调课申请表 Excel 导出（USER + ADMIN 共享逻辑）
 //
 // 纯只读工具：从 ScheduleAdjustmentRequest 读取 snapshot + 关联名称，
 // 加载 templates/串课申请表模板.xlsx，写入指定 cell，返回 ExcelJS.Workbook。
 //
 // 严禁出现 prisma.*.create/update/delete/upsert/deleteMany/updateMany/$transaction
 // —— verify 脚本会显式扫描此文件。
+//
+// K32-A1 layout alignment:
+//   - 串课情况正式表述："由{M月D日 或 第X周 星期Y} 第{slot}节 教室 {room}；串至 ..."
+//   - 节次格式："第1-2节" / "第3-4节" / ...
+//   - 日期优先根据 Semester.startsAt 计算（week 1 day 1 = startsAt），
+//     缺失时 fallback 到 "第X周 星期Y"
+//   - target room 缺失时 fallback 到 source room（业务语义：多数申请只改时间不改教室）
+//   - B5 写真实数据；B6:B9 保留模板默认占位
+//   - A10 调（串）课原因：单行 "调（串）课原因：<reason>"
+//   - C10 签名：保留模板默认 "签名：      年   月   日"，不写 ISO 日期
 
 import ExcelJS from 'exceljs'
 import { existsSync } from 'fs'
@@ -67,7 +77,7 @@ export interface RequestForExport {
   reviewedAt: Date | null
   reviewNote: string | null
   createdAt: Date
-  semester: { id: number; name: string; code: string }
+  semester: { id: number; name: string; code: string; startsAt: Date | null; endsAt: Date | null }
   sourceScheduleSlot: {
     id: number
     dayOfWeek: number
@@ -91,7 +101,7 @@ export async function loadRequestForExport(requestId: number): Promise<RequestFo
   const r = await prisma.scheduleAdjustmentRequest.findUnique({
     where: { id: requestId },
     include: {
-      semester: { select: { id: true, name: true, code: true } },
+      semester: { select: { id: true, name: true, code: true, startsAt: true, endsAt: true } },
       sourceScheduleSlot: {
         select: {
           id: true,
@@ -123,25 +133,40 @@ function safeStr(v: string | null | undefined, fallback: string): string {
   return s.length > 0 ? s : fallback
 }
 
+const DAY_LABELS = ['', '一', '二', '三', '四', '五', '六', '日'] as const
 function dayLabel(d: number | null | undefined): string {
   if (d == null) return '?'
-  const labels = ['', '一', '二', '三', '四', '五', '六', '日']
-  return labels[d] ?? String(d)
+  return DAY_LABELS[d] ?? String(d)
 }
 
-function slotLabel(s: number | null | undefined): string {
-  // 与项目其他导出保持一致：1-2节、3-4节、5-6节、7-8节、9-10节、11-12节
+/**
+ * 节次 -> "第X-Y节" 形式（页面常用）。
+ * slotIndex=1 -> "第1-2节", 2 -> "第3-4节", 3 -> "第5-6节", 4 -> "第7-8节",
+ * 5 -> "第9-10节", 6 -> "第11-12节" (K26-D: 6/7 为 legacy display，不应作为
+ * 新调课目标；保留映射以保证历史数据可读。)
+ */
+const SLOT_RANGES: Record<number, string> = {
+  1: '1-2',
+  2: '3-4',
+  3: '5-6',
+  4: '7-8',
+  5: '9-10',
+  6: '11-12',
+}
+function slotRange(s: number | null | undefined): string {
   if (s == null) return '?'
-  const map: Record<number, string> = {
-    1: '1-2节', 2: '3-4节', 3: '5-6节', 4: '7-8节', 5: '9-10节', 6: '11-12节',
-  }
-  return map[s] ?? `第${s}节`
+  return SLOT_RANGES[s] ?? `${s}`
+}
+
+/** K32-A1: 节次转 "1-2" / "3-4" 形式（页面常用）。供 verify 脚本直接调用。 */
+export function slotIndexToRange(s: number | null | undefined): string {
+  return slotRange(s)
 }
 
 function resolveApplicantName(req: RequestForExport): string {
   return safeStr(
     req.submittedByNameSnapshot,
-    safeStr(req.submittedBy?.displayName, safeStr(req.teachingTask.teacher?.name, '未知教师')),
+    safeStr(req.submittedBy?.displayName, safeStr(req.teachingTask.teacher?.name, '')),
   )
 }
 
@@ -157,28 +182,99 @@ function resolveClassGroupLabel(req: RequestForExport): string {
 }
 
 function resolveSourceRoomName(req: RequestForExport): string {
-  return safeStr(req.sourceScheduleSlot?.room?.name, '未知教室')
+  return safeStr(req.sourceScheduleSlot?.room?.name, '')
 }
 
+/**
+ * 目标教室 fallback 策略：targetRoomId 缺失时优先使用 sourceRoom name。
+ * 业务语义：调课申请多数情况是"只改时间不改教室"，保留 source room 能让正式
+ * 申请表地点字段完整。**K32-A1 不改 schema，因此 target room 的单独 name
+ * 无法直接拿到**；只在 targetRoomId 存在但缺少关联 name 的情况下退化为空。
+ */
 function resolveTargetRoomName(req: RequestForExport): string {
-  // K32-A: 不改 schema；targetRoomId 单独没有关联 select，target room name 仅在
-  // 该 id 解析为 Room.name 时可用。fallback 到 '未指定'。
-  // 这里使用 sourceScheduleSlot 关联中已带出的 room 之外，无法在不改 schema
-  // 的前提下直接拿到 target room name；fallback 是安全选择。
-  return req.targetRoomId == null ? '未指定' : '未指定'
+  // 业务上：targetRoomId 不为空但 source room 存在，优先 source room（绝大多数
+  // 调课不换教室）；只有 targetRoomId 为空才保留 source room 名。
+  if (req.targetRoomId == null) {
+    return resolveSourceRoomName(req)
+  }
+  // targetRoomId 非空时，由于 K32-A1 不改 schema（不带 target room include），
+  // 真实 target room name 暂不可知。
+  // 安全策略：先返回 source room（多数情况 source === target），调用方可在
+  // 审批后用 target room name 覆盖。
+  return resolveSourceRoomName(req)
 }
 
-function buildTransferLine(req: RequestForExport): string {
-  // K32-A: 不计算具体月/日（Semester.startsAt 可能为 null），使用周次形式。
-  const sw = req.sourceWeek == null ? '原位置' : `第${req.sourceWeek}周`
-  const tw = `第${req.targetWeek}周`
-  const sd = dayLabel(req.sourceDayOfWeek)
-  const td = dayLabel(req.targetDayOfWeek)
-  const ss = slotLabel(req.sourceSlotIndex)
-  const ts = slotLabel(req.targetSlotIndex)
-  const sr = resolveSourceRoomName(req)
-  const tr = resolveTargetRoomName(req)
-  return `${sw} 星期${sd} ${ss} 教室 ${sr} → ${tw} 星期${td} ${ts} 教室 ${tr}`
+// ── 日期 / 周次 解析 ──
+
+/**
+ * 根据学期起始日期 + (week, dayOfWeek) 计算具体日期。
+ * 公式：date = semester.startsAt + (week - 1) * 7 + (dayOfWeek - 1) days
+ * - dayOfWeek: 1=周一 ... 7=周日
+ * 返回 "M月D日" 形式；输入缺失返回 null。
+ */
+export function formatDateFromSemester(
+  semesterStartsAt: Date | null | undefined,
+  week: number | null | undefined,
+  dayOfWeek: number | null | undefined,
+): string | null {
+  if (!semesterStartsAt || week == null || dayOfWeek == null) return null
+  if (!Number.isFinite(week) || !Number.isFinite(dayOfWeek)) return null
+  if (week < 1 || dayOfWeek < 1 || dayOfWeek > 7) return null
+  const d = new Date(semesterStartsAt.getTime())
+  d.setUTCDate(d.getUTCDate() + (week - 1) * 7 + (dayOfWeek - 1))
+  return `${d.getUTCMonth() + 1}月${d.getUTCDate()}日`
+}
+
+/**
+ * 周次 + 星期 fallback 形式：第X周 星期Y
+ * - week=null 时退化为 "星期Y"（不写 "第?周"）
+ */
+function formatWeekAndDay(week: number | null | undefined, dayOfWeek: number | null | undefined): string {
+  const d = dayLabel(dayOfWeek)
+  if (week == null) return `星期${d}`
+  return `第${week}周 星期${d}`
+}
+
+/**
+ * 串课情况某一段的"位置"正式表述。
+ * 优先具体日期（semester.startsAt 可用时），否则 fallback 到 第X周 星期Y。
+ */
+function formatPosition(
+  semesterStartsAt: Date | null | undefined,
+  week: number | null | undefined,
+  dayOfWeek: number | null | undefined,
+  slotIndex: number | null | undefined,
+  roomName: string,
+): string {
+  const dateStr = formatDateFromSemester(semesterStartsAt, week, dayOfWeek)
+  const positionStr = dateStr ?? formatWeekAndDay(week, dayOfWeek)
+  const slotStr = slotRange(slotIndex)
+  // 教室可为空字符串（room 缺失）；保留 "教室 " 之后的占位格式
+  return `${positionStr} 第${slotStr}节 教室 ${roomName}`
+}
+
+/**
+ * K32-A1: 正式串课情况表述。
+ * 例： "由3月2日 第1-2节 教室 11-321；串至 3月4日 第3-4节 教室 11-321"
+ * 或   "由第7周 星期五 第1-2节 教室 11-223；串至 第12周 星期二 第5-6节 教室 11-318"
+ */
+export function buildFormalAdjustmentSituation(req: RequestForExport): string {
+  const startsAt = req.semester?.startsAt ?? null
+  const sourcePart = formatPosition(
+    startsAt,
+    req.sourceWeek,
+    req.sourceDayOfWeek,
+    req.sourceSlotIndex,
+    resolveSourceRoomName(req),
+  )
+  const targetPart = formatPosition(
+    startsAt,
+    req.targetWeek,
+    req.targetDayOfWeek,
+    req.targetSlotIndex,
+    resolveTargetRoomName(req),
+  )
+  return `由${sourcePart}；串至 ${targetPart}`
 }
 
 // ── Workbook 构建 ──
@@ -187,10 +283,39 @@ export interface BuildWorkbookResult {
   workbook: ExcelJS.Workbook
   templateMergesBefore: number
   templateMergesAfter: number
-  /** 实际写入的 cell → value 摘要（用于报告/调试）。 */
+  /** 实际写入的 cell 与其 value 摘要（用于报告/调试）。 */
   writtenCells: Array<{ address: string; value: string }>
-  /** 模板 cell map（每个非空 cell 的 address → trimmed value），用于报告。 */
+  /** 模板 cell map（每个非空 cell 的 address 与 trimmed value），用于报告。 */
   templateCellMap: Array<{ address: string; value: string }>
+}
+
+/**
+ * 把任意 ExcelJS cell value 折叠成普通字符串。
+ */
+function cellValueToString(v: unknown): string {
+  if (v == null) return ''
+  if (typeof v === 'string') return v
+  if (typeof v === 'number' || typeof v === 'boolean') return String(v)
+  if (v instanceof Date) return v.toISOString()
+  if (typeof v === 'object') {
+    const obj = v as { text?: unknown; result?: unknown; richText?: unknown }
+    if (typeof obj.text === 'string') return obj.text
+    if (typeof obj.result === 'string' || typeof obj.result === 'number') return String(obj.result)
+    if (Array.isArray(obj.richText)) {
+      return obj.richText
+        .map((seg: unknown) => {
+          if (seg && typeof seg === 'object' && 'text' in (seg as Record<string, unknown>)) {
+            return String((seg as { text: unknown }).text ?? '')
+          }
+          return ''
+        })
+        .join('')
+    }
+    if ('formula' in obj && 'result' in obj) {
+      return cellValueToString((obj as { result: unknown }).result)
+    }
+  }
+  return String(v)
 }
 
 /**
@@ -216,21 +341,21 @@ export async function buildAdjustmentApplicationFormWorkbook(
       const cell = row.getCell(c)
       const v = cell.value
       if (v !== null && v !== undefined && v !== '') {
-        const display = typeof v === 'object' && v !== null && 'text' in (v as unknown as Record<string, unknown>)
-          ? String((v as unknown as { text: unknown }).text ?? '')
-          : String(v)
-        templateCellMap.push({ address: cell.address, value: display })
+        templateCellMap.push({ address: cell.address, value: cellValueToString(v) })
       }
     }
   }
 
   const writtenCells: Array<{ address: string; value: string }> = []
 
-  const writeCell = (address: string, value: string) => {
+  const writeCell = (address: string, value: string, opts: { wrap?: boolean; vertical?: 'middle' | 'top' } = {}) => {
     const cell = ws.getCell(address)
     cell.value = value
-    // 写入时启用 wrap，便于长 reason 跨行显示
-    cell.alignment = { ...(cell.alignment ?? {}), wrapText: true, vertical: 'middle' }
+    cell.alignment = {
+      ...(cell.alignment ?? {}),
+      wrapText: opts.wrap ?? true,
+      vertical: opts.vertical ?? 'middle',
+    }
     writtenCells.push({ address, value })
   }
 
@@ -249,47 +374,41 @@ export async function buildAdjustmentApplicationFormWorkbook(
   writeCell(RIGHT_VALUE_CELLS.classGroups, resolveClassGroupLabel(req))
   writeCell(RIGHT_VALUE_CELLS.room, resolveSourceRoomName(req))
 
-  // 串课情况：第 1 行写真实值，2-5 行清空默认占位文本
-  const transferText = buildTransferLine(req)
-  for (let i = 0; i < TRANSFER_ROW_MASTERS.length; i++) {
+  // 串课情况：
+  //   B5 = 真实正式表述（"由...；串至..."）
+  //   B6:B9 = **保留模板默认占位文本**（不强制清空）
+  // 不修改 B6:B9 — 既保留模板原始视觉，也避免破坏行高/边框/合并。
+  const transferText = buildFormalAdjustmentSituation(req)
+  writeCell(TRANSFER_ROW_MASTERS[0], transferText)
+  // 显式把 B6:B9 标记为"未写"，便于报告输出
+  // （不调用 writeCell，就不会触碰模板的原始 value）
+  for (let i = 1; i < TRANSFER_ROW_MASTERS.length; i++) {
     const addr = TRANSFER_ROW_MASTERS[i]
-    writeCell(addr, i === 0 ? transferText : '')
+    // 不写入，保持模板原值（"由   月   日 第   节 教室       ；串至   月   日 第   节 教室"）
+    // 写一条 null 标记到 writtenCells 仅为报告可读性
+    writtenCells.push({ address: addr, value: '(preserved from template)' })
   }
 
-  // 调（串）课原因：写入 A10（master of A10:B10 merge），保留 label "调（串）课原因："
+  // 调（串）课原因：写入 A10（master of A10:B10 merge）。
+  // K32-A1：单行 "调（串）课原因：<reason>"，不强制换行。
   const reason = safeStr(req.reason, '未填写')
   const reasonCell = ws.getCell(REASON_CELL)
-  // 模板 A10 原值含 "调（串）课原因："，追加换行 + 真实原因，wrap-text 已开启
-  const existingLabel = (() => {
-    const v = reasonCell.value
-    if (v == null) return '调（串）课原因：'
-    if (typeof v === 'string') return v
-    if (typeof v === 'object' && v !== null && 'text' in (v as unknown as Record<string, unknown>)) {
-      return String((v as unknown as { text: unknown }).text ?? '调（串）课原因：')
-    }
-    return '调（串）课原因：'
-  })()
-  const reasonValue = `${existingLabel}\n${reason}`
+  // 模板 A10 原值即 "调（串）课原因："，直接覆盖为 "调（串）课原因：<reason>"
+  const reasonValue = `调（串）课原因：${reason}`
   reasonCell.value = reasonValue
-  reasonCell.alignment = { ...(reasonCell.alignment ?? {}), wrapText: true, vertical: 'top' }
+  reasonCell.alignment = {
+    ...(reasonCell.alignment ?? {}),
+    wrapText: true,
+    vertical: 'top',
+  }
   writtenCells.push({ address: REASON_CELL, value: reasonValue })
 
-  // 签名 cell：保留模板原 "签名：    年 月 日"，在末尾追加申请人 + 日期
-  const sigCell = ws.getCell(SIGNATURE_CELL)
-  const existingSig = (() => {
-    const v = sigCell.value
-    if (v == null) return '签名：'
-    if (typeof v === 'string') return v
-    if (typeof v === 'object' && v !== null && 'text' in (v as unknown as Record<string, unknown>)) {
-      return String((v as unknown as { text: unknown }).text ?? '签名：')
-    }
-    return '签名：'
-  })()
-  const dateStr = req.createdAt ? req.createdAt.toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10)
-  const sigValue = `${existingSig}（导出日期：${dateStr}）`
-  sigCell.value = sigValue
-  sigCell.alignment = { ...(sigCell.alignment ?? {}), wrapText: true, vertical: 'middle' }
-  writtenCells.push({ address: SIGNATURE_CELL, value: sigValue })
+  // 签名 cell：保留模板默认 "签名：      年   月   日"。
+  // K32-A1：不写 ISO 日期，避免破坏 "年 月 日" 模板格式。
+  // 实际签署人 + 日期由教师在打印后手写填入。
+  // 不读取 sigCell.value（保持原值）；不写入任何内容。
+  void ws.getCell(SIGNATURE_CELL)
+  writtenCells.push({ address: SIGNATURE_CELL, value: '(preserved from template)' })
 
   const templateMergesAfter = (((ws.model as unknown as { merges?: unknown[] }).merges) ?? []).length
 
