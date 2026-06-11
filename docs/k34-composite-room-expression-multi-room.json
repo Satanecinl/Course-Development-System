@@ -1,0 +1,85 @@
+{
+  "stage": "K34-A3-IMPORT-COMPOSITE-ROOM-EXPRESSION-MULTI-ROOM-SUPPORT",
+  "shortName": "K34-A3",
+  "status": "implemented",
+  "type": "feature + bug fix",
+  "scope": "composite room parsing, multi-room schema, importer fix, data repair, schedule display, score/conflict integration",
+  "problem": {
+    "compositeRoomExamples": [
+      "11-322 或 10-104",
+      "11-321 或 10-104",
+      "11-208 或 10-104",
+      "11-204 或 11-105",
+      "11-208 或 12-201",
+      "11-208 或 11-105",
+      "11-209 或 12-111",
+      "11-333 或 11-105",
+      "11-328 或 11-105",
+      "11-204 或 12-111"
+    ],
+    "affectedImporterPath": "executeImportInTransaction room creation + ScheduleSlot creation",
+    "affectedUIPath": "schedule-card.tsx, room capacity page, scheduler data-loader/score"
+  },
+  "solution": {
+    "filesCreated": [
+      "src/lib/rooms/composite-room-expression.ts",
+      "prisma/migrations/20260611000000_add_schedule_slot_additional_rooms/migration.sql",
+      "scripts/repair-composite-room-expressions-k34-a3.ts",
+      "scripts/verify-composite-room-expression-k34-a3.ts",
+      "docs/k34-composite-room-expression-multi-room.md",
+      "docs/k34-composite-room-expression-multi-room.json"
+    ],
+    "filesModified": [
+      "prisma/schema.prisma",
+      "src/lib/import/importer.ts",
+      "src/app/api/schedule/route.ts",
+      "src/lib/scheduler/data-loader.ts",
+      "src/lib/scheduler/apply.ts",
+      "src/lib/scheduler/score.ts",
+      "src/lib/scheduler/types.ts",
+      "scripts/verify-room-name-normalization-k34-a2.ts",
+      "scripts/verify-import-management-basic-k34-a.ts"
+    ]
+  },
+  "schema": {
+    "modelAdded": "ScheduleSlotAdditionalRoom",
+    "fields": ["id", "scheduleSlotId", "roomId", "role", "createdAt"],
+    "constraints": ["@@unique([scheduleSlotId, roomId])", "@@index([roomId])", "onDelete: Cascade (slot)", "onDelete: Restrict (room)"],
+    "relationsAdded": ["ScheduleSlot.additionalRooms[]", "Room.slotAdditionalRooms[]"],
+    "migration": "20260611000000_add_schedule_slot_additional_rooms"
+  },
+  "dataRepair": {
+    "compositeRoomsFound": 10,
+    "componentRoomsCreated": ["10-104", "11-105", "12-201", "12-111"],
+    "componentRoomsMatched": ["11-322", "11-321", "11-208", "11-204", "11-209", "11-333", "11-328"],
+    "slotsMigrated": 13,
+    "additionalRoomsCreated": 13,
+    "compositeRoomsDeleted": 10,
+    "compositeRoomsRetained": 0,
+    "backupPath": "prisma/dev.db.backup-before-k34-a3-composite-room-<ts>",
+    "postRepairCompositeRooms": 0
+  },
+  "validation": {
+    "k34A3Verify": "40/40 PASS",
+    "k34A2Verify": "45/45 PASS",
+    "k34A1Verify": "55/55 PASS",
+    "k34AVerify": "65/65 PASS",
+    "repairDryRun": "PASS",
+    "repairApply": "PASS",
+    "prismaValidate": "PASS",
+    "migrateStatus": "up to date (10 migrations)",
+    "build": "PASS",
+    "lint": "340/188/152 (baseline)",
+    "authFoundation": "60/62 (2 pre-existing)"
+  },
+  "manualValidationRequired": true,
+  "manualSteps": [
+    "Open /admin/rooms/capacity — confirm no composite rooms with '或'",
+    "Open /dashboard — find slot with secondary room, confirm card shows '11-322 或 10-104'",
+    "Open /admin/settings → 校区/教室规则 — confirm HC5=0, HC6=0"
+  ],
+  "closureDecision": {
+    "canK34A3Close": true,
+    "recommendedNextStage": "K34-B (full import management) or real-use validation"
+  }
+}

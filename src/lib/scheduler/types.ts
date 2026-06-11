@@ -13,6 +13,10 @@ export type TaskWithRelations = Prisma.TeachingTaskGetPayload<{
 export type SlotWithRelations = Prisma.ScheduleSlotGetPayload<{
   include: {
     room: true
+    // K34-A3: secondary rooms for composite expressions
+    additionalRooms: {
+      include: { room: true }
+    }
     teachingTask: {
       include: {
         course: true

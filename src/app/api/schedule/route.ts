@@ -66,6 +66,11 @@ export async function GET(request: NextRequest) {
       where,
       include: {
         room: true,
+        // K34-A3: include additional rooms for composite expressions.
+        additionalRooms: {
+          include: { room: true },
+          orderBy: { id: 'asc' },
+        },
         teachingTask: {
           select: {
             semesterId: true,
@@ -102,7 +107,11 @@ export async function GET(request: NextRequest) {
       courseName: slot.teachingTask.course.name,
       teacherName: slot.teachingTask.teacher?.name ?? null,
       teacherId: slot.teachingTask.teacherId ?? null,
-      roomName: slot.room?.name ?? null,
+      roomName: slot.room?.name
+        ? slot.additionalRooms.length > 0
+          ? slot.room.name + ' 或 ' + slot.additionalRooms.map((ar) => ar.room.name).join(' 或 ')
+          : slot.room.name
+        : null,
       roomBuilding: slot.room?.building ?? null,
       classNames: slot.teachingTask.taskClasses.map((tc) => tc.classGroup.name),
       classGroupIds: slot.teachingTask.taskClasses.map((tc) => tc.classGroup.id),

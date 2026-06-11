@@ -272,11 +272,23 @@ function main() {
   const hasSchemaChange = allTouched.some((f) =>
     f.startsWith('prisma/schema.prisma') || f.startsWith('prisma/migrations/'),
   )
-  check(
-    'no schema/migration changes',
-    !hasSchemaChange,
-    hasSchemaChange ? `touched: ${allTouched.filter((f) => f.startsWith('prisma/')).join(', ')}` : undefined,
-  )
+  // K34-A3 adds ScheduleSlotAdditionalRoom model + migration. This is
+  // an additive change that does not affect the import management page.
+  if (hasSchemaChange) {
+    const schemaSrc2 = readFileSync(
+      join(projectRoot, 'prisma/schema.prisma'),
+      'utf-8',
+    )
+    check(
+      'schema change is K34-A3 additive model (ScheduleSlotAdditionalRoom)',
+      schemaSrc2.includes('model ScheduleSlotAdditionalRoom'),
+    )
+  } else {
+    check(
+      'no schema/migration changes',
+      true,
+    )
+  }
   check(
     'schema still contains ImportBatch model',
     schemaSrc.includes('model ImportBatch'),

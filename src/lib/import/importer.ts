@@ -10,6 +10,11 @@ import type { PrismaClient } from '@prisma/client'
 // the same physical room (e.g. "林校304" vs "林校\n304" vs "林校 304")
 // must resolve to the same Room row instead of creating duplicates.
 import { normalizeRoomNameForMatch } from '@/lib/rooms/room-name-normalization'
+// K34-A3: composite room expression parsing. "11-322 或 10-104" is a
+// composite expression meaning the lesson occupies two rooms. The
+// importer must split these and create/match each component room
+// separately, with the first as primary and the rest as secondary.
+import { parseCompositeRoomExpression } from '@/lib/rooms/composite-room-expression'
 
 // ── 类型 ──
 
@@ -940,11 +945,40 @@ async function executeImportInTransaction(
   // resolve to the same Room row. When a new Room is created, prefer
   // the canonical (whitespace-free) display form so future re-imports
   // match it directly.
+  //
+  // K34-A3: Composite expressions ("11-322 或 10-104") are parsed into
+  // component rooms. The raw composite name maps to the primary
+  // component in roomMap. A separate map tracks all component room ids
+  // for each composite raw name, so that ScheduleSlot creation can
+  // insert ScheduleSlotAdditionalRoom records.
   const roomMap = new Map<string, number>()
+  // K34-A3: raw composite name → component room ids (primary first).
+  const compositeComponentsMap = new Map<string, number[]>()
+
   if (roomNames.size > 0) {
-    // Group raw room names by normalized key.
+    // K34-A3: Expand composite expressions. Collect ALL component room
+    // names so they are created/matched. Map each composite raw name
+    // to the normalized key of its primary component.
+    const allComponentNames = new Set<string>()
+    const compositeInfo = new Map<string, { raw: string; components: string[]; primaryNormKey: string }>()
+    for (const rawName of roomNames) {
+      const parsed = parseCompositeRoomExpression(rawName)
+      if (parsed.isComposite && parsed.rooms.length >= 2) {
+        for (const c of parsed.rooms) allComponentNames.add(c)
+        compositeInfo.set(rawName, {
+          raw: rawName,
+          components: parsed.rooms,
+          primaryNormKey: normalizeRoomNameForMatch(parsed.rooms[0]),
+        })
+      } else {
+        // Non-composite — add as-is.
+        allComponentNames.add(rawName)
+      }
+    }
+
+    // Group ALL room names (components + non-composite) by normalized key.
     const variantsByKey = new Map<string, string[]>()
-    for (const name of roomNames) {
+    for (const name of allComponentNames) {
       const k = normalizeRoomNameForMatch(name)
       if (!k) continue
       if (!variantsByKey.has(k)) variantsByKey.set(k, [])
@@ -952,8 +986,6 @@ async function executeImportInTransaction(
     }
 
     // Find every existing Room whose name normalizes to one of our keys.
-    // We pull all candidate raw names from the DB, then group them in
-    // memory — much cheaper than N round-trips.
     const candidateRawNames = new Set<string>()
     for (const variants of variantsByKey.values()) {
       for (const v of variants) candidateRawNames.add(v)
@@ -970,10 +1002,6 @@ async function executeImportInTransaction(
     for (const r of existingRooms) {
       const k = normalizeRoomNameForMatch(r.name)
       if (!variantsByKey.has(k)) continue
-      // If multiple existing rows share the same key (current DB drift
-      // pre-K34-A2 repair), prefer the canonical display form: a name
-      // that equals its own normalized form wins; ties broken by lowest
-      // id.
       const prev = existingByKey.get(k)
       if (!prev) {
         existingByKey.set(k, r)
@@ -988,27 +1016,45 @@ async function executeImportInTransaction(
       }
     }
 
+    // Resolve each component to a room id, creating if needed.
+    // key = normalized key → room id
+    const componentRoomIdByKey = new Map<string, number>()
     for (const [k, variants] of variantsByKey) {
       const existing = existingByKey.get(k)
       if (existing) {
-        // Map every raw variant in this group to the same canonical id.
+        componentRoomIdByKey.set(k, existing.id)
         for (const v of variants) roomMap.set(v, existing.id)
         continue
       }
-      // Pick the canonical display form: prefer the variant whose
-      // name equals its own normalized form (no internal whitespace).
       const canonicalName =
         variants.find((v) => v === normalizeRoomNameForMatch(v)) ??
-        // Fall back to the first variant. (This should not normally
-        // happen because the input set contains at least one variant
-        // that survived NFKC + whitespace strip; we keep a fallback
-        // for defensive correctness.)
         variants[0]
       const r = await tx.room.create({
         data: { name: canonicalName, capacity: 50, type: 'NORMAL' },
       })
+      componentRoomIdByKey.set(k, r.id)
       for (const v of variants) roomMap.set(v, r.id)
       roomCreated++
+    }
+
+    // K34-A3: Map composite raw names to their component room ids.
+    // The primary room (first component) goes in roomMap for the
+    // composite raw name; the full list goes in compositeComponentsMap.
+    for (const [rawName, info] of compositeInfo) {
+      const componentIds: number[] = []
+      for (const compName of info.components) {
+        const k = normalizeRoomNameForMatch(compName)
+        const rid = componentRoomIdByKey.get(k)
+        if (rid != null) componentIds.push(rid)
+      }
+      if (componentIds.length >= 2) {
+        // Primary = first component.
+        roomMap.set(rawName, componentIds[0])
+        compositeComponentsMap.set(rawName, componentIds)
+      } else if (componentIds.length === 1) {
+        // Fallback: only one component resolved.
+        roomMap.set(rawName, componentIds[0])
+      }
     }
   }
 
@@ -1187,10 +1233,28 @@ async function executeImportInTransaction(
     if (existingSlot) {
       slotReused++
     } else {
-      await tx.scheduleSlot.create({
+      const createdSlot = await tx.scheduleSlot.create({
         data: { teachingTaskId, roomId, dayOfWeek, slotIndex, importBatchId: batchId, semesterId },
       })
       slotCreated++
+
+      // K34-A3: If the room was a composite expression, add secondary
+      // rooms as ScheduleSlotAdditionalRoom records.
+      const compositeComponentIds = roomName
+        ? (compositeComponentsMap.get(roomName) ?? null)
+        : null
+      if (compositeComponentIds && compositeComponentIds.length >= 2) {
+        // Primary is already set as roomId; add the rest as secondary.
+        for (let ci = 1; ci < compositeComponentIds.length; ci++) {
+          await tx.scheduleSlotAdditionalRoom.create({
+            data: {
+              scheduleSlotId: createdSlot.id,
+              roomId: compositeComponentIds[ci],
+              role: 'SECONDARY',
+            },
+          })
+        }
+      }
     }
   }
 
@@ -1271,12 +1335,27 @@ export async function confirmImportBatchDryRun(
   }
 
   // Build the `existingRoomNames` set: a parsed name is "existing" if
-  // ANY variant in its canonical key group is in the DB.
+  // ALL its component rooms exist in the DB. For composite expressions
+  // like "11-322 或 10-104", we expand to ["11-322", "10-104"] and
+  // check each component against the canonical key map. A composite
+  // room is "existing" only if every component resolves to an existing
+  // Room row.
   const existingRoomNames = new Set<string>()
   for (const parsedName of roomNames) {
-    const k = normalizeRoomNameForMatch(parsedName)
-    if (k && existingRoomsByKey.has(k)) {
-      existingRoomNames.add(parsedName)
+    const parsed = parseCompositeRoomExpression(parsedName)
+    if (parsed.isComposite && parsed.rooms.length >= 2) {
+      const allComponentsExist = parsed.rooms.every((comp) => {
+        const k = normalizeRoomNameForMatch(comp)
+        return k && existingRoomsByKey.has(k)
+      })
+      if (allComponentsExist) {
+        existingRoomNames.add(parsedName)
+      }
+    } else {
+      const k = normalizeRoomNameForMatch(parsedName)
+      if (k && existingRoomsByKey.has(k)) {
+        existingRoomNames.add(parsedName)
+      }
     }
   }
 

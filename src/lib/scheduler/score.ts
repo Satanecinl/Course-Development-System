@@ -76,6 +76,18 @@ function getPos(
 
 // ── HC5: 教室可用性 ──
 
+/** K34-A3: Collect all room ids for a slot (primary + secondary). */
+function getAllRoomIds(slot: SlotWithRelations): number[] {
+  const ids: number[] = []
+  if (slot.roomId != null) ids.push(slot.roomId)
+  // additionalRooms may be absent if the relation was not loaded.
+  const additionalRooms = slot.additionalRooms as Array<{ roomId: number }> | undefined
+  if (additionalRooms) {
+    for (const ar of additionalRooms) ids.push(ar.roomId)
+  }
+  return ids
+}
+
 /** 从 room.name 推断楼栋 */
 function inferBuilding(roomName: string): string {
   if (roomName.includes('林校')) return '林校'
@@ -427,16 +439,20 @@ export function calculateScoreWithDetails(
   }
 
   // ── HC5: 教室不可用 ──
+  // K34-A3: Check primary AND secondary rooms.
   for (const p of positions) {
     if (p.room === 0) continue
-    if (!isRoomAvailable(ctx, p.room, p.day, p.idx)) {
-      hardScore += HARD_PENALTY
-      const room = ctx.roomById.get(p.room)
-      details.push({
-        type: 'HC5_ROOM_UNAVAILABLE', level: 'HARD', penalty: HARD_PENALTY,
-        slotId: p.slot.id,
-        message: `教室不可用: ${room?.name ?? p.room} 在周${p.day}第${p.idx}节不可用`,
-      })
+    const allRoomIds = getAllRoomIds(p.slot)
+    for (const rid of allRoomIds) {
+      if (!isRoomAvailable(ctx, rid, p.day, p.idx)) {
+        hardScore += HARD_PENALTY
+        const room = ctx.roomById.get(rid)
+        details.push({
+          type: 'HC5_ROOM_UNAVAILABLE', level: 'HARD', penalty: HARD_PENALTY,
+          slotId: p.slot.id,
+          message: `教室不可用: ${room?.name ?? rid} 在周${p.day}第${p.idx}节不可用`,
+        })
+      }
     }
   }
 
@@ -564,31 +580,35 @@ export function calculateScoreWithDetails(
 
   // ── HC6 / SC6: 专业教室约束 (K22-F2A classification) ──
   // classGroup membership 是 primary hard-rule signal；courseName/remark 只是 auxiliary
+  // K34-A3: Check primary AND secondary rooms for Linxiao constraint.
   for (const p of positions) {
     if (p.room === 0) continue
-    const room = ctx.roomById.get(p.room)
-    if (!room) continue
+    const allRoomIds = getAllRoomIds(p.slot)
     const cls = classifySpecialty(p.slot.teachingTask)
-    const isLx = isLinxiaoRoomName(room)
-    // HC6: 非汽车专业/混合/未知任务在 Linxiao 教室 → hard penalty
-    const hc6 = computeHC6Penalty(cls, isLx)
-    if (hc6 !== 0) {
-      hardScore += hc6
-      details.push({
-        type: 'HC6_NON_AUTOMOTIVE_FORBID_LINXIAO', level: 'HARD', penalty: hc6,
-        slotId: p.slot.id,
-        message: `林校教室限制: ${p.slot.teachingTask.course?.name ?? '?'} (分类: ${cls}) 不可在林校教室 ${room.name}`,
-      })
-    }
-    // SC6: 汽车专业任务不在 Linxiao 教室 → soft penalty
-    const sc6 = computeSC6Penalty(cls, isLx)
-    if (sc6 !== 0) {
-      softScore += sc6
-      details.push({
-        type: 'SC6_AUTOMOTIVE_PREFERS_LINXIAO', level: 'SOFT', penalty: sc6,
-        slotId: p.slot.id,
-        message: `汽车专业优先林校: ${p.slot.teachingTask.course?.name ?? '?'} 在非林校教室 ${room.name}`,
-      })
+    for (const rid of allRoomIds) {
+      const room = ctx.roomById.get(rid)
+      if (!room) continue
+      const isLx = isLinxiaoRoomName(room)
+      // HC6: 非汽车专业/混合/未知任务在 Linxiao 教室 → hard penalty
+      const hc6 = computeHC6Penalty(cls, isLx)
+      if (hc6 !== 0) {
+        hardScore += hc6
+        details.push({
+          type: 'HC6_NON_AUTOMOTIVE_FORBID_LINXIAO', level: 'HARD', penalty: hc6,
+          slotId: p.slot.id,
+          message: `林校教室限制: ${p.slot.teachingTask.course?.name ?? '?'} (分类: ${cls}) 不可在林校教室 ${room.name}`,
+        })
+      }
+      // SC6: 汽车专业任务不在 Linxiao 教室 → soft penalty
+      const sc6 = computeSC6Penalty(cls, isLx)
+      if (sc6 !== 0) {
+        softScore += sc6
+        details.push({
+          type: 'SC6_AUTOMOTIVE_PREFERS_LINXIAO', level: 'SOFT', penalty: sc6,
+          slotId: p.slot.id,
+          message: `汽车专业优先林校: ${p.slot.teachingTask.course?.name ?? '?'} 在非林校教室 ${room.name}`,
+        })
+      }
     }
   }
 

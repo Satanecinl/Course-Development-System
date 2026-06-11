@@ -47,6 +47,10 @@ export async function loadSchedulingContext(
       where: slotWhere,
       include: {
         room: true,
+        // K34-A3: load secondary rooms for composite expressions.
+        additionalRooms: {
+          include: { room: true },
+        },
         teachingTask: {
           include: {
             course: true,
@@ -79,9 +83,17 @@ export async function loadSchedulingContext(
     if (!arr) { arr = []; slotsByTask.set(teachingTaskId, arr) }
     arr.push(slot)
 
-    // slotsByRoom
-    if (roomId != null) {
-      const rk = roomKey(roomId, dayOfWeek, slotIndex)
+    // slotsByRoom: index by primary AND secondary rooms so that
+    // HC3 (room conflict) detects overlaps on either room.
+    const roomIdsForSlot = new Set<number>()
+    if (roomId != null) roomIdsForSlot.add(roomId)
+    // K34-A3: add secondary room ids.
+    const additionalRooms = (slot as Record<string, unknown>).additionalRooms as Array<{ roomId: number }> | undefined
+    if (additionalRooms) {
+      for (const ar of additionalRooms) roomIdsForSlot.add(ar.roomId)
+    }
+    for (const rid of roomIdsForSlot) {
+      const rk = roomKey(rid, dayOfWeek, slotIndex)
       let rArr = slotsByRoom.get(rk)
       if (!rArr) { rArr = []; slotsByRoom.set(rk, rArr) }
       rArr.push(slot)

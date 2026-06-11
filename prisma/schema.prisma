@@ -73,6 +73,8 @@ model Room {
   slots          ScheduleSlot[]
   adjustments    ScheduleAdjustment[]
   availabilities RoomAvailability[]
+  // K34-A3: secondary room associations from composite expressions
+  slotAdditionalRooms ScheduleSlotAdditionalRoom[]
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
 }
@@ -118,10 +120,31 @@ model ScheduleSlot {
   semester       Semester            @relation(fields: [semesterId], references: [id])
   adjustments    ScheduleAdjustment[]
   adjustmentRequests ScheduleAdjustmentRequest[]
+  // K34-A3: secondary / alternative rooms for composite expressions
+  // like "11-322 或 10-104". The primary room stays in roomId; each
+  // alternative is recorded here.
+  additionalRooms ScheduleSlotAdditionalRoom[]
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
 
   @@index([semesterId])
+}
+
+// K34-A3: associate a ScheduleSlot with one or more secondary rooms.
+// Used when the source schedule expresses "A 或 B" — A is the primary
+// room (ScheduleSlot.roomId), B is recorded here.
+model ScheduleSlotAdditionalRoom {
+  id             Int          @id @default(autoincrement())
+  scheduleSlotId Int
+  roomId         Int
+  role           String       @default("SECONDARY")
+  createdAt      DateTime     @default(now())
+
+  scheduleSlot   ScheduleSlot @relation(fields: [scheduleSlotId], references: [id], onDelete: Cascade)
+  room           Room         @relation(fields: [roomId], references: [id], onDelete: Restrict)
+
+  @@unique([scheduleSlotId, roomId])
+  @@index([roomId])
 }
 
 model ScheduleAdjustment {

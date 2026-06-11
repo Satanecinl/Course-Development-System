@@ -132,6 +132,10 @@ async function loadSchedulingContextWithClient(
       where: slotWhere,
       include: {
         room: true,
+        // K34-A3: secondary rooms for composite expressions
+        additionalRooms: {
+          include: { room: true },
+        },
         teachingTask: {
           include: {
             course: true,
@@ -162,8 +166,14 @@ async function loadSchedulingContextWithClient(
     if (!arr) { arr = []; slotsByTask.set(teachingTaskId, arr) }
     arr.push(slot)
 
-    if (roomId != null) {
-      const rk = `${roomId}-${dayOfWeek}-${slotIndex}`
+    // K34-A3: index by primary AND secondary rooms.
+    const roomIdsForSlot = new Set<number>()
+    if (roomId != null) roomIdsForSlot.add(roomId)
+    if (slot.additionalRooms) {
+      for (const ar of slot.additionalRooms) roomIdsForSlot.add(ar.roomId)
+    }
+    for (const rid of roomIdsForSlot) {
+      const rk = `${rid}-${dayOfWeek}-${slotIndex}`
       let rArr = slotsByRoom.get(rk)
       if (!rArr) { rArr = []; slotsByRoom.set(rk, rArr) }
       rArr.push(slot)
