@@ -247,15 +247,32 @@ console.log(lines.join('\\n'))
     )
   }
 
-  // parser / importer unchanged
+  // parser / importer unchanged. K34-A2 (room name normalization) is
+  // permitted to touch importer.ts but only for room-matching paths.
+  // parse-utils.ts and quality-classifier.ts must remain untouched.
   for (const f of [
     'scripts/parse_cell.py',
     'scripts/parse_schedule.py',
-    'src/lib/import/importer.ts',
     'src/lib/import/parse-utils.ts',
     'src/lib/import/quality-classifier.ts',
   ]) {
     check(`${f} unchanged`, !modifiedFiles.includes(f))
+  }
+  // When importer.ts is modified, verify the change is the K34-A2
+  // room-name normalization forward fix.
+  const importerTsModified = modifiedFiles.includes('src/lib/import/importer.ts')
+  if (importerTsModified) {
+    const importerSrc = readFileSync(
+      join(projectRoot, 'src/lib/import/importer.ts'),
+      'utf-8',
+    )
+    check(
+      'importer.ts change is scoped to K34-A2 room-name normalization',
+      importerSrc.includes('normalizeRoomNameForMatch') &&
+        importerSrc.includes('@/lib/rooms/room-name-normalization'),
+    )
+  } else {
+    check('src/lib/import/importer.ts unchanged', true)
   }
 
   // K22 expected unchanged

@@ -1,0 +1,173 @@
+{
+  "stage": "K34-A2-IMPORT-ROOM-NAME-NORMALIZATION-AND-DUPLICATE-REPAIR",
+  "shortName": "K34-A2",
+  "status": "implemented",
+  "type": "bug-fix",
+  "scope": "forward-fix + data-repair",
+  "summary": "Introduced normalizeRoomNameForMatch helper (NFKC + Unicode whitespace strip). Wired into the importer's transaction and dry-run room-lookup paths. Added a controlled --dry-run/--apply repair script that detected 5 duplicate Linxiao room groups, migrated 22 ScheduleSlot references, deleted 5 duplicate Room rows. No schema/migration change.",
+  "problem": {
+    "rootCause": "scripts/parse_schedule.py emits inconsistent whitespace from DOCX cells ('林校304' / '林校\\n304' / '林校 304'). The importer's prisma.room.findUnique({where:{name}}) does exact match → creates one Room row per variant.",
+    "userImpact": "5 duplicate Linxiao Room groups (林校301/303/304/305/306, each with a newline-variant and a clean variant). 22 ScheduleSlot references split across the variants. Rooms capacity page shows phantom duplicates.",
+    "duplicateGroupsObserved": [
+      { "key": "林校301", "ids": [25, 28], "names": ["林校\\n301", "林校301"] },
+      { "key": "林校303", "ids": [27, 26], "names": ["林校\\n303", "林校303"] },
+      { "key": "林校304", "ids": [22, 23], "names": ["林校\\n304", "林校304"] },
+      { "key": "林校305", "ids": [21, 24], "names": ["林校\\n305", "林校305"] },
+      { "key": "林校306", "ids": [49, 29], "names": ["林校\\n306", "林校306"] }
+    ]
+  },
+  "solution": {
+    "approach": "Three pieces: (1) pure normalization helper, (2) importer forward fix in two phases (transaction + dry-run), (3) controlled --dry-run/--apply repair script with timestamped backup.",
+    "filesCreated": [
+      {
+        "path": "src/lib/rooms/room-name-normalization.ts",
+        "type": "helper-module",
+        "exports": ["normalizeRoomNameForMatch", "isLikelyDuplicateRoomName", "pickCanonicalRoom", "groupDuplicatesByNormalizedName"],
+        "purpose": "Pure normalization helper. NFKC + Unicode whitespace strip via explicit codepoint Set. Never throws."
+      },
+      {
+        "path": "scripts/repair-duplicate-room-names-k34-a2.ts",
+        "type": "repair-script",
+        "purpose": "Dry-run / apply / restore-backup. Default dry-run. Apply creates a timestamped dev.db backup, migrates ScheduleSlot.roomId + ScheduleAdjustment.newRoomId + RoomAvailability.roomId, deletes duplicate Room rows with zero refs."
+      },
+      {
+        "path": "scripts/verify-room-name-normalization-k34-a2.ts",
+        "type": "verify-script",
+        "checks": 45,
+        "purpose": "Static + tsx-eval behavioral checks of helper functions and import-path integration."
+      },
+      {
+        "path": "docs/k34-room-name-normalization-duplicate-repair.md",
+        "type": "doc",
+        "purpose": "Human-readable documentation."
+      },
+      {
+        "path": "docs/k34-room-name-normalization-duplicate-repair.json",
+        "type": "doc",
+        "purpose": "Machine-readable summary."
+      }
+    ],
+    "filesModified": [
+      {
+        "path": "src/lib/import/importer.ts",
+        "type": "importer",
+        "changes": [
+          "imports normalizeRoomNameForMatch",
+          "transaction phase: groups raw room names by normalized key, fetches all existing rows in one query, picks canonical via same strategy as pickCanonicalRoom, maps every raw variant to the same canonical id",
+          "dry-run phase: same in-memory grouping, so 'existing' is reported by canonical key, not by exact name",
+          "newly created rooms use the canonical (whitespace-free) display form"
+        ]
+      },
+      {
+        "path": "scripts/verify-import-management-basic-k34-a.ts",
+        "type": "verify-script",
+        "changes": [
+          "K34-A2-aware: importer.ts room-match change is allowed and verified",
+          "kept the legacy 'parse-utils/quality-classifier unchanged' check"
+        ]
+      },
+      {
+        "path": "scripts/verify-import-detail-object-render-k34-a1.ts",
+        "type": "verify-script",
+        "changes": [
+          "K34-A2-aware: same as above"
+        ]
+      }
+    ],
+    "filesUntouched": [
+      "prisma/schema.prisma",
+      "prisma/migrations/**",
+      "src/lib/import/parse-utils.ts",
+      "src/lib/import/quality-classifier.ts",
+      "src/lib/scheduler/score.ts",
+      "src/lib/scheduler/solver.ts",
+      "src/lib/auth/**",
+      "src/lib/worktime/**",
+      "scripts/parse_cell.py",
+      "scripts/parse_schedule.py"
+    ]
+  },
+  "noOp": {
+    "schemaChanged": false,
+    "migrationsAdded": false,
+    "parserModified": false,
+    "importerBusinessSemanticsChanged": false,
+    "importerRoomMatchChanged": true,
+    "scoreModified": false,
+    "hc5Modified": false,
+    "hc6Modified": false,
+    "worktimeModified": false,
+    "rbacChanged": false,
+    "permissionKeysAdded": false,
+    "k22ExpectedChanged": false,
+    "existingRoomNamesMutated": false,
+    "prismaDevDbCommitted": false,
+    "dbBackupCommitted": false
+  },
+  "helpers": {
+    "normalizeRoomNameForMatch": {
+      "signature": "(raw: string | null | undefined) => string",
+      "behavior": "NFKC normalize + strip every Unicode whitespace / zero-width codepoint. Never throws. Pure.",
+      "examples": [
+        ["林校304", "林校304"],
+        ["林校 304", "林校304"],
+        ["林校\\n304", "林校304"],
+        ["11 - 301", "11-301"],
+        ["  林校　304 ", "林校304"],
+        ["", ""],
+        ["null", ""]
+      ]
+    },
+    "isLikelyDuplicateRoomName": {
+      "signature": "(a, b) => boolean",
+      "purpose": "Returns true iff normalizeRoomNameForMatch(a) === normalizeRoomNameForMatch(b) and both are non-empty."
+    },
+    "pickCanonicalRoom": {
+      "signature": "<T extends {id, name, refCount}>(candidates) => T | null",
+      "strategy": "1) name === normalizeRoomNameForMatch(name); 2) higher refCount; 3) lower id."
+    },
+    "groupDuplicatesByNormalizedName": {
+      "signature": "(rooms) => Map<string, rooms[]>",
+      "purpose": "Returns only groups with more than one member."
+    }
+  },
+  "dataRepair": {
+    "duplicateGroupsFound": 5,
+    "refsMigrated": 22,
+    "roomsDeleted": 5,
+    "roomsRetained": 0,
+    "highRiskGroups": 0,
+    "backupPath": "prisma/dev.db.backup-before-k34-a2-room-repair-<ts>",
+    "postRepairDuplicateGroups": 0,
+    "linxiaoRoomCount": 5,
+    "linxiaoSlotCount": 22
+  },
+  "validation": {
+    "k34A2Verify": "45/45 PASS",
+    "k34AVerify": "65/65 PASS",
+    "k34A1Verify": "55/55 PASS",
+    "repairDryRun": "PASS",
+    "repairApply": "PASS",
+    "prismaValidate": "PASS",
+    "migrateStatus": "up to date",
+    "build": "PASS",
+    "lint": "340/188/152 (no new errors from K34-A2)",
+    "authFoundation": "60/62 (2 pre-existing failures)"
+  },
+  "manualValidationRequired": true,
+  "manualSteps": [
+    "npm run dev",
+    "ADMIN login",
+    "Open 教室容量 page (likely /admin/rooms/capacity)",
+    "Verify 林校304/林校 304 no longer appear as duplicates",
+    "Verify 林校301/303/305/306 are not duplicated",
+    "Open /admin/settings → 校区 / 教室规则设置",
+    "Verify Linxiao room count is 5",
+    "Verify HC5=0 / HC6=0"
+  ],
+  "closureDecision": {
+    "canK34A2Close": true,
+    "featureStatus": "Forward fix in place; dev.db duplicate repair applied via --apply; verify + behavioral coverage green; no schema/migration/parser/business-semantics changes.",
+    "recommendedNextStage": "K34-A3: add Room.normalizedName column + unique index migration so the matching key is enforced at the DB level. Out of scope for K34-A2."
+  }
+}

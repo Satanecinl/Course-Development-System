@@ -6,6 +6,10 @@ import { computeImportParseQuality } from './parse-utils'
 import { classifyImportRecords } from './quality-classifier'
 import { prisma } from '@/lib/prisma'
 import type { PrismaClient } from '@prisma/client'
+// K34-A2: room-name matching-key normalization. Two parsed records for
+// the same physical room (e.g. "林校304" vs "林校\n304" vs "林校 304")
+// must resolve to the same Room row instead of creating duplicates.
+import { normalizeRoomNameForMatch } from '@/lib/rooms/room-name-normalization'
 
 // ── 类型 ──
 
@@ -931,14 +935,79 @@ async function executeImportInTransaction(
   }
 
   // ── 4. Room ──
+  // K34-A2: Look up by normalized matching key. Two raw room names
+  // (e.g. "林校304" vs "林校\n304") that share a normalized key MUST
+  // resolve to the same Room row. When a new Room is created, prefer
+  // the canonical (whitespace-free) display form so future re-imports
+  // match it directly.
   const roomMap = new Map<string, number>()
-  for (const name of roomNames) {
-    const existing = await tx.room.findUnique({ where: { name }, select: { id: true } })
-    if (existing) {
-      roomMap.set(name, existing.id)
-    } else {
-      const r = await tx.room.create({ data: { name, capacity: 50, type: 'NORMAL' } })
-      roomMap.set(name, r.id)
+  if (roomNames.size > 0) {
+    // Group raw room names by normalized key.
+    const variantsByKey = new Map<string, string[]>()
+    for (const name of roomNames) {
+      const k = normalizeRoomNameForMatch(name)
+      if (!k) continue
+      if (!variantsByKey.has(k)) variantsByKey.set(k, [])
+      variantsByKey.get(k)!.push(name)
+    }
+
+    // Find every existing Room whose name normalizes to one of our keys.
+    // We pull all candidate raw names from the DB, then group them in
+    // memory — much cheaper than N round-trips.
+    const candidateRawNames = new Set<string>()
+    for (const variants of variantsByKey.values()) {
+      for (const v of variants) candidateRawNames.add(v)
+    }
+    const existingRooms = candidateRawNames.size > 0
+      ? await tx.room.findMany({
+          where: { name: { in: [...candidateRawNames] } },
+          select: { id: true, name: true },
+        })
+      : []
+
+    // Map: normalized key → existing Room row (id + raw name).
+    const existingByKey = new Map<string, { id: number; name: string }>()
+    for (const r of existingRooms) {
+      const k = normalizeRoomNameForMatch(r.name)
+      if (!variantsByKey.has(k)) continue
+      // If multiple existing rows share the same key (current DB drift
+      // pre-K34-A2 repair), prefer the canonical display form: a name
+      // that equals its own normalized form wins; ties broken by lowest
+      // id.
+      const prev = existingByKey.get(k)
+      if (!prev) {
+        existingByKey.set(k, r)
+      } else {
+        const prevIsCanonical = prev.name === normalizeRoomNameForMatch(prev.name)
+        const curIsCanonical = r.name === normalizeRoomNameForMatch(r.name)
+        if (curIsCanonical && !prevIsCanonical) {
+          existingByKey.set(k, r)
+        } else if (curIsCanonical === prevIsCanonical && r.id < prev.id) {
+          existingByKey.set(k, r)
+        }
+      }
+    }
+
+    for (const [k, variants] of variantsByKey) {
+      const existing = existingByKey.get(k)
+      if (existing) {
+        // Map every raw variant in this group to the same canonical id.
+        for (const v of variants) roomMap.set(v, existing.id)
+        continue
+      }
+      // Pick the canonical display form: prefer the variant whose
+      // name equals its own normalized form (no internal whitespace).
+      const canonicalName =
+        variants.find((v) => v === normalizeRoomNameForMatch(v)) ??
+        // Fall back to the first variant. (This should not normally
+        // happen because the input set contains at least one variant
+        // that survived NFKC + whitespace strip; we keep a fallback
+        // for defensive correctness.)
+        variants[0]
+      const r = await tx.room.create({
+        data: { name: canonicalName, capacity: 50, type: 'NORMAL' },
+      })
+      for (const v of variants) roomMap.set(v, r.id)
       roomCreated++
     }
   }
@@ -1167,17 +1236,53 @@ export async function confirmImportBatchDryRun(
   }
 
   // 查询已有实体
-  const [existingClassGroups, existingTeachers, existingCourses, existingRooms] = await Promise.all([
+  const [existingClassGroups, existingTeachers, existingCourses] = await Promise.all([
     prisma.classGroup.findMany({ where: { semesterId, name: { in: [...classNames] } }, select: { name: true, studentCount: true } }),
     prisma.teacher.findMany({ where: { name: { in: [...teacherNames] } }, select: { name: true } }),
     prisma.course.findMany({ where: { name: { in: [...courseNames] } }, select: { name: true } }),
-    prisma.room.findMany({ where: { name: { in: [...roomNames] } }, select: { name: true } }),
   ])
+
+  // K34-A2: room lookup is by normalized key, not by exact name match.
+  // The exact `in: [...roomNames]` query would miss DB rows whose
+  // names share a normalized key but differ by whitespace (e.g. the
+  // DB has "林校\n304" while the parsed records contain "林校304").
+  // We fetch all existing rooms once and group them in memory by the
+  // same normalized key the transaction phase uses.
+  const allExistingRooms = await prisma.room.findMany({
+    select: { id: true, name: true },
+  })
+  const existingRoomsByKey = new Map<string, { id: number; name: string }>()
+  for (const r of allExistingRooms) {
+    const k = normalizeRoomNameForMatch(r.name)
+    if (!k) continue
+    const prev = existingRoomsByKey.get(k)
+    if (!prev) {
+      existingRoomsByKey.set(k, r)
+    } else {
+      // Prefer a name that is its own normalized form, then smallest id.
+      const prevIsCanonical = prev.name === normalizeRoomNameForMatch(prev.name)
+      const curIsCanonical = r.name === normalizeRoomNameForMatch(r.name)
+      if (curIsCanonical && !prevIsCanonical) {
+        existingRoomsByKey.set(k, r)
+      } else if (curIsCanonical === prevIsCanonical && r.id < prev.id) {
+        existingRoomsByKey.set(k, r)
+      }
+    }
+  }
+
+  // Build the `existingRoomNames` set: a parsed name is "existing" if
+  // ANY variant in its canonical key group is in the DB.
+  const existingRoomNames = new Set<string>()
+  for (const parsedName of roomNames) {
+    const k = normalizeRoomNameForMatch(parsedName)
+    if (k && existingRoomsByKey.has(k)) {
+      existingRoomNames.add(parsedName)
+    }
+  }
 
   const existingClassGroupMap = new Map(existingClassGroups.map((c) => [c.name, c.studentCount]))
   const existingTeacherNames = new Set(existingTeachers.map((t) => t.name))
   const existingCourseNames = new Set(existingCourses.map((c) => c.name))
-  const existingRoomNames = new Set(existingRooms.map((r) => r.name))
 
   const newClassGroupNames = [...classNames].filter((n) => !existingClassGroupMap.has(n))
   const newTeacherNames = [...teacherNames].filter((n) => !existingTeacherNames.has(n))
