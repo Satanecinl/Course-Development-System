@@ -84,6 +84,8 @@ function main() {
   check('score has getAllRoomIds helper', /function getAllRoomIds/.test(scoreSrc))
   check('HC5 checks all rooms (getAllRoomIds)', /HC5[\s\S]{0,500}getAllRoomIds/.test(scoreSrc))
   check('HC6 checks all rooms (getAllRoomIds)', /HC6[\s\S]{0,500}getAllRoomIds/.test(scoreSrc))
+  check('HC4 uses combined capacity for multi-room', /HC4[\s\S]{0,1500}combinedCapacity/.test(scoreSrc))
+  check('SC10 uses combined capacity for multi-room', /SC10[\s\S]{0,1500}combinedCapacity/.test(scoreSrc))
 
   // ── 8. Behavioral eval of parser ────────────────────────────────
   const evalSnippet = `

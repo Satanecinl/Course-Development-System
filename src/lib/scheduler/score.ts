@@ -423,17 +423,32 @@ export function calculateScoreWithDetails(
   }
 
   // ── HC4: 容量 ──
+  // K34-A3: Use combined capacity of primary + secondary rooms when a
+  // slot has multiple rooms. The lesson may use both rooms
+  // simultaneously (e.g. classroom + lab), so the effective capacity is
+  // the sum of all associated rooms.
   for (const p of positions) {
     if (p.room === 0) continue
     const room = ctx.roomById.get(p.room)
     if (!room) continue
     const studentInfo = getTaskStudentCount(p.slot.teachingTask, ctx)
-    if (studentInfo.studentCount > room.capacity) {
+    // Compute combined capacity across all rooms for this slot.
+    const allRoomIds = getAllRoomIds(p.slot)
+    let combinedCapacity = room.capacity
+    for (const rid of allRoomIds) {
+      if (rid === p.room) continue
+      const additionalRoom = ctx.roomById.get(rid)
+      if (additionalRoom) combinedCapacity += additionalRoom.capacity
+    }
+    if (studentInfo.studentCount > combinedCapacity) {
       hardScore += HARD_PENALTY
+      const roomDesc = allRoomIds.length > 1
+        ? allRoomIds.map((rid) => ctx.roomById.get(rid)?.name ?? String(rid)).join(' + ')
+        : room.name
       details.push({
         type: 'HC4_CAPACITY', level: 'HARD', penalty: HARD_PENALTY,
         slotId: p.slot.id,
-        message: `容量不足: ${p.slot.teachingTask.course?.name ?? '?'} 需要 ${studentInfo.studentCount} 人 (${studentInfo.countSource})，教室 ${room.name} 容量 ${room.capacity}`,
+        message: `容量不足: ${p.slot.teachingTask.course?.name ?? '?'} 需要 ${studentInfo.studentCount} 人 (${studentInfo.countSource})，教室 ${roomDesc} 容量 ${combinedCapacity}`,
       })
     }
   }
@@ -712,23 +727,33 @@ export function calculateScoreWithDetails(
   // Per-slot evaluation: utilization = studentCount / roomCapacity.
   // Skip rules: room=0, room missing in roomById, capacity<=0, count<=0, utilization>1.0 (HC4 owns).
   // Only softScore (never touches hardScore).
-  // Day-independent: no weekend / weekday filter.
-  // No day key, no classGroup key, no teachingTask aggregate — single-slot rule.
+  // K34-A3: Use combined capacity for multi-room slots.
   for (const p of positions) {
     if (p.room === 0) continue
     const room = ctx.roomById.get(p.room)
     if (!room || room.capacity <= 0) continue
     const studentInfo = getTaskStudentCount(p.slot.teachingTask, ctx)
     if (studentInfo.studentCount <= 0) continue
-    const penalty = computeSC10CapacityUtilizationPenalty(studentInfo.studentCount, room.capacity)
+    // Combined capacity across all rooms.
+    const allRoomIds = getAllRoomIds(p.slot)
+    let combinedCapacity = room.capacity
+    for (const rid of allRoomIds) {
+      if (rid === p.room) continue
+      const ar = ctx.roomById.get(rid)
+      if (ar && ar.capacity > 0) combinedCapacity += ar.capacity
+    }
+    const penalty = computeSC10CapacityUtilizationPenalty(studentInfo.studentCount, combinedCapacity)
     if (penalty !== 0) {
-      const utilization = studentInfo.studentCount / room.capacity
+      const utilization = studentInfo.studentCount / combinedCapacity
       const reason = penalty === SC10_CAPACITY_TIGHT_FIT_PENALTY ? 'tight' : 'waste'
       softScore += penalty
+      const roomDesc = allRoomIds.length > 1
+        ? allRoomIds.map((rid) => ctx.roomById.get(rid)?.name ?? String(rid)).join(' + ')
+        : room.name
       details.push({
         type: 'SC10_ROOM_CAPACITY_UTILIZATION', level: 'SOFT', penalty,
         slotId: p.slot.id,
-        message: `容量利用率 ${(utilization * 100).toFixed(1)}% (${reason}): 任务 ${p.slot.teachingTask.id} ${studentInfo.studentCount} 人 (${studentInfo.countSource})，教室 ${room.name} 容量 ${room.capacity}`,
+        message: `容量利用率 ${(utilization * 100).toFixed(1)}% (${reason}): 任务 ${p.slot.teachingTask.id} ${studentInfo.studentCount} 人 (${studentInfo.countSource})，教室 ${roomDesc} 容量 ${combinedCapacity}`,
       })
     }
   }
