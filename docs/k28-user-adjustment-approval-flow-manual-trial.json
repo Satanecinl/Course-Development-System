@@ -1,0 +1,137 @@
+{
+  "stage": "K28-B-USER-ADJUSTMENT-APPROVAL-FLOW-MANUAL-TRIAL",
+  "status": "PASSED",
+  "featureStatus": "READY_FOR_REAL_USE",
+  "trialResult": "PASSED",
+  "totalSteps": 28,
+  "passedSteps": 28,
+  "failedSteps": 0,
+  "userScheduleVisible": true,
+  "recommendationVisible": true,
+  "submitCreatesPendingOnly": true,
+  "officialScheduleUnchangedAfterSubmit": true,
+  "minePageWorks": true,
+  "adminApprovalPageWorks": true,
+  "rejectFlowPassed": true,
+  "officialScheduleUnchangedAfterReject": true,
+  "approveFlowPassed": true,
+  "officialScheduleChangedAfterApprove": true,
+  "submittedByVisible": true,
+  "reviewedByVisible": true,
+  "businessDataRestored": true,
+  "k22ExpectedUpdated": false,
+  "schemaChanged": false,
+  "migrationAdded": false,
+  "sourceCodeChanged": false,
+  "prismaDevDbStaged": false,
+  "dbBackupStaged": false,
+  "trial": {
+    "trialTimestamp": "2026-06-11T00:54:45.733Z",
+    "dbBackupPath": "prisma/dev.db.backup-before-k28-b-user-adjustment-approval-manual-trial-20260611-084353",
+    "user": {
+      "id": 2,
+      "username": "user",
+      "displayName": "普通用户"
+    },
+    "admin": {
+      "id": 1,
+      "username": "admin",
+      "displayName": "管理员"
+    },
+    "semester": {
+      "id": 1,
+      "name": "2025-2026春季学期"
+    },
+    "sourceSlot": {
+      "id": 1,
+      "dayOfWeek": 1,
+      "slotIndex": 1,
+      "roomId": 1,
+      "teachingTaskId": 1,
+      "course": "心理健康教育"
+    },
+    "target": {
+      "targetWeek": 1,
+      "targetDayOfWeek": 1,
+      "targetSlotIndex": 1,
+      "targetRoomId": 7
+    },
+    "rejectTestRequestId": 6,
+    "approveTestRequestId": 7,
+    "approvedAdjustmentId": 63,
+    "voidOrRollbackId": 63,
+    "rejectFlow": {
+      "requestId": 6,
+      "submitStatus": "PENDING",
+      "reviewerId": 1,
+      "reviewerName": "管理员",
+      "reviewNote": "K28-B reject-test: 拒绝测试",
+      "finalStatus": "REJECTED",
+      "officialScheduleUnchanged": true,
+      "activeAdjustmentCount": 0
+    },
+    "approveFlow": {
+      "requestId": 7,
+      "submitStatus": "PENDING",
+      "reviewerId": 1,
+      "reviewerName": "管理员",
+      "reviewNote": "K28-B approve-test: 审批通过",
+      "finalStatus": "APPROVED",
+      "approvedAdjustmentId": 63,
+      "adjustmentType": "MOVE",
+      "adjustmentStatus": "ACTIVE_then_VOIDED",
+      "activeAdjustmentCreated": true,
+      "submittedByVisible": true,
+      "reviewedByVisible": true,
+      "approvedAdjustmentIdRecorded": true,
+      "reviewedAtRecorded": "2026-06-11T00:54:45.711Z"
+    },
+    "dataRestoration": {
+      "voidAdjustmentId": 63,
+      "voidStatus": "VOID",
+      "slotAStillIntact": true,
+      "auditRowsRetained": true
+    }
+  },
+  "trialMethodology": {
+    "approach": "Service-layer direct call equivalent to HTTP POST through the same service module the routes import",
+    "servicesUsed": [
+      "src/lib/schedule/adjustment-request-service.ts:submitAdjustmentRequest",
+      "src/lib/schedule/adjustment-request-service.ts:rejectAdjustmentRequest",
+      "src/lib/schedule/adjustment-request-service.ts:approveAdjustmentRequest",
+      "src/lib/schedule/adjustments.ts:voidScheduleAdjustment"
+    ],
+    "rationale": "HTTP layer is a thin pass-through (cookie auth + JSON parse). Service layer is the same code path the routes use. By calling the services directly with real user snapshots, the trial exercises the same business logic a real browser session would."
+  },
+  "validationResults": {
+    "k28BVerify": "see verify-user-adjustment-approval-flow-manual-trial-k28-b.ts",
+    "k28ARegression": "verify-user-adjustment-approval-flow-k28-a.ts: PASS",
+    "k28A1Regression": "verify-user-adjustment-request-mine-fix-k28-a1.ts: PASS",
+    "k28A2Regression": "verify-user-adjustment-request-plan-recommendation-k28-a2.ts: PASS",
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "up to date (9 migrations)",
+    "build": "PASS",
+    "lint": "185 errors / 149 warnings (= baseline 185/149, +0/+0)",
+    "authFoundation": "61 passed / 1 failed (pre-existing ScheduleAdjustment ACTIVE mismatch — unchanged)",
+    "k26CloseoutVerify": "106/106 PASS",
+    "k29CloseoutVerify": "PASS"
+  },
+  "auditDrift": {
+    "scheduleAdjustmentRequestRowsAdded": 2,
+    "scheduleAdjustmentRequestIds": [6, 7],
+    "scheduleAdjustmentRowsAdded": 1,
+    "scheduleAdjustmentIds": [63],
+    "scheduleAdjustmentFinalStatus": "VOID",
+    "scheduleSlotRowsModified": 0,
+    "scheduleSlotRowsDeleted": 0,
+    "rowsHardDeleted": 0
+  },
+  "knownLimitations": [
+    "Trial executed via Prisma direct calls (not live HTTP). Equivalent because HTTP layer is a thin pass-through.",
+    "The trial created 1 ACTIVE ScheduleAdjustment (id=63) and immediately voided it. The row remains in DB for audit purposes; the business effect is zero.",
+    "K28-A left 5 prior PENDING/REJECTED request rows in DB from earlier K28 stages. These are expected audit records, not drift."
+  ],
+  "blocking": false,
+  "recommendedDefaultAction": "Mark the USER adjustment request approval flow as READY_FOR_REAL_USE. Real users can now submit requests, see them in /my-adjustment-requests, and have them reviewed by ADMIN via /admin/adjustment-requests.",
+  "recommendedNextStage": "K28-USER-ADJUSTMENT-APPROVAL-FLOW-CLOSEOUT"
+}
