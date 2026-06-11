@@ -92,19 +92,20 @@ export default function MyAdjustmentRequestsPage() {
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h1 className="text-lg font-bold text-gray-900">我的调课申请</h1>
-          <Badge className="text-xs bg-blue-100 text-blue-700 border-blue-200">USER</Badge>
-        </div>
-        <div className="flex items-center gap-2">
           {/* K31-B: back-to-dashboard navigation. The page is a top-level route
               outside the ProtectedShell, so the sidebar is not present; this
-              button is the only way back to the timetable view. */}
+              button is the only way back to the timetable view. Placed on the
+              LEFT side of the header so it sits next to the H1. */}
           <Link href="/dashboard">
             <Button variant="outline" size="sm" aria-label="返回排课展示">
               <ArrowLeft className="w-4 h-4 mr-1.5" />
               返回排课展示
             </Button>
           </Link>
+          <h1 className="text-lg font-bold text-gray-900">我的调课申请</h1>
+          <Badge className="text-xs bg-blue-100 text-blue-700 border-blue-200">USER</Badge>
+        </div>
+        <div className="flex items-center gap-2">
           <button onClick={load} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700">
             <RefreshCw className="w-4 h-4" /> 刷新
           </button>

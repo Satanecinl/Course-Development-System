@@ -119,19 +119,20 @@ export default function AdminAdjustmentRequestsPage() {
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h1 className="text-lg font-bold text-gray-900">调课审批</h1>
-          <Badge className="text-xs bg-rose-100 text-rose-700 border-rose-200">ADMIN</Badge>
-        </div>
-        <div className="flex items-center gap-2">
           {/* K31-B: back-to-dashboard navigation. The page is a top-level route
               outside the ProtectedShell, so the sidebar is not present; this
-              button is the only way back to the timetable view. */}
+              button is the only way back to the timetable view. Placed on the
+              LEFT side of the header so it sits next to the H1. */}
           <Link href="/dashboard">
             <Button variant="outline" size="sm" aria-label="返回排课展示">
               <ArrowLeft className="w-4 h-4 mr-1.5" />
               返回排课展示
             </Button>
           </Link>
+          <h1 className="text-lg font-bold text-gray-900">调课审批</h1>
+          <Badge className="text-xs bg-rose-100 text-rose-700 border-rose-200">ADMIN</Badge>
+        </div>
+        <div className="flex items-center gap-2">
           <select
             className="flex h-9 rounded-md border border-gray-200 bg-white px-2 text-sm"
             value={statusFilter}
