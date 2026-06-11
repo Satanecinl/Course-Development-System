@@ -1,0 +1,127 @@
+{
+  "stage": "K32-A2",
+  "feature": "adjustment-application-form-source-week-resolution-fix",
+  "goal": "修复 K32-A1 导出表格的'原位置只显示星期X（无周次上下文）'问题；最小修复 submit path 让新申请能输出具体日期",
+  "diagnosis": {
+    "schemaHasSourceWeek": true,
+    "schemaField": "sourceWeek Int? (prisma/schema.prisma)",
+    "dbDistribution": {
+      "total": 8,
+      "sourceWeekNotNull": 0,
+      "sourceWeekNull": 8,
+      "nullRate": "100.0%"
+    },
+    "sampleRequestId": 2,
+    "sampleSourceValues": {
+      "sourceWeek": null,
+      "sourceDayOfWeek": 5,
+      "sourceSlotIndex": 1,
+      "sourceRoomId": 12
+    },
+    "sampleTargetValues": {
+      "targetWeek": 12,
+      "targetDayOfWeek": 2,
+      "targetSlotIndex": 3,
+      "targetRoomId": 2
+    },
+    "semesterStartsAt": "2026-03-09T00:00:00.000Z",
+    "rootCause": "K32-A1 formatWeekAndDay 函数在 week=null 时 fallback 到纯 '星期X'（无周次上下文），违反正式串课申请表要求",
+    "submitPathBug": "K28 service 层 sourceWeek 永远写 null：`sourceWeek: sourceSlot.teachingTask.weekType === 'ALL' ? null : null`（adjustment-request-service.ts:139 旧逻辑）；新申请没有 sourceWeek 字段传入"
+  },
+  "formatChanges": {
+    "formatWeekAndDay": {
+      "before": "if (week == null) return `星期${d}` // K32-A1: 不写 '第?周'",
+      "after": "if (d === '?') return `第${w}周`; else return `第${w}周 星期${d}` // K32-A2: 必含第X周/第?周"
+    },
+    "resolveSourceWeekForExport": {
+      "addedInStage": "K32-A2",
+      "purpose": "统一 sourceWeek 解析入口，便于未来加 fallback 链路（如 approvedAdjustment.sourceWeek）",
+      "priority": [
+        "1. request.sourceWeek (K32-A2 之后新申请会有值)",
+        "2. (future) approvedAdjustment.sourceWeek",
+        "3. (future) request.sourceSnapshot.sourceWeek",
+        "4. (future) sourceScheduleSlot.week (schema 当前不存在)",
+        "5. null → 导出 fallback '第?周 星期X'"
+      ],
+      "forbiddenFallback": "request.createdAt (spec 显式禁止)"
+    }
+  },
+  "submitPathChanges": {
+    "filesChanged": [
+      "src/components/schedule/user-adjustment-request-dialog.tsx (在 dry-run/submit 调用中加 sourceWeek: week)",
+      "src/lib/schedule/adjustment-request-client.ts (SubmitPayload.sourceWeek)",
+      "src/app/api/schedule-adjustment-requests/route.ts (POST 接收 sourceWeek)",
+      "src/lib/schedule/adjustment-request-service.ts (SubmitRequestInput.sourceWeek + service 写入修复)"
+    ],
+    "schemaChanged": false,
+    "migrationChanged": false,
+    "rbacChanged": false,
+    "minimallyInvasive": true,
+    "newlySavedField": "ScheduleAdjustmentRequest.sourceWeek (字段已存在，K32-A2 只是修正了写入逻辑)"
+  },
+  "examples": {
+    "historicalDataSourceWeekNull": "由第?周 星期五 第1-2节 教室 11-223；串至 5月26日 第5-6节 教室 11-223",
+    "newRequestSourceWeek7Day5": "由4月24日 第1-2节 教室 11-223；串至 ... (formula: 03-09 + 42 + 4 = 04-24)",
+    "newRequestSourceWeek12Day2": "由5月26日 第5-6节 教室 11-223；串至 ... (formula: 03-09 + 77 + 1 = 05-26)"
+  },
+  "validation": {
+    "k32A2Verify": {
+      "script": "scripts/verify-adjustment-application-form-source-week-k32-a2.ts",
+      "checks": 35,
+      "passed": 35,
+      "failed": 0,
+      "result": "K32-A2 ADJUSTMENT APPLICATION FORM SOURCE WEEK RESOLUTION FIX VERIFY PASS"
+    },
+    "k32A1Regress": { "result": "K32-A1 ADJUSTMENT APPLICATION FORM LAYOUT ALIGNMENT FIX VERIFY PASS (34/34)" },
+    "k32ARegress": { "result": "K32-A ADJUSTMENT APPLICATION FORM EXPORT VERIFY PASS (49/49)" },
+    "k28Closeout": { "result": "K28 USER ADJUSTMENT APPROVAL FLOW CLOSEOUT VERIFY PASS (41/41)" },
+    "k31CRegress": { "result": "K31-C ADJUSTMENT REQUEST PAGES PROTECTEDSHELL INTEGRATION VERIFY PASS (26/26)" },
+    "k31ARegress": { "result": "K31-A SCHEDULE EXPORT CURRENT FILTER FIX VERIFY PASS (24/24)" },
+    "k22CRegress": { "result": "K22-C SCORE REGRESSION HARNESS VERIFY PASS (73/73)" },
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "9 migrations, up to date",
+    "build": "PASS",
+    "lint": "188/152 (= baseline, no new errors/warnings)",
+    "authFoundation": "60/2 (= baseline, 2 failures are pre-existing)"
+  },
+  "integrationSample": {
+    "path": "scripts/k32-a-sample/sample-2.xlsx",
+    "gitignored": true,
+    "targetId": 2,
+    "targetStatus": "APPROVED",
+    "targetSourceWeek": "null (historical data)",
+    "b5": "由第?周 星期五 第1-2节 教室 11-223；串至 5月26日 第5-6节 教室 11-223",
+    "b6_b9": "preserved from template (由   月   日 第   节 教室       ；串至   月   日 第   节 教室)",
+    "a10": "调（串）课原因：未填写",
+    "c10": "签名：            年   月   日",
+    "dbHashUnchanged": {
+      "scheduleAdjustmentRequest": "8 (hash unchanged)",
+      "scheduleSlot": "440 (hash unchanged)",
+      "scheduleAdjustment": "65 (hash unchanged)"
+    }
+  },
+  "schemaChanges": false,
+  "migrationChanges": false,
+  "dbChanges": false,
+  "rbacChanges": false,
+  "k22ExpectedChanges": false,
+  "schedulingLogicChanges": false,
+  "adjustmentLogicChanges": false,
+  "manualTrialRequired": true,
+  "manualTrialNotes": [
+    "USER 登录 → /my-adjustment-requests → 选一条记录 → '导出串课申请表' → 打开 xlsx",
+    "确认 B5 原位置包含 '第X周' 或 '第?周' 或 'M月D日'，**禁止**只显示 '星期X'",
+    "确认目标位置仍显示具体日期或 第X周",
+    "确认 B5 不含 '原位置' / '→' / '未指定'",
+    "确认 B6:B9 / A10 / C10 仍符合 K32-A1 格式",
+    "新申请 USER 流程：打开 dashboard 当前第 X 周 → 点击调课申请 → 提交 → 在 /my-adjustment-requests 看到新记录 → 导出 → 确认 B5 原位置显示 '由X月X日' 或 '由第X周 星期Y'",
+    "ADMIN 登录 → /admin/adjustment-requests → 导出任意申请 → 同上检查",
+    "确认导出不改变申请状态、ScheduleSlot、ScheduleAdjustment"
+  ],
+  "knownLimitations": [
+    "历史数据 8/8 现有请求 sourceWeek=null (K32-A2 之前创建); 他们的导出 fallback 为 '第?周 星期X'。K32-A2 不在范围内改历史数据",
+    "新申请 sourceWeek 来源是 dashboard 当前查看周次；如果用户操作时源位置在不同周（罕见），会与实际原位置不同。改进方向是 UI 选择器，不在 K32-A2 范围",
+    "ScheduleAdjustment 模型无 sourceWeek 字段，approvedAdjustment 不能作为 sourceWeek 来源"
+  ],
+  "recommendedNextStage": "real-use / K32-B (User.department + UI source week picker) if needed"
+}

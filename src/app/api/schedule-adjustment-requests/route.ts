@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { sourceScheduleSlotId, targetWeek, targetDayOfWeek, targetSlotIndex, targetRoomId, reason, semesterId } = body ?? {}
+    const { sourceScheduleSlotId, sourceWeek, targetWeek, targetDayOfWeek, targetSlotIndex, targetRoomId, reason, semesterId } = body ?? {}
 
     if (
       typeof sourceScheduleSlotId !== 'number' ||
@@ -29,6 +29,8 @@ export async function POST(request: NextRequest) {
 
     const result = await submitAdjustmentRequest({
       sourceScheduleSlotId,
+      // K32-A2: 可选 sourceWeek（dashboard 当前查看周次）；缺失时 service 内部 fallback 到 null
+      sourceWeek: typeof sourceWeek === 'number' ? sourceWeek : null,
       targetWeek,
       targetDayOfWeek,
       targetSlotIndex,

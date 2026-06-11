@@ -34,6 +34,12 @@ export interface SubmitterSnapshot {
 
 export interface SubmitRequestInput {
   sourceScheduleSlotId: number
+  /**
+   * K32-A2: 当前 dashboard 查看周次（即"原位置"周次）。Optional。
+   * 写入 ScheduleAdjustmentRequest.sourceWeek，让导出能输出具体日期。
+   * null/undefined 仍然允许（向后兼容历史数据，导出 fallback "第?周 星期X"）。
+   */
+  sourceWeek?: number | null
   targetWeek: number
   targetDayOfWeek: number
   targetSlotIndex: number
@@ -130,7 +136,7 @@ export async function submitAdjustmentRequest(input: SubmitRequestInput) {
       semesterId,
       sourceScheduleSlotId: sourceSlot.id,
       teachingTaskId: sourceSlot.teachingTaskId,
-      sourceWeek: sourceSlot.teachingTask.weekType === 'ALL' ? null : null,
+      sourceWeek: input.sourceWeek ?? null, // K32-A2: 之前永远写 null，现在用 caller 传入的 sourceWeek
       sourceDayOfWeek: sourceSlot.dayOfWeek,
       sourceSlotIndex: sourceSlot.slotIndex,
       sourceRoomId: sourceSlot.roomId ?? null,

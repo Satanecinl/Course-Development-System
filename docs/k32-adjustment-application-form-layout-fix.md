@@ -159,7 +159,8 @@ npx tsx scripts/verify-score-regression-harness-k22-c.ts          # 73/73 PASS
 
 ## 推荐下一阶段
 
-- real-use / K32-B（如需补"所属部门"字段可加 `User.department` + migration）
+- real-use / K32-A2 source week resolution fix（已完成 → 见 `docs/k32-adjustment-application-form-source-week-fix.md`）
+- 视情况 K32-B（如需补"所属部门"字段可加 `User.department` + migration）
 
 ## 关闭判断
 

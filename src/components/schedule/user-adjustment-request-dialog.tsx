@@ -164,6 +164,9 @@ export function UserAdjustmentRequestDialog({
     try {
       const { dryRun } = await dryRunAdjustmentRequest({
         sourceScheduleSlotId: slotId,
+        // K32-A2: 把当前 dashboard 查看周次作为 sourceWeek 写入。
+        // 用于导出"原位置"显示具体日期 / 第X周。
+        sourceWeek: week,
         targetWeek,
         targetDayOfWeek: newDayOfWeek,
         targetSlotIndex: newSlotIndex,
@@ -193,6 +196,8 @@ export function UserAdjustmentRequestDialog({
     try {
       await submitAdjustmentRequest({
         sourceScheduleSlotId: slotId,
+        // K32-A2: 把当前 dashboard 查看周次作为 sourceWeek 写入。
+        sourceWeek: week,
         targetWeek,
         targetDayOfWeek: newDayOfWeek,
         targetSlotIndex: newSlotIndex,

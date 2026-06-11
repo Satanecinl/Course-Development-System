@@ -1,5 +1,5 @@
 // src/lib/schedule/adjustment-application-form.ts
-// K32-A / K32-A1: 调课申请表 Excel 导出（USER + ADMIN 共享逻辑）
+// K32-A / K32-A1 / K32-A2: 调课申请表 Excel 导出（USER + ADMIN 共享逻辑）
 //
 // 纯只读工具：从 ScheduleAdjustmentRequest 读取 snapshot + 关联名称，
 // 加载 templates/串课申请表模板.xlsx，写入指定 cell，返回 ExcelJS.Workbook。
@@ -16,6 +16,14 @@
 //   - B5 写真实数据；B6:B9 保留模板默认占位
 //   - A10 调（串）课原因：单行 "调（串）课原因：<reason>"
 //   - C10 签名：保留模板默认 "签名：      年   月   日"，不写 ISO 日期
+//
+// K32-A2 sourceWeek resolution fix:
+//   - 严格保证串课情况 B5 任意一侧位置都包含 date/week 上下文（"M月D日" / "第X周" / "第?周"）
+//   - **禁止** fallback 到纯 "星期X"
+//   - 新增 resolveSourceWeekForExport(req)：未来加 fallback 链路时只改一处
+//   - 配合 K32-A2 submit path 修复（dialog 传 sourceWeek -> API 接收 -> service 写入 DB）
+//     让新申请不再有 sourceWeek=null
+//   - 历史数据（K32-A2 之前创建的请求）sourceWeek=null 仍按 "第?周 星期X" 占位输出
 
 import ExcelJS from 'exceljs'
 import { existsSync } from 'fs'
@@ -226,18 +234,49 @@ export function formatDateFromSemester(
 }
 
 /**
- * 周次 + 星期 fallback 形式：第X周 星期Y
- * - week=null 时退化为 "星期Y"（不写 "第?周"）
+ * K32-A2: 周次 + 星期 fallback 形式。
+ *
+ * 严格保证输出始终包含"第X周"或"第?周"上下文，**不得**退化为纯"星期X"。
+ * 原因：正式串课申请表必须有周次上下文，单独的"星期X"无法定位具体周。
+ *
+ * 输出形式：
+ *   - week 已知 + dayOfWeek 已知 -> "第X周 星期Y"
+ *   - week 已知 + dayOfWeek 缺失 -> "第X周"（保留周次）
+ *   - week 缺失 + dayOfWeek 已知 -> "第?周 星期Y"（占位）
+ *   - week/dayOfWeek 都缺失    -> "第?周"（纯占位）
  */
 function formatWeekAndDay(week: number | null | undefined, dayOfWeek: number | null | undefined): string {
   const d = dayLabel(dayOfWeek)
-  if (week == null) return `星期${d}`
-  return `第${week}周 星期${d}`
+  const w = week == null ? '?' : String(week)
+  if (d === '?') return `第${w}周`
+  return `第${w}周 星期${d}`
+}
+
+/**
+ * K32-A2: 解析 sourceWeek 的优先级。
+ *
+ * 1. request.sourceWeek (schema 字段，K32-A2 submit path 修复后会被正确写入)
+ * 2. approvedAdjustment.week (ScheduleAdjustment.week) — 仅在 request 关联到 approvedAdjustment 时
+ *    注意：此处的 "week" 字段语义上是 target week，**不**直接对应 source week
+ *    所以这里只用作诊断保留，不作为正式 source week
+ * 3. sourceScheduleSlot.week — schema 中不存在（slot 是 recurring）
+ * 4. 全部缺失 -> null
+ *
+ * 注意：**禁止**用 request.createdAt 推断原课周次（createdAt 是申请提交时间，
+ * 多数情况下用户在"今天"申请某个未来/过去的课，但 createdAt 不应作为原周
+ * 次的可信数据源）。
+ */
+export function resolveSourceWeekForExport(req: RequestForExport): number | null {
+  if (req.sourceWeek != null && Number.isFinite(req.sourceWeek) && req.sourceWeek >= 1) {
+    return req.sourceWeek
+  }
+  return null
 }
 
 /**
  * 串课情况某一段的"位置"正式表述。
- * 优先具体日期（semester.startsAt 可用时），否则 fallback 到 第X周 星期Y。
+ * 优先具体日期（semester.startsAt + week + dayOfWeek 可用时），否则 fallback
+ * 到 第X周 星期Y。**严格保证**输出包含 date/week 上下文（K32-A2 修复）。
  */
 function formatPosition(
   semesterStartsAt: Date | null | undefined,
@@ -247,6 +286,7 @@ function formatPosition(
   roomName: string,
 ): string {
   const dateStr = formatDateFromSemester(semesterStartsAt, week, dayOfWeek)
+  // K32-A2: dateStr 缺失时 **强制** 使用 "第X周 星期Y" 形式（保留周次上下文）
   const positionStr = dateStr ?? formatWeekAndDay(week, dayOfWeek)
   const slotStr = slotRange(slotIndex)
   // 教室可为空字符串（room 缺失）；保留 "教室 " 之后的占位格式
@@ -254,15 +294,20 @@ function formatPosition(
 }
 
 /**
- * K32-A1: 正式串课情况表述。
+ * K32-A1 / K32-A2: 正式串课情况表述。
  * 例： "由3月2日 第1-2节 教室 11-321；串至 3月4日 第3-4节 教室 11-321"
  * 或   "由第7周 星期五 第1-2节 教室 11-223；串至 第12周 星期二 第5-6节 教室 11-318"
+ * 或   "由第?周 星期五 第1-2节 教室 11-223；串至 5月26日 第5-6节 教室 11-223"
+ *      （K32-A2 历史数据 sourceWeek=null 时的占位 fallback）
  */
 export function buildFormalAdjustmentSituation(req: RequestForExport): string {
   const startsAt = req.semester?.startsAt ?? null
+  // K32-A2: 用 resolveSourceWeekForExport 替代直接读 req.sourceWeek，
+  // 保证未来加 fallback 链路（如 approvedAdjustment / sourceJson）时只需改一处。
+  const sourceWeek = resolveSourceWeekForExport(req)
   const sourcePart = formatPosition(
     startsAt,
-    req.sourceWeek,
+    sourceWeek,
     req.sourceDayOfWeek,
     req.sourceSlotIndex,
     resolveSourceRoomName(req),

@@ -54,6 +54,12 @@ export interface AdjustmentRequestListResponse {
 
 export interface SubmitPayload {
   sourceScheduleSlotId: number
+  /**
+   * K32-A2: 当前 dashboard 查看周次（即"原位置"周次）。
+   * 提交时写入 ScheduleAdjustmentRequest.sourceWeek，让导出能输出具体日期。
+   * 历史数据（K32-A2 之前）无此字段，导出 fallback "第?周 星期X"。
+   */
+  sourceWeek?: number | null
   targetWeek: number
   targetDayOfWeek: number
   targetSlotIndex: number
