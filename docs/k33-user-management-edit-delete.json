@@ -1,0 +1,66 @@
+{
+  "stage": "K33-A",
+  "feature": "user-management-edit-display-name-and-safe-delete",
+  "goal": "完善用户管理页面，管理员可修改显示名称 + 安全删除无业务依赖的用户",
+  "newCapabilities": [
+    "管理员可修改用户显示名称 (PATCH /api/admin/users/[id])",
+    "管理员可安全删除无业务依赖的用户 (DELETE /api/admin/users/[id])"
+  ],
+  "filesChanged": [
+    "src/app/api/admin/users/[id]/route.ts (新增: PATCH + DELETE)",
+    "src/app/admin/users/users-content.tsx (修改: 编辑名称 + 删除按钮 + 确认对话框)",
+    "scripts/verify-user-management-edit-delete-k33-a.ts (新增: 21 checks)",
+    "docs/k33-user-management-edit-delete.md/json (新增)"
+  ],
+  "patchBehavior": {
+    "endpoint": "PATCH /api/admin/users/[id]",
+    "auth": "users:manage",
+    "allowedFields": ["displayName"],
+    "forbiddenFields": ["username", "password", "roles", "isActive"],
+    "validation": "trim, non-empty, 1-50 chars",
+    "response": "{ success, user: { id, username, displayName } }"
+  },
+  "deleteBehavior": {
+    "endpoint": "DELETE /api/admin/users/[id]",
+    "auth": "users:manage",
+    "protections": [
+      "SELF_DELETE_FORBIDDEN: cannot delete current user",
+      "BUILTIN_ADMIN_DELETE_FORBIDDEN: cannot delete username='admin'",
+      "LAST_ADMIN_DELETE_FORBIDDEN: cannot delete last ADMIN role holder",
+      "USER_HAS_DEPENDENCIES: blocks if user has ScheduleAdjustmentRequest or SchedulingRun records"
+    ],
+    "dependencyChecks": ["submittedAdjustmentRequests", "reviewedAdjustmentRequests", "schedulingRuns"],
+    "safeDeletion": "prisma.$transaction: delete userRoles + sessions + user (CASCADE handles the rest)",
+    "businessRecordsPreserved": ["ScheduleAdjustmentRequest", "ScheduleAdjustment", "SchedulingRun", "ScheduleSlot"]
+  },
+  "schemaChanges": false,
+  "rbacChanges": false,
+  "k22ExpectedChanges": false,
+  "validation": {
+    "k33AVerify": {
+      "script": "scripts/verify-user-management-edit-delete-k33-a.ts",
+      "checks": 21,
+      "passed": 21,
+      "failed": 0,
+      "result": "PASS"
+    },
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "9 migrations, up to date",
+    "build": "PASS",
+    "lint": "188/152 (= baseline)",
+    "authFoundation": "60/2 (= baseline, pre-existing)",
+    "k28Regress": "41/41 PASS",
+    "k32A3Regress": "26/26 PASS",
+    "k32A2Regress": "35/35 PASS"
+  },
+  "manualTrialRequired": true,
+  "manualTrialNotes": [
+    "ADMIN 登录 → /admin/users → 编辑一个测试用户的 displayName → 保存成功",
+    "创建临时测试用户 → 删除 → 确认消失",
+    "尝试删除 admin → 应被拒绝",
+    "尝试删除当前登录用户 → 应被拒绝",
+    "尝试删除有调课申请的 user → 应被拒绝并提示使用停用",
+    "确认角色/重置密码/启用停用功能仍正常"
+  ],
+  "recommendedNextStage": "real-use / K33-B (batch ops, audit log) if needed"
+}

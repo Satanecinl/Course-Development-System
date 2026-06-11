@@ -1,7 +1,8 @@
 'use client'
 
-import { Users, Plus, UserCheck, UserX, Shield, KeyRound } from 'lucide-react'
+import { Users, Plus, UserCheck, UserX, Shield, KeyRound, Pencil, Trash2 } from 'lucide-react'
 import { useState, useEffect, useCallback } from 'react'
+import { toast } from 'sonner'
 
 interface Role {
   id: number
@@ -36,6 +37,15 @@ export function UsersContent() {
   const [resettingUserId, setResettingUserId] = useState<number | null>(null)
   const [resetPassword, setResetPassword] = useState('')
   const [resetting, setResetting] = useState(false)
+
+  // K33-A: Edit display name state
+  const [editingNameId, setEditingNameId] = useState<number | null>(null)
+  const [editingNameValue, setEditingNameValue] = useState('')
+  const [savingName, setSavingName] = useState(false)
+
+  // K33-A: Delete user state
+  const [deletingUser, setDeletingUser] = useState<{ id: number; username: string; displayName: string } | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -193,6 +203,76 @@ export function UsersContent() {
       setError('重置密码失败')
     } finally {
       setResetting(false)
+    }
+  }
+
+  // K33-A: Edit display name handler
+  const handleEditName = async (userId: number) => {
+    const trimmed = editingNameValue.trim()
+    if (trimmed.length === 0) {
+      setError('显示名称不能为空')
+      return
+    }
+    if (trimmed.length > 50) {
+      setError('显示名称长度不能超过 50 字符')
+      return
+    }
+
+    setSavingName(true)
+    setError(null)
+
+    try {
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ displayName: trimmed }),
+      })
+      const data = await res.json()
+
+      if (data.success) {
+        setEditingNameId(null)
+        setEditingNameValue('')
+        toast.success('显示名称已更新')
+        fetchUsers()
+      } else {
+        setError(data.error || '修改显示名称失败')
+      }
+    } catch {
+      setError('修改显示名称失败')
+    } finally {
+      setSavingName(false)
+    }
+  }
+
+  // K33-A: Delete user handler
+  const handleDeleteUser = async () => {
+    if (!deletingUser) return
+    setDeleting(true)
+    setError(null)
+
+    try {
+      const res = await fetch(`/api/admin/users/${deletingUser.id}`, {
+        method: 'DELETE',
+      })
+      const data = await res.json()
+
+      if (data.success) {
+        toast.success(`用户 ${deletingUser.username} 已删除`)
+        setDeletingUser(null)
+        fetchUsers()
+      } else {
+        let msg = data.message || data.error || '删除用户失败'
+        if (data.dependencies) {
+          const deps = Object.entries(data.dependencies).map(([k, v]) => `${k}: ${v}`)
+          msg += `（${deps.join(', ')}）`
+        }
+        setError(msg)
+        toast.error(msg)
+      }
+    } catch {
+      setError('删除用户失败')
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -390,8 +470,42 @@ export function UsersContent() {
                           取消
                         </button>
                       </div>
+                    ) : editingNameId === user.id ? (
+                      /* K33-A: Inline edit display name */
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={editingNameValue}
+                          onChange={(e) => setEditingNameValue(e.target.value)}
+                          placeholder="新显示名称"
+                          className="px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 w-40"
+                          maxLength={50}
+                        />
+                        <button
+                          onClick={() => handleEditName(user.id)}
+                          disabled={savingName}
+                          className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 rounded disabled:opacity-50"
+                        >
+                          {savingName ? '...' : '保存'}
+                        </button>
+                        <button
+                          onClick={() => { setEditingNameId(null); setEditingNameValue('') }}
+                          className="px-2 py-1 text-xs text-gray-500 hover:text-gray-700 rounded"
+                        >
+                          取消
+                        </button>
+                      </div>
                     ) : (
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap">
+                        {/* K33-A: Edit display name button */}
+                        <button
+                          onClick={() => { setEditingNameId(user.id); setEditingNameValue(user.displayName) }}
+                          className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-indigo-100 text-indigo-700 hover:bg-indigo-200"
+                          title="修改显示名称"
+                        >
+                          <Pencil className="w-3 h-3" />
+                          编辑
+                        </button>
                         <button
                           onClick={() => setEditingUserId(editingUserId === user.id ? null : user.id)}
                           className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200"
@@ -426,6 +540,15 @@ export function UsersContent() {
                             </>
                           )}
                         </button>
+                        {/* K33-A: Delete button */}
+                        <button
+                          onClick={() => setDeletingUser({ id: user.id, username: user.username, displayName: user.displayName })}
+                          className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-700 hover:bg-red-200"
+                          title="删除用户（仅允许无业务记录的用户）"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          删除
+                        </button>
                       </div>
                     )}
                   </td>
@@ -435,6 +558,38 @@ export function UsersContent() {
           </table>
         )}
       </div>
+
+      {/* K33-A: Delete user confirmation dialog */}
+      {deletingUser && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">确认删除用户？</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              该操作只允许删除无业务记录的用户。已有业务记录的用户应使用&ldquo;停用&rdquo;。
+            </p>
+            <div className="bg-gray-50 rounded-lg p-3 mb-4 text-sm">
+              <div><span className="font-medium">用户名：</span>{deletingUser.username}</div>
+              <div><span className="font-medium">显示名称：</span>{deletingUser.displayName}</div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setDeletingUser(null)}
+                disabled={deleting}
+                className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleDeleteUser}
+                disabled={deleting}
+                className="px-4 py-2 text-sm text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50"
+              >
+                {deleting ? '删除中...' : '确认删除'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
