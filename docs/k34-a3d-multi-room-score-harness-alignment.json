@@ -1,0 +1,110 @@
+{
+  "generatedAt": "2026-06-12T00:00:00.000Z",
+  "phase": "K34-A3D-MULTI-ROOM-SCORE-HARNESS-ALIGNMENT",
+  "summary": {
+    "result": "PASS",
+    "k22CFailuresBefore": 5,
+    "k22CFailuresAfter": 0,
+    "k22CFinalResult": "73 pass / 0 fail / 0 knownFail / 0 info / 0 error",
+    "rootCause": "Real score.ts bug introduced by K34-A3 multi-room combined-capacity change, not expected drift.",
+    "fix": "Minimal: pass current p.room to getAllRoomIds so the primary room id reflects the *current* placement, not the stale slot.roomId stored in DB."
+  },
+  "failuresBefore": [
+    {
+      "id": "A2",
+      "harness": "A",
+      "title": "SC1 cross-building consecutive delta",
+      "expectedFullSoftDelta": 3,
+      "actualFullSoftDelta": 2,
+      "diagnosis": "After moving slot2 to room 100, getAllRoomIds returned [200] (slot.roomId) but p.room=100. The combinedCapacity loop 'if (rid===p.room) continue' did not skip 200 (since 200!=100), so room 200's capacity (100) was added on top of room 100's capacity (100), giving combined=200 instead of 100. With combined=200, 20/200=0.10 also triggers SC10 waste -1, masking the 0 baseline shift in delta accounting."
+    },
+    {
+      "id": "A3",
+      "harness": "A",
+      "title": "MIN_PERT introduction: full vs delta consistency",
+      "diagnosis": "Same bug: cap default 50. After move to room 101, getAllRoomIds=[100] (slot.roomId) but p.room=101; 100!=101, so room 100's cap (50) was added, combined=100. 20/100=0.20 < 0.30 AND cap=100 >= 100 → waste -1 extra. fullSoftDelta -3 vs expected -2."
+    },
+    {
+      "id": "A3b",
+      "harness": "A",
+      "title": "HC1 room conflict introduction",
+      "diagnosis": "Same bug as A3: slot1 moved to room 200, getAllRoomIds returned [100] (stale slot.roomId), combined=50+50=100, 20/100=0.20 waste -1."
+    },
+    {
+      "id": "J10-DELTA-WORSEN-GOOD-TO-TIGHT",
+      "harness": "J",
+      "title": "SC10 delta: good 0.475 → tight 0.95",
+      "expectedSC10Delta": -2,
+      "actualSC10Delta": 0,
+      "diagnosis": "Before state: p.room=200, getAllRoomIds=[200], 200==200 skip, combined=200, 95/200=0.475 → 0. After state: p.room=100, getAllRoomIds=[200] (stale slot.roomId), 200!=100, combined=100+100=200, 95/200=0.475 → 0. Both before and after yield 0, delta=0. Bug prevented tight detection in after state."
+    },
+    {
+      "id": "J11-DELTA-SMALL-HUGE-TO-NORMAL",
+      "harness": "J",
+      "title": "SC10 delta: small in huge (20/120=0.17, waste) → small in normal (20/40=0.50, good)",
+      "expectedSC10Delta": 1,
+      "actualSC10Delta": 0,
+      "diagnosis": "After state: p.room=40, getAllRoomIds=[120] (stale slot.roomId), 120!=40, combined=40+120=160, 20/160=0.125 AND cap=160 >= 100 → waste -1. Both before (-1) and after (-1) yield -1, delta=0. Should have been: after=0, before=-1, delta=+1."
+    }
+  ],
+  "rootCauseAnalysis": {
+    "k34A3Change": "commit bdf1bbe 'fix(score): use combined capacity for multi-room HC4/SC10' introduced getAllRoomIds(slot) returning [slot.roomId, ...additionalRoomIds] and combinedCapacity = room.capacity + sum(additionalRoomCaps).",
+    "bug": "getAllRoomIds used slot.roomId (DB-stored, stale after a move) as the primary id, but combinedCapacity's first term was 'room.capacity' where room = ctx.roomById.get(p.room) (current state room). When a slot was moved to a different room, p.room != slot.roomId, so the 'if (rid === p.room) continue' check did NOT skip the stale primary id, and its capacity was added twice: once as room.capacity, once as additionalRoom.capacity.",
+    "scope": "Affects HC4, SC10 (full + delta calculations), HC5, HC6 — every site that consumes getAllRoomIds. The bug was masked when slot was not moved (p.room == slot.roomId) or when no move occurs.",
+    "k22CFailureManifestation": "All 5 K22-C FAIL cases involved moving a slot to a different room. Slot.roomId remained the original; the delta calculation incorrectly included the old room's capacity in the new state."
+  },
+  "fix": {
+    "files": [
+      {
+        "path": "src/lib/scheduler/score.ts",
+        "function": "getAllRoomIds",
+        "change": "Added optional second parameter 'currentRoomId'. When provided, used as the primary room id; otherwise falls back to slot.roomId (backward compatible)."
+      },
+      {
+        "path": "src/lib/scheduler/score.ts",
+        "change": "Updated 4 call sites (HC4 line 442, HC5 line 460, HC6 line 601, SC10 line 744) to pass p.room as the second arg."
+      }
+    ],
+    "approach": "Minimal. The 'if (rid === p.room) continue' guard inside combinedCapacity loops is now unnecessary in the common case (since the first id IS p.room), but it remains a defensive guard for the case where p.room differs from primaryId (impossible after fix) and to handle the case where p.room appears again in additionalRooms (defensive de-dup).",
+    "noFixtureChange": true,
+    "noExpectedChange": true,
+    "noSchemaChange": true,
+    "noMigrationChange": true,
+    "noDBChange": true,
+    "scoreWeightsChange": false,
+    "solverChange": false
+  },
+  "validation": {
+    "k22CFinal": "73 pass / 0 fail / 0 knownFail / 0 info / 0 error",
+    "k22CA2": "PASS — fullΔsoft=3 (SC1 +5 cleared, MIN_PERT -2 added), delta.soft=3 (matches full)",
+    "k22CA3": "PASS — fullΔsoft=-2 (MIN_PERT -2), delta=-2 (matches full)",
+    "k22CA3b": "PASS — fullΔsoft=-2 (MIN_PERT -2), delta.hard=-1000 (HC1), delta.soft=-2",
+    "k22CJ10": "PASS — before count=0 sum=0, after count=1 sum=-2, SC10 component delta=-2 (expected -2)",
+    "k22CJ11": "PASS — before count=1 sum=-1, after count=0 sum=0, SC10 component delta=+1 (expected +1)",
+    "k34A": "64/64 PASS",
+    "k34A1": "55/55 PASS",
+    "k34A2": "45/45 PASS",
+    "k34A3": "42/42 PASS",
+    "k34A3B": "18/18 PASS",
+    "k34A3C": "20/20 PASS",
+    "k26K4C": "32/36 PASS — 4 FAIL are pre-existing (lint baseline 184/146 hard-coded in script vs current 191/154; auth 53/1 hard-coded vs current 60/62). K22-C, schema, score weights, HC6 penalty, K22 expected all unchanged per K26-K4C checks.",
+    "authFoundation": "60/62 PASS — pre-existing ScheduleAdjustment ACTIVE count mismatch.",
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "Database schema is up to date (10 migrations)",
+    "build": "PASS",
+    "diagnoseScript": "scripts/diagnose-multi-room-k22-score-alignment-k34-a3d.ts confirms SC10 details now show primary room only (no double-counting)"
+  },
+  "multiRoomBehaviorPostFix": {
+    "singleRoomSlotNoMove": "getAllRoomIds returns [currentRoomId]. combinedCapacity = room.capacity. Identical to pre-K34-A3 behavior.",
+    "singleRoomSlotMoved": "getAllRoomIds returns [newRoomId]. combinedCapacity = newRoom.capacity. Correct.",
+    "multiRoomSlotNoMove": "getAllRoomIds returns [currentRoomId, ...additionalRoomIds]. combinedCapacity = currentRoom.capacity + sum(additional). Identical to K34-A3 design intent.",
+    "multiRoomSlotMoved": "getAllRoomIds returns [newRoomId, ...additionalRoomIds]. combinedCapacity = newRoom.capacity + sum(additional). The moved slot keeps its additional rooms (course-configured), and the new primary is the moved-to room."
+  },
+  "conclusion": {
+    "k34A3DCloseable": true,
+    "bugFixed": true,
+    "expectedUpdated": false,
+    "fixtureUpdated": false,
+    "readyForRealUse": "Pending user browser confirmation of K34-A3C dashboard secondary-room filter; K22-C now passes 73/0/0/0, score.ts multi-room bug is fixed, no solver/expected drift."
+  }
+}

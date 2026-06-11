@@ -76,10 +76,16 @@ function getPos(
 
 // ── HC5: 教室可用性 ──
 
-/** K34-A3: Collect all room ids for a slot (primary + secondary). */
-function getAllRoomIds(slot: SlotWithRelations): number[] {
+/** K34-A3: Collect all room ids for a slot (primary + secondary).
+ *  K34-A3D: Pass `currentRoomId` (state-assigned position) so the primary
+ *  reflects the *current* placement, not the DB-stored slot.roomId which
+ *  is stale after a move. Without this, the combined capacity would
+ *  incorrectly include the old primary room in addition to the new
+ *  primary room, double-counting capacity. */
+function getAllRoomIds(slot: SlotWithRelations, currentRoomId?: number): number[] {
   const ids: number[] = []
-  if (slot.roomId != null) ids.push(slot.roomId)
+  const primaryId = currentRoomId ?? slot.roomId
+  if (primaryId != null) ids.push(primaryId)
   // additionalRooms may be absent if the relation was not loaded.
   const additionalRooms = slot.additionalRooms as Array<{ roomId: number }> | undefined
   if (additionalRooms) {
@@ -433,7 +439,7 @@ export function calculateScoreWithDetails(
     if (!room) continue
     const studentInfo = getTaskStudentCount(p.slot.teachingTask, ctx)
     // Compute combined capacity across all rooms for this slot.
-    const allRoomIds = getAllRoomIds(p.slot)
+    const allRoomIds = getAllRoomIds(p.slot, p.room)
     let combinedCapacity = room.capacity
     for (const rid of allRoomIds) {
       if (rid === p.room) continue
@@ -457,7 +463,7 @@ export function calculateScoreWithDetails(
   // K34-A3: Check primary AND secondary rooms.
   for (const p of positions) {
     if (p.room === 0) continue
-    const allRoomIds = getAllRoomIds(p.slot)
+    const allRoomIds = getAllRoomIds(p.slot, p.room)
     for (const rid of allRoomIds) {
       if (!isRoomAvailable(ctx, rid, p.day, p.idx)) {
         hardScore += HARD_PENALTY
@@ -598,7 +604,7 @@ export function calculateScoreWithDetails(
   // K34-A3: Check primary AND secondary rooms for Linxiao constraint.
   for (const p of positions) {
     if (p.room === 0) continue
-    const allRoomIds = getAllRoomIds(p.slot)
+    const allRoomIds = getAllRoomIds(p.slot, p.room)
     const cls = classifySpecialty(p.slot.teachingTask)
     for (const rid of allRoomIds) {
       const room = ctx.roomById.get(rid)
@@ -735,7 +741,7 @@ export function calculateScoreWithDetails(
     const studentInfo = getTaskStudentCount(p.slot.teachingTask, ctx)
     if (studentInfo.studentCount <= 0) continue
     // Combined capacity across all rooms.
-    const allRoomIds = getAllRoomIds(p.slot)
+    const allRoomIds = getAllRoomIds(p.slot, p.room)
     let combinedCapacity = room.capacity
     for (const rid of allRoomIds) {
       if (rid === p.room) continue
