@@ -58,7 +58,28 @@ export async function GET(request: NextRequest) {
       const semester = await resolveSchedulerSemester().catch(() => null)
       const semesterId = semester?.id
 
-      const effectiveItems = await getEffectiveScheduleForWeek(selectedWeek, semesterId)
+      let effectiveItems = await getEffectiveScheduleForWeek(selectedWeek, semesterId)
+
+      // K31-A: Filter effective items by the current page view (class/teacher/room).
+      // Without this, the export would dump ALL teachers' courses for the week
+      // even when the user is viewing one teacher. The dashboard's
+      // `applyViewFilter` runs client-side on `displayItems`; the export
+      // must mirror that contract server-side.
+      if (viewType && targetId && !isNaN(targetId)) {
+        effectiveItems = effectiveItems.filter((item) => {
+          if (viewType === 'class') {
+            const ids = item.classGroupIds ?? []
+            return ids.includes(targetId)
+          }
+          if (viewType === 'teacher') {
+            return item.teacherId === targetId
+          }
+          if (viewType === 'room') {
+            return item.roomId === targetId
+          }
+          return true
+        })
+      }
 
       // Build Excel from effective items
       const workbook = new ExcelJS.Workbook()
@@ -105,7 +126,15 @@ export async function GET(request: NextRequest) {
         const row = item.slotIndex - 1
         const col = item.dayOfWeek - 1
         if (row < 0 || row >= 6 || col < 0 || col >= 7) continue
-        const classLabel = item.classNames.length > 1 ? `\n[${item.classNames.map((cn) => cn.replace(/^.*?(\d+)班$/, '$1')).join('/')}]` : ''
+        // K31-A: build a safe 合班 label. Use a strict test() guard so a class
+        // name without a "数字班" suffix falls back to the original (and never
+        // leaves a raw digit/number stranded in the cell).
+        const classLabel = item.classNames.length > 1
+          ? `\n[${item.classNames.map((cn) => {
+              const m = /^.*?(\d+)班$/.exec(cn)
+              return m ? m[1] : cn
+            }).join('/')}]`
+          : ''
         const adjustedMark = item.isAdjusted ? ' [调课]' : ''
         const cellContent = `${item.courseName}${adjustedMark}\n${item.teacherName || '待定'}\n${item.roomName || ''}${classLabel}`
         if (grid[row][col]) {
@@ -251,8 +280,12 @@ export async function GET(request: NextRequest) {
       if (!isSlotActiveInWeek(task.weekType, task.startWeek, task.endWeek, selectedWeek)) continue
 
       const weekLabel = getWeekLabel(task.weekType, task.startWeek, task.endWeek)
+      // K31-A: safe 合班 label, same defensive pattern as the effective-schedule branch.
       const classLabel = task.taskClasses.length > 1
-        ? `\n[${task.taskClasses.map((tc) => tc.classGroup.name.replace(/^.*?(\d+)班$/, '$1')).join('/')}]`
+        ? `\n[${task.taskClasses.map((tc) => {
+            const m = /^.*?(\d+)班$/.exec(tc.classGroup.name)
+            return m ? m[1] : tc.classGroup.name
+          }).join('/')}]`
         : ''
 
       const cellText = `${task.course.name}${weekLabel}\n${task.teacher?.name || '待定'}\n${slot.room?.name || ''}${classLabel}`

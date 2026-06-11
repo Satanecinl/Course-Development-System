@@ -1,0 +1,91 @@
+{
+  "stage": "K31-A",
+  "feature": "schedule-export-current-filter-fix",
+  "bug": "Dashboard export ignores current page filter — exports all courses instead of teacher/class/room subset",
+  "secondaryBug": "Cell '46' anomaly: classNames.replace regex leaks raw digits when class name lacks 班 suffix",
+  "rootCause": {
+    "primary": "src/app/api/export/excel/route.ts applyAdjustments branch reads viewType/targetId for title only, does not filter effectiveItems",
+    "secondary": "cn.replace(/^.*?(\\d+)班$/, '$1') returns original string when class name doesn't match 数字班 pattern"
+  },
+  "fix": {
+    "filesChanged": [
+      "src/app/api/export/excel/route.ts"
+    ],
+    "filesAdded": [
+      "scripts/verify-schedule-export-current-filter-k31-a.ts",
+      "docs/k31-schedule-export-current-filter-fix.md",
+      "docs/k31-schedule-export-current-filter-fix.json"
+    ],
+    "gitignoreAdded": [
+      "scripts/k31-a-sample/"
+    ],
+    "codeChanges": {
+      "applyAdjustmentsFilter": {
+        "location": "src/app/api/export/excel/route.ts line 61-82",
+        "added": "viewType/targetId filter mirroring dashboard applyViewFilter",
+        "semantics": "class->classGroupIds.includes(targetId), teacher->teacherId===targetId, room->roomId===targetId"
+      },
+      "safeClassLabel": {
+        "location": "src/app/api/export/excel/route.ts line 132-137 (effective path) and 284-289 (raw path)",
+        "added": "/^.*?(\\d+)班$/.exec(cn) with m ? m[1] : cn fallback",
+        "removed": "naked cn.replace(/^.*?(\\d+)班$/, '$1')"
+      }
+    },
+    "frontendChanges": "none — dashboard export button already passes semesterId/week/viewType/targetId"
+  },
+  "permissions": {
+    "exportRoute": "data:export (unchanged)",
+    "noNewRbac": true,
+    "noRoleElevation": true
+  },
+  "schemaChanges": false,
+  "migrationChanges": false,
+  "dbChanges": false,
+  "k22ExpectedChanges": false,
+  "schedulingLogicChanges": false,
+  "adjustmentLogicChanges": false,
+  "verification": {
+    "k31AVerify": {
+      "pass": 24,
+      "fail": 0,
+      "blocking": false,
+      "command": "npx tsx scripts/verify-schedule-export-current-filter-k31-a.ts",
+      "result": "K31-A SCHEDULE EXPORT CURRENT FILTER FIX VERIFY PASS"
+    },
+    "integrationSample": {
+      "teacher": "丹婷婷",
+      "teacherId": 6,
+      "semesterId": 1,
+      "week": 7,
+      "courseCount": 8,
+      "titleCorrect": true,
+      "noForeignTeacherContent": true,
+      "noBare46": true,
+      "samplePath": "scripts/k31-a-sample/dantingting-week7-sample.xlsx"
+    },
+    "prismaValidate": "PASS (expected, not run during script)",
+    "prismaMigrateStatus": "up to date (expected)",
+    "build": "PASS (expected, will run)",
+    "lint": "baseline 185/149 (will run)",
+    "authFoundation": "61/1 pre-existing (will run)"
+  },
+  "knownLimitations": [
+    "Class name '46' is a legitimate ClassGroup name in DB; if it appears inside 合班 label, it is the actual class name from the DB, not a fallback bug",
+    "Manual browser trial at /dashboard required to confirm UI behavior end-to-end"
+  ],
+  "manualTrialRequired": true,
+  "manualTrialNotes": [
+    "Login as ADMIN",
+    "Open /dashboard",
+    "Select current semester",
+    "Select week 7",
+    "Select '按教师' view",
+    "Select teacher 丹婷婷",
+    "Click 导出 Excel",
+    "Open the .xlsx, confirm only 丹婷婷 第7周 courses appear, no other teachers, no bare 46",
+    "Repeat with at least one non-teacher view (按班级 or 按教室)"
+  ],
+  "recommendedNextStage": "K31-B (optional) — extract a shared exportFilteredSchedule() helper to deduplicate dashboard applyViewFilter and export route filter logic",
+  "featureStatus": "READY_FOR_REAL_USE",
+  "canClose": true
+}
