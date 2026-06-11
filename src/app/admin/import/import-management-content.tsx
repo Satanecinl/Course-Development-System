@@ -40,6 +40,11 @@ import {
 } from '@/components/ui/dialog'
 import { useHasPermission } from '@/components/layout/current-user-context'
 import {
+  formatImportDisplayValue,
+  formatImportWarning,
+  normalizeImportWarnings,
+} from './import-display-utils'
+import {
   fetchImportBatches,
   fetchImportBatchDetail,
   rollbackImportBatchDryRun,
@@ -106,26 +111,6 @@ function formatDateTime(dateStr: string | null | undefined): string {
     })
   } catch {
     return dateStr
-  }
-}
-
-/**
- * Defensive parse of a JSON-string array. Returns an empty array on failure.
- * ImportBatch.warningsJson is stored as a JSON-stringified unknown array;
- * the server-side detail route already runs safeJsonParse, but we mirror that
- * here so the page never crashes on malformed payloads.
- */
-function parseWarningsArray(value: unknown): string[] {
-  if (Array.isArray(value)) return value.map((v) => (typeof v === 'string' ? v : JSON.stringify(v)))
-  if (typeof value !== 'string') return []
-  try {
-    const parsed = JSON.parse(value)
-    if (Array.isArray(parsed)) {
-      return parsed.map((v) => (typeof v === 'string' ? v : JSON.stringify(v)))
-    }
-    return []
-  } catch {
-    return []
   }
 }
 
@@ -910,8 +895,17 @@ function DetailBody({
   onOpenConfirmDialog,
   canExecuteRollback,
 }: DetailBodyProps) {
-  // Defensive parse — server returns string[]; guard against missing field.
-  const warnings = Array.isArray(batch.warnings) ? batch.warnings : parseWarningsArray((batch as { warningsJson?: unknown }).warningsJson)
+  // K34-A1: Defensive normalization. Server returns `batch.warnings` after
+  // `safeJsonParse(batch.warningsJson, [])`. The actual stored shape is
+  // either:
+  //   - string[]   (confirmed batches: warningsJson = JSON.stringify({...,
+  //     warnings: [str, str, ...]}))
+  //   - object[]   (pending batches:  warningsJson = JSON.stringify(quality.warnings)
+  //     where quality.warnings is ImportParseWarning[])
+  //   - object     (full payload wrapper for confirmed batches)
+  // `normalizeImportWarnings` handles all three and returns string[] of
+  // human-readable text — never an object that would crash JSX rendering.
+  const warnings = normalizeImportWarnings(batch.warnings)
   const safeWarnings = warnings.length
   const quality = batch.quality
   const stats = batch.stats
@@ -929,16 +923,16 @@ function DetailBody({
             {STATUS_LABELS[batch.status] ?? batch.status}
           </Badge>
         </div>
-        <InfoRow label="文件" value={batch.filename} wide />
+        <InfoRow label="文件" value={formatImportDisplayValue(batch.filename)} wide />
         <InfoRow label="记录数" value={String(batch.recordCount)} />
         <InfoRow label="创建时间" value={formatDateTime(batch.createdAt)} />
         {batch.confirmedAt && <InfoRow label="确认时间" value={formatDateTime(batch.confirmedAt)} />}
         {batch.rolledBackAt && <InfoRow label="回滚时间" value={formatDateTime(batch.rolledBackAt)} />}
-        {batch.strategy && <InfoRow label="策略" value={batch.strategy} mono />}
+        {batch.strategy && <InfoRow label="策略" value={formatImportDisplayValue(batch.strategy)} mono />}
         {batch.errorMessage && (
           <div className="col-span-2">
             <span className="text-gray-500">说明：</span>
-            <span className="text-amber-700">{batch.errorMessage}</span>
+            <span className="text-amber-700">{formatImportDisplayValue(batch.errorMessage)}</span>
           </div>
         )}
       </div>
@@ -995,9 +989,14 @@ function DetailBody({
         {safeWarnings > 0 ? (
           <ul className="space-y-1 max-h-32 overflow-y-auto">
             {warnings.map((w, i) => (
-              <li key={i} className="text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded flex items-start gap-1">
+              <li
+                key={i}
+                className="text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded flex items-start gap-1"
+              >
                 <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-                <span>{w}</span>
+                <span className="whitespace-pre-line break-words">
+                  {formatImportWarning(w)}
+                </span>
               </li>
             ))}
           </ul>
@@ -1010,10 +1009,11 @@ function DetailBody({
             <h5 className="text-xs font-medium text-gray-700 mb-1">解析质量警告</h5>
             <ul className="space-y-1 max-h-32 overflow-y-auto">
               {quality.warnings.map((w, i) => (
-                <li key={i} className="text-xs text-orange-700 bg-orange-50 px-2 py-1 rounded">
-                  <span className="font-mono mr-1">[{w.type}]</span>
-                  {w.message}
-                  {w.recordIndex !== undefined && <span className="text-gray-500 ml-1">(#{w.recordIndex})</span>}
+                <li
+                  key={i}
+                  className="text-xs text-orange-700 bg-orange-50 px-2 py-1 rounded whitespace-pre-line break-words"
+                >
+                  {formatImportWarning(w)}
                 </li>
               ))}
             </ul>
@@ -1022,7 +1022,7 @@ function DetailBody({
 
         {rawWarningsOpen && (
           <pre className="mt-2 text-xs bg-gray-900 text-gray-100 p-3 rounded overflow-x-auto max-h-48">
-            {JSON.stringify(warnings, null, 2)}
+            {JSON.stringify(batch.warnings, null, 2)}
           </pre>
         )}
       </div>

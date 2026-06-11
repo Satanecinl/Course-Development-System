@@ -1,0 +1,159 @@
+{
+  "stage": "K34-A1-IMPORT-DETAIL-OBJECT-RENDER-FIX",
+  "shortName": "K34-A1",
+  "status": "implemented",
+  "type": "bug-fix",
+  "severity": "blocking",
+  "scope": "frontend-render-safety",
+  "summary": "Fixed React runtime error 'Objects are not valid as a React child' that occurred when clicking 详情 on the /admin/import page. The detail body was rendering raw ImportParseWarning objects (e.g. {type, message, recordIndex, ...}) directly as JSX children for pending batches where warningsJson is stored as a JSON-stringified object array. Introduced a defensive formatter helper and updated the detail dialog to use it.",
+  "problem": {
+    "rootCause": "ImportBatch.warningsJson is stored in two shapes: (1) pending batches: JSON.stringify(quality.warnings) where quality.warnings is ImportParseWarning[]; (2) confirmed batches: JSON.stringify({version, generatedAt, warnings: string[], crossCohortApprovals}). The detail route's safeJsonParse returns the parsed value verbatim, so client-side batch.warnings can be string[] OR ImportParseWarning[] OR a payload wrapper object. The K34-A detail body rendered warnings with <span>{w}</span>, which crashed when w was an object.",
+    "userImpact": "ADMIN users could not view any import batch detail. The detail dialog crashed on every click. K34-A manual validation was blocked.",
+    "errorMessage": "Objects are not valid as a React child (found: object with keys {type, message, recordIndex, className, courseName, room})",
+    "stackLocation": "src/app/admin/import/page.tsx (13:7) @ AdminImportPage → <ImportManagementContent />"
+  },
+  "solution": {
+    "approach": "Introduce a small, pure, side-effect-free helper module that handles every plausible input shape. Replace direct object rendering in the detail dialog with calls to the helper. Keep all API semantics, parser/importer logic, and DB schema unchanged.",
+    "filesCreated": [
+      {
+        "path": "src/app/admin/import/import-display-utils.ts",
+        "type": "helper-module",
+        "exports": ["formatImportDisplayValue", "formatImportWarning", "normalizeImportWarnings"],
+        "purpose": "Defensive formatters that coerce unknown values to safe string representations"
+      },
+      {
+        "path": "scripts/verify-import-detail-object-render-k34-a1.ts",
+        "type": "verify-script",
+        "checks": 55,
+        "purpose": "Static checks + in-process behavioral eval of the helper functions across every input shape"
+      },
+      {
+        "path": "docs/k34-import-detail-object-render-fix.md",
+        "type": "doc",
+        "purpose": "Human-readable documentation"
+      },
+      {
+        "path": "docs/k34-import-detail-object-render-fix.json",
+        "type": "doc",
+        "purpose": "Machine-readable summary"
+      }
+    ],
+    "filesModified": [
+      {
+        "path": "src/app/admin/import/import-management-content.tsx",
+        "type": "client-component",
+        "changes": [
+          "imported the three helpers from ./import-display-utils",
+          "replaced inline parseWarningsArray helper with normalizeImportWarnings(batch.warnings)",
+          "replaced <span>{w}</span> with formatImportWarning(w) for both warnings and quality.warnings lists",
+          "wrapped filename, strategy, and errorMessage with formatImportDisplayValue for defense-in-depth",
+          "raw-JSON view now serializes the original batch.warnings payload"
+        ]
+      },
+      {
+        "path": "scripts/verify-import-management-basic-k34-a.ts",
+        "type": "verify-script",
+        "changes": [
+          "added 12 K34-A1-related checks: helper file exists, helper exports, content imports, content uses formatter at render sites, no raw {w} pattern",
+          "kept all 50 original K34-A checks"
+        ]
+      }
+    ],
+    "filesUntouched": [
+      "prisma/schema.prisma",
+      "prisma/migrations/**",
+      "prisma/dev.db",
+      "src/app/api/admin/import/**",
+      "src/lib/import/{importer,parse-utils,quality-classifier}.ts",
+      "src/lib/auth/**",
+      "src/lib/scheduler/**",
+      "scripts/parse_cell.py",
+      "scripts/parse_schedule.py"
+    ]
+  },
+  "api": {
+    "changed": false,
+    "permission": "unchanged (import:manage)"
+  },
+  "noOp": {
+    "schemaChanged": false,
+    "migrationsAdded": false,
+    "dbReset": false,
+    "parserModified": false,
+    "importerModified": false,
+    "scoreModified": false,
+    "k22ExpectedChanged": false,
+    "rbacChanged": false,
+    "permissionKeysAdded": false,
+    "prismaDevDbStaged": false,
+    "dbBackupStaged": false
+  },
+  "helpers": {
+    "formatImportDisplayValue": {
+      "signature": "(value: unknown) => string",
+      "purpose": "Coerce any value to a safe human-readable string. Never throws, never returns an object.",
+      "handles": ["string", "number", "boolean", "bigint", "null", "undefined", "array", "object", "JSON.stringify fallback for circular refs"]
+    },
+    "formatImportWarning": {
+      "signature": "(warning: unknown) => string",
+      "purpose": "Render a single warning (string or ImportParseWarning-shaped object) as a multi-line readable string with type, message, recordIndex, className/courseName/teacher/room context.",
+      "exampleOutput": "[DUPLICATE_CANDIDATE] 第 5 条：疑似重复\n班级：森防1班\n课程：防火\n教室：A101"
+    },
+    "normalizeImportWarnings": {
+      "signature": "(value: unknown) => string[]",
+      "purpose": "Normalize batch.warnings from any shape (string[], object[], payload wrapper, JSON string, single object, null) into a uniform string[].",
+      "behavioralCases": 10
+    }
+  },
+  "validation": {
+    "verifyScript": "scripts/verify-import-detail-object-render-k34-a1.ts",
+    "expectedChecks": 55,
+    "mustPass": [
+      "no <span>{w}</span> in content (would render raw object)",
+      "no <span>{w.type}</span> raw pattern",
+      "no raw {w.message}",
+      "helper exports formatImportDisplayValue",
+      "helper exports formatImportWarning",
+      "helper exports normalizeImportWarnings",
+      "content imports the three helpers",
+      "content uses formatImportWarning in detail warnings list",
+      "content uses formatImportWarning in quality.warnings list",
+      "content uses normalizeImportWarnings(batch.warnings)",
+      "detail Dialog still present",
+      "view-detail 详情 button still present",
+      "warnings section title still rendered",
+      "raw JSON toggle still present",
+      "formatImportWarning handles 11 input cases (string, number, boolean, null, undefined, object with type+message+recordIndex, object with class/course/room context, missing recordIndex, no type or message, array of objects, nested object with deep message)",
+      "normalizeImportWarnings handles 10 input cases (string[], object[], payload wrapper, JSON string of array, JSON string of wrapper, null, undefined, plain string, single-object wrapper, nested object with warnings array)",
+      "no schema/migration changes",
+      "all 6 import API routes unchanged",
+      "parser/importer unchanged",
+      "K22 expected/snapshot unchanged",
+      "prisma/dev.db not staged",
+      "no DB backup staged",
+      "handleViewDetail function still present",
+      "详情 button still present in batch list table"
+    ]
+  },
+  "manualValidationRequired": true,
+  "manualSteps": [
+    "npm run dev",
+    "ADMIN login",
+    "Open /admin/import",
+    "Click 详情 on row #38",
+    "Click 详情 on row #37",
+    "Click 详情 on a 已废弃 batch (filter by 失败/废弃)",
+    "Verify detail dialog opens without React runtime error",
+    "Verify warnings list shows safe-formatted text (not raw object)",
+    "Verify quality warnings shows safe-formatted text",
+    "Verify flags (metadataMatch etc.) display correctly",
+    "Toggle 展开/收起 原始 JSON",
+    "Verify list filter / 刷新 still work",
+    "Switch to USER account — verify no admin access"
+  ],
+  "closureDecision": {
+    "canK34A1Close": true,
+    "canK34AManualValidationResume": true,
+    "recommendedNextStage": "K34-A2 (optional: fold cross-cohort approval UI into confirm flow) or K34-B (full management)"
+  }
+}

@@ -182,6 +182,66 @@ function main() {
     contentSrc.includes("'CONFIRM_IMPORT'") || contentSrc.includes('"CONFIRM_IMPORT"'),
   )
 
+  // ── 10a. K34-A1: object-rendering safety ──────────────────────────
+  // The detail dialog used to render `<span>{w}</span>` where `w` could be
+  // an object (ImportParseWarning shape) for pending batches. K34-A1
+  // introduced a defensive formatter helper.
+  const displayUtilsPath = join(
+    projectRoot,
+    'src/app/admin/import/import-display-utils.ts',
+  )
+  const displayUtilsSrc = existsSync(displayUtilsPath)
+    ? readFileSync(displayUtilsPath, 'utf-8')
+    : ''
+  check('import-display-utils.ts exists', existsSync(displayUtilsPath))
+  check(
+    'content imports normalizeImportWarnings from helper',
+    contentSrc.includes('normalizeImportWarnings'),
+  )
+  check(
+    'content imports formatImportWarning from helper',
+    contentSrc.includes('formatImportWarning'),
+  )
+  check(
+    'content uses formatImportWarning on warnings (not raw {w})',
+    contentSrc.includes('formatImportWarning(w)'),
+  )
+  check(
+    'content uses formatImportWarning on quality.warnings (not raw {w.type})',
+    /quality\.warnings\.map[\s\S]{0,500}formatImportWarning/.test(contentSrc),
+  )
+  check(
+    'display-utils exports formatImportWarning',
+    /export\s+function\s+formatImportWarning\b/.test(displayUtilsSrc),
+  )
+  check(
+    'display-utils exports normalizeImportWarnings',
+    /export\s+function\s+normalizeImportWarnings\b/.test(displayUtilsSrc),
+  )
+  check(
+    'display-utils exports formatImportDisplayValue',
+    /export\s+function\s+formatImportDisplayValue\b/.test(displayUtilsSrc),
+  )
+  check(
+    'formatImportWarning handles string inputs',
+    /typeof\s+\w+\s*===\s*['"]string['"]/.test(displayUtilsSrc) ||
+      /typeof\s+\w+\s*!==\s*['"]string['"]/.test(displayUtilsSrc),
+  )
+  check(
+    'normalizeImportWarnings unwraps payload wrapper object',
+    /Array\.isArray\(\s*obj\.warnings\s*\)/.test(displayUtilsSrc) ||
+      /obj\.warnings/.test(displayUtilsSrc),
+  )
+  check(
+    'normalizeImportWarnings handles JSON-string inputs',
+    /typeof\s+\w+\s*===\s*['"]string['"]/.test(displayUtilsSrc) &&
+      /JSON\.parse/.test(displayUtilsSrc),
+  )
+  check(
+    'no direct <span>{w}</span> rendering in detail body',
+    !/\{w\}/.test(contentSrc),
+  )
+
   // ── 11. No schema / migration / DB / parser / importer changes ─────
   const schemaPath = join(projectRoot, 'prisma/schema.prisma')
   const schemaSrc = existsSync(schemaPath) ? readFileSync(schemaPath, 'utf-8') : ''
