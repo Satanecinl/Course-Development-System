@@ -1,0 +1,192 @@
+{
+  "stage": "K34-A-IMPORT-MANAGEMENT-BASIC-UI-IMPLEMENTATION",
+  "shortName": "K34-A",
+  "status": "implemented",
+  "type": "frontend-ui",
+  "scope": "basic",
+  "summary": "Replaced /admin/import placeholder with a functional management page that lists ImportBatch records, supports status filtering, refresh, detail view with warnings/errors, and reuses existing upload/confirm/rollback/abandon API routes. No parser/importer/score/schema changes.",
+  "problem": {
+    "rootCause": "The /admin/import page was a placeholder that only displayed '功能建设中' (feature under construction). All import APIs, types, and a dialog-based ImportBatchHistory component already existed, but there was no standalone page exposing them.",
+    "userImpact": "ADMIN users could not view import history, batch status, warnings, or trigger upload/confirm actions from a dedicated page. They had to use /admin/db's toolbar buttons."
+  },
+  "implementation": {
+    "filesCreated": [
+      {
+        "path": "src/app/admin/import/import-management-content.tsx",
+        "type": "client-component",
+        "lines": 597,
+        "purpose": "Main management UI: stats cards, status filter, batch list table, detail dialog, upload/confirm/rollback/abandon dialogs"
+      },
+      {
+        "path": "scripts/verify-import-management-basic-k34-a.ts",
+        "type": "verify-script",
+        "lines": 280,
+        "purpose": "Static + lightweight DB verify covering 30+ checks"
+      },
+      {
+        "path": "docs/k34-import-management-basic-ui.md",
+        "type": "doc",
+        "purpose": "Human-readable documentation"
+      },
+      {
+        "path": "docs/k34-import-management-basic-ui.json",
+        "type": "doc",
+        "purpose": "Machine-readable summary"
+      }
+    ],
+    "filesModified": [
+      {
+        "path": "src/app/admin/import/page.tsx",
+        "type": "server-page",
+        "lines": 18,
+        "before": "26-line placeholder showing '功能建设中'",
+        "after": "Wraps <ImportManagementContent /> in <ProtectedShell>"
+      }
+    ],
+    "filesUntouched": [
+      "src/app/api/admin/import/batches/route.ts",
+      "src/app/api/admin/import/batches/[id]/route.ts",
+      "src/app/api/admin/import/confirm/route.ts",
+      "src/app/api/admin/import/parse/route.ts",
+      "src/app/api/admin/import/rollback/route.ts",
+      "src/app/api/admin/import/batches/[id]/abandon/route.ts",
+      "src/lib/import/client.ts",
+      "src/types/import.ts",
+      "src/lib/import/importer.ts",
+      "src/lib/import/parse-utils.ts",
+      "src/lib/import/quality-classifier.ts",
+      "prisma/schema.prisma",
+      "prisma/migrations/**",
+      "scripts/parse_cell.py",
+      "scripts/parse_schedule.py"
+    ]
+  },
+  "apis": {
+    "reused": [
+      {
+        "method": "GET",
+        "route": "/api/admin/import/batches",
+        "permission": "import:manage",
+        "purpose": "List batches"
+      },
+      {
+        "method": "GET",
+        "route": "/api/admin/import/batches/[id]",
+        "permission": "import:manage",
+        "purpose": "Batch detail"
+      },
+      {
+        "method": "POST",
+        "route": "/api/admin/import/parse",
+        "permission": "import:manage",
+        "purpose": "Upload + create pending batch"
+      },
+      {
+        "method": "POST",
+        "route": "/api/admin/import/confirm",
+        "permission": "import:manage",
+        "purpose": "Dry-run or real confirm (with crossCohortApprovals)"
+      },
+      {
+        "method": "POST",
+        "route": "/api/admin/import/rollback",
+        "permission": "import:manage",
+        "purpose": "Dry-run or real rollback"
+      },
+      {
+        "method": "POST",
+        "route": "/api/admin/import/batches/[id]/abandon",
+        "permission": "import:manage",
+        "purpose": "Abandon pending batch"
+      }
+    ],
+    "added": []
+  },
+  "ui": {
+    "pageRoute": "/admin/import",
+    "pageShell": "ProtectedShell",
+    "components": [
+      "Stats cards (5): total, pending, confirmed, failed/abandoned, latest import time",
+      "Status filter (4 tabs): all, pending, confirmed, failed/abandoned",
+      "Refresh button",
+      "Upload button",
+      "Batch list table (9 columns)",
+      "Detail dialog with stats/quality/warnings/flags/raw JSON",
+      "Confirm dialog (preflight + CONFIRM_IMPORT text gate)",
+      "Rollback dialog (preflight + ROLLBACK_IMPORT text gate)",
+      "Abandon dialog (ABANDON_IMPORT text gate)",
+      "Upload dialog (.docx picker)",
+      "Quick links to /admin/db and /dashboard"
+    ],
+    "permissionGate": "useHasPermission('import:manage') — page-level; route-level enforced independently"
+  },
+  "importBatchFields": {
+    "scalar": ["id", "filename", "status", "strategy", "recordCount", "createdTaskCount", "createdSlotCount", "errorMessage", "semesterId", "createdAt", "confirmedAt", "rolledBackAt"],
+    "json": ["statsJson", "qualityJson", "warningsJson"],
+    "jsonParsing": "safeJsonParse on server; mirrored parseWarningsArray helper on client"
+  },
+  "statusFilterMapping": {
+    "all": "all",
+    "pending": ["pending", "confirming"],
+    "confirmed": ["confirmed", "rolling_back", "rolled_back", "rollback_failed"],
+    "failed": ["failed", "abandoned"]
+  },
+  "noOp": {
+    "schemaChanged": false,
+    "migrationsAdded": false,
+    "dbReset": false,
+    "parserModified": false,
+    "importerModified": false,
+    "scoreModified": false,
+    "k22ExpectedChanged": false,
+    "rbacChanged": false,
+    "permissionKeysAdded": false,
+    "prismaDevDbStaged": false,
+    "dbBackupStaged": false
+  },
+  "uploadSupport": {
+    "format": ".docx",
+    "sizeLimit": "20MB (server-enforced)",
+    "ui": "file picker in dialog → POST /api/admin/import/parse",
+    "resultDisplay": "shows new batchId, filename, recordCount",
+    "autoRefresh": true
+  },
+  "confirmSupport": {
+    "ui": "preflight via dryRun → user types CONFIRM_IMPORT → real confirm",
+    "crossCohortApprovals": "not wired in this stage (follow-up K34-B)",
+    "strategy": "UPSERT_BY_NATURAL_KEY (only supported)",
+    "noDirectDbWrites": true
+  },
+  "validation": {
+    "verifyScript": "scripts/verify-import-management-basic-k34-a.ts",
+    "expectedChecks": 30,
+    "mustPass": [
+      "page.tsx exists and uses ProtectedShell",
+      "page no longer shows '功能建设中' placeholder",
+      "content component has 'use client' + default export",
+      "content lists ImportBatch items + has table element",
+      "content provides status filter + refresh",
+      "content has defensive warningsJson parsing",
+      "content has NO direct prisma writes (create/update/delete/upsert/executeRaw/queryRaw)",
+      "all 6 import API routes exist + use import:manage",
+      "content imports 8 expected client helpers",
+      "confirm action requires CONFIRM_IMPORT text",
+      "no schema/migration/K22 expected changes",
+      "prisma/dev.db not staged",
+      "no DB backup staged",
+      "content uses useHasPermission('import:manage') + no-permission hint"
+    ]
+  },
+  "knownLimitations": [
+    "Cross-cohort approval UI not wired in confirm flow (K34-B follow-up)",
+    "Per-semester filter not exposed (relies on shell-level semester selector)",
+    "No inline parsed-record preview (still available via /admin/db import dialog)"
+  ],
+  "recommendedNextStage": "K34-B: full import management — adds cross-cohort approval UI, batch comparison, and bulk operations",
+  "git": {
+    "branch": "master",
+    "noForcePush": true,
+    "noDbCommitted": true,
+    "noBackupCommitted": true
+  }
+}
