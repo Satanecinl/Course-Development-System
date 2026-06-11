@@ -19,6 +19,7 @@ import {
   ThumbsUp,
   ThumbsDown,
   ArrowLeft,
+  FileDown,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -36,6 +37,8 @@ import {
   approveAdjustmentRequest,
   rejectAdjustmentRequest,
   getAdjustmentRequestErrorMessage,
+  exportAdjustmentRequestForm,
+  triggerBlobDownload,
   type AdjustmentRequestListItem,
   type AdjustmentRequestStatus,
 } from '@/lib/schedule/adjustment-request-client'
@@ -58,6 +61,8 @@ export default function AdminAdjustmentRequestsContent() {
   const [approveNote, setApproveNote] = useState('')
   const [rejectNote, setRejectNote] = useState('')
   const [acting, setActing] = useState(false)
+  // K32-A: track which row is currently exporting (to disable its button).
+  const [exportingId, setExportingId] = useState<number | null>(null)
 
   // Initial data load — inline fetch to avoid setState-in-effect lint rule
   useEffect(() => {
@@ -114,6 +119,26 @@ export default function AdminAdjustmentRequestsContent() {
       toast.error(getAdjustmentRequestErrorMessage(code))
     } finally {
       setActing(false)
+    }
+  }
+
+  // K32-A: download the 串课申请表 Excel for this row. ADMIN can export any
+  // request — there is no ownership check on the admin route.
+  const handleExport = async (r: AdjustmentRequestListItem) => {
+    if (exportingId != null) return
+    setExportingId(r.id)
+    try {
+      const blob = await exportAdjustmentRequestForm(r.id, { isAdmin: true })
+      const safeName = `串课申请表-${r.sourceCourseName || ''}-${r.submittedByDisplayName || ''}-${r.id}.xlsx`
+        .replace(/[\\/:*?"<>|\x00-\x1f]/g, '_')
+        .slice(0, 120)
+      triggerBlobDownload(blob, safeName)
+      toast.success('已生成串课申请表')
+    } catch (e) {
+      const code = e instanceof Error ? e.message : 'UNKNOWN'
+      toast.error(getAdjustmentRequestErrorMessage(code))
+    } finally {
+      setExportingId(null)
     }
   }
 
@@ -244,28 +269,40 @@ export default function AdminAdjustmentRequestsContent() {
                       {r.approvedAdjustmentId ? `#${r.approvedAdjustmentId}` : '—'}
                     </td>
                     <td className="py-2 px-3">
-                      {r.status === 'PENDING' ? (
-                        <div className="flex gap-1">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setApproveOpen(r)}
-                            className="h-7 text-xs text-green-700 border-green-300"
-                          >
-                            <ThumbsUp className="w-3 h-3 mr-1" /> 通过
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setRejectOpen(r)}
-                            className="h-7 text-xs text-red-700 border-red-300"
-                          >
-                            <ThumbsDown className="w-3 h-3 mr-1" /> 拒绝
-                          </Button>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-gray-400">—</span>
-                      )}
+                      <div className="flex flex-col gap-1">
+                        {r.status === 'PENDING' && (
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setApproveOpen(r)}
+                              className="h-7 text-xs text-green-700 border-green-300"
+                            >
+                              <ThumbsUp className="w-3 h-3 mr-1" /> 通过
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setRejectOpen(r)}
+                              className="h-7 text-xs text-red-700 border-red-300"
+                            >
+                              <ThumbsDown className="w-3 h-3 mr-1" /> 拒绝
+                            </Button>
+                          </div>
+                        )}
+                        {/* K32-A: 导出串课申请表 — 所有状态都允许。ADMIN route 无所有权检查。 */}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleExport(r)}
+                          disabled={exportingId === r.id}
+                          className="h-7 text-xs"
+                          aria-label={`导出申请 #${r.id} 的串课申请表`}
+                        >
+                          <FileDown className="w-3 h-3 mr-1" />
+                          {exportingId === r.id ? '导出中...' : '导出串课申请表'}
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 )

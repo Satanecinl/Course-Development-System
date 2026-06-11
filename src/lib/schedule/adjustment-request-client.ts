@@ -201,6 +201,55 @@ export function fetchUserPlanRecommendations(payload: PlanRecommendationRequest)
   )
 }
 
+// K32-A: Export adjustment application form (Excel)
+//
+// Hits USER or ADMIN export route. Returns a Blob so the caller can trigger
+// a browser download. We use fetch + blob() (not a direct <a href>) so the
+// session cookie is included in the request and the server-side 401/403
+// response can be surfaced as a typed error.
+
+export interface ExportFormOptions {
+  /** true → use the ADMIN route (no ownership check). false → USER route. */
+  isAdmin?: boolean
+}
+
+export async function exportAdjustmentRequestForm(
+  requestId: number,
+  options: ExportFormOptions = {},
+): Promise<Blob> {
+  const isAdmin = options.isAdmin === true
+  const base = isAdmin
+    ? '/api/admin/schedule-adjustment-requests'
+    : '/api/schedule-adjustment-requests'
+  const url = `${base}/${requestId}/export-form`
+  const res = await fetch(url, { method: 'GET' })
+  if (!res.ok) {
+    let code = `HTTP ${res.status}`
+    let message: string | undefined
+    try {
+      const data = (await res.json()) as { error?: string; message?: string }
+      code = data.error ?? code
+      message = data.message
+    } catch {
+      // non-json body
+    }
+    throw new AdjustmentRequestError(code, message)
+  }
+  return res.blob()
+}
+
+export function triggerBlobDownload(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.style.display = 'none'
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
 export function getAdjustmentRequestErrorMessage(code: string): string {
   switch (code) {
     case 'UNAUTHENTICATED':
@@ -225,6 +274,10 @@ export function getAdjustmentRequestErrorMessage(code: string): string {
       return '未找到该申请'
     case 'INVALID_INPUT':
       return '提交参数不合法'
+    case 'TEMPLATE_NOT_FOUND':
+      return '导出模板缺失，请联系管理员'
+    case 'EXPORT_FAILED':
+      return '导出失败，请稍后重试'
     default:
       return `请求失败: ${code}`
   }

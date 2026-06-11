@@ -1,0 +1,232 @@
+{
+  "stage": "K32-A",
+  "feature": "adjustment-application-form-export",
+  "goal": "从调课申请/审批记录中导出《串课申请表》Excel，使用 templates/串课申请表模板.xlsx 模板填充",
+  "template": {
+    "sourcePath": "D:\\Desktop\\Course Development System\\串课申请表模板.xlsx",
+    "committedPath": "templates/串课申请表模板.xlsx",
+    "sheetName": "串课申请表",
+    "merges": [
+      "A1:D1",
+      "A5:A9",
+      "B5:D5",
+      "B6:D6",
+      "B7:D7",
+      "B8:D8",
+      "B9:D9",
+      "A10:B10",
+      "C10:D10"
+    ],
+    "rowCount": 13,
+    "columnCount": 4,
+    "stylePreserved": true
+  },
+  "routes": {
+    "user": {
+      "path": "GET /api/schedule-adjustment-requests/[id]/export-form",
+      "auth": "requirePermission('adjustment-request:read')",
+      "ownershipCheck": "request.submittedByUserId === user.id (else 403 NOT_OWNER)",
+      "contentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "contentDisposition": "attachment; filename*=UTF-8''<safe>.xlsx",
+      "templateMissingStatus": 500,
+      "templateMissingError": "TEMPLATE_NOT_FOUND"
+    },
+    "admin": {
+      "path": "GET /api/admin/schedule-adjustment-requests/[id]/export-form",
+      "auth": "requirePermission('adjustment-request:review')",
+      "ownershipCheck": "none (admin can export any user's request)",
+      "contentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "contentDisposition": "attachment; filename*=UTF-8''<safe>.xlsx"
+    }
+  },
+  "uiEntries": [
+    {
+      "page": "/my-adjustment-requests",
+      "file": "src/app/my-adjustment-requests/my-adjustment-requests-content.tsx",
+      "buttonLabel": "导出串课申请表",
+      "icon": "FileDown",
+      "allStatuses": true,
+      "usesRoute": "USER"
+    },
+    {
+      "page": "/admin/adjustment-requests",
+      "file": "src/app/admin/adjustment-requests/admin-adjustment-requests-content.tsx",
+      "buttonLabel": "导出串课申请表",
+      "icon": "FileDown",
+      "allStatuses": true,
+      "usesRoute": "ADMIN"
+    }
+  ],
+  "clientApi": {
+    "file": "src/lib/schedule/adjustment-request-client.ts",
+    "exports": [
+      "exportAdjustmentRequestForm(requestId, options?)",
+      "triggerBlobDownload(blob, filename)"
+    ],
+    "usesFetchAndBlob": true
+  },
+  "fieldMapping": {
+    "B2": {
+      "label": "申请教师",
+      "source": "request.submittedByNameSnapshot → submittedBy.displayName → teachingTask.teacher.name",
+      "fallback": "未知教师"
+    },
+    "D2": {
+      "label": "所属部门",
+      "source": "(当前 schema 未存，模板原样)",
+      "fallback": ""
+    },
+    "B3": {
+      "label": "学期",
+      "source": "request.semester.name",
+      "fallback": ""
+    },
+    "D3": {
+      "label": "授课年级专业",
+      "source": "request.teachingTask.taskClasses[].classGroup.name join('、')",
+      "fallback": ""
+    },
+    "B4": {
+      "label": "课程名称",
+      "source": "request.teachingTask.course.name",
+      "fallback": ""
+    },
+    "D4": {
+      "label": "上课地点",
+      "source": "request.sourceRoomId → sourceScheduleSlot.room.name",
+      "fallback": "未知教室"
+    },
+    "B5": {
+      "label": "串课情况",
+      "source": "第{sourceWeek ?? '原位置'}周 星期{sourceDayOfWeek} 第{sourceSlotIndex}节 教室 {sourceRoom} → 第{targetWeek}周 星期{targetDayOfWeek} 第{targetSlotIndex}节 教室 {targetRoom}",
+      "mergeMaster": "B5 (B5:D5)",
+      "fallback": ""
+    },
+    "B6-B9": {
+      "label": "串课情况 (空行)",
+      "source": "cleared to empty string",
+      "mergeMaster": "B6..B9"
+    },
+    "A10": {
+      "label": "调（串）课原因",
+      "source": "request.reason (preserved label + 换行 + reason)",
+      "mergeMaster": "A10 (A10:B10)",
+      "fallback": "未填写"
+    },
+    "C10": {
+      "label": "签名 + 导出日期",
+      "source": "request.createdAt.toISOString().slice(0,10)",
+      "mergeMaster": "C10 (C10:D10)"
+    }
+  },
+  "readOnlyGuarantee": {
+    "utilFile": "src/lib/schedule/adjustment-application-form.ts",
+    "scannedPatterns": [
+      "prisma.*.create",
+      "prisma.*.update",
+      "prisma.*.delete",
+      "prisma.*.upsert",
+      "prisma.*.deleteMany",
+      "prisma.*.updateMany",
+      "prisma.$transaction"
+    ],
+    "verdict": "all patterns return 0 matches in util file",
+    "routeFile": "USER/ADMIN routes also scanned — all patterns return 0 matches",
+    "sideEffects": [
+      "Does not create/update/delete ScheduleAdjustmentRequest",
+      "Does not modify ScheduleSlot",
+      "Does not create/modify ScheduleAdjustment",
+      "Does not call dryRunScheduleAdjustment",
+      "Does not write any audit log"
+    ]
+  },
+  "ownershipCheck": {
+    "userRoute": "submittedByUserId !== user.id → 403 { error: 'NOT_OWNER' }",
+    "adminRoute": "no ownership check (admin can export any request)"
+  },
+  "fieldSourcePolicy": "原始调课信息优先使用 ScheduleAdjustmentRequest 上的 snapshot / source* / target* 字段；关联表只用于补 name。禁止用当前 ScheduleSlot 实时状态覆盖历史申请记录。",
+  "validation": {
+    "k32AVerify": {
+      "script": "scripts/verify-adjustment-application-form-export-k32-a.ts",
+      "checks": 49,
+      "passed": 49,
+      "failed": 0,
+      "result": "K32-A ADJUSTMENT APPLICATION FORM EXPORT VERIFY PASS"
+    },
+    "k28Closeout": {
+      "script": "scripts/verify-user-adjustment-approval-flow-closeout-k28.ts",
+      "result": "K28 USER ADJUSTMENT APPROVAL FLOW CLOSEOUT VERIFY PASS"
+    },
+    "k31CVerify": {
+      "script": "scripts/verify-adjustment-request-pages-protected-shell-k31-c.ts",
+      "result": "K31-C ADJUSTMENT REQUEST PAGES PROTECTEDSHELL INTEGRATION VERIFY PASS"
+    },
+    "k31AVerify": {
+      "script": "scripts/verify-schedule-export-current-filter-k31-a.ts",
+      "result": "K31-A SCHEDULE EXPORT CURRENT FILTER FIX VERIFY PASS"
+    },
+    "k22CVerify": {
+      "script": "scripts/verify-score-regression-harness-k22-c.ts",
+      "result": "K22-C SCORE REGRESSION HARNESS VERIFY PASS"
+    },
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "9 migrations, up to date",
+    "build": "PASS (含新 route 已注册)",
+    "lint": "188/152 (= baseline 188/152, no new errors/warnings)",
+    "authFoundation": "60/2 (= baseline, 2 failures are pre-existing)"
+  },
+  "integration": {
+    "samplePath": "scripts/k32-a-sample/sample-<id>.xlsx",
+    "gitignored": true,
+    "sampleId": 2,
+    "sampleStatus": "APPROVED",
+    "checks": {
+      "templateMergesPreserved": "10 before = 10 after",
+      "sheetName": "串课申请表",
+      "titleContains": "伊春职业学院串课申请表",
+      "requiredCellsNonEmpty": {
+        "B2": "普通用户",
+        "B3": "2025-2026春季学期",
+        "B4": "有机化学",
+        "B5": "原位置 星期五 1-2节 教室 11-223 → 第12周 星期二 5-6节 教室 ...",
+        "A10": "调（串）课原因：\\n未填写"
+      },
+      "noUndefinedOrNullLiterals": true,
+      "styleSpotCheck": "A1.font 保留: {\"bold\":true,\"size\":22,\"name\":\"宋体\",\"charset\":134}",
+      "prePostHashUnchanged": {
+        "scheduleAdjustmentRequest": "8 (hash unchanged)",
+        "scheduleSlot": "440 (hash unchanged)",
+        "scheduleAdjustment": "65 (hash unchanged)"
+      }
+    }
+  },
+  "userOwnershipCheck403": {
+    "static": "USER route 含 submittedByUserId !== user.id 静态检查",
+    "dynamic": "K28-B 浏览器 E2E 已覆盖 service 层语义（k28-b-manual-trial-result.json）；K32-A 不重复 E2E"
+  },
+  "adminCanExportAnyUser": {
+    "static": "ADMIN route 仅检查 review 权限，无 ownership 判断",
+    "implication": "ADMIN 可导出任意用户的申请（含 PENDING/APPROVED/REJECTED/CANCELLED）"
+  },
+  "schemaChanges": false,
+  "migrationChanges": false,
+  "dbChanges": false,
+  "rbacChanges": false,
+  "k22ExpectedChanges": false,
+  "schedulingLogicChanges": false,
+  "adjustmentLogicChanges": false,
+  "manualTrialRequired": true,
+  "manualTrialNotes": [
+    "USER 登录 → /my-adjustment-requests → 点"导出串课申请表" → 下载 xlsx → 打开确认模板格式 + 字段正确",
+    "USER 越权（动态）：在 USER 会话下浏览器 devtools 命中 /api/admin/schedule-adjustment-requests/<别人的id>/export-form → 403",
+    "USER 越权（动态）：在 USER 会话下浏览器 devtools 命中 /api/schedule-adjustment-requests/<别人的id>/export-form → 403",
+    "ADMIN 登录 → /admin/adjustment-requests → 同上 → 可导出所有状态",
+    "确认导出后申请状态、ScheduleSlot、ScheduleAdjustment 全部不变（集成测试已覆盖）"
+  ],
+  "knownLimitations": [
+    "所属部门 字段当前 K28 schema 未存（User 无 department），模板原样保留为空白",
+    "target room name 在不改 schema 的前提下无法单独取到，fallback 为 \"未指定\"",
+    "USER 越权 403 动态验证依赖浏览器 E2E（k28-b 阶段已覆盖 service 路径语义）"
+  ],
+  "recommendedNextStage": "real-use / K32-B (e.g. add User.department field) if needed"
+}

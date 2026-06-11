@@ -9,13 +9,15 @@
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { RefreshCw, AlertTriangle, CheckCircle2, XCircle, History, Info, X, ArrowLeft } from 'lucide-react'
+import { RefreshCw, AlertTriangle, CheckCircle2, XCircle, History, Info, X, ArrowLeft, FileDown } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   listMyAdjustmentRequests,
   cancelMyAdjustmentRequest,
   getAdjustmentRequestErrorMessage,
+  exportAdjustmentRequestForm,
+  triggerBlobDownload,
   type AdjustmentRequestListItem,
   type AdjustmentRequestStatus,
 } from '@/lib/schedule/adjustment-request-client'
@@ -31,6 +33,8 @@ export default function MyAdjustmentRequestsContent() {
   const [items, setItems] = useState<AdjustmentRequestListItem[] | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  // K32-A: track which row is currently exporting (to disable its button).
+  const [exportingId, setExportingId] = useState<number | null>(null)
 
   // Initial data load — inline fetch to avoid setState-in-effect lint rule
   useEffect(() => {
@@ -61,6 +65,27 @@ export default function MyAdjustmentRequestsContent() {
     } catch (e) {
       const code = e instanceof Error ? e.message : 'UNKNOWN'
       toast.error(getAdjustmentRequestErrorMessage(code))
+    }
+  }
+
+  // K32-A: download the 串课申请表 Excel for this row. USER route is
+  // ownership-checked server-side, so this only succeeds for requests the
+  // current user submitted.
+  const handleExport = async (r: AdjustmentRequestListItem) => {
+    if (exportingId != null) return
+    setExportingId(r.id)
+    try {
+      const blob = await exportAdjustmentRequestForm(r.id, { isAdmin: false })
+      const safeName = `串课申请表-${r.sourceCourseName || ''}-${r.submittedByDisplayName || ''}-${r.id}.xlsx`
+        .replace(/[\\/:*?"<>|\x00-\x1f]/g, '_')
+        .slice(0, 120)
+      triggerBlobDownload(blob, safeName)
+      toast.success('已生成串课申请表')
+    } catch (e) {
+      const code = e instanceof Error ? e.message : 'UNKNOWN'
+      toast.error(getAdjustmentRequestErrorMessage(code))
+    } finally {
+      setExportingId(null)
     }
   }
 
@@ -192,18 +217,31 @@ export default function MyAdjustmentRequestsContent() {
                       {r.approvedAdjustmentId ? `#${r.approvedAdjustmentId}` : '—'}
                     </td>
                     <td className="py-2 px-3">
-                      {r.status === 'PENDING' ? (
+                      <div className="flex flex-col gap-1">
+                        {/* K32-A: 导出串课申请表 — 所有状态都允许。USER route 服务端做
+                            所有权检查（submittedByUserId === currentUser.id）。 */}
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleCancel(r.id)}
+                          onClick={() => handleExport(r)}
+                          disabled={exportingId === r.id}
                           className="h-7 text-xs"
+                          aria-label={`导出申请 #${r.id} 的串课申请表`}
                         >
-                          <X className="w-3 h-3 mr-1" /> 取消
+                          <FileDown className="w-3 h-3 mr-1" />
+                          {exportingId === r.id ? '导出中...' : '导出串课申请表'}
                         </Button>
-                      ) : (
-                        <span className="text-xs text-gray-400">—</span>
-                      )}
+                        {r.status === 'PENDING' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleCancel(r.id)}
+                            className="h-7 text-xs"
+                          >
+                            <X className="w-3 h-3 mr-1" /> 取消
+                          </Button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 )
