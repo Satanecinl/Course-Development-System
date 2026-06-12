@@ -140,7 +140,7 @@ if (body.semesterId != null && body.semesterId !== semester.id) {
 
 因 `ClassGroup.name @unique` 移除，以下脚本从 `findUnique({ where: { name } })` 改为 `findFirst`：
 
-- `scripts/diagnose-schedule-import-0420.ts`
+- 历史导入诊断工具（已从当前 HEAD 移除）
 - `scripts/g0fixb-verify-database.ts`
 - `scripts/diagnose-classgroup-data-quality.ts`
 - `scripts/seed_db.ts`（upsert 改为 findFirst + update/create）

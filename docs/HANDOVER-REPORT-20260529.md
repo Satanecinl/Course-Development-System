@@ -516,7 +516,7 @@ model Session {
 | | `test-schedule-adjustment-api-e2e.ts` | API 端到端测试 |
 | | `test-schedule-adjustment-cross-week.ts` | 跨周调课测试 |
 | | `test-schedule-adjustment-final-acceptance.ts` | 最终验收测试 |
-| **G0 修复** | `g0fixb-import-0420.ts` | 0420 版本数据导入 |
+| **G0 修复** | 历史导入工具（已移除） | 0420 版本数据导入结论 |
 | | `g0fixb-verify-database.ts` | 数据库验证 |
 | | `g0fixb-verify-dashboard.ts` | 看板验证 |
 | **排课引擎** | `test-solver.ts` | 求解器测试 |

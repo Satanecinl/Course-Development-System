@@ -47,7 +47,7 @@
 
 其它 write-capable 但已通过 `package.json` 显式暴露：
 
-- `seed-auth.ts`, `seed_db.ts`, `seed_replace.ts` — CLI 种子脚本
+- `seed-auth.ts`, `seed_db.ts` — CLI 种子脚本；`seed_db.ts` 要求显式 synthetic 输入
 - `confirm-import-once.ts`（`CONFIRM_IMPORT=1` 门控）, `rollback-import-once.ts`, `abandon-import-once.ts`
 - `implement-multi-semester-schema-k25-c.ts`
 - `import-data.ts`
@@ -61,13 +61,14 @@
 
 ### 早期 hotfix 残留（g0fix* / f2-fix-e-*）
 
+K36-A5D2A 已从当前 HEAD 移除带固定真实数据路径或破坏性导入流程的
+`g0fixb-import-0420.ts` 与 `g0fixc-check-remark-merge-safety.ts`。
+
 ```txt
 g0fixb-debug-duplicates.ts
-g0fixb-import-0420.ts
 g0fixb-verify-dashboard.ts
 g0fixb-verify-database.ts
 g0fixc-check-adjustments.ts
-g0fixc-check-remark-merge-safety.ts
 g0fixc-verify-excel.ts
 f2-fix-e-ui-verify.ts
 f2-fix-e-ui-verify-final.ts

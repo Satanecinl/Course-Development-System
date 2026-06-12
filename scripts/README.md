@@ -45,6 +45,13 @@ Before running any script, inspect its source, the script inventory, and the rel
 - `build_teacher_whitelist.py <input.xlsx> <output.txt>` requires explicit input and output paths.
 - `fixtures/teachers.synthetic.txt` contains synthetic names for tests only.
 
+## Seed data
+
+- `npm run db:seed` writes synthetic records from `fixtures/schedule.synthetic.json` to the configured database.
+- Direct seed invocation requires `tsx scripts/seed_db.ts --input <schedule.json>`.
+- Real schedule inputs must remain outside the repository.
+- Historical G0 reset/import tools have been removed from the current HEAD.
+
 ## Disallowed (not in this directory)
 
 - Anything that mass-updates source code (formatting, renaming) — do this in a dedicated stage with `package.json` updates.

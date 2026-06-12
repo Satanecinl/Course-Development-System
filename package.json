@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:seed": "tsx scripts/seed_db.ts",
+    "db:seed": "tsx scripts/seed_db.ts --input scripts/fixtures/schedule.synthetic.json",
     "test:solver": "tsx scripts/test-solver.ts",
     "test:diagnostics": "tsx scripts/test-diagnostics.ts",
     "test:capacity": "tsx scripts/test-capacity.ts",

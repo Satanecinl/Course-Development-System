@@ -1,7 +1,7 @@
 # G0-DIAG 诊断报告：0420 源课表导入解析缺陷排查
 
 > 诊断日期：2026-05-29
-> 诊断脚本：`scripts/diagnose-schedule-import-0420.ts`
+> 原诊断工具已在 K36-A5D2A 从当前 HEAD 移除；本文件仅保留历史结论。
 > 状态：**诊断完成，待修复方案确认**
 
 ---
@@ -225,18 +225,6 @@ taskKey = courseName|teacherStr|weekType|startWeek|endWeek|remark|canonicalClass
 
 ---
 
-## 附录：诊断命令
+## 附录
 
-```bash
-# 运行诊断脚本
-npx tsx scripts/diagnose-schedule-import-0420.ts
-
-# 检查 0420 parser 输出
-python scripts/parse_schedule.py "../2026年春季学期课程表(0420).docx" -o /tmp/0420.json -v
-
-# 检查非法课程
-sqlite3 prisma/dev.db "SELECT id, name FROM Course WHERE name IN ('周六','周日','3、4','5、6','7、8')"
-
-# 检查重复 slot
-sqlite3 prisma/dev.db "SELECT teachingTaskId, COUNT(*) FROM ScheduleSlot GROUP BY teachingTaskId HAVING COUNT(*) > 1"
-```
+原诊断和数据修复工具已从当前 HEAD 移除，避免继续暴露固定真实数据路径或被误执行。

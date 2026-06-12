@@ -28,6 +28,33 @@ interface JsonRecord {
   remark: string | null;
 }
 
+function resolveInputPath(): string {
+  const inputIndex = process.argv.indexOf("--input");
+  const inputPath = inputIndex >= 0 ? process.argv[inputIndex + 1] : undefined;
+
+  if (!inputPath || inputPath.startsWith("--")) {
+    console.error("Usage: tsx scripts/seed_db.ts --input <schedule.json>");
+    process.exit(1);
+  }
+
+  return path.resolve(process.cwd(), inputPath);
+}
+
+function readSeedRecords(jsonPath: string): JsonRecord[] {
+  if (!fs.existsSync(jsonPath) || !fs.statSync(jsonPath).isFile()) {
+    console.error("Seed input file does not exist or is not readable.");
+    process.exit(1);
+  }
+
+  const parsed: unknown = JSON.parse(fs.readFileSync(jsonPath, "utf-8"));
+  if (!Array.isArray(parsed)) {
+    console.error("Seed input must be a JSON array.");
+    process.exit(1);
+  }
+
+  return parsed as JsonRecord[];
+}
+
 // ========== 时间槽映射 ==========
 
 function mapTimeSlotToIndex(timeSlot: string): number {
@@ -241,15 +268,9 @@ async function findMergedClassIds(
 async function main() {
   console.log("========== 开始数据入库 ==========\n");
 
-  const jsonPath = path.resolve(__dirname, "..", "output.json");
-  if (!fs.existsSync(jsonPath)) {
-    console.error(`错误: 找不到 ${jsonPath}`);
-    process.exit(1);
-  }
-
-  const raw = fs.readFileSync(jsonPath, "utf-8");
-  const records: JsonRecord[] = JSON.parse(raw);
-  console.log(`读取到 ${records.length} 条 JSON 记录\n`);
+  const jsonPath = resolveInputPath();
+  const records = readSeedRecords(jsonPath);
+  console.log(`读取到 ${records.length} 条 synthetic JSON 记录\n`);
 
   // ======== 第一步：实体去重 (Upsert) ========
   console.log("--- 第一步：实体去重 ---");

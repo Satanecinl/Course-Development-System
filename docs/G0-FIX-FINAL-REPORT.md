@@ -122,7 +122,7 @@ Dashboard 中出现非法课程名：
 
 ## 6. remark 合并安全检查
 
-**脚本**: `scripts/g0fixc-check-remark-merge-safety.ts`
+**历史检查**: 原可执行脚本已在 K36-A5D2A 从当前 HEAD 移除。
 
 ### 6.1 差异解释
 - **plannedTasks=313**: 按旧逻辑（含 remark）的去重计数
@@ -195,8 +195,8 @@ Dashboard 中出现非法课程名：
 | `npm run test:diagnostics` | ✅ 通过 |
 | `npx tsx scripts/test-g0-parser-guards.ts` | ✅ 13/13 通过 |
 | `npx tsx scripts/g0fixb-verify-database.ts` | ✅ 全部通过 |
-| `npx tsx scripts/diagnose-schedule-import-0420.ts` | ✅ 通过（近似匹配 2 个非非法课程） |
-| `npx tsx scripts/g0fixc-check-remark-merge-safety.ts` | ✅ 通过 |
+| 历史导入诊断 | ✅ 通过（近似匹配 2 个非非法课程） |
+| 历史 remark 合并安全检查 | ✅ 通过 |
 | `npm run test:schedule-adjustment` | ✅ 通过 |
 | `npm run test:schedule-adjustment-cross-week` | ✅ 通过 |
 | `npm run test:capacity` | ✅ 通过（94 个容量冲突是源课表既有问题） |
@@ -222,7 +222,7 @@ Dashboard 中出现非法课程名：
 - **实际存在**: 2025级汽车制造与试验技术1班、2025级汽车制造与试验技术2班
 - **影响**: 无，用户可能记忆有误
 
-### 10.4 diagnose-schedule-import-0420.ts 近似匹配
+### 10.4 历史诊断近似匹配
 - **匹配**: "森林植物（二）"和"大学日语"
 - **原因**: 近似匹配算法将括号和日文字符误判为非法 token
 - **影响**: 无，这些是合法课程名
@@ -235,16 +235,16 @@ Dashboard 中出现非法课程名：
 | 文件 | 用途 |
 |------|------|
 | `scripts/test-g0-parser-guards.ts` | Parser 防线 + key 一致性测试 |
-| `scripts/plan-clean-schedule-dirty-data-0420.ts` | Dry-run 清理计划脚本 |
-| `scripts/g0fixb-import-0420.ts` | 完整导入脚本 |
 | `scripts/g0fixb-verify-database.ts` | 数据库验收脚本 |
 | `scripts/g0fixb-verify-dashboard.ts` | Dashboard 浏览器验收脚本 |
 | `scripts/g0fixc-check-adjustments.ts` | 调课记录与导入批次检查 |
-| `scripts/g0fixc-check-remark-merge-safety.ts` | remark 合并安全检查 |
 | `scripts/g0fixc-verify-excel.ts` | Excel 导出验收脚本 |
 | `scripts/export-schedule-adjustments.ts` | ScheduleAdjustment 快照导出 |
 | `docs/G0-DIAG-REPORT.md` | 诊断报告 |
 | `docs/G0-FIX-FINAL-REPORT.md` | 本文档 |
+
+> K36-A5D2A 已从当前 HEAD 移除旧 G0 诊断、重建、清理计划和 remark
+> 检查工具。本文仅保留历史验收结论，不再提供这些工具的可执行入口。
 
 ### 修改文件
 | 文件 | 修改内容 |
