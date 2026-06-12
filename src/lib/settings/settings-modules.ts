@@ -2,7 +2,7 @@
  * K26-A: System settings module registry.
  *
  * Defines the 9 settings modules and their current status.
- * Only semester-settings is implemented; others are roadmap placeholders.
+ * Some modules are editable settings; others are intentionally read-only status views.
  */
 
 export type ModuleStatus = 'ready' | 'planned' | 'coming-soon' | 'roadmap'
@@ -42,12 +42,12 @@ export const SETTINGS_MODULES: SettingsModule[] = [
   {
     key: 'time-slot-worktime',
     title: '节次与作息设置',
-    description: '管理节次名称、起止时间、启用状态、午休、晚课和周末排课规则。当前仅管理配置本身，尚未接入调课推荐、自动排课 solver、score。',
+    description: '管理节次名称、起止时间、启用状态、午休、晚课和周末排课规则。已接入调课推荐、自动排课 solver、score、apply 和 rollback 主流程。',
     status: 'ready',
     priority: 'P2',
     recommendedStage: 'K26-H-COMPLETED',
     riskLevel: 'high',
-    notes: 'K26-F schema + K26-G API + K26-H UI 已完成。影响面广，solver/score/recommendation 接入需 K26-I/K26-J。',
+    notes: 'K26-F schema + K26-G API + K26-H UI 已完成；recommendation / adjustment / solver / score / apply / rollback 集成已在 K26-I/K26-J/K26-K 相关阶段完成。',
   },
   {
     key: 'campus-room-rules',

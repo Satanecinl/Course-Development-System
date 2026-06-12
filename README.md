@@ -2,18 +2,19 @@
 
 工程应用技术学院排课系统。Next.js 16 + Prisma + SQLite，支持 Word 课表解析、冲突检测、拖拽排课、Multi-room 复合教室、调课审批流、多学期自动排课、WorkTime 引擎接入、K22 score 回归体系。
 
-> **当前主要功能状态**（K35-A 整理时确认）：
+> **当前主要功能状态**（K35-A housekeeping 后汇总；K36-A3 仅对齐文档，未重跑验证命令）：
 >
 > - ✅ 系统设置九模块基础版已验收
-> - ✅ WorkTime 已接入 solver / score / apply / rollback
+> - ✅ WorkTime 设置 UI 已完成，recommendation / adjustment / solver / score / apply / rollback 已接入主流程，**READY_FOR_REAL_USE**
 > - ✅ K26-K HC6 闭环已完成
 > - ✅ K28 用户调课申请审批流 **READY_FOR_REAL_USE**
 > - ✅ K29 多学期自动排课入口 **READY_FOR_REAL_USE**
 > - ✅ K34 导入管理基础页 **READY_FOR_REAL_USE**
 > - ✅ K34-A3 multi-room / secondary room support **READY_FOR_REAL_USE**
-> - ✅ K22-C score regression baseline 当前为 **73 / 0 / 0 / 0 / 0**
-> - ⚠ auth foundation 当前为 **60 / 62**（pre-existing ScheduleAdjustment ACTIVE count）
-> - ⚠ lint baseline 最近为 **191 errors / 154 warnings**（以后以实际 repo 为准，**不得新增问题**）
+> - ✅ K35-A repository housekeeping 已完成
+> - ℹ️ K22-C score 历史 baseline 为 **73 / 0 / 0 / 0 / 0**
+> - ⚠ auth foundation 历史记录为 **60 / 62**（pre-existing ScheduleAdjustment ACTIVE count）
+> - ⚠ lint 历史 baseline 为 **191 errors / 154 warnings**；K36-A 系列未重跑，以后续实际验证为准
 
 详细状态与最近一次整合请看：
 
@@ -96,7 +97,7 @@ npm run audit:confirmed-import          # 导入后审计
 ## 数据库
 
 - **本地数据库**：`prisma/dev.db`（SQLite，**禁止提交**）
-- **Schema**：`prisma/schema.prisma`（10 个 migrations；最新：`20260608000000_add_worktime_config`）
+- **Schema**：`prisma/schema.prisma`（10 个 migrations；最新：`20260611000000_add_schedule_slot_additional_rooms`）
 - **Backup 规则**：DESTRUCTIVE 操作前生成 `prisma/dev.db.backup-before-<stage>-<timestamp>`；**禁止提交 backup**
 - **Backup 状态**（K35-A 盘点时）：ignore 区域内已有 `prisma/dev.db.backup-before-conflict-adjustment-manual-acceptance-20260601101600` 等历史 backup；保留不动
 
@@ -147,6 +148,7 @@ npm run audit:confirmed-import          # 导入后审计
 ## 当前开发建议
 
 - **K34-A3 multi-room 链路已 READY_FOR_REAL_USE**，可放心使用 secondary room 筛选与显示。
+- **K35-A housekeeping 已完成**；K36-A 系列正在进行发布基线与文档对齐，本地阶段状态不代表远端已同步。
 - **K28 / K29 / K34 入口**功能可用；继续做新功能前，先在 [docs/current-project-status.md](docs/current-project-status.md) 顶部确认最近 closeout。
 - **依赖升级**是独立 stage（推荐名：`K35-B-DEPENDENCY-UPGRADE-PLAN-AND-SAFE-UPDATE`），当前不升级。
 - **脚本归档**是独立 stage（推荐名：`K35-C-SCRIPT-ARCHIVE-AND-NAMING-CONSOLIDATION`），当前只盘点不归档。
