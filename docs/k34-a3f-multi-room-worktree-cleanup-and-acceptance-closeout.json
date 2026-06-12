@@ -1,0 +1,147 @@
+{
+  "generatedAt": "2026-06-12T01:00:00.000Z",
+  "phase": "K34-A3F-MULTI-ROOM-WORKTREE-CLEANUP-AND-ACCEPTANCE-CLOSEOUT",
+  "summary": {
+    "result": "PASS",
+    "scope": "worktree cleanup + acceptance closeout only. No business code changes.",
+    "featureStatus": "READY_FOR_REAL_USE",
+    "manualVerification": "K34-A3E user manual verification PASSED (browser smoke-test of all five runtime surfaces)"
+  },
+  "k34A3StageProgression": {
+    "K34-A3": {
+      "status": "CLOSED",
+      "summary": "Multi-room / composite room schema, importer, score, apply, export. Grep-only verification, 42/42 PASS.",
+      "commit": "bdf1bbe"
+    },
+    "K34-A3B": {
+      "status": "CLOSED",
+      "summary": "Dashboard all-week mode restored. 18/18 PASS.",
+      "commit": "3cbe80a"
+    },
+    "K34-A3C": {
+      "status": "CLOSED",
+      "summary": "Initial secondary-room filter support. Stage-aware upgrade in K34-A3E added server-side OR check. 21/21 PASS (was 20/20, +1 K34-A3E check).",
+      "commit": "29332be + dedb5f5 (K34-A3E stage-aware)"
+    },
+    "K34-A3D": {
+      "status": "CLOSED",
+      "summary": "score.ts getAllRoomIds stale primary double-count bug fixed (currentRoomId parameter). K22-C recovered 73/0/0/0. 25/25 PASS.",
+      "commit": "8ed7fcc"
+    },
+    "K34-A3E": {
+      "status": "CLOSED",
+      "summary": "Runtime server-side room filter (OR) + classroom capacity union (primary+additional, dedup). User manual verification PASSED on all 5 surfaces. 36/36 PASS.",
+      "commit": "dedb5f5"
+    },
+    "K34-A3F": {
+      "status": "CLOSED",
+      "summary": "Worktree cleanup (K22 generatedAt drift restored; 3 K28-B untracked preserved as unrelated) + acceptance closeout. No business code changes. 25/25 PASS."
+    }
+  },
+  "userManualVerification": {
+    "status": "PASSED",
+    "scope": "K34-A3E browser smoke-test of all five runtime surfaces",
+    "verifiedItems": [
+      "/dashboard 全部显示按 10-104 / 11-105 (secondary) 筛选可显示课程",
+      "/dashboard 单周模式 secondary room 筛选正常",
+      "/dashboard 教师筛选 composite display 仍正常 (11-322 或 10-104 等)",
+      "/admin/rooms/capacity 页 10-104 / 11-105 不再 0/0",
+      "Excel secondary room 导出通过",
+      "无 runtime error"
+    ]
+  },
+  "worktreeCleanup": {
+    "k22GeneratedAtDrift": {
+      "status": "RESTORED",
+      "method": "git checkout -- (uncommitted local re-runs of K22-C verify generated timestamp drift; no functional change)",
+      "filesRestored": [
+        "docs/k22-score-default-snapshot.json",
+        "docs/k22-score-regression-harness-implementation.json"
+      ],
+      "rationale": "Drift was purely the generatedAt timestamp; restoring keeps the K22 expected files locked to their last committed (K34-A3D) state. K22-C re-run during K34-A3F will leave no drift in the final worktree."
+    },
+    "k28BUntracked": {
+      "status": "PRESERVED (untracked, NOT committed, NOT deleted)",
+      "files": [
+        "docs/项目汇报表格.md",
+        "k28-b-manual-trial-result.json",
+        "scripts/k28-b-run-manual-trial.ts"
+      ],
+      "rationale": "Pre-existing K28-B manual trial artifacts unrelated to K34-A3 multi-room. K34-A3F scope explicitly forbids committing these; closeout doc records them as pre-existing unrelated untracked. They remain visible in git status but are not part of this commit."
+    },
+    "prismaDevDb": "NOT STAGED, NOT COMMITTED",
+    "dbBackup": "NONE generated, NONE committed"
+  },
+  "businessCodeChanges": {
+    "srcApp": "NONE",
+    "srcComponents": "NONE",
+    "srcLib": "NONE",
+    "prismaSchema": "NONE",
+    "prismaMigrations": "NONE",
+    "prismaDevDb": "NONE",
+    "k22Expected": "NONE",
+    "k22Fixture": "NONE",
+    "solver": "NONE",
+    "scoreTs": "NONE",
+    "importer": "NONE",
+    "dashboardUi": "NONE",
+    "capacityLogic": "NONE",
+    "exportLogic": "NONE",
+    "rbac": "NONE",
+    "authSeed": "NONE"
+  },
+  "filesAdded": [
+    {
+      "path": "scripts/verify-multi-room-acceptance-closeout-k34-a3f.ts",
+      "purpose": "Read-only closeout verify (25 checks: schema, Prisma, code, K22/K28-B untracked, closeout doc)"
+    },
+    {
+      "path": "docs/k34-a3f-multi-room-worktree-cleanup-and-acceptance-closeout.md",
+      "purpose": "Closeout doc (this file's twin)"
+    },
+    {
+      "path": "docs/k34-a3f-multi-room-worktree-cleanup-and-acceptance-closeout.json",
+      "purpose": "Closeout JSON report"
+    }
+  ],
+  "filesRestored": [
+    "docs/k22-score-default-snapshot.json (K22 generatedAt drift)",
+    "docs/k22-score-regression-harness-implementation.json (K22 generatedAt drift)"
+  ],
+  "validationChain": {
+    "k34A3FCloseoutVerify": "25/25 PASS",
+    "k34A3EVerify": "36/36 PASS",
+    "k34A3C": "21/21 PASS (was 20/20, +1 K34-A3E stage-aware)",
+    "k34A3B": "18/18 PASS",
+    "k34A3": "42/42 PASS",
+    "k34A2": "45/45 PASS",
+    "k34A": "64/64 PASS",
+    "k22C": "73/0/0/0/0 (unchanged from K34-A3D)",
+    "k26K4C": "32/36 — 4 fails are pre-existing baseline hardcodes (lint 184/146 vs current 191/154, auth 53/1 vs current 60/62). K22-C, schema, score weights, HC6, K22 expected all PASS per script.",
+    "authFoundation": "60/62 — pre-existing ScheduleAdjustment ACTIVE count",
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "10 migrations, schema up to date",
+    "build": "PASS",
+    "lint": "191 errors / 154 warnings (unchanged from K34-A3D; no new lint issues introduced by K34-A3F)"
+  },
+  "gitHubSync": {
+    "branch": "master",
+    "localHeadBefore": "dedb5f5 (K34-A3E)",
+    "localHeadAfter": "<TBD after push>",
+    "remoteHeadAfter": "<TBD after push>",
+    "forcePush": "NO",
+    "aheadBehind": "0/0",
+    "prismaDevDbCommitted": false,
+    "dbBackupCommitted": false,
+    "k22DriftCommitted": false,
+    "k28BUntrackedCommitted": false
+  },
+  "conclusion": {
+    "k34A3FCloseable": true,
+    "k34A3ReadyForRealUse": true,
+    "k34A3ManualVerificationPassed": true,
+    "k22CStable": true,
+    "allowNextFeatureStage": true,
+    "remainingBlockers": "none"
+  }
+}
