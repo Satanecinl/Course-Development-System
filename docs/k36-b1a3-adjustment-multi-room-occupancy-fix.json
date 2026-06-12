@@ -1,0 +1,44 @@
+{
+  "stage": "K36-B1A3-ADJUSTMENT-AND-RECOMMENDATION-MULTI-ROOM-FIX",
+  "status": "PASS",
+  "roomSemantics": {
+    "primaryMayChange": true,
+    "secondaryRoomsRetained": true,
+    "nullNewRoomRetainsPrimary": true,
+    "effectiveTargetRoomSet": "target primary plus retained secondary rooms"
+  },
+  "behavior": {
+    "targetPrimaryExistingPrimary": "PASS",
+    "targetPrimaryExistingSecondary": "PASS",
+    "retainedSecondaryExistingPrimary": "PASS",
+    "retainedSecondaryExistingSecondary": "PASS",
+    "sameWeekExcludeSelf": "PASS",
+    "crossWeekSourceRecurrence": "PASS",
+    "crossSemesterIsolation": "PASS",
+    "noRoomTeacherClassPreserved": "PASS",
+    "deduplication": "PASS",
+    "legacyPrimaryOnly": "PASS",
+    "directCreateGuard": "PASS",
+    "requestSubmitGuard": "PASS",
+    "requestApprovalGuard": "PASS",
+    "roomRecommendation": "PASS",
+    "planRecommendation": "PASS"
+  },
+  "validation": {
+    "fixturePassed": 15,
+    "fixtureFailed": 0,
+    "docsPiiBlocking": 0,
+    "prismaValidate": "PASS",
+    "build": "PASS",
+    "targetedEslintErrors": 0,
+    "targetedEslintExistingWarnings": 7
+  },
+  "outOfScope": [
+    "scheduler score and solver",
+    "campus room rules",
+    "HC4 HC5 HC6 delta alignment",
+    "WorkTime B-03",
+    "schema and migrations",
+    "Git history"
+  ]
+}

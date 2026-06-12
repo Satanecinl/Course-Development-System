@@ -8,11 +8,13 @@ import type {
 } from '@/types/schedule-adjustment'
 import { isScheduleItemActiveInWeek } from './week-filter'
 import {
-  isRoomConflict as ruleIsRoomConflict,
+  checkOccupancyConflicts,
+  getEffectiveRoomIds,
   isTeacherConflict as ruleIsTeacherConflict,
   isClassGroupConflict as ruleIsClassGroupConflict,
   isSameTimeSlot as ruleIsSameTimeSlot,
   isWeekOverlapping as ruleIsWeekOverlapping,
+  type ScheduleConflictCandidate,
   type ScheduleConflictOccupancy,
 } from '@/lib/schedule/conflict-rules'
 import { expandWeeks as ruleExpandWeeks, type WeekConstraint } from '@/lib/conflict'
@@ -62,6 +64,18 @@ export interface EffectiveScheduleItem extends ScheduleViewData {
   originalSlotId?: number
   sourceWeek?: number
   targetWeek?: number
+}
+
+export function findAdjustmentRoomConflict(
+  candidate: ScheduleConflictCandidate,
+  occupancies: ScheduleConflictOccupancy[],
+): ScheduleConflictOccupancy | null {
+  for (const occupancy of occupancies) {
+    const hasRoomConflict = checkOccupancyConflicts(candidate, occupancy)
+      .some((match) => match.type === 'room')
+    if (hasRoomConflict) return occupancy
+  }
+  return null
 }
 
 export async function getEffectiveScheduleForWeek(
@@ -178,7 +192,14 @@ export async function getEffectiveScheduleForWeek(
             dayOfWeek: adj.newDayOfWeek ?? originalItem.dayOfWeek,
             slotIndex: adj.newSlotIndex ?? originalItem.slotIndex,
             roomId: adj.newRoomId ?? originalItem.roomId,
-            roomName: adj.newRoom ? adj.newRoom.name : originalItem.roomName,
+            roomName: adj.newRoom
+              ? originalItem.additionalRoomIds?.length
+                ? adj.newRoom.name + ' 或 ' + slotRoomNames(
+                    originalItem.additionalRoomIds,
+                    slots,
+                  ).join(' 或 ')
+                : adj.newRoom.name
+              : originalItem.roomName,
             adjustmentId: adj.id,
             isAdjusted: true,
             originalSlotId: adj.originalSlotId,
@@ -229,6 +250,10 @@ export async function dryRunScheduleAdjustment(
   const originalSlot = await prisma.scheduleSlot.findUnique({
     where: { id: input.originalSlotId },
     include: {
+      additionalRooms: {
+        select: { roomId: true },
+        orderBy: { id: 'asc' },
+      },
       teachingTask: {
         include: {
           course: true,
@@ -320,7 +345,11 @@ export async function dryRunScheduleAdjustment(
   const effectiveItems = await getEffectiveScheduleForWeek(targetWeek, semesterId)
   const newDay = input.newDayOfWeek!
   const newSlot = input.newSlotIndex!
-  const newRoomId = input.newRoomId ?? null
+  // Adjustments only replace the primary room. Secondary rooms remain attached
+  // to the source ScheduleSlot and therefore remain occupied after the move.
+  // A null newRoomId retains the original primary room.
+  const newRoomId = input.newRoomId ?? originalSlot.roomId ?? null
+  const retainedAdditionalRoomIds = originalSlot.additionalRooms.map((room) => room.roomId)
 
   // Build occupancy list from effective items at the target day/slot.
   // The effective schedule is already scoped to targetWeek, so week overlap
@@ -348,6 +377,8 @@ export async function dryRunScheduleAdjustment(
     teacherId: item.teacherId ?? null,
     classGroupIds: item.classGroupIds ?? [],
     roomId: item.roomId ?? null,
+    additionalRoomIds: item.additionalRoomIds ?? [],
+    semesterId,
     dayOfWeek: item.dayOfWeek,
     slotIndex: item.slotIndex,
     weekConstraint: {
@@ -390,14 +421,25 @@ export async function dryRunScheduleAdjustment(
     })
   }
 
-  // Room conflict (first match wins — matches original behavior)
-  if (newRoomId) {
-    const roomConflict = occupancies.find(
-      (occ) =>
-        ruleIsSameTimeSlot({ dayOfWeek: newDay, slotIndex: newSlot }, occ) &&
-        ruleIsWeekOverlapping(taskWeeks, occ.weekConstraint) &&
-        ruleIsRoomConflict({ roomId: newRoomId }, occ),
-    )
+  // Room conflict (first match wins). The candidate occupies its target
+  // primary room plus the source slot's retained secondary rooms.
+  const candidateRoomIds = getEffectiveRoomIds({
+    roomId: newRoomId,
+    additionalRoomIds: retainedAdditionalRoomIds,
+  })
+  if (candidateRoomIds.size > 0) {
+    const roomConflict = findAdjustmentRoomConflict({
+      teachingTaskId: task.id,
+      teacherId,
+      classGroupIds: originalClassGroupIds,
+      roomId: newRoomId,
+      additionalRoomIds: retainedAdditionalRoomIds,
+      semesterId,
+      dayOfWeek: newDay,
+      slotIndex: newSlot,
+      weeks: taskWeeks,
+      excludeOccupancyId: targetWeek === sourceWeek ? input.originalSlotId : null,
+    }, occupancies)
     if (roomConflict) {
       conflicts.push({
         type: 'ROOM_CONFLICT',
@@ -424,6 +466,21 @@ export async function dryRunScheduleAdjustment(
   }
 
   return { canApply: conflicts.length === 0, conflicts, warnings }
+}
+
+function slotRoomNames(
+  roomIds: number[],
+  slots: Array<{
+    additionalRooms: Array<{ roomId: number; room: { name: string } }>
+  }>,
+): string[] {
+  const names = new Map<number, string>()
+  for (const slot of slots) {
+    for (const room of slot.additionalRooms) {
+      if (roomIds.includes(room.roomId)) names.set(room.roomId, room.room.name)
+    }
+  }
+  return roomIds.map((roomId) => names.get(roomId)).filter((name): name is string => name != null)
 }
 
 // ── Create adjustment ──

@@ -89,6 +89,11 @@ export interface RoomRecommendationInput {
   limit?: number
   /** Optional semester override. Defaults to slot's semester. */
   semesterId?: number | null
+  /**
+   * Secondary rooms retained by the moving slot. Normally resolved from the
+   * source slot; plan recommendation may pass them explicitly.
+   */
+  retainedAdditionalRoomIds?: number[]
 }
 
 export interface RoomRecommendationCandidate {
@@ -185,6 +190,10 @@ export async function findAdjustmentRoomRecommendations(
     where: { id: input.scheduleSlotId },
     include: {
       room: true,
+      additionalRooms: {
+        select: { roomId: true },
+        orderBy: { id: 'asc' },
+      },
       teachingTask: {
         include: {
           course: true,
@@ -201,6 +210,8 @@ export async function findAdjustmentRoomRecommendations(
 
   // 3. Source task context
   const task = slot.teachingTask
+  const retainedAdditionalRoomIds =
+    input.retainedAdditionalRoomIds ?? slot.additionalRooms.map((item) => item.roomId)
   const classGroupIds = task.taskClasses.map((tc) => tc.classGroupId)
   const classGroupNames = task.taskClasses.map((tc) => tc.classGroup.name)
 
@@ -259,6 +270,7 @@ export async function findAdjustmentRoomRecommendations(
       targetDayOfWeek: input.targetDayOfWeek,
       targetSlotIndex: input.targetSlotIndex,
       targetRoomId: room.id,
+      targetAdditionalRoomIds: retainedAdditionalRoomIds,
       semesterId,
     })
     if (conflictResult.hasConflict) {

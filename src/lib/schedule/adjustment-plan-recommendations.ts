@@ -267,6 +267,10 @@ export async function findAdjustmentPlanRecommendations(
     where: { id: input.scheduleSlotId },
     include: {
       room: true,
+      additionalRooms: {
+        select: { roomId: true },
+        orderBy: { id: 'asc' },
+      },
       teachingTask: {
         include: {
           course: true,
@@ -363,6 +367,7 @@ export async function findAdjustmentPlanRecommendations(
           targetSlotIndex,
           limit: limit, // bound inner work; outer sort decides final top-N
           semesterId,
+          retainedAdditionalRoomIds: slot.additionalRooms.map((room) => room.roomId),
         })
 
         // Tally rejected buckets for this time candidate so the
