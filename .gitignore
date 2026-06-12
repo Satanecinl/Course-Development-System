@@ -50,6 +50,9 @@ prisma/dev.db
 prisma/dev.db.backup-*
 prisma/dev.db-journal
 
+# Local database backups
+/prisma/backups/
+
 # Screenshots (UI verification)
 scripts/f2-verify-screenshots/
 
@@ -68,6 +71,9 @@ __pycache__/
 
 # CodeGraph
 .codegraph/
+
+# Local tool configuration
+/.claude/
 
 # K35-A: temp directory for local-only artifacts, manual trial outputs,
 # unsanitized drafts, DB backup pointers, etc. The temp/README.md itself
