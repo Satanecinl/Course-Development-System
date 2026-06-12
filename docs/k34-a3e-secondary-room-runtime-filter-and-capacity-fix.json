@@ -62,10 +62,10 @@
       "asAdditional": 4,
       "expectedMatched": 4,
       "sampleSlots": [
-        { "slotId": 148, "course": "智能传感器装调与测试", "teacher": "赵俣绗", "display": "11-208 或 10-104" },
-        { "slotId": 235, "course": "冶金设备维护", "teacher": "宋如武", "display": "11-322 或 10-104" },
-        { "slotId": 253, "course": "冶金设备维护", "teacher": "宋如武", "display": "11-321 或 10-104" },
-        { "slotId": 308, "course": "机电设备故障诊断与维修", "teacher": "宋如武", "display": "11-208 或 10-104" }
+        { "slotId": 148, "course": "Course001", "teacher": "T001", "display": "<REDACTED_TEXT>" },
+        { "slotId": 235, "course": "Course002", "teacher": "T002", "display": "<REDACTED_TEXT>" },
+        { "slotId": 253, "course": "Course002", "teacher": "T002", "display": "<REDACTED_TEXT>" },
+        { "slotId": 308, "course": "Course003", "teacher": "T002", "display": "<REDACTED_TEXT>" }
       ]
     },
     "11-105": {
@@ -74,11 +74,11 @@
       "asAdditional": 6,
       "expectedMatched": 6,
       "sampleSlots": [
-        { "slotId": 309, "course": "工厂供配电技术", "teacher": "宋如武", "display": "11-204 或 11-105" },
-        { "slotId": 315, "course": "工厂供配电技术", "teacher": "宋如武", "display": "11-208 或 11-105" },
-        { "slotId": 321, "course": "工厂供配电技术", "teacher": "宋如武", "display": "11-333 或 11-105" },
-        { "slotId": 327, "course": "工厂供配电技术", "teacher": "宋如武", "display": "11-208 或 11-105" },
-        { "slotId": 335, "course": "工厂供配电技术", "teacher": "宋如武", "display": "11-204 或 11-105" }
+        { "slotId": 309, "course": "Course004", "teacher": "T002", "display": "<REDACTED_TEXT>" },
+        { "slotId": 315, "course": "Course004", "teacher": "T002", "display": "<REDACTED_TEXT>" },
+        { "slotId": 321, "course": "Course004", "teacher": "T002", "display": "<REDACTED_TEXT>" },
+        { "slotId": 327, "course": "Course004", "teacher": "T002", "display": "<REDACTED_TEXT>" },
+        { "slotId": 335, "course": "Course004", "teacher": "T002", "display": "<REDACTED_TEXT>" }
       ]
     }
   },

@@ -416,7 +416,7 @@
     "worstTeacherDistributions": [
       {
         "teacherId": 5,
-        "teacherName": "李媛",
+        "teacherName": "T001",
         "distribution": [
           3,
           2,
@@ -436,7 +436,7 @@
     "worstClassGaps": [
       {
         "classGroupId": 1,
-        "classGroupName": "2025级智能轧钢技术1班",
+        "classGroupName": "CG001",
         "day": 2,
         "periods": [
           2,
@@ -449,7 +449,7 @@
       },
       {
         "classGroupId": 2,
-        "classGroupName": "2025级智能轧钢技术2班",
+        "classGroupName": "CG002",
         "day": 2,
         "periods": [
           1,
@@ -463,7 +463,7 @@
       },
       {
         "classGroupId": 3,
-        "classGroupName": "2025级钢铁智能冶金技术1班（高本贯通）",
+        "classGroupName": "CG003",
         "day": 5,
         "periods": [
           2,
@@ -476,7 +476,7 @@
       },
       {
         "classGroupId": 3,
-        "classGroupName": "2025级钢铁智能冶金技术1班（高本贯通）",
+        "classGroupName": "CG003",
         "day": 4,
         "periods": [
           1,
@@ -489,7 +489,7 @@
       },
       {
         "classGroupId": 17,
-        "classGroupName": "2025级森林草原防火技术1班",
+        "classGroupName": "CG004",
         "day": 5,
         "periods": [
           3,
@@ -501,7 +501,7 @@
       },
       {
         "classGroupId": 6,
-        "classGroupName": "2025级机电一体化技术1班",
+        "classGroupName": "CG005",
         "day": 5,
         "periods": [
           1,
@@ -515,7 +515,7 @@
       },
       {
         "classGroupId": 7,
-        "classGroupName": "2025级机电一体化技术2班",
+        "classGroupName": "CG006",
         "day": 5,
         "periods": [
           4,
@@ -526,7 +526,7 @@
       },
       {
         "classGroupId": 6,
-        "classGroupName": "2025级机电一体化技术1班",
+        "classGroupName": "CG005",
         "day": 4,
         "periods": [
           2,
@@ -539,7 +539,7 @@
       },
       {
         "classGroupId": 6,
-        "classGroupName": "2025级机电一体化技术1班",
+        "classGroupName": "CG005",
         "day": 3,
         "periods": [
           2,
@@ -552,7 +552,7 @@
       },
       {
         "classGroupId": 7,
-        "classGroupName": "2025级机电一体化技术2班",
+        "classGroupName": "CG006",
         "day": 1,
         "periods": [
           1,
@@ -566,7 +566,7 @@
       },
       {
         "classGroupId": 9,
-        "classGroupName": "2025级机电一体化技术4班",
+        "classGroupName": "CG007",
         "day": 2,
         "periods": [
           1,
@@ -579,7 +579,7 @@
       },
       {
         "classGroupId": 8,
-        "classGroupName": "2025级机电一体化技术3班",
+        "classGroupName": "CG008",
         "day": 1,
         "periods": [
           1,
@@ -593,7 +593,7 @@
       },
       {
         "classGroupId": 9,
-        "classGroupName": "2025级机电一体化技术4班",
+        "classGroupName": "CG007",
         "day": 1,
         "periods": [
           1,
@@ -607,7 +607,7 @@
       },
       {
         "classGroupId": 8,
-        "classGroupName": "2025级机电一体化技术3班",
+        "classGroupName": "CG008",
         "day": 5,
         "periods": [
           1,
@@ -620,7 +620,7 @@
       },
       {
         "classGroupId": 9,
-        "classGroupName": "2025级机电一体化技术4班",
+        "classGroupName": "CG007",
         "day": 5,
         "periods": [
           1,
@@ -638,61 +638,61 @@
     "mostRooms": [
       {
         "taskId": 199,
-        "courseName": "大学英语",
+        "courseName": "Course001",
         "roomCount": 3,
         "penalty": -4
       },
       {
         "taskId": 200,
-        "courseName": "大学日语",
+        "courseName": "Course002",
         "roomCount": 3,
         "penalty": -4
       },
       {
         "taskId": 6,
-        "courseName": "无机化学",
+        "courseName": "Course003",
         "roomCount": 2,
         "penalty": -2
       },
       {
         "taskId": 12,
-        "courseName": "大学英语",
+        "courseName": "Course001",
         "roomCount": 2,
         "penalty": -2
       },
       {
         "taskId": 21,
-        "courseName": "无机化学",
+        "courseName": "Course003",
         "roomCount": 2,
         "penalty": -2
       },
       {
         "taskId": 27,
-        "courseName": "高等数学",
+        "courseName": "Course004",
         "roomCount": 2,
         "penalty": -2
       },
       {
         "taskId": 29,
-        "courseName": "线性代数",
+        "courseName": "Course005",
         "roomCount": 2,
         "penalty": -2
       },
       {
         "taskId": 43,
-        "courseName": "冶金热工基础",
+        "courseName": "Course006",
         "roomCount": 2,
         "penalty": -2
       },
       {
         "taskId": 71,
-        "courseName": "PLC技术与应用",
+        "courseName": "Course007",
         "roomCount": 2,
         "penalty": -2
       },
       {
         "taskId": 72,
-        "courseName": "电机与电气控制技术",
+        "courseName": "Course008",
         "roomCount": 2,
         "penalty": -2
       }
@@ -763,19 +763,19 @@
       "rank": 1,
       "issue": "SC5 教师负载不均 1 个教师",
       "severity": "MEDIUM",
-      "detail": "最严重: 李媛 [3,2,1,4,4] (diff=3, penalty=-3)"
+      "detail": "<REDACTED_TEXT>"
     },
     {
       "rank": 2,
       "issue": "SC8 班级空洞 48 个 (classGroup, day) 对",
       "severity": "MEDIUM",
-      "detail": "最严重: 2025级智能轧钢技术1班 星期2 periods=[2,3,5,6] gap=1"
+      "detail": "<REDACTED_TEXT>"
     },
     {
       "rank": 3,
       "issue": "SC9 教室不稳定 76 个 task 使用 ≥2 教室",
       "severity": "MEDIUM",
-      "detail": "最严重: 大学英语 使用 3 个不同教室"
+      "detail": "<REDACTED_TEXT>"
     },
     {
       "rank": 4,
