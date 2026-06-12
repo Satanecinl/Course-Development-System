@@ -19,135 +19,135 @@
   "decisions": [
     {
       "taskId": 168,
-      "course": "机械制图",
-      "teacher": "赵春超",
+      "course": "Course001",
+      "teacher": "T001",
       "classGroups": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG001",
+        "CG002",
+        "CG003",
+        "CG004"
       ],
       "cohortYears": [
         2025,
         2024
       ],
       "tracks": [
-        "高本贯通",
-        "现场工程师"
+        "CG005",
+        "CG006"
       ],
       "scheduleSlotCount": 1,
       "importBatchStatus": "confirmed",
       "sourceEvidenceAvailable": true,
       "decision": "LIKELY_ERROR",
       "confidence": "HIGH",
-      "recommendedRepairPlan": "Remove classgroup link to 2024级钢铁智能冶金技术1班（高本贯通）from task 168. If the 2024级 class genuinely shares this course, create a separate TeachingTask for the 2024级 cohort. Requires K18 data repair.",
+      "recommendedRepairPlan": "<REDACTED_TEXT>",
       "manualReviewQuestions": [
-        "Does the original .docx show \"机械制图\" taught to 2024级钢铁智能冶金技术1班（高本贯通）as a separate entry?",
-        "Was the 合班 remark \"2024级钢铁智能冶金技术1班（高本贯通）\" intended as a cross-cohort merge or a parser artifact?"
+        "<REDACTED_TEXT>",
+        "<REDACTED_TEXT>"
       ]
     },
     {
       "taskId": 174,
-      "course": "机械制图",
-      "teacher": "张红梅",
+      "course": "Course001",
+      "teacher": "T002",
       "classGroups": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG001",
+        "CG002",
+        "CG003",
+        "CG004"
       ],
       "cohortYears": [
         2025,
         2024
       ],
       "tracks": [
-        "高本贯通",
-        "现场工程师"
+        "CG005",
+        "CG006"
       ],
       "scheduleSlotCount": 1,
       "importBatchStatus": "confirmed",
       "sourceEvidenceAvailable": true,
       "decision": "LIKELY_ERROR",
       "confidence": "HIGH",
-      "recommendedRepairPlan": "Remove classgroup link to 2024级钢铁智能冶金技术1班（高本贯通）from task 174. If the 2024级 class genuinely shares this course, create a separate TeachingTask for the 2024级 cohort. Requires K18 data repair.",
+      "recommendedRepairPlan": "<REDACTED_TEXT>",
       "manualReviewQuestions": [
-        "Does the original .docx show \"机械制图\" taught to 2024级钢铁智能冶金技术1班（高本贯通）as a separate entry?",
-        "Was the 合班 remark \"2024级钢铁智能冶金技术1班（高本贯通）\" intended as a cross-cohort merge or a parser artifact?"
+        "<REDACTED_TEXT>",
+        "<REDACTED_TEXT>"
       ]
     },
     {
       "taskId": 176,
-      "course": "电子技术",
-      "teacher": "许进",
+      "course": "Course002",
+      "teacher": "T003",
       "classGroups": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG001",
+        "CG002",
+        "CG003",
+        "CG004"
       ],
       "cohortYears": [
         2025,
         2024
       ],
       "tracks": [
-        "高本贯通",
-        "现场工程师"
+        "CG005",
+        "CG006"
       ],
       "scheduleSlotCount": 1,
       "importBatchStatus": "confirmed",
       "sourceEvidenceAvailable": true,
       "decision": "LIKELY_ERROR",
       "confidence": "HIGH",
-      "recommendedRepairPlan": "Remove classgroup link to 2024级钢铁智能冶金技术1班（高本贯通）from task 176. If the 2024级 class genuinely shares this course, create a separate TeachingTask for the 2024级 cohort. Requires K18 data repair.",
+      "recommendedRepairPlan": "<REDACTED_TEXT>",
       "manualReviewQuestions": [
-        "Does the original .docx show \"电子技术\" taught to 2024级钢铁智能冶金技术1班（高本贯通）as a separate entry?",
-        "Was the 合班 remark \"2024级钢铁智能冶金技术1班（高本贯通）\" intended as a cross-cohort merge or a parser artifact?"
+        "<REDACTED_TEXT>",
+        "<REDACTED_TEXT>"
       ]
     },
     {
       "taskId": 181,
-      "course": "传感器与检测技术",
-      "teacher": "张旭",
+      "course": "Course003",
+      "teacher": "T004",
       "classGroups": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG001",
+        "CG002",
+        "CG003",
+        "CG004"
       ],
       "cohortYears": [
         2025,
         2024
       ],
       "tracks": [
-        "高本贯通",
-        "现场工程师"
+        "CG005",
+        "CG006"
       ],
       "scheduleSlotCount": 1,
       "importBatchStatus": "confirmed",
       "sourceEvidenceAvailable": true,
       "decision": "LIKELY_ERROR",
       "confidence": "HIGH",
-      "recommendedRepairPlan": "Remove classgroup link to 2024级钢铁智能冶金技术1班（高本贯通）from task 181. If the 2024级 class genuinely shares this course, create a separate TeachingTask for the 2024级 cohort. Requires K18 data repair.",
+      "recommendedRepairPlan": "<REDACTED_TEXT>",
       "manualReviewQuestions": [
-        "Does the original .docx show \"传感器与检测技术\" taught to 2024级钢铁智能冶金技术1班（高本贯通）as a separate entry?",
-        "Was the 合班 remark \"2024级钢铁智能冶金技术1班（高本贯通）\" intended as a cross-cohort merge or a parser artifact?"
+        "<REDACTED_TEXT>",
+        "<REDACTED_TEXT>"
       ]
     },
     {
       "taskId": 37,
-      "course": "习近平新时代中国特色社会主义思想概论",
-      "teacher": "房忠敏",
+      "course": "Course004",
+      "teacher": "T005",
       "classGroups": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级森林草原防火技术1班",
-        "2024级森林草原防火技术1班"
+        "CG001",
+        "CG007",
+        "CG008"
       ],
       "cohortYears": [
         2025,
         2024
       ],
       "tracks": [
-        "高本贯通",
+        "CG005",
         null
       ],
       "scheduleSlotCount": 1,
@@ -157,33 +157,33 @@
       "confidence": "MEDIUM",
       "recommendedRepairPlan": "Verify original .docx to confirm whether this public course intentionally merges 2024 and 2025 cohorts. If confirmed legitimate, mark ACCEPTED_CROSS_COHORT. If not, split into separate tasks per cohort.",
       "manualReviewQuestions": [
-        "Is \"习近平新时代中国特色社会主义思想概论\" a cross-cohort public course in the original .docx?",
-        "Should 2024级 and 2025级 students attend this course together?"
+        "<REDACTED_TEXT>",
+        "<REDACTED_TEXT>"
       ]
     }
   ],
   "repairPlanCandidates": [
     {
       "taskId": 168,
-      "course": "机械制图",
+      "course": "Course001",
       "decision": "LIKELY_ERROR",
       "plan": "Remove classgroup link to 2024级钢铁智能冶金技术1班（高本贯通）from task 168. If the 2024级 class genuinely shares this course, create a separate TeachingTask for the 2024级 cohort. Requires K18 data repair."
     },
     {
       "taskId": 174,
-      "course": "机械制图",
+      "course": "Course001",
       "decision": "LIKELY_ERROR",
       "plan": "Remove classgroup link to 2024级钢铁智能冶金技术1班（高本贯通）from task 174. If the 2024级 class genuinely shares this course, create a separate TeachingTask for the 2024级 cohort. Requires K18 data repair."
     },
     {
       "taskId": 176,
-      "course": "电子技术",
+      "course": "Course002",
       "decision": "LIKELY_ERROR",
       "plan": "Remove classgroup link to 2024级钢铁智能冶金技术1班（高本贯通）from task 176. If the 2024级 class genuinely shares this course, create a separate TeachingTask for the 2024级 cohort. Requires K18 data repair."
     },
     {
       "taskId": 181,
-      "course": "传感器与检测技术",
+      "course": "Course003",
       "decision": "LIKELY_ERROR",
       "plan": "Remove classgroup link to 2024级钢铁智能冶金技术1班（高本贯通）from task 181. If the 2024级 class genuinely shares this course, create a separate TeachingTask for the 2024级 cohort. Requires K18 data repair."
     }

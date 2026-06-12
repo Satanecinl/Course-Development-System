@@ -29,12 +29,12 @@
     {
       "name": "course_is_xi_jinping",
       "status": "PASS",
-      "detail": "Course: 习近平新时代中国特色社会主义思想概论"
+      "detail": "<REDACTED_TEXT>"
     },
     {
       "name": "teacher_is_fang_zhong_min",
       "status": "PASS",
-      "detail": "Teacher: 房忠敏"
+      "detail": "<REDACTED_TEXT>"
     },
     {
       "name": "import_batch_1_confirmed",
@@ -89,7 +89,7 @@
     {
       "name": "classgroup_35_exists",
       "status": "PASS",
-      "detail": "ClassGroup 35 (2024级森林草原防火技术1班) exists"
+      "detail": "<REDACTED_TEXT>"
     },
     {
       "name": "mutation_plan_only_ttc_94",
@@ -177,7 +177,7 @@
     {
       "name": "classgroup_35_preserved",
       "status": "PASS",
-      "detail": "ClassGroup 35 (2024级森林草原防火技术1班) still exists"
+      "detail": "<REDACTED_TEXT>"
     },
     {
       "name": "slot_43_preserved",
