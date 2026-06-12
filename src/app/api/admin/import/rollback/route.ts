@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server'
 import { requirePermission } from '@/lib/auth/require-permission'
-import { buildRollbackPlan, rollbackImportBatch } from '@/lib/import/rollback'
+import {
+  buildRollbackPlan,
+  rollbackImportBatch,
+  RollbackBlockedBySlotReferencesError,
+} from '@/lib/import/rollback'
 import { resolveSchedulerSemester } from '@/lib/semester'
 import { prisma } from '@/lib/prisma'
 
@@ -62,6 +66,21 @@ export async function POST(request: Request) {
     const result = await rollbackImportBatch(body.batchId)
     return NextResponse.json({ success: true, dryRun: false, result })
   } catch (error) {
+    if (error instanceof RollbackBlockedBySlotReferencesError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: error.message,
+          code: error.code,
+          blockingSlotCount: error.summary.blockingSlotCount,
+          blockingReferenceCount: error.summary.blockingReferenceCount,
+          referenceTypes: error.summary.referenceTypes,
+          affectedSlotIds: error.summary.affectedSlotIds,
+        },
+        { status: 409 }
+      )
+    }
+
     const message = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(
       { success: false, error: message },

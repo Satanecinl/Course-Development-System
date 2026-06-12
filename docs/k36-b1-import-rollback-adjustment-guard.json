@@ -1,0 +1,26 @@
+{
+  "stage": "K36-B1-P0-IMPORT-ROLLBACK-ADJUSTMENT-GUARD",
+  "finding": "B-01",
+  "status": "VERIFIED",
+  "blockingCode": "ROLLBACK_BLOCKED_BY_ADJUSTMENT_REFERENCES",
+  "guardedReferenceTypes": [
+    "ScheduleAdjustment",
+    "ScheduleAdjustmentRequest",
+    "SchedulerRunChange"
+  ],
+  "affectedSlotIdLimit": 20,
+  "schemaChanged": false,
+  "migrationChanged": false,
+  "databaseWriteDuringValidation": false,
+  "realRollbackExecuted": false,
+  "validation": {
+    "sourceChecksPassed": 12,
+    "sourceChecksTotal": 12,
+    "docsJsonParsed": 148,
+    "docsPiiBlocking": 0,
+    "docsPiiWarnings": 2,
+    "prismaValidate": "PASS",
+    "targetedEslint": "PASS",
+    "build": "PASS"
+  }
+}

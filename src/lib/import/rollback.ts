@@ -1,12 +1,29 @@
-import { PrismaClient } from '@prisma/client'
+import { Prisma, PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
+
+export const ROLLBACK_BLOCKED_BY_ADJUSTMENT_REFERENCES =
+  'ROLLBACK_BLOCKED_BY_ADJUSTMENT_REFERENCES'
+
+const MAX_AFFECTED_SLOT_IDS = 20
+
+export interface RollbackReferenceSummary {
+  blockingSlotCount: number
+  blockingReferenceCount: number
+  referenceTypes: Record<string, number>
+  affectedSlotIds: number[]
+}
 
 export interface RollbackPlan {
   batchId: number
   batchStatus: string
   canRollback: boolean
   blockingReasons: string[]
+  blockingCode: string | null
+  blockingSlotCount: number
+  blockingReferenceCount: number
+  referenceTypes: Record<string, number>
+  affectedSlotIds: number[]
   warnings: string[]
 
   scheduleSlotsToDelete: number
@@ -47,6 +64,18 @@ class RollbackSignal {
   constructor(public readonly result: RollbackSimulationResult) {}
 }
 
+export class RollbackBlockedBySlotReferencesError extends Error {
+  readonly code = ROLLBACK_BLOCKED_BY_ADJUSTMENT_REFERENCES
+
+  constructor(public readonly summary: RollbackReferenceSummary) {
+    super(
+      `Rollback blocked: ${summary.blockingReferenceCount} adjustment or audit references ` +
+      `exist for ${summary.blockingSlotCount} ScheduleSlots`
+    )
+    this.name = 'RollbackBlockedBySlotReferencesError'
+  }
+}
+
 export interface RollbackResult {
   batchId: number
   rolledBack: boolean
@@ -58,6 +87,80 @@ export interface RollbackResult {
   retainedCourses: number
   retainedRooms: number
   warnings: string[]
+}
+
+type RollbackGuardClient = Pick<
+  PrismaClient | Prisma.TransactionClient,
+  'scheduleSlot' | 'scheduleAdjustment' | 'scheduleAdjustmentRequest' | 'schedulerRunChange'
+>
+
+async function inspectRollbackSlotReferences(
+  client: RollbackGuardClient,
+  batchId: number,
+): Promise<RollbackReferenceSummary> {
+  const slots = await client.scheduleSlot.findMany({
+    where: { importBatchId: batchId },
+    select: { id: true },
+  })
+  const slotIds = slots.map((slot) => slot.id)
+
+  if (slotIds.length === 0) {
+    return {
+      blockingSlotCount: 0,
+      blockingReferenceCount: 0,
+      referenceTypes: {},
+      affectedSlotIds: [],
+    }
+  }
+
+  const [adjustments, adjustmentRequests, schedulerRunChanges] = await Promise.all([
+    client.scheduleAdjustment.findMany({
+      where: { originalSlotId: { in: slotIds } },
+      select: { originalSlotId: true },
+    }),
+    client.scheduleAdjustmentRequest.findMany({
+      where: { sourceScheduleSlotId: { in: slotIds } },
+      select: { sourceScheduleSlotId: true },
+    }),
+    client.schedulerRunChange.findMany({
+      where: { scheduleSlotId: { in: slotIds } },
+      select: { scheduleSlotId: true },
+    }),
+  ])
+
+  const referenceTypes: Record<string, number> = {}
+  const affectedSlotIdSet = new Set<number>()
+
+  if (adjustments.length > 0) {
+    referenceTypes.ScheduleAdjustment = adjustments.length
+    for (const item of adjustments) affectedSlotIdSet.add(item.originalSlotId)
+  }
+  if (adjustmentRequests.length > 0) {
+    referenceTypes.ScheduleAdjustmentRequest = adjustmentRequests.length
+    for (const item of adjustmentRequests) affectedSlotIdSet.add(item.sourceScheduleSlotId)
+  }
+  if (schedulerRunChanges.length > 0) {
+    referenceTypes.SchedulerRunChange = schedulerRunChanges.length
+    for (const item of schedulerRunChanges) affectedSlotIdSet.add(item.scheduleSlotId)
+  }
+
+  const affectedSlotIds = Array.from(affectedSlotIdSet)
+    .sort((a, b) => a - b)
+    .slice(0, MAX_AFFECTED_SLOT_IDS)
+
+  return {
+    blockingSlotCount: affectedSlotIdSet.size,
+    blockingReferenceCount:
+      adjustments.length + adjustmentRequests.length + schedulerRunChanges.length,
+    referenceTypes,
+    affectedSlotIds,
+  }
+}
+
+function throwIfRollbackReferencesExist(summary: RollbackReferenceSummary): void {
+  if (summary.blockingReferenceCount > 0) {
+    throw new RollbackBlockedBySlotReferencesError(summary)
+  }
 }
 
 export async function buildRollbackPlan(batchId: number): Promise<RollbackPlan> {
@@ -75,6 +178,11 @@ export async function buildRollbackPlan(batchId: number): Promise<RollbackPlan> 
       batchStatus: 'NOT_FOUND',
       canRollback: false,
       blockingReasons: [`Batch #${batchId} not found`],
+      blockingCode: null,
+      blockingSlotCount: 0,
+      blockingReferenceCount: 0,
+      referenceTypes: {},
+      affectedSlotIds: [],
       warnings: [],
       scheduleSlotsToDelete: 0,
       teachingTaskClassesToDelete: 0,
@@ -96,12 +204,22 @@ export async function buildRollbackPlan(batchId: number): Promise<RollbackPlan> 
   const warnings: string[] = []
 
   // Only confirmed batch can be rolled back
-  const canRollback = batch.status === 'confirmed'
-  if (!canRollback) {
+  const hasRollbackableStatus = batch.status === 'confirmed'
+  if (!hasRollbackableStatus) {
     blockingReasons.push(
       `Batch status is "${batch.status}", only "confirmed" batches can be rolled back`
     )
   }
+
+  const referenceSummary = await inspectRollbackSlotReferences(prisma, batchId)
+  if (referenceSummary.blockingReferenceCount > 0) {
+    blockingReasons.push(
+      `Rollback is blocked because ${referenceSummary.blockingReferenceCount} adjustment or audit references ` +
+      `exist for ${referenceSummary.blockingSlotCount} ScheduleSlots`
+    )
+  }
+  const canRollback =
+    hasRollbackableStatus && referenceSummary.blockingReferenceCount === 0
 
   // Count imported TeachingTasks and ScheduleSlots
   const [importedTaskCount, importedSlotCount] = await Promise.all([
@@ -170,6 +288,11 @@ export async function buildRollbackPlan(batchId: number): Promise<RollbackPlan> 
     batchStatus: batch.status,
     canRollback,
     blockingReasons,
+    blockingCode:
+      referenceSummary.blockingReferenceCount > 0
+        ? ROLLBACK_BLOCKED_BY_ADJUSTMENT_REFERENCES
+        : null,
+    ...referenceSummary,
     warnings,
 
     scheduleSlotsToDelete: importedSlotCount,
@@ -262,6 +385,14 @@ export async function rollbackImportBatch(batchId: number): Promise<RollbackResu
   const plan = await buildRollbackPlan(batchId)
 
   if (!plan.canRollback) {
+    if (plan.blockingCode === ROLLBACK_BLOCKED_BY_ADJUSTMENT_REFERENCES) {
+      throw new RollbackBlockedBySlotReferencesError({
+        blockingSlotCount: plan.blockingSlotCount,
+        blockingReferenceCount: plan.blockingReferenceCount,
+        referenceTypes: plan.referenceTypes,
+        affectedSlotIds: plan.affectedSlotIds,
+      })
+    }
     throw new Error(`Cannot rollback batch #${batchId}: ${plan.blockingReasons.join('; ')}`)
   }
 
@@ -289,6 +420,11 @@ export async function rollbackImportBatch(batchId: number): Promise<RollbackResu
 
   try {
     const result = await prisma.$transaction(async (tx) => {
+      // Re-check inside the delete transaction to close the race between
+      // dry-run/plan inspection and the destructive operation.
+      const referenceSummary = await inspectRollbackSlotReferences(tx, batchId)
+      throwIfRollbackReferencesExist(referenceSummary)
+
       // 1. Delete ScheduleSlot where importBatchId = batchId
       const deletedScheduleSlots = await tx.scheduleSlot.deleteMany({
         where: { importBatchId: batchId },
@@ -333,6 +469,20 @@ export async function rollbackImportBatch(batchId: number): Promise<RollbackResu
       warnings: plan.warnings,
     }
   } catch (e) {
+    if (e instanceof RollbackBlockedBySlotReferencesError) {
+      // The optimistic status transition happened before the transaction.
+      // Restore the confirmed state because no rollback data was deleted.
+      try {
+        await prisma.importBatch.updateMany({
+          where: { id: batchId, status: 'rolling_back' },
+          data: { status: 'confirmed', errorMessage: null },
+        })
+      } catch {
+        // Preserve the original blocking error.
+      }
+      throw e
+    }
+
     // On failure, update status to rollback_failed
     const errorMessage = e instanceof Error ? e.message : String(e)
     try {
