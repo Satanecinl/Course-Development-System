@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-从全校通讯录 teachers.xlsx 自动化清洗提取教师白名单。
+从显式指定的通讯录文件清洗提取教师白名单。
 
 清洗规则：
 1. 去除名字中间的所有空格（如 "张   志" → "张志"）
@@ -11,6 +11,7 @@
 5. 按字符串长度降序排列输出
 """
 
+import argparse
 import re
 import sys
 from pathlib import Path
@@ -46,12 +47,16 @@ def is_valid_name(name: str) -> bool:
 
 
 def main():
-    script_dir = Path(__file__).parent
-    xlsx_path = script_dir / "teachers.xlsx"
-    output_path = script_dir / "teachers.txt"
+    parser = argparse.ArgumentParser(description="从通讯录 XLSX 生成教师白名单")
+    parser.add_argument("input_xlsx", help="输入 XLSX 文件路径")
+    parser.add_argument("output_txt", help="输出白名单 TXT 文件路径")
+    args = parser.parse_args()
 
-    if not xlsx_path.exists():
-        sys.exit(f"错误：找不到 {xlsx_path}")
+    xlsx_path = Path(args.input_xlsx)
+    output_path = Path(args.output_txt)
+
+    if not xlsx_path.is_file():
+        sys.exit("错误：输入 XLSX 文件不存在或不可读")
 
     df = pd.read_excel(xlsx_path)
 
@@ -94,14 +99,8 @@ def main():
     print(f"清洗前原始条目数: {len(raw_data)}")
     print(f"有效姓名（格式正确）: {len(cleaned)} (去重后 {len(unique)})")
     if skipped_buildings:
-        sample = skipped_buildings[:10]
-        print(f"已过滤非人员条目 ({len(skipped_buildings)} 条): {', '.join(sample)}{'...' if len(skipped_buildings) > 10 else ''}")
+        print(f"已过滤非人员条目: {len(skipped_buildings)} 条")
     print(f"已保存到: {output_path}")
-
-    # 打印采样
-    print(f"\n采样 (前10条, 按长度降序):")
-    for name in unique[:10]:
-        print(f"  {name} (长度 {len(name)})")
 
     return len(unique)
 

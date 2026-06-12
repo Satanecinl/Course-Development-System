@@ -112,7 +112,7 @@ def deduplicate_records(records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 def split_course_teacher_by_known_teacher(text: str, teacher_names: List[str]) -> Tuple[Optional[str], Optional[str]]:
     """
     用已知教师名单反向切分粘连的 课程名+教师名。
-    例如 "无机化学丹婷婷" → ("无机化学", "丹婷婷")
+    例如 "无机化学张测试" → ("无机化学", "张测试")
     返回 (course, teacher) 或 (None, None) 表示无法切分。
     """
     if not text or not teacher_names:
@@ -222,13 +222,13 @@ def parse_student_count(raw: str) -> Optional[int]:
         return None
 
 
-# ========== 教师白名单（从 teachers.txt 加载） ==========
+# ========== 可选教师白名单 ==========
 
 def load_teacher_names(txt_path: str) -> List[str]:
-    """从 teachers.txt 读取清洗后的教师白名单（已按长度降序排列）。"""
+    """读取清洗后的教师白名单（已按长度降序排列）。"""
     path = Path(txt_path)
     if not path.exists():
-        print(f"警告：教师名单文件不存在 {txt_path}")
+        print("警告：已配置的教师白名单不可用，将使用无白名单模式")
         return []
     with open(path, "r", encoding="utf-8") as f:
         names = [line.strip() for line in f if line.strip()]
@@ -239,7 +239,7 @@ def build_teacher_regex(teacher_names: List[str]) -> Optional[re.Pattern]:
     """将教师姓名列表编译为正则（最长优先，避免部分匹配）。"""
     if not teacher_names:
         return None
-    # teachers.txt 已按长度降序排列
+    # 白名单已按长度降序排列
     escaped = [re.escape(name) for name in teacher_names]
     return re.compile('|'.join(escaped))
 
@@ -669,10 +669,13 @@ def parse_word_schedule(
     """
     teacher_regex = None
     teacher_names: List[str] = []
-    if teachers_path and Path(teachers_path).exists():
+    if teachers_path:
         teacher_names = load_teacher_names(teachers_path)
         teacher_regex = build_teacher_regex(teacher_names)
-        print(f"教师白名单: {len(teacher_names)} 人 (来自 {teachers_path})")
+        if teacher_regex:
+            print(f"教师白名单: 已启用 ({len(teacher_names)} 条)")
+    else:
+        print("教师白名单: 未配置，使用无白名单模式")
 
     doc = Document(docx_path)
 
@@ -790,8 +793,8 @@ def main():
     parser.add_argument('-v', '--verbose', action='store_true', help='显示详细解析信息')
     parser.add_argument(
         '--teachers',
-        default=str(Path(__file__).parent / 'teachers.txt'),
-        help='教师白名单文件路径（由 build_teacher_whitelist.py 生成）',
+        default=None,
+        help='可选教师白名单文件路径；未提供时使用无白名单模式',
     )
 
     args = parser.parse_args()

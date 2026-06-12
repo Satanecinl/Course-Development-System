@@ -8,7 +8,7 @@ import type { ImportScheduleRecord } from '../src/types/import'
 
 const DOCX_PATH = join(__dirname, '..', '..', '2026年春季学期课程表(0420).docx')
 const SCRIPT_PATH = join(__dirname, 'parse_schedule.py')
-const TEACHERS_PATH = join(__dirname, 'teachers.txt')
+const TEACHERS_PATH = process.env.TEACHER_WHITELIST_PATH ?? join(__dirname, 'fixtures', 'teachers.synthetic.txt')
 
 const DAY_MAP: Record<number, string> = { 1: '周一', 2: '周二', 3: '周三', 4: '周四', 5: '周五', 6: '周六', 7: '周日' }
 
@@ -125,41 +125,12 @@ function main() {
     const courseWithWeek = records.filter((r) => r.course && (r.course.includes('单周') || r.course.includes('双周')))
     console.log(`course含"单周/双周":   ${courseWithWeek.length} 条 (应为 0)`)
 
-    // 教师粘连修复样本
-    console.log('\n--- 教师粘连修复样本 ---')
-    const fixSamples = {
-      '丹婷婷': '无机化学',
-      '杨景勋': '电子技术',
-      '何佳霖': '森林调查技术',
-      '赵强': '森林火灾扑救指挥',
-      '王文来': '森林防火通信技术',
-    }
-    for (const [teacher, expectedCourse] of Object.entries(fixSamples)) {
-      const found = records.filter((r) => r.teacher === teacher && (r.course ?? '').includes(expectedCourse))
-      console.log(`  ${expectedCourse}${teacher}: ${found.length > 0 ? 'FIXED' : 'NOT FIXED'}`)
-    }
-
-    // 括号残留样本检查
-    console.log('\n--- 括号残留修复检查 (sampleFixChecks) ---')
-    const bracketChecks = [
-      { label: '电子技术杨景勋', teacher: '杨景勋', coursePart: '电子技术' },
-      { label: '林草调考察技术何佳霖', teacher: '何佳霖', coursePart: '林草调考察技术' },
-    ]
-    for (const chk of bracketChecks) {
-      const found = records.filter((r) => r.teacher === chk.teacher && (r.course ?? '').includes(chk.coursePart))
-      console.log(`  ${chk.label}: ${found.length > 0 ? 'PASS' : 'FAIL'}`)
-    }
-
     // ── 通过/失败判断 ──
-    const allBracketPass = bracketChecks.every((chk) =>
-      records.some((r) => r.teacher === chk.teacher && (r.course ?? '').includes(chk.coursePart))
-    )
     const pass =
       headerRecords.length === 0 &&
       oddEven.length > 0 &&
       courseWithWeek.length === 0 &&
-      quality.recordsMissingStudentCount === 0 &&
-      allBracketPass
+      quality.recordsMissingStudentCount === 0
 
     console.log(`\n${pass ? 'PASS' : 'FAIL'}`)
     process.exit(pass ? 0 : 1)

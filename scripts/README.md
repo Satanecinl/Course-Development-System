@@ -37,6 +37,14 @@ Before running any script, inspect its source, the script inventory, and the rel
 - `build_teacher_whitelist.py` / `create_mock_data.py` / `diagnose_*.py` — one-off Python utilities
 - `test_parse.py` / `test_parse_cell_sanitize.py` — Python unit tests
 
+### Teacher whitelist
+
+- The import API reads an optional private whitelist path from `TEACHER_WHITELIST_PATH`.
+- The private whitelist must remain outside the repository. Missing or unavailable configuration falls back to parsing without a whitelist and emits a warning.
+- `parse_schedule.py --teachers <path>` accepts an explicit whitelist for CLI use.
+- `build_teacher_whitelist.py <input.xlsx> <output.txt>` requires explicit input and output paths.
+- `fixtures/teachers.synthetic.txt` contains synthetic names for tests only.
+
 ## Disallowed (not in this directory)
 
 - Anything that mass-updates source code (formatting, renaming) — do this in a dedicated stage with `package.json` updates.

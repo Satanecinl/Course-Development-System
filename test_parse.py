@@ -6,21 +6,21 @@ from parse_cell import parse_cell_content
 
 
 def test_case_1_two_courses_two_rooms():
-    """大学英语 于秀杰 11-504 大学日语 葛书 11-223 (应拆分为2条)"""
-    text = "大学英语 于秀杰 11-504 大学日语 葛书 11-223"
+    """大学英语 李样例 11-504 大学日语 王虚构 11-223 (应拆分为2条)"""
+    text = "大学英语 李样例 11-504 大学日语 王虚构 11-223"
     result = parse_cell_content(text)
     assert len(result) == 2, f"Expected 2 records, got {len(result)}: {result}"
 
     # 第一条：大学英语
     r1 = result[0]
     assert r1["course_name"] == "大学英语", f"r1 course_name: {r1['course_name']}"
-    assert r1["teacher"] == "于秀杰", f"r1 teacher: {r1['teacher']}"
+    assert r1["teacher"] == "李样例", f"r1 teacher: {r1['teacher']}"
     assert r1["classroom"] == "11-504", f"r1 classroom: {r1['classroom']}"
 
     # 第二条：大学日语
     r2 = result[1]
     assert r2["course_name"] == "大学日语", f"r2 course_name: {r2['course_name']}"
-    assert r2["teacher"] == "葛书", f"r2 teacher: {r2['teacher']}"
+    assert r2["teacher"] == "王虚构", f"r2 teacher: {r2['teacher']}"
     assert r2["classroom"] == "11-223", f"r2 classroom: {r2['classroom']}"
 
     print("[OK] Case 1 passed: 两个教室拆分为2条")
@@ -108,14 +108,14 @@ def test_case_5_dirty_data():
 
 
 def test_case_6_no_room():
-    """体能训练 周 5 学时 杨景勋 (无教室，教室为null)"""
-    text = "体能训练 周 5 学时 杨景勋"
+    """体能训练 周 5 学时 李样例 (无教室，教室为null)"""
+    text = "体能训练 周 5 学时 李样例"
     result = parse_cell_content(text)
     assert len(result) == 1, f"Expected 1 record, got {len(result)}: {result}"
 
     r = result[0]
     assert r["course_name"] == "体能训练", f"course_name: {r['course_name']}"
-    assert r["teacher"] == "杨景勋", f"teacher: {r['teacher']}"
+    assert r["teacher"] == "李样例", f"teacher: {r['teacher']}"
     assert r["classroom"] is None, f"classroom should be None, got: {r['classroom']}"
 
     print("[OK] Case 6 passed: 无教室情况处理正确")
@@ -132,14 +132,14 @@ def test_case_7_empty():
 
 
 def test_case_8_heban_remark():
-    """美育 苏英周 11-529 合班24轧钢一二班 (教师:苏英周, 教室:11-529, 备注:合班24轧钢一二班)"""
-    text = "美育 苏英周 11-529 合班24轧钢一二班"
+    """美育 赵演示 11-529 合班24轧钢一二班 (教师:赵演示, 教室:11-529, 备注:合班24轧钢一二班)"""
+    text = "美育 赵演示 11-529 合班24轧钢一二班"
     result = parse_cell_content(text)
     assert len(result) == 1, f"Expected 1 record, got {len(result)}: {result}"
 
     r = result[0]
     assert r["course_name"] == "美育", f"course_name: {r['course_name']}"
-    assert r["teacher"] == "苏英周", f"teacher: {r['teacher']}"
+    assert r["teacher"] == "赵演示", f"teacher: {r['teacher']}"
     assert r["classroom"] == "11-529", f"classroom: {r['classroom']}"
     assert r["remark"] == "合班24轧钢一二班", f"remark: {r['remark']}"
 
@@ -147,17 +147,17 @@ def test_case_8_heban_remark():
 
 
 def test_case_9_heuristic_zhanghongmei():
-    """机械制图张红梅 11-318 → course=机械制图, teacher=张红梅, room=11-318"""
-    text = "机械制图张红梅 11-318"
+    """机械制图王虚构 11-318 → course=机械制图, teacher=王虚构, room=11-318"""
+    text = "机械制图王虚构 11-318"
     result = parse_cell_content(text)
     assert len(result) == 1, f"Expected 1 record, got {len(result)}: {result}"
 
     r = result[0]
     assert r["course_name"] == "机械制图", f"course_name: {r['course_name']}"
-    assert r["teacher"] == "张红梅", f"teacher: {r['teacher']}"
+    assert r["teacher"] == "王虚构", f"teacher: {r['teacher']}"
     assert r["classroom"] == "11-318", f"classroom: {r['classroom']}"
 
-    print("[OK] Case 9 passed: 启发式提取张红梅")
+    print("[OK] Case 9 passed: 启发式提取虚构教师")
 
 
 def test_case_10_heuristic_liuchuang():
@@ -242,17 +242,17 @@ def test_case_14_whitelist_liuchuang():
 
 
 def test_case_15_whitelist_zhanghongmei():
-    """机械制图张红梅 11-318 + [张红梅] → course=机械制图, teacher=张红梅"""
-    text = "机械制图张红梅 11-318"
-    regex = _make_regex(['张红梅'])
+    """机械制图王虚构 11-318 + [王虚构] → course=机械制图, teacher=王虚构"""
+    text = "机械制图王虚构 11-318"
+    regex = _make_regex(['王虚构'])
     result = parse_cell_content(text, regex)
     assert len(result) == 1, f"Expected 1 record, got {len(result)}: {result}"
 
     r = result[0]
     assert r["course_name"] == "机械制图", f"course_name: {r['course_name']}"
-    assert r["teacher"] == "张红梅", f"teacher: {r['teacher']}"
+    assert r["teacher"] == "王虚构", f"teacher: {r['teacher']}"
 
-    print("[OK] Case 15 passed: 白名单匹配张红梅")
+    print("[OK] Case 15 passed: 白名单匹配虚构教师")
 
 
 def test_case_16_whitelist_hehao():

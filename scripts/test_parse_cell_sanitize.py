@@ -41,9 +41,9 @@ def test_parse_cell_abnormal_cases():
     Uses realistic cell text with room/week anchors."""
     cases = [
         # (input_text, expected_course_name_should_not_start_with_orphan)
-        ('杨景勋（）机械制图张红梅（双周上）11-333 3,4 1-16周', False),
-        ('）机械制图张红梅 11-333 3,4 1-16周', False),
-        ('） 机械制图张红梅 11-333 3,4 1-16周', False),
+        ('李样例（）机械制图王虚构（双周上）11-333 3,4 1-16周', False),
+        ('）机械制图王虚构 11-333 3,4 1-16周', False),
+        ('） 机械制图王虚构 11-333 3,4 1-16周', False),
     ]
     passed = 0
     failed = 0

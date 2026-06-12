@@ -68,89 +68,89 @@ def test_header_inheritance_simulation():
 
 def test_clean_teacher_whitelist():
     """测试脏数据剔除：后缀也在名单中的长名字被移除"""
-    raw = ['张旭', '应用张旭', '许进', '应用许进', '任城龙', '计任城龙', '丹婷婷']
+    raw = ['张测试', '应用张测试', '李样例', '应用李样例', '王虚构', '计王虚构', '赵演示']
     clean = clean_teacher_whitelist(raw)
 
-    assert '张旭' in clean
-    assert '许进' in clean
-    assert '任城龙' in clean
-    assert '丹婷婷' in clean
-    assert '应用张旭' not in clean
-    assert '应用许进' not in clean
-    assert '计任城龙' not in clean
+    assert '张测试' in clean
+    assert '李样例' in clean
+    assert '王虚构' in clean
+    assert '赵演示' in clean
+    assert '应用张测试' not in clean
+    assert '应用李样例' not in clean
+    assert '计王虚构' not in clean
     print("[OK] 白名单清洗正确剔除粘连脏数据")
 
 
 def test_whitelist_fix_lianzhan():
     """
     测试 course/teacher 粘连修正：
-    parse_cell_content 可能将 "单片机技术应用张旭" 拆成
-    course="单片机技术", teacher="应用张旭"；
-    白名单应修正为 course="单片机技术应用", teacher="张旭"。
+    parse_cell_content 可能将 "单片机技术应用张测试" 拆成
+    course="单片机技术", teacher="应用张测试"；
+    白名单应修正为 course="单片机技术应用", teacher="张测试"。
     """
-    whitelist = ['张旭', '于秀杰', '葛书']
+    whitelist = ['张测试', '李样例', '王虚构']
     regex = build_teacher_regex(whitelist)
     whitelist_set = set(whitelist)
 
     records = [
-        {"course_name": "单片机技术", "teacher": "应用张旭"},
+        {"course_name": "单片机技术", "teacher": "应用张测试"},
     ]
 
     fixed = apply_teacher_whitelist(records, regex, whitelist_set)
 
     assert fixed[0]["course_name"] == "单片机技术应用", f"course: {fixed[0]['course_name']}"
-    assert fixed[0]["teacher"] == "张旭", f"teacher: {fixed[0]['teacher']}"
-    print("[OK] 白名单修正粘连: '单片机技术应用张旭' → course='单片机技术应用', teacher='张旭'")
+    assert fixed[0]["teacher"] == "张测试", f"teacher: {fixed[0]['teacher']}"
+    print("[OK] 白名单修正粘连虚构样例")
 
 
 def test_whitelist_skip_valid():
     """已在白名单的教师不应被改动"""
-    whitelist = ['于秀杰', '葛书']
+    whitelist = ['李样例', '王虚构']
     regex = build_teacher_regex(whitelist)
     whitelist_set = set(whitelist)
 
     records = [
-        {"course_name": "大学英语", "teacher": "于秀杰"},
+        {"course_name": "大学英语", "teacher": "李样例"},
     ]
 
     fixed = apply_teacher_whitelist(records, regex, whitelist_set)
 
     assert fixed[0]["course_name"] == "大学英语"
-    assert fixed[0]["teacher"] == "于秀杰"
+    assert fixed[0]["teacher"] == "李样例"
     print("[OK] 白名单跳过已正确教师")
 
 
 def test_whitelist_fix_none_teacher():
     """教师为 None 时，若课程末尾包含白名单教师，也应切分"""
-    whitelist = ['杨景勋']
+    whitelist = ['李样例']
     regex = build_teacher_regex(whitelist)
     whitelist_set = set(whitelist)
 
     records = [
-        {"course_name": "体能训练周5学时杨景勋", "teacher": ""},
+        {"course_name": "体能训练周5学时李样例", "teacher": ""},
     ]
 
     fixed = apply_teacher_whitelist(records, regex, whitelist_set)
 
-    # 应切分为 course="体能训练周5学时", teacher="杨景勋"
-    assert fixed[0]["teacher"] == "杨景勋", f"teacher: {fixed[0]['teacher']}"
-    assert "杨景勋" not in fixed[0]["course_name"]
+    # 应切分为 course="体能训练周5学时", teacher="李样例"
+    assert fixed[0]["teacher"] == "李样例", f"teacher: {fixed[0]['teacher']}"
+    assert "李样例" not in fixed[0]["course_name"]
     print("[OK] 白名单修正无教师字段的情况")
 
 
 def test_whitelist_longest_priority():
     """长名字优先匹配，避免部分匹配"""
-    whitelist = ['苏英周', '周吴']
+    whitelist = ['张测试', '张测']
     regex = build_teacher_regex(whitelist)
     whitelist_set = set(whitelist)
 
     records = [
-        {"course_name": "美育", "teacher": "苏英周"},
+        {"course_name": "美育", "teacher": "张测试"},
     ]
 
     fixed = apply_teacher_whitelist(records, regex, whitelist_set)
 
-    assert fixed[0]["teacher"] == "苏英周"
+    assert fixed[0]["teacher"] == "张测试"
     assert fixed[0]["course_name"] == "美育"
     print("[OK] 长名字优先匹配避免误切")
 

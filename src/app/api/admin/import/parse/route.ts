@@ -64,11 +64,32 @@ export async function POST(request: NextRequest) {
     fs.writeFileSync(tmpDocx, Buffer.from(arrayBuffer))
 
     const scriptPath = path.join(process.cwd(), 'scripts', 'parse_schedule.py')
-    const teachersPath = path.join(process.cwd(), 'scripts', 'teachers.txt')
+    const configuredWhitelistPath = process.env.TEACHER_WHITELIST_PATH?.trim()
+    let teacherWhitelistApplied = false
+    let teacherWhitelistWarning: { type: string; message: string } | null = null
 
     const args = [tmpDocx, '-o', tmpJson]
-    if (fs.existsSync(teachersPath)) {
-      args.push('--teachers', teachersPath)
+    if (!configuredWhitelistPath) {
+      teacherWhitelistWarning = {
+        type: 'TEACHER_WHITELIST_NOT_CONFIGURED',
+        message: '教师白名单未配置，本次解析使用无白名单模式',
+      }
+    } else {
+      const whitelistPath = path.resolve(configuredWhitelistPath)
+      let whitelistExists = false
+      try {
+        whitelistExists = fs.statSync(whitelistPath).isFile()
+      } catch {}
+
+      if (whitelistExists) {
+        args.push('--teachers', whitelistPath)
+        teacherWhitelistApplied = true
+      } else {
+        teacherWhitelistWarning = {
+          type: 'TEACHER_WHITELIST_CONFIGURED_NOT_FOUND',
+          message: '已配置的教师白名单不可用，本次解析使用无白名单模式',
+        }
+      }
     }
 
     const result = await runPythonScript({ scriptPath, args, timeoutMs: PARSE_TIMEOUT_MS })
@@ -96,6 +117,9 @@ export async function POST(request: NextRequest) {
 
     const stats = computeImportParseStats(records)
     const quality = computeImportParseQuality(records)
+    if (teacherWhitelistWarning) {
+      quality.warnings.unshift(teacherWhitelistWarning)
+    }
 
     // 保存文件到稳定路径
     const uploadsDir = getUploadsDir()
@@ -129,6 +153,7 @@ export async function POST(request: NextRequest) {
       batchId: batch.id,
       semesterId: semester.id,
       filename: file.name,
+      teacherWhitelistApplied,
       stats,
       quality,
       records,

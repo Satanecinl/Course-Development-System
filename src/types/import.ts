@@ -64,6 +64,7 @@ export interface ImportParseResult {
   batchId?: number
   semesterId?: number
   filename?: string
+  teacherWhitelistApplied: boolean
   stats: ImportParseStats
   quality: ImportParseQuality
   records: ImportScheduleRecord[]
