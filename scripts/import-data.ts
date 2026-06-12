@@ -4,6 +4,30 @@ import * as path from 'path'
 
 const prisma = new PrismaClient()
 
+function resolveImportDir(): string {
+  const configured = process.env.DATA_IMPORT_DIR?.trim()
+  if (!configured) {
+    throw new Error('DATA_IMPORT_DIR is required and must point to a private directory outside the repository.')
+  }
+
+  const dataDir = path.resolve(configured)
+  const projectRoot = path.resolve(__dirname, '..')
+  const relative = path.relative(projectRoot, dataDir)
+  const isInsideProject =
+    relative === '' ||
+    (!relative.startsWith(`..${path.sep}`) && relative !== '..' && !path.isAbsolute(relative))
+
+  if (isInsideProject) {
+    throw new Error('DATA_IMPORT_DIR must be outside the repository.')
+  }
+
+  if (!fs.existsSync(dataDir) || !fs.statSync(dataDir).isDirectory()) {
+    throw new Error('DATA_IMPORT_DIR does not exist or is not a directory.')
+  }
+
+  return dataDir
+}
+
 /** 名称标准化：trim、去多余空格、全角转半角 */
 function normalizeName(name: string): string {
   return name
@@ -37,10 +61,10 @@ function parseCsv(filePath: string): Record<string, string>[] {
   })
 }
 
-async function importRoomCapacity() {
-  const csvPath = path.join(__dirname, '..', 'data', 'room-capacity.csv')
+async function importRoomCapacity(dataDir: string) {
+  const csvPath = path.join(dataDir, 'room-capacity.csv')
   if (!fs.existsSync(csvPath)) {
-    console.log('[Room] 未找到 data/room-capacity.csv，已跳过。')
+    console.log('[Room] 未找到 DATA_IMPORT_DIR/room-capacity.csv，已跳过。')
     return
   }
 
@@ -110,10 +134,10 @@ async function importRoomCapacity() {
   console.log(`[Room] 数据库中 capacity=50 的教室: ${cap50Count}/${totalRooms}`)
 }
 
-async function importClassStudentCount() {
-  const csvPath = path.join(__dirname, '..', 'data', 'class-student-count.csv')
+async function importClassStudentCount(dataDir: string) {
+  const csvPath = path.join(dataDir, 'class-student-count.csv')
   if (!fs.existsSync(csvPath)) {
-    console.log('[Class] 未找到 data/class-student-count.csv，已跳过。')
+    console.log('[Class] 未找到 DATA_IMPORT_DIR/class-student-count.csv，已跳过。')
     return
   }
 
@@ -180,10 +204,11 @@ async function importClassStudentCount() {
 }
 
 async function main() {
+  const dataDir = resolveImportDir()
   console.log('=== 数据导入 ===\n')
-  await importRoomCapacity()
+  await importRoomCapacity(dataDir)
   console.log()
-  await importClassStudentCount()
+  await importClassStudentCount(dataDir)
   console.log('\n=== 导入完成 ===')
 }
 

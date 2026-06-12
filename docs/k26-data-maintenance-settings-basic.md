@@ -27,7 +27,7 @@ forbidden in the UI/API and described only as safety-rule guidance.
 | Summary cards | Filesystem + constants (database type, migration count, known-check count, destructive-actions flag) |
 | Database status | `prisma/schema.prisma` (provider), `.gitignore` (dev.db / backup patterns) |
 | Backup & restore | README/CLAUDE.md guidance + filesystem hints |
-| Data export | Existing `/api/export/excel`, `/api/data/summary`, `export:data-template` script |
+| Data export | Existing `/api/export/excel`, `/api/data/summary`, `export:data-template` script (requires external `DATA_EXPORT_DIR`) |
 | Cleanup capability | Existing `audit-cleanup-candidates.ts` / `cleanup-teaching-task-class-pollution.ts` / `audit-data-quality-classgroup-matching-k17-fix-a.ts` |
 | Anomaly data checks | K21 / K17-K19 / K20 / K22-C / auth-foundation |
 | Migration status | `prisma/migrations/` directory listing (count only, no execution) |

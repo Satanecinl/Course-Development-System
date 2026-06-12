@@ -45,6 +45,10 @@ next-env.d.ts
 # Import uploads
 uploads/
 
+# Local capacity and class data
+/data/class-student-count.csv
+/data/room-capacity.csv
+
 # Database
 prisma/dev.db
 prisma/dev.db.backup-*

@@ -4,9 +4,27 @@ import * as path from 'path'
 
 const prisma = new PrismaClient()
 
-const DATA_DIR = path.join(__dirname, '..', 'data')
+function resolveExportDir(): string {
+  const configured = process.env.DATA_EXPORT_DIR?.trim()
+  if (!configured) {
+    throw new Error('DATA_EXPORT_DIR is required and must point to a directory outside the repository.')
+  }
 
-async function exportRoomCapacity() {
+  const projectRoot = path.resolve(__dirname, '..')
+  const outputDir = path.resolve(configured)
+  const relative = path.relative(projectRoot, outputDir)
+  const isInsideProject =
+    relative === '' ||
+    (!relative.startsWith(`..${path.sep}`) && relative !== '..' && !path.isAbsolute(relative))
+
+  if (isInsideProject) {
+    throw new Error('DATA_EXPORT_DIR must be outside the repository.')
+  }
+
+  return outputDir
+}
+
+async function exportRoomCapacity(dataDir: string) {
   const rooms = await prisma.room.findMany({
     orderBy: [{ building: 'asc' }, { name: 'asc' }],
   })
@@ -23,7 +41,7 @@ async function exportRoomCapacity() {
     ].map((v) => v.includes(',') ? `"${v}"` : v).join(',')
   })
 
-  const csvPath = path.join(DATA_DIR, 'room-capacity.csv')
+  const csvPath = path.join(dataDir, 'room-capacity.csv')
   fs.writeFileSync(csvPath, [header, ...rows].join('\n') + '\n', 'utf-8')
 
   const todoCount = rooms.filter((r) => r.capacity === 50).length
@@ -34,7 +52,7 @@ async function exportRoomCapacity() {
   return { total: rooms.length, todo: todoCount }
 }
 
-async function exportClassStudentCount() {
+async function exportClassStudentCount(dataDir: string) {
   const classes = await prisma.classGroup.findMany({
     orderBy: { name: 'asc' },
   })
@@ -51,7 +69,7 @@ async function exportClassStudentCount() {
     ].map((v) => v.includes(',') ? `"${v}"` : v).join(',')
   })
 
-  const csvPath = path.join(DATA_DIR, 'class-student-count.csv')
+  const csvPath = path.join(dataDir, 'class-student-count.csv')
   fs.writeFileSync(csvPath, [header, ...rows].join('\n') + '\n', 'utf-8')
 
   const todoCount = classes.filter((c) => c.studentCount == null).length
@@ -63,17 +81,17 @@ async function exportClassStudentCount() {
 }
 
 async function main() {
-  // 确保 data 目录存在
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true })
+  const dataDir = resolveExportDir()
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true })
   }
 
   console.log('=== 导出待填 CSV ===\n')
-  await exportRoomCapacity()
-  await exportClassStudentCount()
+  await exportRoomCapacity(dataDir)
+  await exportClassStudentCount(dataDir)
   console.log('\n=== 导出完成 ===')
-  console.log('\n请打开 data/room-capacity.csv 和 data/class-student-count.csv')
-  console.log('填写真实数据后运行: npm run import:data')
+  console.log(`\n请打开 ${dataDir} 中生成的 CSV。`)
+  console.log('填写真实数据后设置 DATA_IMPORT_DIR，再运行 npm run import:data。')
 }
 
 main()

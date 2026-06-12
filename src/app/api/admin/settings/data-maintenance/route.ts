@@ -149,16 +149,16 @@ export async function GET(request: NextRequest) {
     description:
       '当前已有课表 Excel 导出 API (GET /api/export/excel)，权限 data:export。' +
       '数据摘要 API (GET /api/data/summary)，权限 data:read。' +
-      '脚本侧有 export:data-template (scripts/export-data-template.ts)。' +
+      '脚本侧有 export:data-template (scripts/export-data-template.ts)，要求仓库外 DATA_EXPORT_DIR。' +
       '不提供"一键导出全库"统一入口。',
     facts: [
       '课表 Excel 导出: GET /api/export/excel (data:export)',
       '数据摘要: GET /api/data/summary (data:read)',
-      '脚本: export:data-template (scripts/export-data-template.ts)',
+      '脚本: export:data-template (需设置仓库外 DATA_EXPORT_DIR)',
       '一键导出全库入口: 待统一入口 / 不提供',
     ],
     commands: [
-      'npm run export:data-template  # 导出数据模板',
+      'DATA_EXPORT_DIR=<仓库外目录> npm run export:data-template',
       'GET /api/export/excel?viewType=class&targetId=...',
     ],
   }

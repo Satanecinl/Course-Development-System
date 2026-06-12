@@ -53,6 +53,14 @@ Before running any script, inspect its source, the script inventory, and the rel
 - Historical G0 reset/import tools have been removed from the current HEAD.
 - `create_mock_data.py <output.docx>` generates independently constructed synthetic parser input at an explicit path.
 
+## Local capacity and class data
+
+- `npm run export:data-template` reads the configured database and writes CSV files to `DATA_EXPORT_DIR`.
+- `DATA_EXPORT_DIR` is required and must be outside the repository.
+- `npm run import:data` writes the configured database from CSV files in `DATA_IMPORT_DIR`.
+- `DATA_IMPORT_DIR` is required and should point to a private local directory.
+- Files ending in `.template.csv` under `data/` are synthetic format examples only.
+
 ## Disallowed (not in this directory)
 
 - Anything that mass-updates source code (formatting, renaming) — do this in a dedicated stage with `package.json` updates.
