@@ -58,7 +58,14 @@ export async function GET(request: NextRequest) {
       } else if (viewType === 'teacher') {
         where.teachingTask = { teacherId: targetId }
       } else if (viewType === 'room') {
-        where.roomId = targetId
+        // K34-A3E: match on primary OR secondary (additionalRooms) room.
+        // Prisma where.roomId is exact-match primary-only; union with
+        // additionalRooms.some({ roomId: targetId }) so secondary-room
+        // courses (e.g. 10-104, 11-105) appear in the dashboard filter.
+        where.OR = [
+          { roomId: targetId },
+          { additionalRooms: { some: { roomId: targetId } } },
+        ]
       }
     }
 

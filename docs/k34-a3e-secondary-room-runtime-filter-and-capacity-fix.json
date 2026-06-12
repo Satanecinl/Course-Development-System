@@ -1,0 +1,130 @@
+{
+  "generatedAt": "2026-06-12T00:30:00.000Z",
+  "phase": "K34-A3E-SECONDARY-ROOM-RUNTIME-FILTER-AND-CAPACITY-FIX",
+  "summary": {
+    "result": "PASS",
+    "userReportedBug": "Dashboard room filter for secondary rooms (10-104, 11-105) returns 0 courses; classroom capacity for these rooms shows 0/0.",
+    "rootCause": "Real server-side primary-only filter bug in /api/schedule and getRoomCapacityRows.",
+    "fix": "Minimal: (1) schedule API room filter now uses Prisma OR (roomId=X OR additionalRooms.some({roomId:X})); (2) getRoomCapacityRows iterates slot.additionalRooms and dedupes per (roomId, slotId).",
+    "noSchemaChange": true,
+    "noMigrationChange": true,
+    "noDBChange": true,
+    "noK22ExpectedChange": true,
+    "noSolverChange": true,
+    "noScoreWeightsChange": true,
+    "noApplyRollbackChange": true,
+    "noRBACChange": true,
+    "noImporterChange": true,
+    "noRoomRepairChange": true,
+    "expectedAfter": "All four runtime filter surfaces (dashboard, single-week, Excel, capacity) treat secondary rooms as real rooms."
+  },
+  "filesModified": [
+    {
+      "path": "src/app/api/schedule/route.ts",
+      "change": "room filter now uses OR: { roomId: targetId, additionalRooms: { some: { roomId: targetId } } }. Falls back to where.roomId for viewType !== 'room'."
+    },
+    {
+      "path": "src/lib/rooms/capacity.ts",
+      "change": "Includes additionalRooms in Prisma query; iterates slot.additionalRooms during aggregation; dedupes per (roomId, slotId) via seenByRoom map to prevent double-count when a room appears as both primary and additional for the same slot."
+    },
+    {
+      "path": "scripts/verify-dashboard-secondary-room-filter-k34-a3c.ts",
+      "change": "Added K34-A3E stage-aware check: schedule route room filter now uses OR (server-side secondary room support)."
+    },
+    {
+      "path": "scripts/verify-secondary-room-runtime-filter-k34-a3e.ts",
+      "change": "New: 36 checks covering all five runtime surfaces."
+    },
+    {
+      "path": "scripts/diagnose-secondary-room-runtime-filter-k34-a3e.ts",
+      "change": "New: read-only diagnostic for room 10-104 and 11-105."
+    }
+  ],
+  "filesNotModified": [
+    "src/lib/schedule/adjustments.ts (getEffectiveScheduleForWeek already emits additionalRoomIds; client-side filter handles secondary)",
+    "src/app/dashboard/dashboard-content.tsx (applyViewFilter already checks additionalRoomIds)",
+    "src/app/api/export/excel/route.ts (raw branch already merges secondary; effective branch already client-side checks additionalRoomIds)",
+    "prisma/schema.prisma",
+    "prisma/migrations/**",
+    "prisma/dev.db",
+    "src/lib/scheduler/score.ts"
+  ],
+  "rootCauseAnalysis": {
+    "dashboardRoomFilter": "src/app/api/schedule/route.ts line 60-62 set where.roomId = targetId. Prisma exact-matches ScheduleSlot.roomId (primary only). Slots where the target room appears as additional in ScheduleSlotAdditionalRoom were never returned. Frontend applyViewFilter at dashboard-content.tsx line 138-142 already checks additionalRoomIds but never saw those slots because the API had filtered them out. Single-week path uses getEffectiveScheduleForWeek which does NOT accept viewType/targetId — returns full week; frontend client filter then handles both primary and additional, so single-week was already working. K34-A3E unifies the behavior.",
+    "classroomCapacity": "src/lib/rooms/capacity.ts line 47 'where: { roomId: { not: null } }' filtered ScheduleSlot to primary-only. Aggregation line 81-97 used slot.roomId only, missing additionalRooms. After fix: query includes additionalRooms; aggregation iterates both primary and additional with dedup.",
+    "excelExport": "Already fixed in K34-A3C: raw branch line 234-263 merges secondary-room slots; effective branch line 78-81 client-side checks additionalRoomIds. Not regressed by this stage.",
+    "whyK34A3CVerifyMissed": "K34-A3C verify used Prisma in-memory simulation: it fetched ALL slots for the semester, mapped to viewData shape, then ran an in-memory filter checking v.roomId === X || v.additionalRoomIds.includes(X). That filter PASSED because it was client-side on the full dataset. It never issued a real /api/schedule?viewType=room&targetId=X HTTP request, so the server-side primary-only filter was never exercised. K34-A3E verify replicates the actual server-side Prisma query directly and exposes the bug."
+  },
+  "diagnosticFindings": {
+    "10-104": {
+      "id": 54,
+      "asPrimary": 0,
+      "asAdditional": 4,
+      "expectedMatched": 4,
+      "sampleSlots": [
+        { "slotId": 148, "course": "智能传感器装调与测试", "teacher": "赵俣绗", "display": "11-208 或 10-104" },
+        { "slotId": 235, "course": "冶金设备维护", "teacher": "宋如武", "display": "11-322 或 10-104" },
+        { "slotId": 253, "course": "冶金设备维护", "teacher": "宋如武", "display": "11-321 或 10-104" },
+        { "slotId": 308, "course": "机电设备故障诊断与维修", "teacher": "宋如武", "display": "11-208 或 10-104" }
+      ]
+    },
+    "11-105": {
+      "id": 55,
+      "asPrimary": 0,
+      "asAdditional": 6,
+      "expectedMatched": 6,
+      "sampleSlots": [
+        { "slotId": 309, "course": "工厂供配电技术", "teacher": "宋如武", "display": "11-204 或 11-105" },
+        { "slotId": 315, "course": "工厂供配电技术", "teacher": "宋如武", "display": "11-208 或 11-105" },
+        { "slotId": 321, "course": "工厂供配电技术", "teacher": "宋如武", "display": "11-333 或 11-105" },
+        { "slotId": 327, "course": "工厂供配电技术", "teacher": "宋如武", "display": "11-208 或 11-105" },
+        { "slotId": 335, "course": "工厂供配电技术", "teacher": "宋如武", "display": "11-204 或 11-105" }
+      ]
+    }
+  },
+  "validation": {
+    "k34A3E": "36/36 PASS",
+    "k34A3C": "21/21 PASS (was 20/20, +1 K34-A3E stage-aware check)",
+    "k34A3B": "18/18 PASS",
+    "k34A3": "42/42 PASS",
+    "k34A2": "45/45 PASS",
+    "k34A": "64/64 PASS",
+    "k22C": "73/0/0/0/0",
+    "k26K4C": "32/36 — 4 fails are pre-existing baseline hardcodes (lint 184/146 vs current 191/154, auth 53/1 vs current 60/62). K22-C, schema, score weights, HC6, K22 expected all PASS per script reports.",
+    "authFoundation": "60/62 PASS — pre-existing ScheduleAdjustment ACTIVE count mismatch.",
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "10 migrations, schema up to date",
+    "build": "PASS",
+    "lint": "191 errors / 154 warnings (unchanged from K34-A3D; no new lint issues introduced by K34-A3E)"
+  },
+  "keyCheckpoints": {
+    "serverSide10-104": "count=4 (was 0 before fix)",
+    "serverSide11-105": "count=6 (was 0 before fix)",
+    "capacity10-104": "slotCount=4, maxAssignedStudentCount=37 (was 0/0 before fix)",
+    "capacity11-105": "slotCount=6, maxAssignedStudentCount=37 (was 0/0 before fix)",
+    "teacherSongRuwu": "17 courses, including '11-322 或 10-104' composite display",
+    "noDoubleCount11-321": "slotCount=17 expected=17 (dedup primary+additional)"
+  },
+  "gitHubSync": {
+    "branch": "master",
+    "localHeadBefore": "8ed7fcc (K34-A3D)",
+    "localHeadAfter": "<TBD after push>",
+    "remoteHeadAfter": "<TBD after push>",
+    "forcePush": "NO",
+    "preExistingUntrackedNotCommitted": [
+      "docs/项目汇报表格.md",
+      "k28-b-manual-trial-result.json",
+      "scripts/k28-b-run-manual-trial.ts"
+    ]
+  },
+  "manualVerificationRequired": [
+    "1. Restart dev server",
+    "2. /dashboard 全部显示, room=10-104 should return 4 courses with composite display (e.g. 11-322 或 10-104)",
+    "3. /dashboard 全部显示, room=11-105 should return 6 courses",
+    "4. /dashboard single-week mode (e.g. week=1) with room=10-104 or 11-105 should also work",
+    "5. /dashboard with teacher=宋如武 still shows 17 courses with composite display",
+    "6. /admin/rooms/capacity page: 10-104 slotCount=4, students=37 (not 0/0); 11-105 slotCount=6, students=37",
+    "7. Excel export with room=10-104 or 11-105 includes the corresponding courses",
+    "8. No runtime error in browser console"
+  ]
+}

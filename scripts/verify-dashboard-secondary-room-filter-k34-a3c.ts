@@ -80,6 +80,11 @@ async function main() {
     'export route cell text includes composite room display',
     /slot\.additionalRooms\.length > 0[\s\S]{0,200}' 或 '/.test(exportRouteSrc),
   )
+  // K34-A3E: schedule API room filter now does server-side OR.
+  check(
+    'schedule route room filter uses OR (roomId OR additionalRooms.some) — K34-A3E',
+    /viewType === 'room'[\s\S]{0,500}OR[\s\S]{0,500}roomId: targetId[\s\S]{0,500}additionalRooms: \{ some: \{ roomId: targetId \}/.test(scheduleRouteSrc),
+  )
 
   // ── 2. Behavioral checks via Prisma ──────────────────────────────
   const prisma = new PrismaClient()

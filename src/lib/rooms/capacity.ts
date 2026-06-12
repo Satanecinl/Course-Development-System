@@ -43,10 +43,14 @@ export async function getRoomCapacityRows(
   })
 
   // 2. 查询所有 ScheduleSlot（带 TeachingTask → TeachingTaskClass → ClassGroup）
+  // K34-A3E: include additional rooms so a room used as secondary
+  // (composite expression "11-322 或 10-104") is counted in capacity stats.
   const slots = await prisma.scheduleSlot.findMany({
     where: { roomId: { not: null } },
     include: {
       room: true,
+      // K34-A3E: secondary rooms for the slot.
+      additionalRooms: true,
       teachingTask: {
         include: {
           taskClasses: {
@@ -73,26 +77,42 @@ export async function getRoomCapacityRows(
   }
 
   // 4. 按 room 聚合：计算 maxAssignedStudentCount 和 slotCount
+  // K34-A3E: union primary (slot.roomId) and secondary (additionalRooms)
+  // so a room used in composite expressions counts toward both rooms.
+  // Dedupe by slotId per room to avoid double-counting if the room
+  // appears as both primary AND additional for the same slot.
   const roomStats = new Map<
     number,
     { maxAssignedStudentCount: number; slotCount: number }
   >()
+  const seenByRoom = new Map<number, Set<number>>()
 
   for (const slot of slots) {
-    if (!slot.roomId) continue
     const studentCount = taskStudentCountMap.get(slot.teachingTaskId) ?? 0
+    // K34-A3E: collect all room ids (primary + additional) for this slot.
+    const allRoomIds = new Set<number>()
+    if (slot.roomId != null) allRoomIds.add(slot.roomId)
+    for (const ar of slot.additionalRooms) allRoomIds.add(ar.roomId)
 
-    const existing = roomStats.get(slot.roomId)
-    if (existing) {
-      existing.slotCount++
-      if (studentCount > existing.maxAssignedStudentCount) {
-        existing.maxAssignedStudentCount = studentCount
+    for (const roomId of allRoomIds) {
+      let seen = seenByRoom.get(roomId)
+      if (!seen) { seen = new Set<number>(); seenByRoom.set(roomId, seen) }
+      // Dedupe: a slot should count once per room even if duplicated.
+      if (seen.has(slot.id)) continue
+      seen.add(slot.id)
+
+      const existing = roomStats.get(roomId)
+      if (existing) {
+        existing.slotCount++
+        if (studentCount > existing.maxAssignedStudentCount) {
+          existing.maxAssignedStudentCount = studentCount
+        }
+      } else {
+        roomStats.set(roomId, {
+          maxAssignedStudentCount: studentCount,
+          slotCount: 1,
+        })
       }
-    } else {
-      roomStats.set(slot.roomId, {
-        maxAssignedStudentCount: studentCount,
-        slotCount: 1,
-      })
     }
   }
 
