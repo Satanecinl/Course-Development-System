@@ -68,3 +68,10 @@ __pycache__/
 
 # CodeGraph
 .codegraph/
+
+# K35-A: temp directory for local-only artifacts, manual trial outputs,
+# unsanitized drafts, DB backup pointers, etc. The temp/README.md itself
+# is the only tracked file inside temp/ — everything else is ignored.
+/temp/**
+!/temp/README.md
+!/temp/.gitkeep

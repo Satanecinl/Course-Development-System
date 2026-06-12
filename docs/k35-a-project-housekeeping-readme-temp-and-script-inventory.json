@@ -1,0 +1,141 @@
+{
+  "generatedAt": "2026-06-12T02:00:00.000Z",
+  "phase": "K35-A-PROJECT-HOUSEKEEPING-README-TEMP-AND-SCRIPT-INVENTORY",
+  "summary": {
+    "result": "PASS",
+    "scope": "Housekeeping only. No business code changes. No dependency upgrades. No script deletion or moving of tracked scripts. No schema/migration/DB changes.",
+    "featureStatus": "READY_FOR_REAL_USE (K34-A3 multi-room support unchanged)",
+    "predecessorCloseout": "K34-A3F (commit 89b5807)"
+  },
+  "housekeepingActions": {
+    "tempRuleEstablished": {
+      "gitignoreAdded": "/temp/** and !/temp/README.md and !/temp/.gitkeep",
+      "tempReadmeCreated": "temp/README.md (tracked)",
+      "rationale": "Local-only scratch space for untracked artifacts, manual trial outputs, drafts, DB backup pointers."
+    },
+    "k28BUntrackedMovedToTemp": {
+      "moved": [
+        "docs/项目汇报材料.md (UTF-8) -> temp/local-artifacts/k28-b/项目汇报材料.md",
+        "k28-b-manual-trial-result.json -> temp/local-artifacts/k28-b/k28-b-manual-trial-result.json",
+        "scripts/k28-b-run-manual-trial.ts -> temp/local-artifacts/k28-b/k28-b-run-manual-trial.ts"
+      ],
+      "committedToGit": false,
+      "gitignoredNow": true,
+      "rationale": "Pre-existing K28-B manual trial artifacts unrelated to K34-A3 multi-room. K35-A scope explicitly forbids committing them. Moving into temp/ keeps them on disk for reference but removes them from git status clutter."
+    },
+    "k22GeneratedAtDrift": {
+      "status": "NOT_PRESENT_AT_K35-A_START",
+      "rationale": "K34-A3F closeout already restored K22 doc files to K34-A3D state. K22-C re-runs during K35-A validation chain produce fresh drift; this commit explicitly restores again before commit, so the final worktree is clean."
+    },
+    "readmeUpdated": {
+      "file": "README.md",
+      "summary": "Project intro / tech stack / run / commands / data flow / DB rules / safety rules / temp rules / dev recommendations. Explicit READY_FOR_REAL_USE status for K28 / K29 / K34 / K34-A3. Explicit ban list (no prisma/dev.db commit, no force push, no migrate reset, no dependency upgrade)."
+    },
+    "currentProjectStatusDocCreated": {
+      "file": "docs/current-project-status.md",
+      "summary": "Per-feature readiness table, verification baselines (K22-C 73/0/0/0/0, lint 191/154, auth 60/62, prisma migrate status 10 migrations, build PASS), known local artifacts (temp/local-artifacts/k28-b/, DB backups), recent commits, next recommended work."
+    },
+    "scriptsReadmeCreated": {
+      "file": "scripts/README.md",
+      "summary": "Naming convention: verify-*, audit-*, diagnose-*, plan-*, trial-*, evaluate-*, validate-*, test-*, export-*, seed-*, import-*, confirm-*, abandon-*, rollback-*, fix-*, repair-*, backfill-*, cleanup-*, implement-*, dry-run-*, etc. Rule of thumb: any non-read-only-prefix is likely write-capable."
+    },
+    "scriptInventoryCreated": {
+      "file": "docs/project-script-inventory-k35-a.md",
+      "summary": "Full inventory: 115 verify, 51 audit, 8 diagnose, 7 plan, 7 validate, 47 test, 3 trial, 1 evaluate, 8 dangerous/write-capable, plus full verify list. ~50 candidate_for_archive markers across K17-K20 / K22-L / K34-A predecessor / g0fix* / f2-fix-e-* / temp-* / tmp-*."
+    },
+    "dependencyVersionInventory": {
+      "next": "16.2.6",
+      "react": "19.2.4",
+      "reactDom": "19.2.4",
+      "typescript": "^5",
+      "prisma": "^5.22.0",
+      "prismaClient": "^5.22.0",
+      "eslint": "^9",
+      "eslintConfigNext": "16.2.6",
+      "tailwindcss": "^4",
+      "@types/node": "^20",
+      "tsconfigTarget": "ES2017",
+      "tsconfigModule": "esnext",
+      "tsconfigModuleResolution": "bundler",
+      "lockfile": "package-lock.json (npm)",
+      "noYarnLock": true,
+      "noPnpmLock": true,
+      "thisStageNoUpgrade": true,
+      "nextStageRecommended": "K35-B-DEPENDENCY-UPGRADE-PLAN-AND-SAFE-UPDATE"
+    }
+  },
+  "filesAdded": [
+    ".gitignore (added /temp/** block; everything else unchanged)",
+    "temp/README.md (new tracked file)",
+    "README.md (replaced; same filename)",
+    "docs/current-project-status.md (new)",
+    "scripts/README.md (new)",
+    "docs/project-script-inventory-k35-a.md (new)",
+    "docs/k35-a-project-housekeeping-readme-temp-and-script-inventory.md (new)",
+    "docs/k35-a-project-housekeeping-readme-temp-and-script-inventory.json (new)"
+  ],
+  "filesMoved": [
+    "docs/项目汇报材料.md -> temp/local-artifacts/k28-b/项目汇报材料.md (NOT committed; git-ignored)",
+    "k28-b-manual-trial-result.json -> temp/local-artifacts/k28-b/k28-b-manual-trial-result.json (NOT committed; git-ignored)",
+    "scripts/k28-b-run-manual-trial.ts -> temp/local-artifacts/k28-b/k28-b-run-manual-trial.ts (NOT committed; git-ignored)"
+  ],
+  "filesNotTouched": {
+    "srcApp": true,
+    "srcComponents": true,
+    "srcLib": true,
+    "prismaSchema": true,
+    "prismaMigrations": true,
+    "prismaDevDb": true,
+    "k22Expected": true,
+    "k22Fixture": true,
+    "solver": true,
+    "scoreTs": true,
+    "importer": true,
+    "dashboardUi": true,
+    "capacityLogic": true,
+    "exportLogic": true,
+    "rbac": true,
+    "authSeed": true,
+    "packageJson": true,
+    "packageLockJson": true,
+    "tsconfigJson": true,
+    "eslintConfig": true
+  },
+  "deletedScripts": [],
+  "movedTrackedScripts": [],
+  "deletedTrackedFiles": [],
+  "validation": {
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "10 migrations, schema up to date",
+    "build": "PASS",
+    "lint": "191 errors / 154 warnings (unchanged from K34-A3D/E/F; no new lint issues introduced by K35-A)",
+    "k34A3FCloseoutVerify": "25/25 PASS",
+    "k22CScoreHarness": "73/0/0/0/0 PASS (K22-C verify was re-run; final worktree is clean — K22 generatedAt drift restored before commit)",
+    "authFoundation": "60/62 PASS (pre-existing)"
+  },
+  "gitHubSync": {
+    "branch": "master",
+    "localHeadBefore": "89b5807 (K34-A3F)",
+    "localHeadAfter": "<TBD after push>",
+    "remoteHeadAfter": "<TBD after push>",
+    "forcePush": "NO",
+    "aheadBehind": "0/0",
+    "prismaDevDbCommitted": false,
+    "dbBackupCommitted": false,
+    "k22DriftCommitted": false,
+    "k28BUntrackedCommitted": false,
+    "tempLocalArtifactsCommitted": false
+  },
+  "conclusion": {
+    "k35ACloseable": true,
+    "housekeepingFirstStageComplete": true,
+    "k34A3MultiRoomStillReady": true,
+    "k22CStable": true,
+    "allowK35B": true,
+    "k35BSuggestedTargets": [
+      "K35-B-DEPENDENCY-UPGRADE-PLAN-AND-SAFE-UPDATE: dependency patch-level review, dry-run upgrade of Next.js / Prisma / ESLint within current major, document risk",
+      "K35-C-SCRIPT-ARCHIVE-AND-NAMING-CONSOLIDATION: move candidate_for_archive scripts to scripts/_archive/<stage>/, write archive README, verify no regressions in current closeout chain"
+    ],
+    "remainingBlockers": "none"
+  }
+}
