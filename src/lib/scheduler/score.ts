@@ -154,6 +154,37 @@ function isRoomAvailable(
   return true
 }
 
+function computeHC4CapacityPenalty(
+  ctx: SchedulingContext,
+  slot: SlotWithRelations,
+  currentRoomId: number,
+  studentCount: number,
+): number {
+  if (currentRoomId <= 0 || !ctx.roomById.has(currentRoomId)) return 0
+
+  let combinedCapacity = 0
+  for (const roomId of getEffectiveRoomIds(slot, currentRoomId)) {
+    combinedCapacity += ctx.roomById.get(roomId)?.capacity ?? 0
+  }
+  return studentCount > combinedCapacity ? HARD_PENALTY : 0
+}
+
+function computeHC5AvailabilityPenalty(
+  ctx: SchedulingContext,
+  slot: SlotWithRelations,
+  currentRoomId: number,
+  day: number,
+  slotIndex: number,
+): number {
+  if (currentRoomId <= 0) return 0
+
+  let penalty = 0
+  for (const roomId of getEffectiveRoomIds(slot, currentRoomId)) {
+    if (!isRoomAvailable(ctx, roomId, day, slotIndex)) penalty += HARD_PENALTY
+  }
+  return penalty
+}
+
 // ── HC6 / SC6 / SC7: 专业教室约束与周末约束 ──
 
 // K22-F2A: 汽车专业关键词（classGroup membership 为主信号，courseName/remark 为辅助）
@@ -199,6 +230,22 @@ export function computeHC6Penalty(cls: SpecialtyClassification, isLx: boolean): 
   if (!isLx) return 0
   if (cls === 'AUTOMOTIVE_ONLY') return 0
   return HC6_NON_AUTOMOTIVE_LINXIAO_PENALTY
+}
+
+function computeHC6EffectiveRoomPenalty(
+  ctx: SchedulingContext,
+  slot: SlotWithRelations,
+  currentRoomId: number,
+  cls: SpecialtyClassification,
+): number {
+  if (currentRoomId <= 0) return 0
+
+  let penalty = 0
+  for (const roomId of getEffectiveRoomIds(slot, currentRoomId)) {
+    const room = ctx.roomById.get(roomId)
+    if (room) penalty += computeHC6Penalty(cls, isLinxiaoRoomName(room))
+  }
+  return penalty
 }
 
 /** 计算 SC6 penalty: 汽车专业任务不在 Linxiao 教室 */
@@ -869,17 +916,27 @@ export function calculateDeltaScore(
   }
 
   // HC4 容量
+  const studentInfo = getTaskStudentCount(task, ctx)
+  deltaHard += computeHC4CapacityPenalty(ctx, slot, move.newRoomId, studentInfo.studentCount)
+    - computeHC4CapacityPenalty(ctx, slot, old.roomId, studentInfo.studentCount)
+
   const oldRoom = ctx.roomById.get(old.roomId)
   const newRoom = ctx.roomById.get(move.newRoomId)
-  const studentInfo = getTaskStudentCount(task, ctx)
-  if (oldRoom && studentInfo.studentCount > oldRoom.capacity) deltaHard -= HARD_PENALTY
-  if (newRoom && studentInfo.studentCount > newRoom.capacity) deltaHard += HARD_PENALTY
 
   // HC5 教室可用性
-  const oldAvail = isRoomAvailable(ctx, old.roomId, old.dayOfWeek, old.slotIndex)
-  const newAvail = isRoomAvailable(ctx, move.newRoomId, move.newDay, move.newSlotIndex)
-  if (!oldAvail) deltaHard -= HARD_PENALTY
-  if (!newAvail) deltaHard += HARD_PENALTY
+  deltaHard += computeHC5AvailabilityPenalty(
+    ctx,
+    slot,
+    move.newRoomId,
+    move.newDay,
+    move.newSlotIndex,
+  ) - computeHC5AvailabilityPenalty(
+    ctx,
+    slot,
+    old.roomId,
+    old.dayOfWeek,
+    old.slotIndex,
+  )
 
   // HC6 锁定课程移动
   // HC6 is intentionally not counted in delta scoring because full scoring (calculateScoreWithDetails)
@@ -1000,18 +1057,8 @@ export function calculateDeltaScore(
   const cls = classifySpecialty(task)
 
   // HC6 delta: 非汽车专业/混合/未知任务在 Linxiao 教室
-  if (old.roomId !== 0) {
-    const oldRoom = ctx.roomById.get(old.roomId)
-    if (oldRoom && computeHC6Penalty(cls, isLinxiaoRoomName(oldRoom)) !== 0) {
-      deltaHard -= HC6_NON_AUTOMOTIVE_LINXIAO_PENALTY // 移出旧位置的 HC6 违规
-    }
-  }
-  if (move.newRoomId !== 0) {
-    const newRoom = ctx.roomById.get(move.newRoomId)
-    if (newRoom && computeHC6Penalty(cls, isLinxiaoRoomName(newRoom)) !== 0) {
-      deltaHard += HC6_NON_AUTOMOTIVE_LINXIAO_PENALTY // 新位置引入 HC6 违规
-    }
-  }
+  deltaHard += computeHC6EffectiveRoomPenalty(ctx, slot, move.newRoomId, cls)
+    - computeHC6EffectiveRoomPenalty(ctx, slot, old.roomId, cls)
 
   // SC6 delta: 汽车专业任务不在 Linxiao 教室
   if (old.roomId !== 0) {

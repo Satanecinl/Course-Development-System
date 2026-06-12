@@ -1,0 +1,45 @@
+{
+  "stage": "K36-B1A6-MULTI-ROOM-DELTA-HC4-HC5-HC6-FIX",
+  "status": "PASS",
+  "scope": [
+    "src/lib/scheduler/score.ts",
+    "scripts/verify-scheduler-multi-room-delta-hc4-hc5-hc6-k36-b1a6.ts"
+  ],
+  "penaltiesChanged": false,
+  "fullScoreChanged": false,
+  "behavior": {
+    "hc4FullCombinedCapacity": "PASS",
+    "hc4DeltaIntroduce": "PASS",
+    "hc4DeltaResolve": "PASS",
+    "hc5FullSecondaryUnavailable": "PASS",
+    "hc5DeltaIntroduce": "PASS",
+    "hc5DeltaResolve": "PASS",
+    "hc6FullSecondaryRestriction": "PASS",
+    "hc6DeltaIntroduce": "PASS",
+    "hc6DeltaResolve": "PASS",
+    "duplicateRoomDeduplication": "PASS",
+    "noRoom": "PASS",
+    "legacyPrimaryOnly": "PASS",
+    "hc1Regression": "PASS"
+  },
+  "validation": {
+    "fixturePassed": 13,
+    "fixtureFailed": 0,
+    "hc1FixturePassed": 14,
+    "hc1FixtureFailed": 0,
+    "docsPiiBlocking": 0,
+    "prismaValidate": "PASS",
+    "build": "PASS",
+    "targetedEslintErrors": 0,
+    "targetedEslintWarnings": 0
+  },
+  "outOfScope": [
+    "campus room rules",
+    "WorkTime B-03",
+    "adjustment and recommendation",
+    "schema and migrations",
+    "frontend",
+    "K22 expected outputs",
+    "Git history"
+  ]
+}
