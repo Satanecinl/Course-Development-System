@@ -7,7 +7,12 @@ import type {
   TaskWithRelations,
 } from './types'
 import { isScoreBetter } from './types'
-import { calculateInitialScore, calculateDeltaScore } from './score'
+import {
+  calculateInitialScore,
+  calculateDeltaScore,
+  findEffectiveRoomConflict,
+  getEffectiveRoomIds,
+} from './score'
 import { classifySpecialty, computeHC6Penalty, isLinxiaoRoomName } from './score'
 import { getTaskStudentCount } from './capacity'
 import {
@@ -113,7 +118,7 @@ function hasWeekOverlap(taskA: TaskWithRelations, taskB: TaskWithRelations): boo
  * Check if placing a task at (day, slot, room) would create any hard conflict
  * with existing placements. Excludes the moving slot itself.
  */
-function isPlacementHardCompatible(
+export function isPlacementHardCompatible(
   ctx: SchedulingContext,
   state: ScheduleState,
   movingSlotId: number,
@@ -141,14 +146,15 @@ function isPlacementHardCompatible(
   }
 
   const movingClassGroupIds = new Set(movingTask.taskClasses.map(tc => tc.classGroupId))
+  const movingSlot = ctx.slots.find(s => s.id === movingSlotId)
+  if (!movingSlot) return false
+  const proposedRoomIds = getEffectiveRoomIds(movingSlot, proposedRoomId)
 
   // Exclude only the moving slot itself (not siblings — siblings at the same
   // position would create a duplicate, which we must detect)
   for (const [slotId, pos] of state.assignments) {
     if (slotId === movingSlotId) continue
     if (pos.dayOfWeek !== proposedDay || pos.slotIndex !== proposedSlotIndex) continue
-    if (pos.roomId === 0) continue
-
     const otherSlot = ctx.slots.find(s => s.id === slotId)
     if (!otherSlot) continue
     const otherTask = otherSlot.teachingTask
@@ -157,7 +163,14 @@ function isPlacementHardCompatible(
     if (!hasWeekOverlap(movingTask, otherTask)) continue
 
     // HC1: room conflict
-    if (pos.roomId === proposedRoomId) return false
+    if (
+      proposedRoomIds.size > 0 &&
+      findEffectiveRoomConflict(movingSlot, proposedRoomId, otherSlot, pos.roomId) != null
+    ) {
+      return false
+    }
+
+    if (pos.roomId === 0) continue
 
     // HC2: teacher conflict
     if (movingTask.teacherId != null && movingTask.teacherId === otherTask.teacherId) return false
@@ -173,7 +186,7 @@ function isPlacementHardCompatible(
 
 // ── Hard conflict participant detection ──
 
-function findHardConflictParticipants(
+export function findHardConflictParticipants(
   ctx: SchedulingContext,
   state: ScheduleState,
 ): Set<number> {
@@ -183,24 +196,27 @@ function findHardConflictParticipants(
   for (let i = 0; i < slots.length; i++) {
     const a = slots[i]
     const aPos = state.assignments.get(a.id)
-    if (!aPos || aPos.roomId === 0) continue
+    if (!aPos) continue
 
     for (let j = i + 1; j < slots.length; j++) {
       const b = slots[j]
       const bPos = state.assignments.get(b.id)
-      if (!bPos || bPos.roomId === 0) continue
+      if (!bPos) continue
       if (aPos.dayOfWeek !== bPos.dayOfWeek || aPos.slotIndex !== bPos.slotIndex) continue
       if (!hasWeekOverlap(a.teachingTask, b.teachingTask)) continue
 
-      const hasRoomConflict = aPos.roomId === bPos.roomId
-      const hasTeacherConflict = a.teachingTask.teacherId != null &&
+      const hasRoomConflict = findEffectiveRoomConflict(a, aPos.roomId, b, bPos.roomId) != null
+      const bothHavePrimaryRooms = aPos.roomId !== 0 && bPos.roomId !== 0
+      const hasTeacherConflict = bothHavePrimaryRooms && a.teachingTask.teacherId != null &&
         a.teachingTask.teacherId === b.teachingTask.teacherId
       let hasClassConflict = false
-      for (const tcA of a.teachingTask.taskClasses) {
-        for (const tcB of b.teachingTask.taskClasses) {
-          if (tcA.classGroupId === tcB.classGroupId) { hasClassConflict = true; break }
+      if (bothHavePrimaryRooms) {
+        for (const tcA of a.teachingTask.taskClasses) {
+          for (const tcB of b.teachingTask.taskClasses) {
+            if (tcA.classGroupId === tcB.classGroupId) { hasClassConflict = true; break }
+          }
+          if (hasClassConflict) break
         }
-        if (hasClassConflict) break
       }
 
       if (hasRoomConflict || hasTeacherConflict || hasClassConflict) {

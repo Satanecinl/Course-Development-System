@@ -76,22 +76,48 @@ function getPos(
 
 // ── HC5: 教室可用性 ──
 
-/** K34-A3: Collect all room ids for a slot (primary + secondary).
- *  K34-A3D: Pass `currentRoomId` (state-assigned position) so the primary
- *  reflects the *current* placement, not the DB-stored slot.roomId which
- *  is stale after a move. Without this, the combined capacity would
- *  incorrectly include the old primary room in addition to the new
- *  primary room, double-counting capacity. */
-function getAllRoomIds(slot: SlotWithRelations, currentRoomId?: number): number[] {
-  const ids: number[] = []
+/**
+ * Build the effective room set for a slot from its current primary room plus
+ * immutable secondary rooms. The current primary can come from solver state.
+ */
+export function getEffectiveRoomIds(
+  slot: SlotWithRelations,
+  currentRoomId?: number | null,
+): Set<number> {
+  const ids = new Set<number>()
   const primaryId = currentRoomId ?? slot.roomId
-  if (primaryId != null) ids.push(primaryId)
+  if (primaryId != null && primaryId > 0) ids.add(primaryId)
   // additionalRooms may be absent if the relation was not loaded.
   const additionalRooms = slot.additionalRooms as Array<{ roomId: number }> | undefined
   if (additionalRooms) {
-    for (const ar of additionalRooms) ids.push(ar.roomId)
+    for (const ar of additionalRooms) {
+      if (ar.roomId > 0) ids.add(ar.roomId)
+    }
   }
   return ids
+}
+
+export function findEffectiveRoomConflict(
+  slotA: SlotWithRelations,
+  currentRoomA: number | null | undefined,
+  slotB: SlotWithRelations,
+  currentRoomB: number | null | undefined,
+): number | null {
+  if (slotA.semesterId != null && slotB.semesterId != null && slotA.semesterId !== slotB.semesterId) {
+    return null
+  }
+
+  const roomIdsA = getEffectiveRoomIds(slotA, currentRoomA)
+  if (roomIdsA.size === 0) return null
+  const roomIdsB = getEffectiveRoomIds(slotB, currentRoomB)
+  for (const roomId of roomIdsA) {
+    if (roomIdsB.has(roomId)) return roomId
+  }
+  return null
+}
+
+function getAllRoomIds(slot: SlotWithRelations, currentRoomId?: number): number[] {
+  return Array.from(getEffectiveRoomIds(slot, currentRoomId))
 }
 
 /** 从 room.name 推断楼栋 */
@@ -382,23 +408,26 @@ export function calculateScoreWithDetails(
   // ── HC1/HC2/HC3: 成对检测 ──
   for (let i = 0; i < positions.length; i++) {
     const a = positions[i]
-    if (a.room === 0) continue
 
     for (let j = i + 1; j < positions.length; j++) {
       const b = positions[j]
-      if (b.room === 0) continue
       if (a.day !== b.day || a.idx !== b.idx) continue
       if (!hasWeekOverlap(a.slot.teachingTask, b.slot.teachingTask)) continue
 
       // HC1: 教室冲突
-      if (a.room === b.room) {
+      const conflictingRoomId = findEffectiveRoomConflict(a.slot, a.room, b.slot, b.room)
+      if (conflictingRoomId != null) {
         hardScore += HARD_PENALTY
         details.push({
           type: 'HC1_ROOM_CONFLICT', level: 'HARD', penalty: HARD_PENALTY,
           slotId: a.slot.id, relatedSlotId: b.slot.id,
-          message: `教室冲突: ${a.slot.teachingTask.course?.name ?? '?'} 与 ${b.slot.teachingTask.course?.name ?? '?'} 同时使用教室 ${ctx.roomById.get(a.room)?.name ?? a.room}`,
+          message: `教室冲突: ${a.slot.teachingTask.course?.name ?? '?'} 与 ${b.slot.teachingTask.course?.name ?? '?'} 同时使用教室 ${ctx.roomById.get(conflictingRoomId)?.name ?? conflictingRoomId}`,
         })
       }
+
+      // Preserve the legacy rule that no-primary-room slots do not participate
+      // in teacher/class hard conflicts.
+      if (a.room === 0 || b.room === 0) continue
 
       // HC2: 教师冲突
       if (a.slot.teachingTask.teacherId != null &&
@@ -803,32 +832,37 @@ export function calculateDeltaScore(
   for (const other of ctx.slots) {
     if (other.id === slot.id) continue
     const oPos = getPos(other, state)
-    if (oPos.room === 0) continue
 
     const overlap = hasWeekOverlap(task, other.teachingTask)
+    const oldRoomConflict = findEffectiveRoomConflict(slot, old.roomId, other, oPos.room) != null
+    const newRoomConflict = findEffectiveRoomConflict(slot, move.newRoomId, other, oPos.room) != null
 
     // 旧位置冲突移除
     if (old.dayOfWeek === oPos.day && old.slotIndex === oPos.idx && overlap) {
-      if (old.roomId === oPos.room) deltaHard -= HARD_PENALTY
-      if (task.teacherId != null && task.teacherId === other.teachingTask.teacherId) {
+      if (oldRoomConflict) deltaHard -= HARD_PENALTY
+      if (oPos.room !== 0 && task.teacherId != null && task.teacherId === other.teachingTask.teacherId) {
         deltaHard -= HARD_PENALTY
       }
-      for (const tc of task.taskClasses) {
-        for (const otc of other.teachingTask.taskClasses) {
-          if (tc.classGroupId === otc.classGroupId) { deltaHard -= HARD_PENALTY; break }
+      if (oPos.room !== 0) {
+        for (const tc of task.taskClasses) {
+          for (const otc of other.teachingTask.taskClasses) {
+            if (tc.classGroupId === otc.classGroupId) { deltaHard -= HARD_PENALTY; break }
+          }
         }
       }
     }
 
     // 新位置冲突添加
     if (move.newDay === oPos.day && move.newSlotIndex === oPos.idx && overlap) {
-      if (move.newRoomId === oPos.room) deltaHard += HARD_PENALTY
-      if (task.teacherId != null && task.teacherId === other.teachingTask.teacherId) {
+      if (newRoomConflict) deltaHard += HARD_PENALTY
+      if (oPos.room !== 0 && task.teacherId != null && task.teacherId === other.teachingTask.teacherId) {
         deltaHard += HARD_PENALTY
       }
-      for (const tc of task.taskClasses) {
-        for (const otc of other.teachingTask.taskClasses) {
-          if (tc.classGroupId === otc.classGroupId) { deltaHard += HARD_PENALTY; break }
+      if (oPos.room !== 0) {
+        for (const tc of task.taskClasses) {
+          for (const otc of other.teachingTask.taskClasses) {
+            if (tc.classGroupId === otc.classGroupId) { deltaHard += HARD_PENALTY; break }
+          }
         }
       }
     }

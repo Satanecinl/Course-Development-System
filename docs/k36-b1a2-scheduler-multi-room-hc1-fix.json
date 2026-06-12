@@ -1,0 +1,44 @@
+{
+  "stage": "K36-B1A2-SCHEDULER-SCORE-MULTI-ROOM-HC1-FIX",
+  "status": "PASS",
+  "scope": [
+    "src/lib/scheduler/score.ts",
+    "src/lib/scheduler/solver.ts"
+  ],
+  "hc1Penalty": -1000,
+  "behavior": {
+    "fullPrimaryPrimary": "PASS",
+    "fullPrimarySecondary": "PASS",
+    "fullSecondaryPrimary": "PASS",
+    "fullSecondarySecondary": "PASS",
+    "onePenaltyPerPair": "PASS",
+    "roomIdDeduplication": "PASS",
+    "noRoom": "PASS",
+    "differentTime": "PASS",
+    "crossSemesterIsolation": "PASS",
+    "deltaPrimarySecondary": "PASS",
+    "deltaSecondarySecondary": "PASS",
+    "solverPlacement": "PASS",
+    "participantDetection": "PASS",
+    "teacherClassUnchanged": "PASS",
+    "legacyPrimaryOnly": "PASS"
+  },
+  "validation": {
+    "fixturePassed": 14,
+    "fixtureFailed": 0,
+    "docsPiiBlocking": 0,
+    "prismaValidate": "PASS",
+    "build": "PASS",
+    "targetedEslintErrors": 0,
+    "targetedEslintExistingWarnings": 2
+  },
+  "outOfScope": [
+    "adjustment dry-run and apply",
+    "room and plan recommendation",
+    "campus room rules",
+    "HC4 HC5 HC6 delta alignment",
+    "WorkTime B-03",
+    "schema and migrations",
+    "Git history"
+  ]
+}
