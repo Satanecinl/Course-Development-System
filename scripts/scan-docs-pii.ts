@@ -1,10 +1,14 @@
 /**
- * K36-A5D3C: Docs PII Regression Scan
+ * K36-A5D3C1: Docs PII Regression Scan (tuned)
  *
  * Read-only scanner for docs JSON files. Detects potential PII or
  * sensitive business data that may have leaked into audit/diagnostic
  * report files. Does NOT write files, does NOT read the database,
  * does NOT run any generate/write scripts.
+ *
+ * Two-tier field classification:
+ *   A. STRICT_IDENTITY_FIELDS — blocking on any non-whitelisted Chinese
+ *   B. FREE_TEXT_FIELDS — only blocking on specific PII patterns
  *
  * Exit codes: 0 = clean, 1 = blocking hits detected.
  *
@@ -17,13 +21,24 @@ import * as path from 'path'
 
 // ─── Configuration ────────────────────────────────────────────────
 
-/** Fields that, when containing a Chinese string that is NOT a
- *  whitelisted token, are flagged as BLOCKING. */
-const HIGH_RISK_FIELDS = new Set([
+/**
+ * A. STRICT_IDENTITY_FIELDS: identity-bearing fields.
+ * Blocking on any non-whitelisted Chinese string value.
+ */
+const STRICT_IDENTITY_FIELDS = new Set([
   'teacherName', 'teacherNames', 'teacher',
   'courseName', 'courseNames',
   'classGroupName', 'classGroupNames',
   'roomName', 'roomNames',
+  'wrongCG',
+])
+
+/**
+ * B. FREE_TEXT_FIELDS: audit text fields.
+ * NOT blocking on generic Chinese audit text.
+ * Only blocking on specific PII patterns (phone, identity labels, class patterns).
+ */
+const FREE_TEXT_FIELDS = new Set([
   'reason', 'reasons',
   'evidence', 'excerpt',
   'recommendation',
@@ -32,8 +47,11 @@ const HIGH_RISK_FIELDS = new Set([
   'detail',
   'currentStatus', 'risk',
   'diagnosisEffort', 'improvementWithEvidence',
-  'wrongCG', 'tasks', 'case',
+  'tasks', 'case',
 ])
+
+/** All fields we scan (union of A + B). */
+const ALL_SCANNED_FIELDS = new Set([...STRICT_IDENTITY_FIELDS, ...FREE_TEXT_FIELDS])
 
 /** Fields that hold numeric IDs — always pass, never checked. */
 const STRUCTURAL_ID_FIELDS = new Set([
@@ -62,7 +80,6 @@ const ALLOWED_TOKEN_PATTERNS = [
   /^MEDIUM$/,
   /^LOW$/,
   /^P[0-3]$/,
-  // Structural values that are safe
   /^\d+$/,
   /^(null|true|false|unknown|none|N\/A|n\/a|empty)$/i,
 ]
@@ -73,6 +90,20 @@ const PHONE_RE = /1[3-9][0-9]{9}/
 /** Patterns for timestamp-like false positives (13-digit millis). */
 const TIMESTAMP_RE = /\b1[67]\d{11}\b/
 
+/**
+ * Patterns for FREE_TEXT_FIELDS that indicate real PII (not just
+ * generic Chinese audit text). Only these trigger blocking in
+ * free-text fields. Uses structural patterns only — no specific
+ * real names, no hardcoded name lists.
+ */
+const FREE_TEXT_PII_PATTERNS = [
+  { pattern: /\bteacherName\s*[=:：]/i, type: 'IDENTITY_LABEL_TEACHER' },
+  { pattern: /\bcourseName\s*[=:：]/i, type: 'IDENTITY_LABEL_COURSE' },
+  { pattern: /\bclassGroupName\s*[=:：]/i, type: 'IDENTITY_LABEL_CLASS' },
+  { pattern: /\broomName\s*[=:：]/i, type: 'IDENTITY_LABEL_ROOM' },
+  { pattern: /\d{4}级[一-鿿]{2,15}班/, type: 'CLASS_ENTITY_PATTERN' },
+]
+
 // ─── Types ────────────────────────────────────────────────────────
 
 interface Hit {
@@ -81,14 +112,14 @@ interface Hit {
   type: string
   count: number
   blocking: boolean
-  samplePreview?: string   // truncated, no full value
+  severity: 'BLOCKING' | 'WARNING' | 'INFO'
+  samplePreview?: string
 }
 
 // ─── Main ─────────────────────────────────────────────────────────
 
 function collectJsonFiles(dir: string): string[] {
   const results: string[] = []
-  // Walk docs directory, collect .json files
   for (const entry of fs.readdirSync(dir)) {
     const fullPath = path.join(dir, entry)
     const stat = fs.statSync(fullPath)
@@ -106,8 +137,16 @@ function isAllowedToken(value: string): boolean {
 }
 
 function containsChinese(value: string): boolean {
-  // Match a single Chinese character anywhere in the string
   return /[一-鿿]/.test(value)
+}
+
+function checkFreeTextForPII(value: string): { found: boolean; type: string } | null {
+  for (const { pattern, type } of FREE_TEXT_PII_PATTERNS) {
+    if (pattern.test(value)) {
+      return { found: true, type }
+    }
+  }
+  return null
 }
 
 function walkJson(
@@ -121,19 +160,40 @@ function walkJson(
 
   // Arrays
   if (Array.isArray(value)) {
-    // Check each element if parent is a high-risk field
-    if (HIGH_RISK_FIELDS.has(parentKey)) {
+    if (STRICT_IDENTITY_FIELDS.has(parentKey)) {
       for (let i = 0; i < value.length; i++) {
         const v = value[i]
         if (typeof v === 'string' && containsChinese(v) && !isAllowedToken(v)) {
           hits.push({
             file,
             fieldPath: `${parentPath}[${i}]`,
-            type: 'CHINESE_IN_ARRAY_ELEMENT',
+            type: 'IDENTITY_IN_ARRAY',
             count: 1,
             blocking: true,
-            samplePreview: `${v.substring(0, 20)}...(${v.length} chars)`,
+            severity: 'BLOCKING',
+            samplePreview: `<CJK_TEXT>(${v.length} chars)`,
           })
+        }
+      }
+      return
+    }
+    // For free-text arrays, check each element for PII patterns
+    if (FREE_TEXT_FIELDS.has(parentKey)) {
+      for (let i = 0; i < value.length; i++) {
+        const v = value[i]
+        if (typeof v === 'string') {
+          const pii = checkFreeTextForPII(v)
+          if (pii) {
+            hits.push({
+              file,
+              fieldPath: `${parentPath}[${i}]`,
+              type: pii.type,
+              count: 1,
+              blocking: true,
+              severity: 'BLOCKING',
+              samplePreview: `<CJK_TEXT>(${v.length} chars)`,
+            })
+          }
         }
       }
       return
@@ -146,18 +206,40 @@ function walkJson(
 
   // Objects
   if (typeof value !== 'object') {
-    // Leaf value — check if parentKey is high-risk
-    if (typeof value === 'string' && HIGH_RISK_FIELDS.has(parentKey)) {
+    if (typeof value !== 'string') return
+    // Leaf string value
+
+    // STRICT_IDENTITY_FIELDS: blocking on any Chinese
+    if (STRICT_IDENTITY_FIELDS.has(parentKey)) {
       if (containsChinese(value) && !isAllowedToken(value)) {
         hits.push({
           file,
           fieldPath: parentPath,
-          type: 'CHINESE_IN_STRING',
+          type: 'IDENTITY_IN_STRING',
           count: 1,
           blocking: true,
-          samplePreview: `${value.substring(0, 20)}...(${value.length} chars)`,
+          severity: 'BLOCKING',
+          samplePreview: `<CJK_TEXT>(${value.length} chars)`,
         })
       }
+      return
+    }
+
+    // FREE_TEXT_FIELDS: only blocking on specific PII patterns
+    if (FREE_TEXT_FIELDS.has(parentKey)) {
+      const pii = checkFreeTextForPII(value)
+      if (pii) {
+        hits.push({
+          file,
+          fieldPath: parentPath,
+          type: pii.type,
+          count: 1,
+          blocking: true,
+          severity: 'BLOCKING',
+          samplePreview: `<CJK_TEXT>(${value.length} chars)`,
+        })
+      }
+      return
     }
     return
   }
@@ -165,8 +247,14 @@ function walkJson(
   // Walk object keys
   for (const key of Object.keys(value)) {
     if (STRUCTURAL_ID_FIELDS.has(key)) continue
+    if (!ALL_SCANNED_FIELDS.has(key)) {
+      // Not a scanned field — recurse into children to find nested scanned fields
+      const childPath = parentPath ? `${parentPath}.${key}` : key
+      walkJson((value as Record<string, unknown>)[key], childPath, key, hits, file)
+      continue
+    }
     const childPath = parentPath ? `${parentPath}.${key}` : key
-    walkJson(value[key], childPath, key, hits, file)
+    walkJson((value as Record<string, unknown>)[key], childPath, key, hits, file)
   }
 }
 
@@ -175,23 +263,20 @@ function scanFileForPhoneNumbers(filePath: string, file: string): Hit[] {
   const raw = fs.readFileSync(filePath, 'utf-8')
   const matches = raw.match(PHONE_RE)
   if (matches) {
-    // Filter out timestamp-like false positives
     const realMatches = matches.filter(m => !TIMESTAMP_RE.test(m))
     if (realMatches.length > 0) {
-      // Check if these are in structurally safe locations (filenames, paths)
-      // by looking at surrounding context
       for (const match of realMatches) {
         hits.push({
           file,
           fieldPath: '<regex match>',
           type: 'PHONE_NUMBER',
           count: 1,
-          blocking: false,  // treat as warning — likely import batch timestamps
+          blocking: false,
+          severity: 'WARNING',
           samplePreview: `${match.slice(0, 3)}***`,
         })
       }
     }
-    // Count false positives (timestamps)
     const falsePositives = matches.filter(m => TIMESTAMP_RE.test(m))
     if (falsePositives.length > 0) {
       hits.push({
@@ -200,6 +285,7 @@ function scanFileForPhoneNumbers(filePath: string, file: string): Hit[] {
         type: 'PHONE_FALSE_POSITIVE_CANDIDATE',
         count: falsePositives.length,
         blocking: false,
+        severity: 'INFO',
         samplePreview: `${falsePositives.length} matches look like timestamps`,
       })
     }
@@ -217,7 +303,7 @@ function main(): void {
   }
 
   const files = collectJsonFiles(docsDir)
-  console.log(`\nK36-A5D3C: Docs PII Regression Scan`)
+  console.log(`\nK36-A5D3C1: Docs PII Regression Scan (tuned)`)
   console.log(`Scanning ${files.length} JSON files in docs/\n`)
 
   const allHits: Hit[] = []
@@ -236,11 +322,8 @@ function main(): void {
 
     filesScanned++
 
-    // Walk JSON for field-level PII
     const hits: Hit[] = []
     walkJson(json, '', '', hits, relPath)
-
-    // Scan raw content for phone numbers
     hits.push(...scanFileForPhoneNumbers(filePath, relPath))
 
     if (hits.length === 0) {
@@ -251,10 +334,9 @@ function main(): void {
 
   // ── Summary ──
   const blockingHits = allHits.filter(h => h.blocking)
-  const warningHits = allHits.filter(h => !h.blocking && h.type !== 'PHONE_FALSE_POSITIVE_CANDIDATE')
-  const falsePositiveCandidates = allHits.filter(h => h.type === 'PHONE_FALSE_POSITIVE_CANDIDATE')
+  const warningHits = allHits.filter(h => h.severity === 'WARNING')
+  const infoHits = allHits.filter(h => h.severity === 'INFO')
 
-  // Group by file
   const hitsByFile = new Map<string, Hit[]>()
   for (const h of allHits) {
     const arr = hitsByFile.get(h.file) || []
@@ -262,23 +344,23 @@ function main(): void {
     hitsByFile.set(h.file, arr)
   }
 
-  console.log(`\n── Results ──`)
+  console.log(`── Results ──`)
   console.log(`Files scanned:       ${filesScanned}`)
   console.log(`Files clean:         ${filesClean}`)
   console.log(`Total hits:          ${allHits.length}`)
   console.log(`  BLOCKING:          ${blockingHits.length}`)
   console.log(`  WARNING:           ${warningHits.length}`)
-  console.log(`  False positive:    ${falsePositiveCandidates.length}`)
+  console.log(`  INFO:              ${infoHits.length}`)
   console.log('')
 
   for (const [file, hits] of hitsByFile) {
     const blocking = hits.filter(h => h.blocking)
-    const warning = hits.filter(h => !h.blocking)
+    const warning = hits.filter(h => h.severity === 'WARNING')
     const icon = blocking.length > 0 ? '🔴' : warning.length > 0 ? '🟡' : '🟢'
     console.log(`${icon} ${file}: ${hits.length} hit(s) (${blocking.length} blocking, ${warning.length} warning)`)
     for (const h of hits) {
-      const b = h.blocking ? 'BLOCKING' : 'warning'
-      console.log(`    [${b}] ${h.fieldPath} — ${h.type} (count=${h.count})${h.samplePreview ? ' ' + h.samplePreview : ''}`)
+      const sev = h.severity
+      console.log(`    [${sev}] ${h.fieldPath} — ${h.type} (count=${h.count})${h.samplePreview ? ' ' + h.samplePreview : ''}`)
     }
   }
 
