@@ -23,7 +23,7 @@ npx prisma validate                                    # Validate schema
 npx prisma migrate status                              # Check migration status
 
 # Data pipeline
-python scripts/parse_schedule.py "../2026年春季学期课程表(0420).docx" -o output.json -v
+python scripts/parse_schedule.py "<input.docx>" -o "<output.json>" -v
 python test_parse.py                                # Run 7 parser unit tests
 
 # Import pipeline tests
@@ -63,7 +63,7 @@ FIX_IMPORT_METADATA=1 npm run fix:confirmed-import-metadata  # Fix metadata if n
 ## Architecture
 
 ```
-Word .docx  ──[Python]──>  output.json  ──[Import API]──>  SQLite dev.db
+Word .docx  ──[Python]──>  explicit JSON output  ──[Import API]──>  SQLite dev.db
                                                                  │
                                     Next.js App Router ──────────┘
                                     /api/schedule ── GET all items

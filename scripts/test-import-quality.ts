@@ -1,13 +1,13 @@
-import { execSync } from 'child_process'
-import { readFileSync, existsSync, unlinkSync, mkdtempSync } from 'fs'
+import { execFileSync } from 'child_process'
+import { readFileSync, existsSync, mkdtempSync, rmSync } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
 import { computeImportParseQuality } from '../src/lib/import/parse-utils'
 import { classifyImportRecords, classifyMissingTeacher, classifyMissingRoom } from '../src/lib/import/quality-classifier'
 import type { ImportScheduleRecord } from '../src/types/import'
 
-const DOCX_PATH = join(__dirname, '..', '..', '2026年春季学期课程表(0420).docx')
 const SCRIPT_PATH = join(__dirname, 'parse_schedule.py')
+const MOCK_SCRIPT_PATH = join(__dirname, 'create_mock_data.py')
 const TEACHERS_PATH = process.env.TEACHER_WHITELIST_PATH ?? join(__dirname, 'fixtures', 'teachers.synthetic.txt')
 
 const DAY_MAP: Record<number, string> = { 1: '周一', 2: '周二', 3: '周三', 4: '周四', 5: '周五', 6: '周六', 7: '周日' }
@@ -26,20 +26,27 @@ function printRecord(idx: number, r: ImportScheduleRecord, cls?: { category: str
 }
 
 function main() {
-  if (!existsSync(DOCX_PATH)) {
-    console.error(`错误：找不到课表文件: ${DOCX_PATH}`)
-    process.exit(1)
-  }
-
   const tmpDir = mkdtempSync(join(tmpdir(), 'import-quality-'))
+  const docxPath = join(tmpDir, 'schedule.synthetic.docx')
   const tmpJson = join(tmpDir, 'output.json')
 
   try {
-    // 实时调用 parse_schedule.py
-    const teachersArg = existsSync(TEACHERS_PATH) ? ` --teachers "${TEACHERS_PATH}"` : ''
-    const cmd = `python "${SCRIPT_PATH}" "${DOCX_PATH}" -o "${tmpJson}"${teachersArg}`
+    execFileSync('python', [MOCK_SCRIPT_PATH, docxPath], {
+      cwd: join(__dirname, '..'),
+      stdio: 'pipe',
+      timeout: 60000,
+    })
+
+    const parserArgs = [SCRIPT_PATH, docxPath, '-o', tmpJson]
+    if (existsSync(TEACHERS_PATH)) {
+      parserArgs.push('--teachers', TEACHERS_PATH)
+    }
     console.log('运行解析器（实时解析）...')
-    execSync(cmd, { cwd: join(__dirname, '..'), stdio: 'pipe', timeout: 60000 })
+    execFileSync('python', parserArgs, {
+      cwd: join(__dirname, '..'),
+      stdio: 'pipe',
+      timeout: 60000,
+    })
 
     if (!existsSync(tmpJson)) {
       console.error('错误：解析器未生成输出文件')
@@ -135,8 +142,7 @@ function main() {
     console.log(`\n${pass ? 'PASS' : 'FAIL'}`)
     process.exit(pass ? 0 : 1)
   } finally {
-    try { unlinkSync(tmpJson) } catch {}
-    try { require('fs').rmdirSync(tmpDir) } catch {}
+    rmSync(tmpDir, { recursive: true, force: true })
   }
 }
 

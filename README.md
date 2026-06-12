@@ -58,7 +58,7 @@ Word .docx ──[Python 解析]──> JSON ──[Import API]──> SQLite (p
 ### 解析
 
 ```bash
-python scripts/parse_schedule.py "../2026年春季学期课程表(0420).docx" -o output.json -v
+python scripts/parse_schedule.py "<input.docx>" -o "<output.json>" -v
 ```
 
 ### 导入（通过 Web UI）

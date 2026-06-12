@@ -33,7 +33,7 @@ Before running any script, inspect its source, the script inventory, and the rel
 
 ## Python files
 
-- `parse_cell.py` / `parse_schedule.py` — Word `.docx` parser (read-only on the file system, writes `output.json`)
+- `parse_cell.py` / `parse_schedule.py` — Word `.docx` parser (requires explicit input and output paths)
 - `build_teacher_whitelist.py` / `create_mock_data.py` / `diagnose_*.py` — one-off Python utilities
 - `test_parse.py` / `test_parse_cell_sanitize.py` — Python unit tests
 
@@ -51,6 +51,7 @@ Before running any script, inspect its source, the script inventory, and the rel
 - Direct seed invocation requires `tsx scripts/seed_db.ts --input <schedule.json>`.
 - Real schedule inputs must remain outside the repository.
 - Historical G0 reset/import tools have been removed from the current HEAD.
+- `create_mock_data.py <output.docx>` generates independently constructed synthetic parser input at an explicit path.
 
 ## Disallowed (not in this directory)
 

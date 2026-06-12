@@ -67,7 +67,7 @@ Word .docx → Python 解析 → output.json → Import API → SQLite
 
 代码中 "semester" 出现仅在：
 - `half_semester` — 导入质量分类标签（前八周/后八周），与学期模型无关
-- `scripts/semester_2026.json` — 旧的种子数据文件名，不反映数据模型
+- 历史 `semester_2026.json` 种子文件不反映数据模型，已从当前 HEAD 移除
 
 ---
 

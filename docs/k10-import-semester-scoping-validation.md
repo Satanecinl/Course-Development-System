@@ -156,7 +156,7 @@ Fix-B (`86af57e`) 完成了 ClassGroup scoped uniqueness 和 confirmed guard sem
 
 ## 13. 样例导入 / API / 浏览器验证
 
-- 是否找到样例文件：**是**（16 个 .docx 在 `uploads/imports/`，`output.json` 在项目根目录）
+- 历史验收时曾找到本地样例；真实 `.docx` 与根目录 `output.json` 均不属于当前 HEAD 的可发布 fixture。
 - 是否执行真实 parse：**否**
 - 是否执行真实 confirm：**否**
 - 是否执行浏览器验证：**否**

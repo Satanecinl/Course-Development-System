@@ -193,7 +193,7 @@ async function main() {
   console.log('## Source Hypothesis')
   if (jsonAbnormal.size > 0) {
     console.log('- verdict: ORIGINAL_JSON_HAS_BAD_NAME')
-    console.log('- evidence: The abnormal course names exist in the batch #1 JSON (uploads/imports/1780035124021-sejcg9dy.json). The Python parser (scripts/parse_cell.py) produced these names from the Word docx. The CSV (scripts/semester_2026.csv) shows the raw teacher field contains "杨景勋 （）机械制图 张红梅 （双周上）" — the parser incorrectly split the teacher+course string, producing "）机械制图" as a course name.')
+    console.log('- evidence: Historical import evidence showed a combined teacher/course/week marker field. The parser split that malformed field incorrectly, producing an invalid course-name token. Raw names and source rows have been removed from the current HEAD.')
   } else {
     console.log('- verdict: UNKNOWN_NEEDS_REVIEW')
     console.log('- evidence: Abnormal names not found in JSON but exist in DB')

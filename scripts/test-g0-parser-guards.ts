@@ -3,18 +3,19 @@
  *
  * 测试范围：
  * 1. 非法 token 不生成课程
- * 2. 0420 parser 回归测试
- * 3. 汽车制造与试验技术2班重复保护
+ * 2. synthetic parser 回归测试
+ * 3. synthetic fixture 重复保护
  * 4. seed/importer key 一致性测试
  */
 
-import { execSync } from 'child_process'
+import { execFileSync } from 'child_process'
 import * as fs from 'fs'
+import * as os from 'os'
 import * as path from 'path'
 
 const DOCKER_ROOT = path.resolve(__dirname, '..')
 const PARSER_PATH = path.resolve(__dirname, 'parse_schedule.py')
-const DOCX_0420 = path.resolve(DOCKER_ROOT, '..', '2026年春季学期课程表(0420).docx')
+const MOCK_SCRIPT_PATH = path.resolve(__dirname, 'create_mock_data.py')
 
 interface TestResult {
   name: string
@@ -65,30 +66,32 @@ function testIllegalTokens(): TestResult {
   return { name: '1. 非法 token 过滤列表完整性', passed: details.every((d) => !d.startsWith('FAIL')), details }
 }
 
-// ── 测试 2：0420 parser 回归测试 ──
+// ── 测试 2：synthetic parser 回归测试 ──
 
 function test0420Parser(): TestResult {
   const details: string[] = []
-
-  if (!fs.existsSync(DOCX_0420)) {
-    details.push(`SKIP: 0420 源文件不存在: ${DOCX_0420}`)
-    return { name: '2. 0420 parser 回归测试', passed: true, details }
-  }
-
-  const tmpOutput = path.resolve(__dirname, '0420_test_output.json')
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'g0-parser-guards-'))
+  const tmpDocx = path.join(tmpDir, 'schedule.synthetic.docx')
+  const tmpOutput = path.join(tmpDir, 'schedule.synthetic.json')
   try {
-    execSync(`python "${PARSER_PATH}" "${DOCX_0420}" -o "${tmpOutput}"`, {
+    execFileSync('python', [MOCK_SCRIPT_PATH, tmpDocx], {
+      encoding: 'utf-8',
+      timeout: 120000,
+    })
+    execFileSync('python', [PARSER_PATH, tmpDocx, '-o', tmpOutput], {
       encoding: 'utf-8',
       timeout: 120000,
     })
   } catch (e: any) {
     details.push(`FAIL: parser 执行失败: ${e.message}`)
-    return { name: '2. 0420 parser 回归测试', passed: false, details }
+    fs.rmSync(tmpDir, { recursive: true, force: true })
+    return { name: '2. synthetic parser 回归测试', passed: false, details }
   }
 
   if (!fs.existsSync(tmpOutput)) {
     details.push('FAIL: parser 未生成输出文件')
-    return { name: '2. 0420 parser 回归测试', passed: false, details }
+    fs.rmSync(tmpDir, { recursive: true, force: true })
+    return { name: '2. synthetic parser 回归测试', passed: false, details }
   }
 
   const raw = fs.readFileSync(tmpOutput, 'utf-8')
@@ -98,7 +101,8 @@ function test0420Parser(): TestResult {
     records = Array.isArray(parsed) ? parsed : parsed.records || []
   } catch {
     details.push('FAIL: JSON 解析失败')
-    return { name: '2. 0420 parser 回归测试', passed: false, details }
+    fs.rmSync(tmpDir, { recursive: true, force: true })
+    return { name: '2. synthetic parser 回归测试', passed: false, details }
   }
 
   // 断言 1: records > 0
@@ -130,27 +134,27 @@ function test0420Parser(): TestResult {
   }
   details.push(assertEqual(dupCount, 0, `完全重复 records = 0 (实际 ${dupCount})`))
 
-  // 断言 4: 班级数约等于 37
+  // 断言 4: synthetic fixture 包含 3 个班级
   const classes = new Set(records.map((r: any) => r.class_info?.class_name).filter(Boolean))
-  details.push(assertTrue(classes.size >= 30 && classes.size <= 40, `班级数在 30-40 之间 (实际 ${classes.size})`))
+  details.push(assertEqual(classes.size, 3, `班级数 = 3 (实际 ${classes.size})`))
 
-  // 断言 5: 2024级汽车制造与试验技术2班 有 records
-  const car2 = records.filter((r: any) => r.class_info?.class_name === '2024级汽车制造与试验技术2班')
-  details.push(assertTrue(car2.length > 0, `2024级汽车制造与试验技术2班 records > 0 (实际 ${car2.length})`))
+  // 断言 5: 明确 synthetic 班级有 records
+  const syntheticClass = records.filter((r: any) => r.class_info?.class_name === '测试专业2026级乙班')
+  details.push(assertTrue(syntheticClass.length > 0, `synthetic 乙班 records > 0 (实际 ${syntheticClass.length})`))
 
   // 断言 6: 同一 class+course+teacher+room+day+slot+week 不重复
-  const car2Keys = new Set<string>()
-  let car2Dup = 0
-  for (const r of car2) {
+  const classKeys = new Set<string>()
+  let classDup = 0
+  for (const r of syntheticClass) {
     const key = `${r.course}|${r.teacher}|${r.room}|${r.day_of_week}|${r.time_slot}|${r.week_type}|${r.week_start}-${r.week_end}`
-    if (car2Keys.has(key)) car2Dup++
-    else car2Keys.add(key)
+    if (classKeys.has(key)) classDup++
+    else classKeys.add(key)
   }
-  details.push(assertEqual(car2Dup, 0, `汽车制造2班重复 records = 0 (实际 ${car2Dup})`))
+  details.push(assertEqual(classDup, 0, `synthetic 乙班重复 records = 0 (实际 ${classDup})`))
 
-  fs.unlinkSync(tmpOutput)
+  fs.rmSync(tmpDir, { recursive: true, force: true })
 
-  return { name: '2. 0420 parser 回归测试', passed: details.every((d) => !d.startsWith('FAIL')), details }
+  return { name: '2. synthetic parser 回归测试', passed: details.every((d) => !d.startsWith('FAIL')), details }
 }
 
 // ── 测试 3：seed_db.ts / importer.ts key 一致性（remark 不在 dedup key 中） ──
