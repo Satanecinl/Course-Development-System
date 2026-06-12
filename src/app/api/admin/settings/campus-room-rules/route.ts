@@ -51,22 +51,33 @@ export async function GET(_request: NextRequest) {
       reason: string
     }> = []
 
-    // HC5: room unavailability
+    // HC5: room unavailability — include secondary rooms (K36-B1A5)
     const unavailRecords = await prisma.roomAvailability.findMany({
       where: { available: false },
       include: { room: true },
     })
+    const seenHc5Slots = new Set<number>()
     for (const ua of unavailRecords) {
       const slotsAtPos = await prisma.scheduleSlot.findMany({
         where: {
           semesterId: 1,
-          roomId: ua.roomId,
           dayOfWeek: ua.dayOfWeek,
           slotIndex: ua.slotIndex,
+          OR: [
+            { roomId: ua.roomId },
+            { additionalRooms: { some: { roomId: ua.roomId } } },
+          ],
         },
-        include: { teachingTask: { include: { course: true } } },
+        include: {
+          teachingTask: { include: { course: true } },
+          additionalRooms: { select: { roomId: true } },
+        },
       })
       for (const slot of slotsAtPos) {
+        // Deduplicate: a slot's primary and secondary rooms may both be
+        // unavailable for the same time position.
+        if (seenHc5Slots.has(slot.id)) continue
+        seenHc5Slots.add(slot.id)
         violations.push({
           type: 'HC5_ROOM_UNAVAILABLE',
           slotId: slot.id,
@@ -77,12 +88,19 @@ export async function GET(_request: NextRequest) {
       }
     }
 
-    // HC6: non-automotive in Linxiao
+    // HC6: non-automotive in Linxiao — include secondary rooms (K36-B1A5)
     if (linxiaoIds.length > 0) {
       const slotsInLinxiao = await prisma.scheduleSlot.findMany({
-        where: { semesterId: 1, roomId: { in: linxiaoIds } },
+        where: {
+          semesterId: 1,
+          OR: [
+            { roomId: { in: linxiaoIds } },
+            { additionalRooms: { some: { roomId: { in: linxiaoIds } } } },
+          ],
+        },
         include: {
           room: true,
+          additionalRooms: { include: { room: true } },
           teachingTask: {
             include: {
               course: true,
@@ -91,16 +109,31 @@ export async function GET(_request: NextRequest) {
           },
         },
       })
+      // Deduplicate by slot id: a slot may match through both primary
+      // and secondary rooms, or through multiple secondary rooms.
+      const seenHc6Slots = new Set<number>()
       for (const slot of slotsInLinxiao) {
+        if (seenHc6Slots.has(slot.id)) continue
+        seenHc6Slots.add(slot.id)
         const task = slot.teachingTask as unknown as TaskWithRelations
         const cls = classifySpecialty(task)
         if (cls === 'AUTOMOTIVE_ONLY') continue
+        // Determine which linxiao room(s) this slot uses (primary or secondary)
+        const effectiveLinxiaoRoomNames: string[] = []
+        if (slot.roomId != null && linxiaoIds.includes(slot.roomId)) {
+          effectiveLinxiaoRoomNames.push(slot.room?.name ?? String(slot.roomId))
+        }
+        for (const ar of slot.additionalRooms) {
+          if (linxiaoIds.includes(ar.roomId)) {
+            effectiveLinxiaoRoomNames.push(ar.room?.name ?? String(ar.roomId))
+          }
+        }
         violations.push({
           type: 'HC6_NON_AUTOMOTIVE_FORBID_LINXIAO',
           slotId: slot.id,
           courseName: task.course?.name ?? '?',
-          roomName: slot.room?.name ?? null,
-          reason: `${task.course?.name ?? '?'} (分类: ${cls}) 不可在林校教室 ${slot.room?.name ?? '?'}`,
+          roomName: effectiveLinxiaoRoomNames[0] ?? slot.room?.name ?? null,
+          reason: `${task.course?.name ?? '?'} (分类: ${cls}) 不可在林校教室 ${effectiveLinxiaoRoomNames.join('、') || slot.room?.name || '?'}`,
         })
       }
     }

@@ -1,0 +1,27 @@
+{
+  "task": "K36-B1A5",
+  "title": "Campus room rules secondary room fix",
+  "status": "done",
+  "changedFiles": [
+    "src/app/api/admin/settings/campus-room-rules/route.ts",
+    "scripts/verify-campus-room-rules-secondary-k36-b1a5.ts",
+    "docs/k36-b1a5-campus-room-rules-secondary-fix.md",
+    "docs/k36-b1a5-campus-room-rules-secondary-fix.json"
+  ],
+  "gaps": {
+    "HC5": "Only queried ScheduleSlot.roomId, missed additionalRooms",
+    "HC6": "Only queried primary roomId in linxiaoIds, missed secondary rooms"
+  },
+  "fixSummary": {
+    "HC5": "Added OR with additionalRooms.some.roomId, dedup via seenHc5Slots",
+    "HC6": "Added OR with additionalRooms.some.roomId in linxiaoIds, loads room detail, dedup via seenHc6Slots"
+  },
+  "untouched": [
+    "prisma schema/migrations",
+    "scheduler score/solver",
+    "adjustment/recommendation",
+    "WorkTime",
+    "frontend UI",
+    "permissions"
+  ]
+}
