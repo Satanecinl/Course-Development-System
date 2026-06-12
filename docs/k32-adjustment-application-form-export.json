@@ -225,7 +225,7 @@
   "adjustmentLogicChanges": false,
   "manualTrialRequired": true,
   "manualTrialNotes": [
-    "USER 登录 → /my-adjustment-requests → 点"导出串课申请表" → 下载 xlsx → 打开确认模板格式 + 字段正确",
+    "USER 登录 → /my-adjustment-requests → 点\"导出串课申请表\" → 下载 xlsx → 打开确认模板格式 + 字段正确",
     "USER 越权（动态）：在 USER 会话下浏览器 devtools 命中 /api/admin/schedule-adjustment-requests/<别人的id>/export-form → 403",
     "USER 越权（动态）：在 USER 会话下浏览器 devtools 命中 /api/schedule-adjustment-requests/<别人的id>/export-form → 403",
     "ADMIN 登录 → /admin/adjustment-requests → 同上 → 可导出所有状态",
