@@ -35,6 +35,10 @@ export interface ScheduleConflictOccupancy {
   classGroupIds: number[]
   /** Room id of the occupancy (null for business-empty). */
   roomId?: number | null
+  /** Secondary room ids occupied by the same slot. */
+  additionalRoomIds?: number[]
+  /** Semester boundary for callers that provide mixed-semester fixtures. */
+  semesterId?: number | null
   /** Day of week 1-7. */
   dayOfWeek: number
   /** Slot index 1-6. */
@@ -56,6 +60,8 @@ export interface ScheduleConflictCandidate {
   teacherId?: number | null
   classGroupIds: number[]
   roomId?: number | null
+  additionalRoomIds?: number[]
+  semesterId?: number | null
   dayOfWeek: number
   slotIndex: number
   /**
@@ -76,6 +82,8 @@ export type ScheduleConflictRuleType = 'teacher' | 'classGroup' | 'room'
 export interface ScheduleConflictRuleMatch {
   type: ScheduleConflictRuleType
   occupancyId?: number
+  /** Actual intersecting room id for a multi-room conflict. */
+  roomId?: number
   message: string
 }
 
@@ -144,7 +152,7 @@ export function toConflictDetailFromMatch(
     message: match.message,
     scheduleSlotId: occupancy.id ?? undefined,
     teachingTaskId: occupancy.teachingTaskId ?? undefined,
-    roomId: occupancy.roomId ?? undefined,
+    roomId: match.roomId ?? occupancy.roomId ?? undefined,
     teacherId: occupancy.teacherId ?? undefined,
     classGroupIds: occupancy.classGroupIds,
     dayOfWeek: occupancy.dayOfWeek,
@@ -232,13 +240,43 @@ export function isTeacherConflict(
   return candidate.teacherId === occupancy.teacherId
 }
 
+export function getEffectiveRoomIds(
+  value: {
+    roomId?: number | null
+    additionalRoomIds?: number[]
+  },
+): Set<number> {
+  const roomIds = new Set<number>()
+  if (value.roomId != null && value.roomId > 0) {
+    roomIds.add(value.roomId)
+  }
+  for (const roomId of value.additionalRoomIds ?? []) {
+    if (roomId != null && roomId > 0) {
+      roomIds.add(roomId)
+    }
+  }
+  return roomIds
+}
+
+export function findRoomConflictId(
+  candidate: Pick<ScheduleConflictCandidate, 'roomId' | 'additionalRoomIds'>,
+  occupancy: Pick<ScheduleConflictOccupancy, 'roomId' | 'additionalRoomIds'>,
+): number | null {
+  const candidateRoomIds = getEffectiveRoomIds(candidate)
+  if (candidateRoomIds.size === 0) return null
+
+  const occupancyRoomIds = getEffectiveRoomIds(occupancy)
+  for (const roomId of candidateRoomIds) {
+    if (occupancyRoomIds.has(roomId)) return roomId
+  }
+  return null
+}
+
 export function isRoomConflict(
-  candidate: Pick<ScheduleConflictCandidate, 'roomId'>,
-  occupancy: Pick<ScheduleConflictOccupancy, 'roomId'>,
+  candidate: Pick<ScheduleConflictCandidate, 'roomId' | 'additionalRoomIds'>,
+  occupancy: Pick<ScheduleConflictOccupancy, 'roomId' | 'additionalRoomIds'>,
 ): boolean {
-  if (candidate.roomId == null) return false
-  if (occupancy.roomId == null) return false
-  return candidate.roomId === occupancy.roomId
+  return findRoomConflictId(candidate, occupancy) != null
 }
 
 export function isClassGroupConflict(
@@ -287,14 +325,23 @@ export function checkOccupancyConflicts(
   if (honorExcludeSelf && candidate.excludeOccupancyId != null && occupancy.id === candidate.excludeOccupancyId) {
     return matches
   }
+  if (
+    candidate.semesterId != null &&
+    occupancy.semesterId != null &&
+    candidate.semesterId !== occupancy.semesterId
+  ) {
+    return matches
+  }
   if (!isSameTimeSlot(candidate, occupancy)) return matches
   if (!isWeekOverlapping(candidate.weeks, occupancy.weekConstraint)) return matches
   if (!checkRules) return matches
 
-  if (isRoomConflict(candidate, occupancy)) {
+  const conflictingRoomId = findRoomConflictId(candidate, occupancy)
+  if (conflictingRoomId != null) {
     matches.push({
       type: 'room',
       occupancyId: occupancy.id ?? undefined,
+      roomId: conflictingRoomId,
       message: '', // formatter fills in
     })
   }

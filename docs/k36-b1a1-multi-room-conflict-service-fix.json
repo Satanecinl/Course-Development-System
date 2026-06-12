@@ -1,0 +1,36 @@
+{
+  "stage": "K36-B1A1-MULTI-ROOM-CONFLICT-SERVICE-FIX",
+  "status": "PASS",
+  "scope": [
+    "src/lib/schedule/conflict-rules.ts",
+    "src/lib/schedule/conflict-check.ts"
+  ],
+  "behavior": {
+    "effectiveRoomSet": true,
+    "primaryPrimary": "PASS",
+    "primarySecondary": "PASS",
+    "secondaryPrimary": "PASS",
+    "secondarySecondary": "PASS",
+    "deduplication": "PASS",
+    "crossSemesterIsolation": "PASS",
+    "noRoomBehavior": "PASS",
+    "teacherClassUnchanged": "PASS",
+    "legacyPrimaryOnlyCompatibility": "PASS"
+  },
+  "validation": {
+    "fixturePassed": 14,
+    "fixtureFailed": 0,
+    "docsPiiBlocking": 0,
+    "prismaValidate": "PASS",
+    "build": "PASS",
+    "targetedEslint": "PASS"
+  },
+  "outOfScope": [
+    "scheduler score and solver",
+    "adjustment dry-run and apply",
+    "room and plan recommendation",
+    "campus room rules",
+    "schema and migrations",
+    "Git history"
+  ]
+}

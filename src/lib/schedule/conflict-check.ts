@@ -39,6 +39,11 @@ export interface ScheduleConflictCheckInput {
   targetDayOfWeek: number
   targetSlotIndex: number
   targetRoomId: number
+  /**
+   * Optional secondary rooms for the candidate. When omitted for an existing
+   * slot, its current secondary rooms remain part of the effective occupancy.
+   */
+  targetAdditionalRoomIds?: number[]
   /** Scope the conflict scan to this semester. */
   semesterId?: number | null
 }
@@ -66,12 +71,14 @@ async function resolveTaskContext(
   movingWeek: WeekConstraint
   movingClassNames: string[]
   movingTeacherName: string | null
+  sourceAdditionalRoomIds: number[]
 } | null> {
   let teacherId: number | null | undefined
   let classGroupIds: number[] | undefined
   let movingWeek: WeekConstraint | undefined
   let movingClassNames: string[] | undefined
   let movingTeacherName: string | null | undefined
+  let sourceAdditionalRoomIds: number[] = []
 
   if (input.teachingTaskId != null) {
     const task = await prisma.teachingTask.findUnique({
@@ -95,6 +102,9 @@ async function resolveTaskContext(
     const slot = await prisma.scheduleSlot.findUnique({
       where: { id: input.scheduleSlotId },
       include: {
+        additionalRooms: {
+          select: { roomId: true },
+        },
         teachingTask: {
           include: {
             teacher: true,
@@ -113,6 +123,7 @@ async function resolveTaskContext(
     }
     movingClassNames = slot.teachingTask.taskClasses.map((tc) => tc.classGroup.name)
     movingTeacherName = slot.teachingTask.teacher?.name ?? null
+    sourceAdditionalRoomIds = slot.additionalRooms.map((room) => room.roomId)
   } else {
     if (input.teacherId === undefined || input.classGroupIds === undefined || !input.movingWeek) {
       return null
@@ -124,7 +135,14 @@ async function resolveTaskContext(
     movingTeacherName = null
   }
 
-  return { teacherId: teacherId ?? null, classGroupIds, movingWeek, movingClassNames, movingTeacherName }
+  return {
+    teacherId: teacherId ?? null,
+    classGroupIds,
+    movingWeek,
+    movingClassNames,
+    movingTeacherName,
+    sourceAdditionalRoomIds,
+  }
 }
 
 /**
@@ -137,6 +155,8 @@ function toOccupancy(slot: {
   slotIndex: number
   roomId: number | null
   room: { name: string } | null
+  semesterId: number | null
+  additionalRooms: { roomId: number }[]
   teachingTask: {
     teacherId: number | null
     weekType: string | null
@@ -152,6 +172,8 @@ function toOccupancy(slot: {
     teacherId: slot.teachingTask.teacherId,
     classGroupIds: slot.teachingTask.taskClasses.map((tc) => tc.classGroup.id),
     roomId: slot.roomId,
+    additionalRoomIds: slot.additionalRooms.map((room) => room.roomId),
+    semesterId: slot.semesterId,
     dayOfWeek: slot.dayOfWeek,
     slotIndex: slot.slotIndex,
     weekConstraint: {
@@ -190,7 +212,15 @@ export async function checkScheduleConflicts(
     return result
   }
 
-  const { teacherId, classGroupIds, movingWeek, movingClassNames, movingTeacherName } = ctx
+  const {
+    teacherId,
+    classGroupIds,
+    movingWeek,
+    movingClassNames,
+    movingTeacherName,
+    sourceAdditionalRoomIds,
+  } = ctx
+  const targetAdditionalRoomIds = input.targetAdditionalRoomIds ?? sourceAdditionalRoomIds
 
   const timeWhere: Record<string, unknown> = {
     dayOfWeek: input.targetDayOfWeek,
@@ -203,11 +233,14 @@ export async function checkScheduleConflicts(
     timeWhere.semesterId = input.semesterId
   }
 
-  const targetRoomRecord = await prisma.room.findUnique({
-    where: { id: input.targetRoomId },
-    select: { name: true },
+  const candidateRoomIds = Array.from(new Set(
+    [input.targetRoomId, ...targetAdditionalRoomIds].filter((roomId) => roomId > 0),
+  ))
+  const targetRoomRecords = await prisma.room.findMany({
+    where: { id: { in: candidateRoomIds } },
+    select: { id: true, name: true },
   })
-  const targetRoomLabel = targetRoomRecord?.name || String(input.targetRoomId)
+  const targetRoomLabels = new Map(targetRoomRecords.map((room) => [room.id, room.name]))
 
   // Build the candidate (the move being validated). Weeks are the explicit
   // set of weeks the moving task is active in.
@@ -215,6 +248,8 @@ export async function checkScheduleConflicts(
     teacherId,
     classGroupIds,
     roomId: input.targetRoomId,
+    additionalRoomIds: targetAdditionalRoomIds,
+    semesterId: input.semesterId ?? null,
     dayOfWeek: input.targetDayOfWeek,
     slotIndex: input.targetSlotIndex,
     weeks: Array.from(expandWeeks(movingWeek)).sort((a, b) => a - b),
@@ -230,6 +265,9 @@ export async function checkScheduleConflicts(
     where: timeWhere,
     include: {
       room: true,
+      additionalRooms: {
+        select: { roomId: true },
+      },
       teachingTask: {
         include: {
           course: true,
@@ -256,7 +294,10 @@ export async function checkScheduleConflicts(
     occupancies,
     (match, occ) => {
       if (!occ) return null
-      return formatMatchMessage(match.type, candidate, occ, targetRoomLabel)
+      const conflictingRoomLabel = match.roomId != null
+        ? (targetRoomLabels.get(match.roomId) ?? String(match.roomId))
+        : String(input.targetRoomId)
+      return formatMatchMessage(match.type, candidate, occ, conflictingRoomLabel)
     },
     { source: 'conflict-check' },
   )
