@@ -20,6 +20,7 @@
 import { PrismaClient } from '@prisma/client'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
+import { anonymizeReport } from './lib/anonymize-report-output'
 
 const prisma = new PrismaClient()
 
@@ -665,31 +666,35 @@ async function main() {
   ]
 
   // ─── Historical case review ───
+  // K36-A5D3A2: all real names / class / course / remark / report-date
+  // detail has been redacted to <REDACTED_TEXT>. Only structural
+  // information (stage id, task ids, cg id, finding count) is kept,
+  // so the audit conclusion shape is preserved without leaking PII.
   const historicalCaseReview: HistoricalCaseReview[] = [
     {
       case: 'K18-B 4 tasks (168 / 174 / 176 / 181)',
-      tasks: '168 (机械制图/赵春超), 174 (机械制图/张红梅), 176 (电子技术/许进), 181 (传感器与检测技术/张旭)',
-      wrongCG: 'CG22 (2024级钢铁智能冶金技术1班(高本贯通))',
+      tasks: '4 cross-cohort task ids (168, 174, 176, 181); teacher/course real names redacted',
+      wrongCG: 'cg22 (real class name redacted)',
       diagnosisEffort:
-        'K17-FIX-A 报告 (HIGH=1, MEDIUM=9) 发现 4 个 cross-cohort task → K17-FIX-B review decision → K18 plan → K18-B 修复前需人工 cross-reference 17 个 source JSON, 确认 4 个 task 在 parsed JSON 中**只有 2025 cohort** 记录 → 修复 4 个 TTC link.',
+        '<REDACTED_TEXT> (K17-FIX-A reported 4 cross-cohort tasks; manual cross-reference of 17 source JSONs required to confirm 2025-cohort-only provenance; 4 TTC links fixed in K18-B)',
       improvementWithEvidence:
-        '若 TeachingTaskClass 有 sourceRowIndex + sourceArtifactFilename 字段: 修复脚本直接定位 (4 个 task 各自的第一条 link → 找到 source row → 看到 row class_name = 2025级钢铁智能冶金技术1班(高本贯通) 而非 2024级), 无需 cross-reference 17 JSON. 诊断时间 ~30 分钟.',
+        '<REDACTED_TEXT> (per-link source row index + sourceArtifactFilename would let a repair script locate the link directly; estimated diagnosis time reduced from ~1 day to ~30 minutes)',
     },
     {
-      case: 'K18-E3 task 37 (习近平思想/房忠敏)',
-      tasks: '37 (习近平新时代中国特色社会主义思想概论/房忠敏)',
-      wrongCG: 'CG35 (2024级森林草原防火技术1班)',
+      case: 'K18-E3 task (public-ideology course cross-cohort link)',
+      tasks: '1 cross-cohort task id (37); teacher/course real names redacted',
+      wrongCG: 'cg35 (real class name redacted)',
       diagnosisEffort:
-        'K17-FIX-B review 时被标记为 NEEDS_SOURCE_REVIEW → K18-C 报告 (2026-06-03T03:51) 人工搜索 17 个 source JSON 确认 "无任何 2024 cohort 房忠敏+习近平 记录" → 判定 LIKELY_ERROR → K18-E3 删除 TTC 94. 此报告本身是手工 cross-reference 产物.',
+        '<REDACTED_TEXT> (K17-FIX-B marked the link as NEEDS_SOURCE_REVIEW; K18-C manually searched 17 source JSONs to confirm absence of any cross-cohort record; 1 TTC link deleted in K18-E3)',
       improvementWithEvidence:
-        '若 TeachingTaskClass 有 sourceRowIndex + sourceKeyword 字段: (a) 修复脚本直接定位 CG35 link → 看到 source row 的 remark = 与森防合班 + class_name = 2025级钢铁智能冶金技术1班(高本贯通); (b) 同一 batch 内所有 task 37 link 共享 sourceKeyword, 自动汇总 "2024 cohort 房忠敏+习近平 task 37 link = 0"; (c) K18-C 报告变为 SELECT COUNT(*) FROM TeachingTaskClass WHERE classGroupId IN (2024 cohort) AND teachingTask.teacherId = 房忠敏. 诊断时间 ~10 分钟.',
+        '<REDACTED_TEXT> (per-link source row index + source keyword would let a repair script locate the link and run an aggregate "no cross-cohort record exists" query; K18-C report would become a single SQL aggregate; estimated diagnosis time reduced from ~1 day to ~10 minutes)',
     },
     {
-      case: '未来潜在 case (hypothetical)',
-      tasks: '假设某 batch import 后出现 cross-cohort false positive',
-      wrongCG: '未知',
-      diagnosisEffort: '当前: 人工 cross-reference N 个 source JSON + DB scan. 估计 0.5-2 天.',
-      improvementWithEvidence: 'TeachingTaskClass.sourceRowIndex + sourceArtifactFilename + sourceKeyword → 直接定位 link → 看到具体 row + class_name + match strategy. 估计 5-15 分钟.',
+      case: 'Future hypothetical case',
+      tasks: 'n/a (preventive pattern)',
+      wrongCG: 'n/a',
+      diagnosisEffort: '<REDACTED_TEXT> (current: manual cross-reference of N source JSONs + DB scan; estimated 0.5-2 days)',
+      improvementWithEvidence: '<REDACTED_TEXT> (per-link source row index + source artifact filename + source keyword would let a script directly locate the link and see the source row class_name + match strategy; estimated 5-15 minutes)',
     },
   ]
 
@@ -903,6 +908,13 @@ async function main() {
   const outDir = path.join(projectRoot, 'docs')
   if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true })
   const outPath = path.join(outDir, 'k20-source-evidence-traceability-audit.json')
+  // K36-A5D3A2: defensive anonymization pass before write. The
+  // historicalCaseReview entries above are already hand-redacted to
+  // <REDACTED_TEXT> for literal-name fields; this call additionally
+  // walks the report and replaces any teacherName / courseName /
+  // classGroupNames / roomName / free-text fields in case future
+  // code changes reintroduce PII at a field the helper recognizes.
+  anonymizeReport(report)
   fs.writeFileSync(outPath, JSON.stringify(report, null, 2), 'utf8')
 
   // Terminal output
