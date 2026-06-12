@@ -22,29 +22,20 @@
 import { PrismaClient } from '@prisma/client'
 import { readFileSync, writeFileSync, readdirSync, existsSync, statSync } from 'fs'
 import { join } from 'path'
+import { anonymizeReport } from './lib/anonymize-report-output'
 
 // ─── Constants ────────────────────────────────────────────────────────
 
 const KNOWN_TRACKS = ['高本贯通', '现场工程师']
 
-const LIKELY_PUBLIC_COURSE_HINTS = [
-  '大学英语', '大学日语', '大学语文', '高等数学',
-  '习近平新时代中国特色社会主义思想概论',
-  '毛泽东思想和中国特色社会主义理论体系概论',
-  '思想道德与法治', '形势与政策', '创新创业教育',
-  '职业生涯规划', '体育', '军事理论', '心理健康教育',
-  '劳动教育', '信息技术', '计算机应用基础', '中华优秀传统文化',
-  '美育', '职业素养', '大学生职业发展与就业指导',
-]
+const LIKELY_PUBLIC_COURSE_PATTERN = /大学英语|大学日语|大学语文|高等数学|新时代|思想概论|毛泽东|道德与法治|形势与政策|创新创业|职业生涯|体育|军事理论|心理健康|劳动教育|信息技术|计算机应用基础|中华优秀传统文化|美育|职业素养|大学生职业发展/
 
 const MERGED_CLASS_KEYWORDS = ['合班', '与', '多班']
 
-// Target class focus for the historical K9-DQ-1 case
-const TARGET_CLASS_2024 = '2024级钢铁智能冶金技术1班（高本贯通）'
-const TARGET_CLASS_2025 = '2025级钢铁智能冶金技术1班（高本贯通）'
-const TARGET_CLASS_2024_SF = '2024级森林草原防火技术1班'
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const TARGET_CLASS_2025_SF = '2025级森林草原防火技术1班'
+// K36-A5D3A: target class ids (non-PII) replace real class name strings.
+const TARGET_CLASS_GROUP_ID_2024 = 22
+const TARGET_CLASS_GROUP_ID_2025 = 3
+const TARGET_CLASS_GROUP_ID_2024_SF = 35
 
 // ─── Types ────────────────────────────────────────────────────────────
 
@@ -133,7 +124,7 @@ function extractTrack(name: string): string | null {
 
 function isPublicCourse(course: string | null): boolean {
   if (!course) return false
-  return LIKELY_PUBLIC_COURSE_HINTS.some(h => course.includes(h))
+  return LIKELY_PUBLIC_COURSE_PATTERN.test(course)
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -339,57 +330,57 @@ async function main() {
   const historicalCases: HistoricalCase[] = [
     {
       taskId: 168,
-      course: '机械制图',
-      teacher: '赵春超',
-      wrongClassGroup: TARGET_CLASS_2024,
-      expectedClassGroup: TARGET_CLASS_2025 + ' (and 2025 cohort 现场工程师 classes only)',
-      rootCauseHypothesis: '2025 cohort 现场工程师 CG18/19 remark "与高本贯通合班" (implied) or name-similarity "钢铁智能冶金" 跨过 cohort filter. Import matching picked up 2024 cohort CG22 (高本贯通) as a match because the 2024 cohort is a 2024-级 candidate and the existing filter only requires `cy === baseYear` when keyword has no explicit year. The base 2025-级高本贯通 class is the source, and the remark "合班" or class name substring "钢铁智能冶金" was matched against the 2024 cohort CG22.',
+      course: '<REDACTED>',
+      teacher: '<REDACTED>',
+      wrongClassGroup: '<REDACTED>',
+      expectedClassGroup: '<REDACTED>',
+      rootCauseHypothesis: '<REDACTED_TEXT>',
       currentStatus: 'REPAIRED',
-      sourceFileEvidence: 'K18 source artifact review confirms parsed JSON has 2025 cohort classes only for 机械制图',
+      sourceFileEvidence: '<REDACTED_TEXT>',
       semanticGuard: 'K16 fix-a: guardTeachingTaskUpdateSemantics covers teacher/room/classGroup/week/semester',
     },
     {
       taskId: 174,
-      course: '机械制图',
-      teacher: '张红梅',
-      wrongClassGroup: TARGET_CLASS_2024,
-      expectedClassGroup: TARGET_CLASS_2025 + ' (and 2025 cohort 现场工程师 classes only)',
-      rootCauseHypothesis: 'Same as task 168 — 2024 cohort 高本贯通 CG22 incorrectly merged via 合班 remark / name-similarity matching.',
+      course: '<REDACTED>',
+      teacher: '<REDACTED>',
+      wrongClassGroup: '<REDACTED>',
+      expectedClassGroup: '<REDACTED>',
+      rootCauseHypothesis: '<REDACTED_TEXT>',
       currentStatus: 'REPAIRED',
-      sourceFileEvidence: 'K18 source artifact review confirms parsed JSON has 2025 cohort classes only for 机械制图',
+      sourceFileEvidence: '<REDACTED_TEXT>',
       semanticGuard: 'K16 fix-a covers teaching task mutation',
     },
     {
       taskId: 176,
-      course: '电子技术',
-      teacher: '许进',
-      wrongClassGroup: TARGET_CLASS_2024,
-      expectedClassGroup: TARGET_CLASS_2025 + ' (and 2025 cohort 现场工程师 classes only)',
-      rootCauseHypothesis: 'Same root cause — 2024 cohort 高本贯通 CG22 incorrectly merged via name-similarity "钢铁智能冶金" or 合班 remark expansion.',
+      course: '<REDACTED>',
+      teacher: '<REDACTED>',
+      wrongClassGroup: '<REDACTED>',
+      expectedClassGroup: '<REDACTED>',
+      rootCauseHypothesis: '<REDACTED_TEXT>',
       currentStatus: 'REPAIRED',
-      sourceFileEvidence: 'K18 source artifact review confirms parsed JSON has 2025 cohort classes only for 电子技术',
+      sourceFileEvidence: '<REDACTED_TEXT>',
       semanticGuard: 'K16 fix-a covers teaching task mutation',
     },
     {
       taskId: 181,
-      course: '传感器与检测技术',
-      teacher: '张旭',
-      wrongClassGroup: TARGET_CLASS_2024,
-      expectedClassGroup: TARGET_CLASS_2025 + ' (and 2025 cohort 现场工程师 classes only)',
-      rootCauseHypothesis: 'Same root cause — 2024 cohort 高本贯通 CG22 incorrectly merged via name-similarity or remark expansion.',
+      course: '<REDACTED>',
+      teacher: '<REDACTED>',
+      wrongClassGroup: '<REDACTED>',
+      expectedClassGroup: '<REDACTED>',
+      rootCauseHypothesis: '<REDACTED_TEXT>',
       currentStatus: 'REPAIRED',
-      sourceFileEvidence: 'K18 source artifact review confirms parsed JSON has 2025 cohort classes only for 传感器与检测技术',
+      sourceFileEvidence: '<REDACTED_TEXT>',
       semanticGuard: 'K16 fix-a covers teaching task mutation',
     },
     {
       taskId: 37,
-      course: '习近平新时代中国特色社会主义思想概论',
-      teacher: '房忠敏',
-      wrongClassGroup: TARGET_CLASS_2024_SF,
-      expectedClassGroup: '2025级钢铁智能冶金技术1班（高本贯通） + 2025级森林草原防火技术1班 (only)',
-      rootCauseHypothesis: '2025 cohort 钢铁智能冶金 1班 (高本贯通) remark "与森防合班" → matches "森防" → against 2024 cohort 森林草原防火 1班 (CG35). The remark keyword "森防" has no explicit year, and baseClass 2025级钢铁智能冶金 is 2025. The cohort filter `cy !== baseYear` only kicks in when keyword has no explicit year, so the filter is active — yet the 2024 candidate is still matched. ACTUAL REPRO: review of source artifacts (K18-C) shows no 2024 record for 房忠敏+习近平 in any parsed JSON. Most likely the import previously (before filter existed) merged it, or the import logic matched via a different path (e.g. previous import batch had a different base year, or seed_db.ts pre-filtered data).',
+      course: '<REDACTED>',
+      teacher: '<REDACTED>',
+      wrongClassGroup: '<REDACTED>',
+      expectedClassGroup: '<REDACTED>',
+      rootCauseHypothesis: '<REDACTED_TEXT>',
       currentStatus: 'NEEDS_REVIEW',
-      sourceFileEvidence: 'No 2024 record for 房忠敏+习近平 in any source artifact (K18-C)',
+      sourceFileEvidence: '<REDACTED_TEXT>',
       semanticGuard: 'K16 fix-a covers teaching task mutation',
     },
   ]
@@ -400,9 +391,9 @@ async function main() {
   //   - if keyword lacks 2024级 / 2025级, share baseClass year
   //   - if keyword lacks 高本贯通 / 现场工程师, share baseClass track
   // For task 37:
-  //   - baseClass = 2025级钢铁智能冶金技术1班（高本贯通）
-  //   - keyword = "森防" (no year, no track)
-  //   - filter requires candidate year === 2025 (2024 cohort 森林草原防火 1班 excluded)
+  //   - baseClass is a 2025 cohort 高本贯通 class (specific name redacted)
+  //   - keyword is a short-form cross-cohort abbreviation (no year, no track)
+  //   - filter requires candidate year === 2025 (2024 cohort forest-fire CG35 excluded)
   //   - So 2024 CG35 should be excluded. But K17-FIX-A confirms it WAS linked.
   //   - HYPOTHESIS: at the time of ImportBatch #1, the cohort filter may not have
   //     existed yet, OR the import path that ran was a previous version of the code
@@ -421,7 +412,7 @@ async function main() {
   // Check historical: was task 37 caused by current importer or by historical seed_db.ts?
   const task37LinkedTo2024 = crossCohortTasks.find(t => t.teachingTaskId === 37)
   if (task37LinkedTo2024) {
-    evidenceA.push(`Task 37 (习近平思想) currently cross-cohort: years=[${task37LinkedTo2024.cohortYears.join(',')}], cgIds=[${task37LinkedTo2024.classGroupIds.join(',')}]`)
+    evidenceA.push(`Task 37 (public-ideology course) currently cross-cohort: years=[${task37LinkedTo2024.cohortYears.join(',')}], cgIds=[${task37LinkedTo2024.classGroupIds.join(',')}]`)
   }
 
   findings.push({
@@ -452,23 +443,22 @@ async function main() {
   // ── 7. Rule B: remark over-extension ──────────────────────────────
   // The parseRemarkKeywords function generates multiple keyword candidates from a single
   // remark like "与森防合班" → "森防" + ... sliced variations.
-  // For 习近平+房忠敏, all source artifacts show:
-  //   - 2025级钢铁智能冶金技术1班（高本贯通）remark="与森防合班"
-  //   - 2025级森林草原防火技术1班remark="与高本贯通合班"
+  // For the public-ideology course pair, all source artifacts show:
+  //   - 2025 cohort 高本贯通 class remark="与森防合班" (specific name redacted)
+  //   - 2025 cohort 森林防火 class remark="与高本贯通合班" (specific name redacted)
   // So the remark is bilateral and SHOULD lead to a 2-class merge.
-  // But it should NOT lead to 2024 cohort 森林草原防火 1班 (CG35) being merged.
+  // But it should NOT lead to 2024 cohort 森林防火 1班 (CG35) being merged.
   const remarksSample = sourceRecords
-    .filter(r => r.course?.includes('习近平') && r.teacher === '房忠敏')
-    .map(r => `${r.className} | remark=${r.remark ?? '(null)'}`)
-    .filter((v, i, a) => a.indexOf(v) === i)
+    .filter(r => r.course && LIKELY_PUBLIC_COURSE_PATTERN.test(r.course))
     .slice(0, 10)
+    .map(r => `<REDACTED_TEXT>`)
 
   const evidenceB: string[] = []
   if (codeRefs.parseRemark.length > 0) {
     evidenceB.push(`parseRemarkKeywords found in: ${codeRefs.parseRemark.map(r => r.filePath).join(', ')}`)
   }
   if (remarksSample.length > 0) {
-    evidenceB.push(`房忠敏+习近平 remark sample: ${remarksSample.join(' | ')}`)
+    evidenceB.push(`Public-ideology course remark sample: ${remarksSample.join(' | ')}`)
   }
   // Count of remarks in source data
   const remarksWithCohortKeyword = sourceRecords.filter(r => r.remark && /\d{4}级/.test(r.remark)).length
@@ -573,8 +563,8 @@ async function main() {
   //   - findMergedClassNames will be called
   //   - filterCandidatesByYearAndTrack will filter by year/track
   //   - For task 37's remark "与森防合班" → keyword "森防":
-  //     - baseClass = 2025级钢铁智能冶金技术1班（高本贯通）
-  //     - candidate 2024级森林草原防火技术1班 (CG35) has year=2024 != 2025 → EXCLUDED
+  //     - baseClass is a 2025 cohort 高本贯通 class (specific name redacted)
+  //     - candidate 2024 cohort 森林防火 1班 (CG35) has year=2024 != 2025 → EXCLUDED
   //   - So re-import would NOT recreate the 2024 link.
   //   - HOWEVER: if CG22 (2024 cohort) had the same year as the base (e.g. 2024),
   //     it would still be linked. This is the K18-B fixed case.
@@ -586,7 +576,7 @@ async function main() {
   evidenceE.push(`K17-FIX-A confirmed: cross-cohort task count reduced from 35 (2026-05-30) to 5 (2026-06-03) after the filter was in place`)
   evidenceE.push(`Current confirmed cross-cohort count (post-K18-B/E3): ${crossCohortTasks.length}`)
   if (crossCohortTasks.length > 0) {
-    evidenceE.push(`Remaining: ${crossCohortTasks.map(t => `task ${t.teachingTaskId} (${t.courseName})`).join(', ')}`)
+    evidenceE.push(`Remaining: ${crossCohortTasks.map(t => `task ${t.teachingTaskId} (<REDACTED>)`).join(', ')}`)
   }
 
   findings.push({
@@ -656,7 +646,7 @@ async function main() {
     severity: 'INFO',
     category: 'STATISTICS',
     title: 'K18 historical error cases (all repaired or marked for review)',
-    evidence: `tasks 168/174/176/181 (4 个专业课 cross-cohort with 2024 cohort 高本贯通 CG22) — REPAIRED in K18-B; task 37 (习近平思想 with 2024 cohort 森林草原防火 CG35) — REMOVED in K18-E3 (TTC94 deleted)`,
+    evidence: `4 cross-cohort tasks (168/174/176/181) REPAIRED; task 37 cross-cohort link REMOVED (K18-E3, 1 TTC deleted)`,
     files: [
       'docs/k18-cross-cohort-data-repair-execute.md',
       'docs/k18-task37-finalization-execute.md',
@@ -723,9 +713,9 @@ async function main() {
       },
       {
         id: 'RCH-2',
-        hypothesis: 'Task 37 (习近平思想 + 2024 cohort 森林草原防火 CG35) was likely created by a pre-filter version of the importer or by seed_db.ts (legacy CLI seed). The current importer would not recreate this link because the cohort filter would exclude CG35. Task 37 is the ONLY remaining post-K18 cross-cohort candidate, classified as NEED_MANUAL_REVIEW (K18-C) and LIKELY_ERROR (K18-C review).',
+        hypothesis: '<REDACTED_TEXT>',
         supportingEvidence: [
-          'K18-C source artifact review: no 2024 record for 房忠敏+习近平 in any of 17 source JSON files',
+          'K18-C source artifact review: no source record for the cross-cohort link',
           'Task 32 (same teacher/course) does NOT link 2024 cohort — strong inconsistency',
           'Pattern matches the 4 confirmed-error K18-B tasks',
           'filterCandidatesByYearAndTrack would exclude CG35 from "森防" keyword against 2025 baseClass',
@@ -774,10 +764,10 @@ async function main() {
     regressionTestPlan: {
       coverage: [
         'Test 1: 2024/2025 高本贯通相似班级 — should NOT be merged (already covered by filter)',
-        'Test 2: 2024/2025 森林草原防火相似班级 — should NOT be merged',
+        'Test 2: 2024/2025 cohort cross-cohort similar-class case — should NOT be merged',
         'Test 3: same-cohort 合班 with explicit remark "与XX合班" — should be merged (positive case)',
         'Test 4: public course cross-cohort with explicit "2024级" in remark — should be merged if classGroup names match',
-        'Test 5: remark "2024级森林草原防火技术1班" appearing on a 2025 cohort class — should be checked for cohort-mismatch warning',
+        'Test 5: remark with explicit cross-cohort class name appearing on a different-cohort class — should be checked for cohort-mismatch warning',
         'Test 6: re-import K18 source artifact (regression) — should NOT recreate any of the 5 historical errors',
         'Test 7: ambiguous match (multiple candidates match a keyword) — should emit AMBIGUOUS warning and NOT auto-link',
       ],
@@ -790,6 +780,8 @@ async function main() {
   }
 
   const outPath = join(process.cwd(), 'docs/k19-import-matching-root-cause-audit.json')
+  // K36-A5D3A: anonymize real names before write
+  anonymizeReport(out)
   writeFileSync(outPath, JSON.stringify(out, null, 2), 'utf-8')
 
   // ── 16. Console summary ──────────────────────────────────────────
@@ -816,7 +808,7 @@ async function main() {
   console.log()
   console.log('Cross-cohort tasks in current DB:')
   for (const t of crossCohortTasks) {
-    console.log(`  task ${t.teachingTaskId} | ${t.courseName} | ${t.teacherName ?? '(no teacher)'} | years=[${t.cohortYears.join(',')}] | cgIds=[${t.classGroupIds.join(',')}] | slots=${t.slotCount} | public=${t.isPublicCourse}`)
+    console.log(`  task ${t.teachingTaskId} | <REDACTED> | <REDACTED> | years=[${t.cohortYears.join(',')}] | cgIds=[${t.classGroupIds.join(',')}] | slots=${t.slotCount} | public=${t.isPublicCourse}`)
   }
   console.log()
   console.log(`Source artifacts: ${sourceArtifactCount} JSON / ${docxCount} docx`)

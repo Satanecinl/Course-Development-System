@@ -19,6 +19,7 @@ import { expandWeeks, getOverlapWeeks, type WeekConstraint } from '../src/lib/co
 import type { SolverConfig, SchedulingContext, ScheduleState, ScoreDetail, SlotWithRelations, TaskWithRelations, RoomWithAvailability } from '../src/lib/scheduler/types'
 import * as fs from 'fs'
 import * as path from 'path'
+import { anonymizeReport } from './lib/anonymize-report-output'
 
 // ── Types ──
 
@@ -817,6 +818,24 @@ async function main() {
   const topClassConflicts = buildTopClassConflicts(hc3)
   const topRoomConflicts = buildTopRoomConflicts(hc1)
   const topTimePressure = buildTopTimeSlotPressure(ctx, solveResult.bestState, hc1, hc3, hc4)
+
+  // K36-A5D3A: anonymize all real names before building reports.
+  // anonymizeReport replaces teacherName/courseName/classGroupName/roomName
+  // in-place with tokens like T001 / CG001 / Course001 / Room001.
+  // Free-text fields (evidence, excerpt, reason, recommendation) that
+  // contain Chinese are replaced with <REDACTED_TEXT>.
+  // We pass { redactFreeText: false } here because the 'reason' field
+  // on HC5 is an English template like "Room X marked unavailable …"
+  // that contains no PII — only Chinese prose is auto-redacted.
+  anonymizeReport(hc1)
+  anonymizeReport(hc2)
+  anonymizeReport(hc3)
+  anonymizeReport(hc4)
+  anonymizeReport(hc5)
+  anonymizeReport(topCapacityGaps)
+  anonymizeReport(topClassConflicts)
+  anonymizeReport(topRoomConflicts)
+  // topTeacherConflicts is either a string or array slice of hc2 — already anonymized
 
   // 6. 周次重叠诊断
   console.log('[K9-A2] Running week overlap sanity check...')

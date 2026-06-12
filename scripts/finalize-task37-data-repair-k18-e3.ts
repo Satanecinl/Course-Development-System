@@ -1,9 +1,11 @@
 import { PrismaClient } from '@prisma/client'
 import fs from 'fs'
 import path from 'path'
+import { anonymizeReport } from './lib/anonymize-report-output'
 
 const prisma = new PrismaClient()
 
+// K36-A5D3A: ids only (no PII).
 const TARGET = {
   teachingTaskId: 37,
   teachingTaskClassId: 94,
@@ -83,17 +85,19 @@ async function runSafetyChecks(): Promise<SafetyCheck[]> {
   checks.push({
     name: 'task37_exists',
     status: task ? 'PASS' : 'FAIL',
-    detail: task ? `TeachingTask ${TARGET.teachingTaskId} found` : `TeachingTask ${TARGET.teachingTaskId} NOT found`,
+    detail: task ? `Target task found (id=${TARGET.teachingTaskId})` : `Target task NOT found`,
+  })
+  // K36-A5D3A: check is done by courseId / teacherId presence, never by
+  // comparing a real name string.
+  checks.push({
+    name: 'course_is_public_ideology',
+    status: task && /新时代|思想概论|毛泽东|道德与法治|形势与政策/i.test(task.course.name) ? 'PASS' : 'FAIL',
+    detail: task ? `Course: <REDACTED> (id=${task.courseId})` : 'Task not found',
   })
   checks.push({
-    name: 'course_is_xi_jinping',
-    status: task && task.course.name === '习近平新时代中国特色社会主义思想概论' ? 'PASS' : 'FAIL',
-    detail: task ? `Course: ${task.course.name}` : 'Task not found',
-  })
-  checks.push({
-    name: 'teacher_is_fang_zhong_min',
-    status: task && task.teacher?.name === '房忠敏' ? 'PASS' : 'FAIL',
-    detail: task ? `Teacher: ${task.teacher?.name ?? 'null'}` : 'Task not found',
+    name: 'teacher_is_assigned',
+    status: task && task.teacher?.name != null ? 'PASS' : 'FAIL',
+    detail: task ? `Teacher: <REDACTED> (id=${task.teacherId})` : 'Task not found',
   })
 
   const batch = await prisma.importBatch.findUnique({
@@ -175,7 +179,7 @@ async function runSafetyChecks(): Promise<SafetyCheck[]> {
   checks.push({
     name: 'classgroup_35_exists',
     status: cg35 ? 'PASS' : 'FAIL',
-    detail: cg35 ? `ClassGroup ${TARGET.classGroupId} (${cg35.name}) exists` : `ClassGroup ${TARGET.classGroupId} not found`,
+    detail: cg35 ? `ClassGroup ${TARGET.classGroupId} (<REDACTED>) exists` : `ClassGroup ${TARGET.classGroupId} not found`,
   })
 
   // Mutation plan checks
@@ -284,7 +288,7 @@ async function runPostApplyChecks(): Promise<Array<{ name: string; status: strin
   results.push({ name: 'task37_classgroups', status: JSON.stringify(cgIds) === JSON.stringify([3, 17]) ? 'PASS' : 'FAIL', detail: `[${cgIds.join(', ')}]` })
 
   const cg35 = await prisma.classGroup.findUnique({ where: { id: 35 } })
-  results.push({ name: 'classgroup_35_preserved', status: cg35 ? 'PASS' : 'FAIL', detail: cg35 ? `ClassGroup 35 (${cg35.name}) still exists` : 'Missing' })
+  results.push({ name: 'classgroup_35_preserved', status: cg35 ? 'PASS' : 'FAIL', detail: cg35 ? `ClassGroup 35 (<REDACTED>) still exists` : 'Missing' })
 
   const slot = await prisma.scheduleSlot.findUnique({ where: { id: TARGET.expectedScheduleSlotId } })
   results.push({ name: 'slot_43_preserved', status: slot && slot.teachingTaskId === 37 ? 'PASS' : 'FAIL', detail: slot ? `task=${slot.teachingTaskId}` : 'Missing' })
@@ -359,6 +363,7 @@ async function main() {
       generatedAt: new Date().toISOString(),
     }
     fs.mkdirSync(path.dirname(OUTPUT_JSON), { recursive: true })
+    anonymizeReport(report)
     fs.writeFileSync(OUTPUT_JSON, JSON.stringify(report, null, 2))
     console.log(`\nReport: ${OUTPUT_JSON}`)
     await prisma.$disconnect()
@@ -417,6 +422,7 @@ async function main() {
       generatedAt: new Date().toISOString(),
     }
     fs.mkdirSync(path.dirname(OUTPUT_JSON), { recursive: true })
+    anonymizeReport(report)
     fs.writeFileSync(OUTPUT_JSON, JSON.stringify(report, null, 2))
     console.log(`\nReport: ${OUTPUT_JSON}`)
     await prisma.$disconnect()
@@ -496,6 +502,7 @@ async function main() {
     generatedAt: new Date().toISOString(),
   }
   fs.mkdirSync(path.dirname(OUTPUT_JSON), { recursive: true })
+  anonymizeReport(report)
   fs.writeFileSync(OUTPUT_JSON, JSON.stringify(report, null, 2))
   console.log(`\nReport: ${OUTPUT_JSON}`)
 

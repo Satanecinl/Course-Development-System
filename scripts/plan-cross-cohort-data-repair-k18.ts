@@ -1,12 +1,14 @@
 import { PrismaClient } from '@prisma/client'
 import fs from 'fs'
 import path from 'path'
+import { anonymizeReport } from './lib/anonymize-report-output'
 
 const prisma = new PrismaClient()
 
 const K17_DECISION_PATH = path.join(__dirname, '..', 'docs', 'k17-cross-cohort-review-decision.json')
 const OUTPUT_JSON_PATH = path.join(__dirname, '..', 'docs', 'k18-cross-cohort-data-repair-plan.json')
 
+// K36-A5D3A: internal ids only (no PII).
 const REPAIR_TASK_IDS = [168, 174, 176, 181]
 const EXCLUDED_TASK_IDS = [37]
 const ALL_TASK_IDS = [...REPAIR_TASK_IDS, ...EXCLUDED_TASK_IDS]
@@ -216,16 +218,16 @@ async function main() {
     })
   }
 
-  // Process excluded task 37
-  const task37 = taskMap.get(37)
-  if (task37) {
+  // Process excluded task
+  const excludedTask = taskMap.get(EXCLUDED_TASK_IDS[0])
+  if (excludedTask) {
     excludedTasks.push({
-      teachingTaskId: 37,
-      courseName: task37.course.name,
-      teacherName: task37.teacher?.name ?? null,
+      teachingTaskId: EXCLUDED_TASK_IDS[0],
+      courseName: excludedTask.course.name,    // anonymized by helper
+      teacherName: excludedTask.teacher?.name ?? null,
       decision: 'NEEDS_SOURCE_REVIEW',
-      reason: 'Public/ideology course (习近平新时代中国特色社会主义思想概论) — cross-cohort merge may be legitimate. Requires manual verification against original .docx before any repair action.',
-      nextStep: 'Human reviews original .docx to determine if 2024级森林草原防火技术1班 and 2025级森林草原防火技术1班 should attend this course together. If confirmed legitimate → ACCEPTED_CROSS_COHORT. If not → separate repair plan.',
+      reason: '<REDACTED_TEXT> (public/ideology course — cross-cohort merge may be legitimate; requires manual verification)',
+      nextStep: '<REDACTED_TEXT>',
     })
   }
 
@@ -369,6 +371,8 @@ async function main() {
     ],
   }
 
+  // K36-A5D3A: anonymize real names before write
+  anonymizeReport(output)
   fs.writeFileSync(OUTPUT_JSON_PATH, JSON.stringify(output, null, 2), 'utf-8')
 
   // Terminal output

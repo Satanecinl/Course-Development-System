@@ -18,22 +18,15 @@
 import { PrismaClient } from '@prisma/client'
 import { writeFileSync } from 'fs'
 import { join } from 'path'
+import { anonymizeReport } from './lib/anonymize-report-output'
 
 // ─── Constants ────────────────────────────────────────────────────────
 
-const TARGET_CLASS_FULL = '2024级钢铁智能冶金技术1班（高本贯通）'
-const TARGET_KEYWORDS = ['钢铁智能冶金', '高本贯通', '2024级']
+// K36-A5D3A: lookup by id, not by name string.
+const TARGET_CLASS_ID = 22
 
 // Public/ideology/通识 courses that may legitimately cross years
-const LIKELY_PUBLIC_COURSE_HINTS = [
-  '大学英语', '大学日语', '大学语文', '高等数学',
-  '习近平新时代中国特色社会主义思想概论',
-  '毛泽东思想和中国特色社会主义理论体系概论',
-  '思想道德与法治', '形势与政策', '创新创业教育',
-  '职业生涯规划', '体育', '军事理论', '心理健康教育',
-  '劳动教育', '信息技术', '计算机应用基础', '中华优秀传统文化',
-  '美育', '职业素养', '大学生职业发展与就业指导',
-]
+const LIKELY_PUBLIC_COURSE_PATTERN = /大学英语|大学日语|大学语文|高等数学|新时代|思想概论|毛泽东|道德与法治|形势与政策|创新创业|职业生涯|体育|军事理论|心理健康|劳动教育|信息技术|计算机应用基础|中华优秀传统文化|美育|职业素养|大学生职业发展/
 
 const KNOWN_TRACKS = ['高本贯通', '现场工程师']
 
@@ -132,7 +125,7 @@ function parseTrack(name: string): string | null {
 }
 
 function isLikelyPublicCourse(courseName: string): boolean {
-  return LIKELY_PUBLIC_COURSE_HINTS.some(hint => courseName.includes(hint))
+  return LIKELY_PUBLIC_COURSE_PATTERN.test(courseName)
 }
 
 function classifyCrossYear(
@@ -158,7 +151,7 @@ function classifyCrossYear(
   if (isLikelyPublicCourse(courseName)) {
     return {
       classification: 'UNKNOWN_NEEDS_SOURCE_CHECK',
-      reason: `cross-cohort on a public/ideology course "${courseName}" — may be legitimate, needs source verification`,
+      reason: `cross-cohort on a public/ideology course "<REDACTED_TEXT>" — may be legitimate, needs source verification`,
       severity: 'INFO',
     }
   }
@@ -438,7 +431,7 @@ async function main() {
   }
 
   // ── 9. Rule F: known target class专项检查 ──────────────────────────
-  const targetClass = classGroups.find(cg => cg.name === TARGET_CLASS_FULL)
+  const targetClass = classGroups.find(cg => cg.classGroupId === TARGET_CLASS_ID)
   const targetClassInvestigation = {
     targetClassFound: targetClass !== undefined,
     targetClassId: targetClass?.classGroupId ?? null,
@@ -447,13 +440,13 @@ async function main() {
     targetClassStudentCount: classGroupsRaw.find(cg => cg.id === targetClass?.classGroupId)?.studentCount ?? null,
     targetClassCohortYear: targetClass?.cohortYear ?? null,
     keywordHits: {
-      钢铁智能冶金: classGroups.filter(cg => cg.name.includes('钢铁智能冶金')).length,
-      高本贯通: classGroups.filter(cg => cg.name.includes('高本贯通')).length,
-      '2024级': classGroups.filter(cg => cg.name.startsWith('2024级')).length,
+      cohortYear2024: classGroups.filter(cg => cg.cohortYear === 2024).length,
+      track高本贯通: classGroups.filter(cg => cg.track === '高本贯通').length,
+      cohortYear2025: classGroups.filter(cg => cg.cohortYear === 2025).length,
     },
-    targetClassGroupNames: classGroups.filter(cg => TARGET_KEYWORDS.some(kw => cg.name.includes(kw))).map(cg => ({
+    targetClassGroupNames: classGroups.filter(cg => cg.cohortYear === 2024 && cg.track === '高本贯通').map(cg => ({
       id: cg.classGroupId,
-      name: cg.name,
+      name: '<REDACTED>',
       semesterId: cg.semesterId,
       cohortYear: cg.cohortYear,
       track: cg.track,
@@ -476,7 +469,7 @@ async function main() {
           courseName: t.courseName,
           teacherName: t.teacherName,
           years,
-          classes: t.classGroups.map(cg => cg.name),
+          classes: t.classGroups.map(() => '<REDACTED>'),
         })
         if (t.slotCount > 0) {
           targetClassInvestigation.crossCohortScheduled.push({
@@ -499,7 +492,7 @@ async function main() {
       ruleFFindings.push({
         id: '__placeholder_F__', // will be renumbered at end
         severity: crossScheduled > 0 ? 'HIGH' : 'MEDIUM',
-        title: `Target "${TARGET_CLASS_FULL}" appears in ${crossCount} cross-cohort TeachingTask(s) with 2025 cohort; ${crossScheduled} already scheduled`,
+        title: `Target class (id=${TARGET_CLASS_ID}) appears in ${crossCount} cross-cohort TeachingTask(s) with 2025 cohort; ${crossScheduled} already scheduled`,
         evidence: `target class id=${targetClassInvestigation.targetClassId}, semesterId=${targetClassInvestigation.targetClassSemesterId} (${targetClassInvestigation.targetClassSemesterName}), studentCount=${targetClassInvestigation.targetClassStudentCount}, cohortYear=${targetClassInvestigation.targetClassCohortYear}. cross-cohort task ids: ${targetClassInvestigation.crossCohortWith2025.map(t => t.teachingTaskId).join(', ')}. already-scheduled count: ${crossScheduled}.`,
         affectedTeachingTaskIds: targetClassInvestigation.crossCohortWith2025.map(t => t.teachingTaskId),
         affectedClassGroupIds: [targetClassInvestigation.targetClassId!, ...classGroups.filter(cg => cg.cohortYear === 2025).map(cg => cg.classGroupId)],
@@ -516,7 +509,7 @@ async function main() {
       ruleFFindings.push({
         id: '__placeholder_F__', // will be renumbered at end
         severity: 'NONE',
-        title: `Target "${TARGET_CLASS_FULL}" — no cross-cohort merges found`,
+        title: `Target class (id=${TARGET_CLASS_ID}) — no cross-cohort merges found`,
         evidence: `target class found (id=${targetClassInvestigation.targetClassId}); target's tasks all stay within a single cohort (year=${targetClassInvestigation.targetClassCohortYear}).`,
         affectedTeachingTaskIds: [],
         affectedClassGroupIds: [targetClassInvestigation.targetClassId!],
@@ -530,8 +523,8 @@ async function main() {
     ruleFFindings.push({
       id: '__placeholder_F__', // will be renumbered at end
       severity: 'INFO',
-      title: `Target "${TARGET_CLASS_FULL}" not found in ClassGroup table`,
-      evidence: `no ClassGroup with exact name "${TARGET_CLASS_FULL}"; partial matches: ${classGroups.filter(cg => cg.name.includes('钢铁智能冶金')).map(cg => cg.name).join(' | ')}`,
+      title: `Target class (id=${TARGET_CLASS_ID}) not found`,
+      evidence: '<REDACTED_TEXT>',
       affectedTeachingTaskIds: [],
       affectedClassGroupIds: [],
       affectedImportBatchIds: [],
@@ -611,7 +604,7 @@ async function main() {
   console.log(`  Target semesterId:      ${targetClassInvestigation.targetClassSemesterId} (${targetClassInvestigation.targetClassSemesterName})`)
   console.log(`  Target studentCount:    ${targetClassInvestigation.targetClassStudentCount}`)
   console.log(`  Target cohortYear:      ${targetClassInvestigation.targetClassCohortYear}`)
-  console.log(`  Keyword hits:           钢铁智能冶金=${targetClassInvestigation.keywordHits.钢铁智能冶金} 高本贯通=${targetClassInvestigation.keywordHits.高本贯通} 2024级=${targetClassInvestigation.keywordHits['2024级']}`)
+  console.log(`  Keyword hits:           cohortYear2024=${targetClassInvestigation.keywordHits.cohortYear2024} track高本贯通=${targetClassInvestigation.keywordHits.track高本贯通} cohortYear2025=${targetClassInvestigation.keywordHits.cohortYear2025}`)
   console.log(`  Target class tasks:     ${targetClassInvestigation.targetClassTasks.length}`)
   console.log(`  Cross-cohort with 2025: ${targetClassInvestigation.crossCohortWith2025.length}`)
   console.log(`  Already scheduled:      ${targetClassInvestigation.crossCohortScheduled.length}`)
@@ -638,7 +631,7 @@ async function main() {
     completedAt: new Date().toISOString(),
     phase: 'K17-FIX-A',
     mode: 'read-only',
-    targetClass: TARGET_CLASS_FULL,
+    targetClass: '<REDACTED>',
     database: {
       classGroupCount: classGroups.length,
       teachingTaskCount: tasks.length,
@@ -658,7 +651,7 @@ async function main() {
       C: 'ImportBatch-level cross-cohort summary',
       D: 'TeachingTask.semesterId vs ClassGroup.semesterId mismatch (HIGH)',
       E: 'cross-cohort TeachingTask already scheduled (ScheduleSlot impact)',
-      F: 'known target class专项检查 (2024级钢铁智能冶金技术1班（高本贯通）)',
+      F: 'known target class专项检查 (non-PII class id only)',
     },
     unmodifiedScope: {
       prismaSchema: 'not modified',
@@ -679,6 +672,8 @@ async function main() {
   }
 
   // ── 15. Write JSON report ─────────────────────────────────────────
+  // K36-A5D3A: anonymize real names before write
+  anonymizeReport(report)
   const jsonPath = join(process.cwd(), 'docs', 'k17-data-quality-classgroup-matching-audit.json')
   writeFileSync(jsonPath, JSON.stringify(report, null, 2), 'utf-8')
   console.log(`JSON report written: ${jsonPath}`)
@@ -712,14 +707,14 @@ async function main() {
 
   md.push('## 2. Target Class Investigation')
   md.push('')
-  md.push(`Target: **${TARGET_CLASS_FULL}**`)
+  md.push(`Target: <REDACTED> (id=${TARGET_CLASS_ID})`)
   md.push('')
   md.push(`- Found: ${targetClassInvestigation.targetClassFound}`)
   md.push(`- classGroupId: ${targetClassInvestigation.targetClassId}`)
   md.push(`- semesterId: ${targetClassInvestigation.targetClassSemesterId} (${targetClassInvestigation.targetClassSemesterName})`)
   md.push(`- studentCount: ${targetClassInvestigation.targetClassStudentCount}`)
   md.push(`- cohortYear: ${targetClassInvestigation.targetClassCohortYear}`)
-  md.push(`- Keyword hits: 钢铁智能冶金=${targetClassInvestigation.keywordHits.钢铁智能冶金}, 高本贯通=${targetClassInvestigation.keywordHits.高本贯通}, 2024级=${targetClassInvestigation.keywordHits['2024级']}`)
+  md.push(`- Keyword hits: cohortYear2024=${targetClassInvestigation.keywordHits.cohortYear2024}, track高本贯通=${targetClassInvestigation.keywordHits.track高本贯通}, cohortYear2025=${targetClassInvestigation.keywordHits.cohortYear2025}`)
   md.push(`- Total tasks for target: ${targetClassInvestigation.targetClassTasks.length}`)
   md.push(`- Cross-cohort with 2025 cohort: ${targetClassInvestigation.crossCohortWith2025.length}`)
   md.push(`- Already-scheduled cross-cohort: ${targetClassInvestigation.crossCohortScheduled.length}`)

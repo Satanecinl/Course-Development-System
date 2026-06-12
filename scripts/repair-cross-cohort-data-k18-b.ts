@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import fs from 'fs'
 import path from 'path'
+import { anonymizeReport } from './lib/anonymize-report-output'
 
 const prisma = new PrismaClient()
 
@@ -251,6 +252,7 @@ async function main() {
       warnings: ['Safety checks failed — repair aborted'],
       generatedAt: new Date().toISOString(),
     }
+    anonymizeReport(output)
     fs.writeFileSync(OUTPUT_JSON_PATH, JSON.stringify(output, null, 2), 'utf-8')
     await prisma.$disconnect()
     process.exit(1)
@@ -295,6 +297,7 @@ async function main() {
       warnings: [],
       generatedAt: new Date().toISOString(),
     }
+    anonymizeReport(output)
     fs.writeFileSync(OUTPUT_JSON_PATH, JSON.stringify(output, null, 2), 'utf-8')
     console.log(`\nOutput written to: ${OUTPUT_JSON_PATH}`)
     await prisma.$disconnect()
@@ -327,6 +330,7 @@ async function main() {
       warnings: [`Backup failed: ${e}`],
       generatedAt: new Date().toISOString(),
     }
+    anonymizeReport(output)
     fs.writeFileSync(OUTPUT_JSON_PATH, JSON.stringify(output, null, 2), 'utf-8')
     await prisma.$disconnect()
     process.exit(1)
@@ -350,6 +354,7 @@ async function main() {
       warnings: ['Re-check failed before apply — aborted'],
       generatedAt: new Date().toISOString(),
     }
+    anonymizeReport(output)
     fs.writeFileSync(OUTPUT_JSON_PATH, JSON.stringify(output, null, 2), 'utf-8')
     await prisma.$disconnect()
     process.exit(1)
@@ -390,6 +395,7 @@ async function main() {
       warnings: [`Expected 4 deletions, got ${deletedLinks.length}`],
       generatedAt: new Date().toISOString(),
     }
+    anonymizeReport(output)
     fs.writeFileSync(OUTPUT_JSON_PATH, JSON.stringify(output, null, 2), 'utf-8')
     await prisma.$disconnect()
     process.exit(1)
@@ -453,7 +459,7 @@ async function main() {
   postChecks.push({
     name: 'ClassGroup 22 still exists',
     pass: !!cg22,
-    detail: cg22 ? `"${cg22.name}"` : 'FAIL: deleted',
+    detail: cg22 ? `id=${cg22.id}` : 'FAIL: deleted',
   })
 
   // Verify tasks still exist
@@ -505,6 +511,7 @@ async function main() {
     warnings: allPostPass ? [] : ['Some post-apply checks failed'],
     generatedAt: new Date().toISOString(),
   }
+  anonymizeReport(output)
   fs.writeFileSync(OUTPUT_JSON_PATH, JSON.stringify(output, null, 2), 'utf-8')
   console.log(`\nOutput written to: ${OUTPUT_JSON_PATH}`)
   console.log(`\n${allPostPass ? '✅ REPAIR COMPLETE' : '⚠️ REPAIR COMPLETE WITH WARNINGS'}`)

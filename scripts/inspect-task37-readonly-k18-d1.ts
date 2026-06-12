@@ -1,8 +1,10 @@
 /**
  * K18-D1: Task 37 Read-Only State Inspection
  *
- * Read-only script that inspects TeachingTask 37 current DB state.
+ * Read-only script that inspects the target TeachingTask's current DB state.
  * No writes, no modifications, no repair logic.
+ *
+ * K36-A5D3A: real names are anonymized at write time.
  *
  * Usage: npx tsx scripts/inspect-task37-readonly-k18-d1.ts
  */
@@ -10,10 +12,12 @@
 import { PrismaClient } from '@prisma/client'
 import * as fs from 'fs'
 import * as path from 'path'
+import { anonymizeReport } from './lib/anonymize-report-output'
 
 const prisma = new PrismaClient()
 
 const OUTPUT_JSON = path.resolve('docs/k18-task37-readonly-state-inspection.json')
+const TARGET_TASK_ID = 37
 
 function extractCohortYear(name: string): number | null {
   const m = name.match(/^(\d{4})级/)
@@ -21,9 +25,9 @@ function extractCohortYear(name: string): number | null {
 }
 
 async function main() {
-  // ── 1. Fetch task 37 with all relations ──
+  // ── 1. Fetch target task with all relations ──
   const task = await prisma.teachingTask.findUnique({
-    where: { id: 37 },
+    where: { id: TARGET_TASK_ID },
     include: {
       course: true,
       teacher: true,
@@ -35,7 +39,7 @@ async function main() {
   })
 
   if (!task) {
-    console.log('ERROR: Task 37 not found')
+    console.log('ERROR: target task not found')
     await prisma.$disconnect()
     process.exit(1)
   }
@@ -71,8 +75,8 @@ async function main() {
     roomCapacity: s.room?.capacity || null,
   }))
 
-  // ── 5. Check if CG 35 (2024级森林草原防火技术1班) is linked ──
-  const hasCg35 = classGroups.some((cg) => cg.id === 35)
+  // ── 5. Check if excluded CG is linked ──
+  const hasExcludedCg = classGroups.some((cg) => cg.id === 35)
 
   // ── 6. Count total cross-cohort tasks in DB ──
   const allTasks = await prisma.teachingTask.findMany({
@@ -93,22 +97,19 @@ async function main() {
   console.log('K18-D1 Task37 Readonly State Inspection')
   console.log('')
   console.log(`Summary:`)
-  console.log(`TASK_ID: ${task.id}`)
-  console.log(`COURSE: ${task.course.name}`)
-  console.log(`TEACHER: ${task.teacher?.name || 'null'}`)
+  console.log(`TASK_ID: ${TARGET_TASK_ID}`)
   console.log(`IMPORT_BATCH_ID: ${task.importBatchId}`)
   console.log(`IMPORT_BATCH_STATUS: ${task.importBatch?.status || 'null'}`)
   console.log(`SEMESTER_ID: ${task.semesterId}`)
   console.log(`REMARK: ${task.remark || 'null'}`)
   console.log(`CLASS_GROUP_COUNT: ${classGroups.length}`)
-  console.log(`CLASS_GROUPS: ${classGroups.map((cg) => `${cg.id}(${cg.name})`).join(', ')}`)
   console.log(`TTC_LINK_IDS: ${ttcLinks.map((l) => l.id).join(', ')}`)
   console.log(`SCHEDULE_SLOT_IDS: ${slots.map((s) => s.id).join(', ')}`)
   console.log(`COHORT_YEARS: [${cohortYears.join(', ')}]`)
   console.log(`IS_CROSS_COHORT: ${isCrossCohort}`)
-  console.log(`HAS_CG_35: ${hasCg35}`)
+  console.log(`HAS_EXCLUDED_CG: ${hasExcludedCg}`)
   console.log(`TOTAL_CROSS_COHORT_TASKS: ${crossCohortTasks.length}`)
-  console.log(`IS_ONLY_REMAINING_CROSS_COHORT_CANDIDATE: ${crossCohortTasks.length === 1 && crossCohortTasks[0].id === 37}`)
+  console.log(`IS_ONLY_REMAINING_CROSS_COHORT_CANDIDATE: ${crossCohortTasks.length === 1 && crossCohortTasks[0].id === TARGET_TASK_ID}`)
 
   // ── 8. Build JSON output ──
   const report = {
@@ -116,9 +117,9 @@ async function main() {
     phase: 'K18-D1',
     mode: 'read-only',
     task37: {
-      id: task.id,
+      id: TARGET_TASK_ID,
       courseId: task.courseId,
-      courseName: task.course.name,
+      courseName: task.course.name,       // anonymized by helper
       teacherId: task.teacherId,
       teacherName: task.teacher?.name || null,
       semesterId: task.semesterId,
@@ -130,22 +131,23 @@ async function main() {
       startWeek: task.startWeek,
       endWeek: task.endWeek,
     },
-    classGroups,
-    ttcLinks,
-    scheduleSlots: slots,
+    classGroups,                          // names anonymized by helper
+    ttcLinks,                             // names anonymized by helper
+    scheduleSlots: slots,                 // names anonymized by helper
     analysis: {
       cohortYears,
       isCrossCohort,
-      hasCg35,
-      cg35Name: hasCg35 ? classGroups.find((cg) => cg.id === 35)?.name : null,
+      hasCg35: hasExcludedCg,
+      cg35Name: hasExcludedCg ? classGroups.find((cg) => cg.id === 35)?.name : null,
       totalCrossCohortTasks: crossCohortTasks.length,
       crossCohortTaskIds: crossCohortTasks.map((t) => t.id),
       isOnlyRemainingCrossCohortCandidate:
-        crossCohortTasks.length === 1 && crossCohortTasks[0].id === 37,
+        crossCohortTasks.length === 1 && crossCohortTasks[0].id === TARGET_TASK_ID,
     },
   }
 
   fs.mkdirSync(path.dirname(OUTPUT_JSON), { recursive: true })
+  anonymizeReport(report)
   fs.writeFileSync(OUTPUT_JSON, JSON.stringify(report, null, 2), 'utf-8')
   console.log(`\nJSON written: ${OUTPUT_JSON}`)
 

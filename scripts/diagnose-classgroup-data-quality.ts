@@ -2,41 +2,29 @@
  * K9-DQ-1: ClassGroup Data Quality Diagnostic Script
  *
  * Read-only diagnostic queries to audit:
- * 1. Target class "2024级钢铁智能冶金技术1班（高本贯通）" binding
+ * 1. Target class binding (non-PII structural, not real class name)
  * 2. Cross-year merges globally
  * 3. Cross-track merges
  * 4. HC3/HC4 impact estimate
+ *
+ * K36-A5D3A: real teacher / class / course names are anonymized at
+ * write time via scripts/lib/anonymize-report-output.
  */
 
 import { PrismaClient } from '@prisma/client'
 import { writeFileSync } from 'fs'
 import { join } from 'path'
+import { anonymizeReport } from './lib/anonymize-report-output'
 
 const prisma = new PrismaClient()
 
-const TARGET_CLASS = '2024级钢铁智能冶金技术1班（高本贯通）'
+// K36-A5D3A: detect-only constants. These are used for classification
+// logic (classifyCrossYear), never written to JSON or MD output.
+// Real names in the output are anonymized by anonymizeReport.
+const TARGET_CLASS_ID = 22  // classGroupId (non-PII internal id)
 
-// Known suspicious courses from the user's screenshot
-const SUSPICIOUS_COURSES = [
-  '机械制图',
-  '传感器与检测技术',
-  '金属材料与热处理',
-  '大学英语',
-  '大学日语',
-  '创新创业教育',
-  '习近平新时代中国特色社会主义思想概论',
-  '林草环境',
-  '无人机应用技术',
-]
-
-// Public/ideology courses that might legitimately cross years
-const LIKELY_PUBLIC_COURSES = [
-  '大学英语', '大学日语', '大学语文', '高等数学',
-  '习近平新时代中国特色社会主义思想概论', '毛泽东思想和中国特色社会主义理论体系概论',
-  '思想道德与法治', '形势与政策', '创新创业教育', '职业生涯规划',
-  '体育', '军事理论', '心理健康教育', '劳动教育',
-  '信息技术', '计算机应用基础',
-]
+const SUSPICIOUS_COURSE_IDS: number[] = []  // filled at runtime from DB if needed
+const LIKELY_PUBLIC_COURSE_PATTERN = /大学英语|大学日语|大学语文|高等数学|新时代|思想概论|毛泽东|道德与法治|形势与政策|创新创业|职业生涯|体育|军事理论|心理健康|劳动教育|信息技术|计算机应用基础/
 
 interface CrossYearTask {
   teachingTaskId: number
@@ -87,15 +75,15 @@ function classifyCrossYear(courseName: string, classGroupNames: string[]): { cla
   if (hasHighGao) tracks.add('高本贯通')
   if (hasEngineer) tracks.add('现场工程师')
 
-  const isPublic = LIKELY_PUBLIC_COURSES.some(pc => courseName.includes(pc))
+  const isPublic = LIKELY_PUBLIC_COURSE_PATTERN.test(courseName)
 
   if (tracks.size > 1) {
-    return { classification: 'SUSPICIOUS_CROSS_TRACK_MERGE', reason: `跨培养方向: ${[...tracks].join('+')}` }
+    return { classification: 'SUSPICIOUS_CROSS_TRACK_MERGE', reason: '<REDACTED_TEXT>' }
   }
   if (isPublic) {
-    return { classification: 'UNKNOWN_NEEDS_SOURCE_CHECK', reason: '公共课/思政课跨年级合班，需回看原始数据确认' }
+    return { classification: 'UNKNOWN_NEEDS_SOURCE_CHECK', reason: '<REDACTED_TEXT>' }
   }
-  return { classification: 'SUSPICIOUS_CROSS_YEAR_MERGE', reason: `专业课跨年级合班: ${years.join('+')}级` }
+  return { classification: 'SUSPICIOUS_CROSS_YEAR_MERGE', reason: '<REDACTED_TEXT>' }
 }
 
 async function main() {
@@ -103,22 +91,16 @@ async function main() {
 
   // ── Step 1: Find target class ──
   const targetClass = await prisma.classGroup.findFirst({
-    where: { name: TARGET_CLASS },
+    where: { id: TARGET_CLASS_ID },
     select: { id: true, name: true, studentCount: true },
   })
 
   if (!targetClass) {
-    console.error(`Target class not found: ${TARGET_CLASS}`)
-    // Try partial match
-    const partial = await prisma.classGroup.findMany({
-      where: { name: { contains: '钢铁智能冶金' } },
-      select: { id: true, name: true },
-    })
-    console.log('Partial matches:', partial)
+    console.error('Target class not found')
     process.exit(1)
   }
 
-  console.log(`Target class: id=${targetClass.id}, name="${targetClass.name}", studentCount=${targetClass.studentCount}\n`)
+  console.log(`Target class: id=${targetClass.id}, studentCount=${targetClass.studentCount}\n`)
 
   // ── Step 2: All TeachingTasks for target class ──
   const targetTaskClasses = await prisma.teachingTaskClass.findMany({
@@ -145,7 +127,7 @@ async function main() {
     const classGroupYears = classGroupNames.map(extractYear).filter(Boolean) as string[]
     const uniqueYears = [...new Set(classGroupYears)]
     const isCrossYear = uniqueYears.length > 1
-    const containsOtherYear = classGroupNames.some(n => n !== TARGET_CLASS && extractYear(n) !== extractYear(TARGET_CLASS))
+    const containsOtherYear = task.taskClasses.some(tc => tc.classGroupId !== TARGET_CLASS_ID && extractYear(tc.classGroup.name) !== extractYear(targetClass.name))
 
     const requiredStudents = task.taskClasses.reduce((sum, t) => sum + (t.classGroup.studentCount ?? 50), 0)
 
@@ -170,14 +152,14 @@ async function main() {
       requiredStudents,
       remark: task.remark,
       isCrossYear,
-      containsTargetYear: classGroupNames.includes(TARGET_CLASS),
+      containsTargetYear: task.taskClasses.some(tc => tc.classGroupId === TARGET_CLASS_ID),
       containsOtherYear,
       suspicious,
       suspiciousReason,
     }
   })
 
-  console.log(`TeachingTasks for "${TARGET_CLASS}": ${targetTasks.length}`)
+  console.log(`TeachingTasks for target class (id=${targetClass.id}): ${targetTasks.length}`)
   const crossYearInTarget = targetTasks.filter(t => t.isCrossYear)
   const suspiciousInTarget = targetTasks.filter(t => t.suspicious)
   console.log(`  Cross-year tasks: ${crossYearInTarget.length}`)
@@ -267,6 +249,10 @@ async function main() {
   console.log(`  SUSPICIOUS: ${suspiciousCount}`)
   console.log(`  UNKNOWN_NEEDS_SOURCE_CHECK: ${unknownCount}\n`)
 
+  // K36-A5D3A: anonymize before building MD
+  anonymizeReport(targetTasks)
+  anonymizeReport(allCrossYearTasks)
+
   // Top 20 suspicious
   const top20 = allCrossYearTasks.filter(t => t.classification.startsWith('SUSPICIOUS')).slice(0, 20)
   if (top20.length > 0) {
@@ -289,7 +275,7 @@ async function main() {
   for (const task of allTasks) {
     const baseKey = [task.courseId, task.teacherId ?? 'NULL', task.weekType, task.startWeek, task.endWeek].join('|')
     if (!tasksByBaseKey.has(baseKey)) tasksByBaseKey.set(baseKey, [])
-    tasksByBaseKey.get(baseKey)!.push(task as any)
+    tasksByBaseKey.get(baseKey)!.push(task)
   }
 
   let remarkCollisionCount = 0
@@ -302,7 +288,7 @@ async function main() {
       if (remarkCollisionExamples.length < 10) {
         const t = tasks[0]
         remarkCollisionExamples.push(
-          `course="${t.course.name}" teacher="${t.teacher?.name ?? '(无)'}" remarks=[${remarks.map(r => `"${r}"`).join(', ')}] taskIds=[${tasks.map(t => t.id).join(', ')}]`
+          `<REDACTED_TEXT> taskIds=[${tasks.map(t => t.id).join(', ')}]`
         )
       }
     }
@@ -359,7 +345,7 @@ async function main() {
     hc3Total += uniqueTasks.length - 1
 
     const classGroupId = parseInt(key.split('|')[0])
-    const isTargetClass = entries.some(e => e.classGroupNames.includes(TARGET_CLASS))
+    const isTargetClass = entries.some(e => e.classGroupNames.includes(targetClass.name))
     if (isTargetClass) hc3TargetClass++
 
     const hasSuspicious = entries.some(e => {
@@ -370,7 +356,7 @@ async function main() {
       hc3Suspicious++
       if (hc3Examples.length < 10) {
         const [cgId, dow, si] = key.split('|')
-        hc3Examples.push(`classGroupId=${cgId} day=${dow} slot=${si}: ${entries.map(e => `[${e.taskId}]${e.courseName}`).join(' vs ')}`)
+        hc3Examples.push(`classGroupId=${cgId} day=${dow} slot=${si}: <REDACTED_TEXT>`)
       }
     }
   }
@@ -397,14 +383,14 @@ async function main() {
     if (requiredStudents > slot.room.capacity) {
       hc4Total++
       const classGroupNames = task.taskClasses.map(tc => tc.classGroup.name)
-      const isTargetClass = classGroupNames.includes(TARGET_CLASS)
+      const isTargetClass = task.taskClasses.some(tc => tc.classGroupId === TARGET_CLASS_ID)
       if (isTargetClass) hc4TargetClass++
 
       const years = [...new Set(classGroupNames.map(extractYear).filter(Boolean))]
       if (years.length > 1) {
         hc4Suspicious++
         if (hc4Examples.length < 10) {
-          hc4Examples.push(`[${task.id}] ${task.course.name} room=${slot.room.name}(cap=${slot.room.capacity}) required=${requiredStudents} classes=${classGroupNames.join(',')}`)
+          hc4Examples.push(`[${task.id}] room=<REDACTED>(cap=${slot.room.capacity}) required=${requiredStudents}`)
         }
       }
     }
@@ -442,7 +428,7 @@ async function main() {
       file: 'src/lib/import/importer.ts',
       functions: ['parseRemarkKeywords', 'findMergedClassNames'],
       risk: 'MEDIUM-HIGH',
-      detail: 'When resolving 合班 remarks, character-subsequence matching considers ALL class groups regardless of year. A keyword like "森防" matches both "2024级森林草原防火技术1班" and "2025级森林草原防火技术1班".',
+      detail: 'When resolving 合班 remarks, character-subsequence matching considers ALL class groups regardless of year. Substring keywords (e.g. short form of a class name) can match same-named classes in different cohorts.',
     }, {
       finding: 'taskKey in prepareRecords omits remark field',
       file: 'src/lib/import/importer.ts',
@@ -472,6 +458,8 @@ async function main() {
 
   // Write JSON report
   const jsonPath = join(process.cwd(), 'docs', 'classgroup-data-quality-report.json')
+  // K36-A5D3A: anonymize real names in report before write
+  anonymizeReport(report)
   writeFileSync(jsonPath, JSON.stringify(report, null, 2), 'utf-8')
   console.log(`JSON report written to: ${jsonPath}`)
 
@@ -483,7 +471,7 @@ async function main() {
   mdLines.push('')
   mdLines.push('## 1. Executive Summary')
   mdLines.push('')
-  mdLines.push(`Target class: **${TARGET_CLASS}** (id=${targetClass.id})`)
+  mdLines.push(`Target class: <REDACTED> (id=${targetClass.id})`)
   mdLines.push('')
   mdLines.push(`- TeachingTasks for target class: **${targetTasks.length}**`)
   mdLines.push(`- Suspicious cross-year in target: **${suspiciousInTarget.length}**`)
@@ -496,7 +484,7 @@ async function main() {
 
   mdLines.push('## 2. Target ClassGroup Binding Audit')
   mdLines.push('')
-  mdLines.push(`All ${targetTasks.length} TeachingTasks bound to "${TARGET_CLASS}":`)
+  mdLines.push(`All ${targetTasks.length} TeachingTasks bound to target class (id=${targetClass.id}):`)
   mdLines.push('')
   mdLines.push('| taskId | course | teacher | classGroups | crossYear | suspicious |')
   mdLines.push('|--------|--------|---------|-------------|-----------|------------|')
@@ -531,7 +519,7 @@ async function main() {
   mdLines.push('- **File**: `src/lib/import/importer.ts` lines 145-199')
   mdLines.push('- **Functions**: `parseRemarkKeywords()`, `findMergedClassNames()`')
   mdLines.push('- **Risk**: MEDIUM-HIGH')
-  mdLines.push('- **Detail**: When resolving 合班 remarks, character-subsequence matching considers ALL class groups regardless of year. A keyword like "森防" matches both "2024级森林草原防火技术1班" and "2025级森林草原防火技术1班".')
+  mdLines.push('- **Detail**: When resolving 合班 remarks, character-subsequence matching considers ALL class groups regardless of year. Substring keywords (e.g. short form of a class name) can match same-named classes in different cohorts.')
   mdLines.push('')
   mdLines.push('### Finding 2: taskKey omits remark in prepareRecords')
   mdLines.push('- **File**: `src/lib/import/importer.ts` line 299')

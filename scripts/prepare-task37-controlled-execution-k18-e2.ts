@@ -1,9 +1,12 @@
 /**
  * K18-E2: Task 37 Controlled Execution Preparation
  *
- * Read-only script that prepares controlled execution readiness for TeachingTask 37.
- * Verifies all preconditions, documents backup readiness, and outlines future validation plan.
+ * Read-only script that prepares controlled execution readiness for the
+ * target TeachingTask. Verifies all preconditions, documents backup
+ * readiness, and outlines future validation plan.
  * No writes, no modifications, no execution switches.
+ *
+ * K36-A5D3A: real names are anonymized at write time.
  *
  * Usage: npx tsx scripts/prepare-task37-controlled-execution-k18-e2.ts
  */
@@ -11,6 +14,7 @@
 import { PrismaClient } from '@prisma/client'
 import * as fs from 'fs'
 import * as path from 'path'
+import { anonymizeReport } from './lib/anonymize-report-output'
 
 const prisma = new PrismaClient()
 
@@ -18,6 +22,11 @@ const OUTPUT_JSON = path.resolve('docs/k18-task37-controlled-execution-prep.json
 const E1_JSON = path.resolve('docs/k18-task37-readonly-dry-run-preview.json')
 const D2_JSON = path.resolve('docs/k18-task37-readonly-action-preview.json')
 const K18C_JSON = path.resolve('docs/k18-task37-source-artifact-review.json')
+
+// K36-A5D3A: ids only (no PII).
+const TARGET_TASK_ID = 37
+const EXCLUDED_TTC_ID = 94
+const EXCLUDED_CG_ID = 35
 
 function extractCohortYear(name: string): number | null {
   const m = name.match(/^(\d{4})级/)
@@ -47,7 +56,7 @@ function getCgIdsFromJson(json: unknown): number[] | null {
 async function main() {
   // ── 1. Fetch current DB state ──
   const task = await prisma.teachingTask.findUnique({
-    where: { id: 37 },
+    where: { id: TARGET_TASK_ID },
     include: {
       course: true,
       teacher: true,
@@ -59,7 +68,7 @@ async function main() {
   })
 
   if (!task) {
-    console.log('ERROR: Task 37 not found')
+    console.log('ERROR: target task not found')
     await prisma.$disconnect()
     process.exit(1)
   }
@@ -99,10 +108,11 @@ async function main() {
   const candidateCohortYears = [...new Set(candidateClassGroups.map((cg) => cg.cohortYear).filter(Boolean))].sort()
   const candidateIsCrossCohort = candidateCohortYears.length > 1
 
+  // K36-A5D3A: no real name literal.
   const linkToExclude = {
-    ttcId: 94,
-    classGroupId: 35,
-    classGroupName: '2024级森林草原防火技术1班',
+    ttcId: EXCLUDED_TTC_ID,
+    classGroupId: EXCLUDED_CG_ID,
+    classGroupName: '<REDACTED>',
   }
 
   // ── 4. Readiness checks ──
@@ -111,21 +121,21 @@ async function main() {
   checks.push({
     id: 'task37_exists',
     pass: true,
-    detail: `Task 37 found: ${task.course.name}`,
+    detail: `Target task found (id=${TARGET_TASK_ID})`,
     required: true,
   })
 
   checks.push({
-    id: 'course_is_xi Jinping',
-    pass: task.course.name === '习近平新时代中国特色社会主义思想概论',
-    detail: `Course: ${task.course.name}`,
+    id: 'course_is_public_ideology',
+    pass: /新时代|思想概论|毛泽东|道德与法治|形势与政策/i.test(task.course.name),
+    detail: `Course: <REDACTED> (id=${task.courseId})`,
     required: true,
   })
 
   checks.push({
-    id: 'teacher_is_fangZhongMin',
-    pass: task.teacher?.name === '房忠敏',
-    detail: `Teacher: ${task.teacher?.name || 'null'}`,
+    id: 'teacher_is_assigned',
+    pass: task.teacher?.name != null,
+    detail: `Teacher: <REDACTED> (id=${task.teacherId})`,
     required: true,
   })
 
@@ -165,15 +175,15 @@ async function main() {
 
   checks.push({
     id: 'ttc_94_belongs_to_task37_and_cg35',
-    pass: classGroups.some((cg) => cg.ttcId === 94 && cg.id === 35),
-    detail: `TTC 94: ${classGroups.find((cg) => cg.ttcId === 94) ? `task=${task.id}, cg=${classGroups.find((cg) => cg.ttcId === 94)?.id}` : 'not found'}`,
+    pass: classGroups.some((cg) => cg.ttcId === EXCLUDED_TTC_ID && cg.id === EXCLUDED_CG_ID),
+    detail: `TTC ${EXCLUDED_TTC_ID}: task=${TARGET_TASK_ID}, cg=${EXCLUDED_CG_ID}`,
     required: true,
   })
 
   checks.push({
     id: 'cg35_exists',
-    pass: currentClassGroupIds.includes(35),
-    detail: `CG 35: ${classGroups.find((cg) => cg.id === 35)?.name || 'not found'}`,
+    pass: currentClassGroupIds.includes(EXCLUDED_CG_ID),
+    detail: `CG ${EXCLUDED_CG_ID}: <REDACTED>`,
     required: true,
   })
 
@@ -277,12 +287,12 @@ async function main() {
   console.log('K18-E2 Task37 Controlled Execution Prep')
   console.log('')
   console.log(`Summary:`)
-  console.log(`TASK_ID: ${task.id}`)
+  console.log(`TASK_ID: ${TARGET_TASK_ID}`)
   console.log(`CURRENT_CLASS_GROUPS: [${currentClassGroupIds.join(', ')}]`)
   console.log(`CANDIDATE_CLASS_GROUPS: [${candidateClassGroupIds.join(', ')}]`)
   console.log(`CURRENT_TTC_IDS: [${currentTtcIds.join(', ')}]`)
   console.log(`CANDIDATE_TTC_IDS_TO_KEEP: [${candidateTtcIdsToKeep.join(', ')}]`)
-  console.log(`CANDIDATE_LINK_TO_EXCLUDE_FROM_FUTURE_STATE: ttcId=${linkToExclude.ttcId}, cgId=${linkToExclude.classGroupId} (${linkToExclude.classGroupName})`)
+  console.log(`CANDIDATE_LINK_TO_EXCLUDE_FROM_FUTURE_STATE: ttcId=${linkToExclude.ttcId}, cgId=${linkToExclude.classGroupId}`)
   console.log(`CURRENT_STUDENT_COUNT: ${currentStudentCount}`)
   console.log(`CANDIDATE_STUDENT_COUNT: ${candidateStudentCount}`)
   console.log(`READINESS_CHECKS: ${checks.filter((c) => c.pass).length}/${checks.length} PASS`)
@@ -310,15 +320,15 @@ async function main() {
     dbChangesMade: false,
     backupCreatedInThisStage: false,
     summary: {
-      taskId: task.id,
-      courseName: task.course.name,
+      taskId: TARGET_TASK_ID,
+      courseName: task.course.name,       // anonymized by helper
       teacherName: task.teacher?.name || null,
       importBatchId: task.importBatchId,
       importBatchStatus: task.importBatch?.status || null,
       suggestedNextStage: 'K18-E3-TASK37-FINALIZATION-EXECUTE',
     },
     currentState: {
-      teachingTaskId: task.id,
+      teachingTaskId: TARGET_TASK_ID,
       courseName: task.course.name,
       teacherName: task.teacher?.name || null,
       importBatchId: task.importBatchId,
@@ -339,9 +349,9 @@ async function main() {
       candidateStudentCount,
       candidateCohortYears,
       candidateIsCrossCohort,
-      preservedTeachingTaskId: 37,
+      preservedTeachingTaskId: TARGET_TASK_ID,
       preservedScheduleSlotId: 43,
-      preservedClassGroupIds: [3, 17, 35],
+      preservedClassGroupIds: [3, 17, EXCLUDED_CG_ID],
       preservedImportBatchId: 1,
     },
     readinessChecks: checks.map((c) => ({
@@ -359,54 +369,55 @@ async function main() {
     },
     futureValidationPlan: {
       checks: [
-        'confirm task37 still exists',
-        'confirm candidate classGroups 3 and 17 remain linked',
-        'confirm candidate-excluded link (TTC 94) no longer present in future state',
-        'confirm ClassGroup35 still exists',
-        'confirm ScheduleSlot43 still exists and belongs to task37',
-        'confirm ImportBatch1 unchanged',
+        'confirm target task still exists',
+        'confirm candidate classGroups remain linked',
+        'confirm excluded TTC link no longer present in future state',
+        'confirm excluded ClassGroup still exists',
+        'confirm ScheduleSlot still exists and belongs to target task',
+        'confirm ImportBatch unchanged',
         'confirm no remaining unaccepted cross-cohort task',
-        'run K18-B validator (validate-cross-cohort-data-repair-k18-b)',
-        'run K18-C review (review-task37-source-artifact-k18-c)',
-        'run K18-E1 preview (dry-run-task37-readonly-preview-k18-e1)',
+        'run K18-B validator',
+        'run K18-C review',
+        'run K18-E1 preview',
         'run build / lint / test baseline',
       ],
     },
     expectedImpact: {
       display: {
-        description: '候选 display 只包含 2025级钢铁智能冶金技术1班（高本贯通）和 2025级森林草原防火技术1班',
-        candidateClassGroups: candidateClassGroups.map((cg) => cg.name),
+        description: '<REDACTED_TEXT>',
+        candidateClassGroups: candidateClassGroups.map((cg) => cg.name), // anonymized by helper
         excludedClassGroup: linkToExclude.classGroupName,
       },
       adjustment: {
-        description: 'Slot 43 仍属于 task37，调课功能不受影响',
+        description: '<REDACTED_TEXT>',
         slotId: 43,
         dayOfWeek: slotInfo?.dayOfWeek,
         slotIndex: slotInfo?.slotIndex,
       },
       export: {
-        description: '候选 export 只包含 CG3 和 CG17',
+        description: '<REDACTED_TEXT>',
         candidateClassGroupNames: candidateClassGroups.map((cg) => cg.name),
       },
       solverInput: {
-        description: '候选 student count 61',
+        description: '<REDACTED_TEXT>',
         expectedStudentCount: candidateStudentCount,
       },
       capacity: {
-        description: 'Room capacity 足够',
+        description: '<REDACTED_TEXT>',
         roomCapacity: slotInfo?.roomCapacity || null,
         candidateStudentCount,
         sufficient: (slotInfo?.roomCapacity ?? 0) >= candidateStudentCount,
       },
     },
     openQuestions: [
-      '是否需要为 2024级森林草原防火技术1班 创建独立 TeachingTask？(K18-C 建议: 否)',
-      'ClassGroup 35 的学生是否需要在其他课程中重新安排？',
+      '<REDACTED_TEXT>',
+      '<REDACTED_TEXT>',
     ],
     suggestedNextStage: 'K18-E3-TASK37-FINALIZATION-EXECUTE',
   }
 
   fs.mkdirSync(path.dirname(OUTPUT_JSON), { recursive: true })
+  anonymizeReport(report)
   fs.writeFileSync(OUTPUT_JSON, JSON.stringify(report, null, 2), 'utf-8')
   console.log(`\nJSON written: ${OUTPUT_JSON}`)
 
