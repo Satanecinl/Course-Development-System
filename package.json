@@ -50,7 +50,8 @@
     "diagnose:scheduler-hard-conflicts": "tsx scripts/diagnose-hard-conflicts.ts",
     "diagnose:classgroup-data-quality": "tsx scripts/diagnose-classgroup-data-quality.ts",
     "test:classgroup-matching": "tsx scripts/test-classgroup-matching.ts",
-    "verify:batch-classgroup-matching": "tsx scripts/verify-batch-classgroup-matching.ts"
+    "verify:batch-classgroup-matching": "tsx scripts/verify-batch-classgroup-matching.ts",
+    "scan:docs-pii": "tsx scripts/scan-docs-pii.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
