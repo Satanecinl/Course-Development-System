@@ -140,14 +140,12 @@ audit-import-coverage.ts
 ### temp-* / tmp-* / debug-*
 
 ```txt
-temp-cookie.ts
-temp-debug.ts
 tmp-check-classes.ts
 debug-worktime-controlled-apply-hardscore-mismatch-k26-k2.ts
 g0fixb-debug-duplicates.ts
 ```
 
-理由：阶段内临时调试脚本，应在 stage 关闭时一并清理。**K22-A 之后仍有遗留**，建议 `K35-C` 统一清理。
+理由：阶段内临时调试脚本，应在 stage 关闭时一并清理。`temp-cookie.ts` 与 `temp-debug.ts` 已在 K36-A5D1 从当前 HEAD 移除；其余候选后续单独处理。
 
 ## 全量 verify 列表（115 个，K35-A 盘点）
 

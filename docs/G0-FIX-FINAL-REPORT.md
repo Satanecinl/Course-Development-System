@@ -254,10 +254,8 @@ Dashboard 中出现非法课程名：
 | `src/lib/import/importer.ts` | 统一 taskKey，移除 remark，增强 ScheduleSlot 去重 |
 
 ### 备份文件
-| 文件 | 说明 |
-|------|------|
-| `prisma/dev.db.backup-before-g0fixb-rebuild-20260529140132` | 重建前完整备份 |
-| `prisma/backups/schedule-adjustments-before-g0fixb-2026-05-29T06-02-06-492Z.json` | 调课记录快照（21 条） |
+
+G0 阶段曾生成数据库与调课记录备份。相关本地备份和 tracked 调课快照已在后续仓库卫生阶段从当前 HEAD 移除；本文仅保留备份曾完成的汇总结论，不保留备份路径或记录明细。
 
 ---
 
