@@ -4,8 +4,8 @@
   "mode": "read-only",
   "summary": {
     "taskId": 37,
-    "courseName": "习近平新时代中国特色社会主义思想概论",
-    "teacherName": "房忠敏",
+    "courseName": "Course001",
+    "teacherName": "T001",
     "importBatchId": 1,
     "importBatchStatus": "confirmed",
     "dbChangesMade": false,
@@ -13,8 +13,8 @@
   },
   "currentState": {
     "teachingTaskId": 37,
-    "courseName": "习近平新时代中国特色社会主义思想概论",
-    "teacherName": "房忠敏",
+    "courseName": "Course001",
+    "teacherName": "T001",
     "importBatchId": 1,
     "importBatchStatus": "confirmed",
     "classGroups": [
@@ -45,7 +45,7 @@
       "dayOfWeek": 1,
       "slotIndex": 5,
       "roomId": 18,
-      "roomName": "1号楼虚拟仿真实训室",
+      "roomName": "Room001",
       "capacity": 100
     },
     "currentClassGroupIds": [
@@ -85,16 +85,16 @@
         "2025级钢铁智能冶金技术1班（高本贯通）",
         "2025级森林草原防火技术1班"
       ],
-      "description": "只显示 2025级钢铁智能冶金技术1班（高本贯通）和 2025级森林草原防火技术1班"
+      "description": "<REDACTED_TEXT>"
     },
     "candidateSolverInput": {
       "expectedStudentCount": 61
     },
     "candidateExportImpact": {
-      "description": "不再包含 2024级森林草原防火技术1班"
+      "description": "<REDACTED_TEXT>"
     },
     "candidateAdjustmentImpact": {
-      "description": "slot 43 保持原 task 与时间位置",
+      "description": "<REDACTED_TEXT>",
       "slotId": 43,
       "dayOfWeek": 1,
       "slotIndex": 5
@@ -104,17 +104,17 @@
     {
       "check": "task37_exists",
       "pass": true,
-      "detail": "Task 37 found: 习近平新时代中国特色社会主义思想概论"
+      "detail": "<REDACTED_TEXT>"
     },
     {
       "check": "course_is_xi Jinping",
       "pass": true,
-      "detail": "Course: 习近平新时代中国特色社会主义思想概论"
+      "detail": "<REDACTED_TEXT>"
     },
     {
       "check": "teacher_is_fangZhongMin",
       "pass": true,
-      "detail": "Teacher: 房忠敏"
+      "detail": "<REDACTED_TEXT>"
     },
     {
       "check": "current_links_include_ttc_92_93_94",

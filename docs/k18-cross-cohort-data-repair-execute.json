@@ -87,22 +87,22 @@
     {
       "name": "Task 168 exists",
       "pass": true,
-      "detail": "Found: 2024级钢铁智能冶金技术1班（高本贯通）"
+      "detail": "<REDACTED_TEXT>"
     },
     {
       "name": "Task 174 exists",
       "pass": true,
-      "detail": "Found: 2024级钢铁智能冶金技术1班（高本贯通）"
+      "detail": "<REDACTED_TEXT>"
     },
     {
       "name": "Task 176 exists",
       "pass": true,
-      "detail": "Found: 2024级钢铁智能冶金技术1班（高本贯通）"
+      "detail": "<REDACTED_TEXT>"
     },
     {
       "name": "Task 181 exists",
       "pass": true,
-      "detail": "Found: 2024级钢铁智能冶金技术1班（高本贯通）"
+      "detail": "<REDACTED_TEXT>"
     },
     {
       "name": "TTC 349 exists (task=168, cg=22)",
@@ -263,8 +263,8 @@
   "beforeSnapshot": [
     {
       "taskId": 168,
-      "courseName": "机械制图",
-      "teacherName": "赵春超",
+      "courseName": "Course001",
+      "teacherName": "T001",
       "classGroups": [
         {
           "ttcId": 346,
@@ -303,8 +303,8 @@
     },
     {
       "taskId": 174,
-      "courseName": "机械制图",
-      "teacherName": "张红梅",
+      "courseName": "Course001",
+      "teacherName": "T002",
       "classGroups": [
         {
           "ttcId": 358,
@@ -343,8 +343,8 @@
     },
     {
       "taskId": 176,
-      "courseName": "电子技术",
-      "teacherName": "许进",
+      "courseName": "Course002",
+      "teacherName": "T003",
       "classGroups": [
         {
           "ttcId": 363,
@@ -383,8 +383,8 @@
     },
     {
       "taskId": 181,
-      "courseName": "传感器与检测技术",
-      "teacherName": "张旭",
+      "courseName": "Course003",
+      "teacherName": "T004",
       "classGroups": [
         {
           "ttcId": 374,
@@ -425,8 +425,8 @@
   "afterSnapshot": [
     {
       "taskId": 168,
-      "courseName": "机械制图",
-      "teacherName": "赵春超",
+      "courseName": "Course001",
+      "teacherName": "T001",
       "classGroups": [
         {
           "ttcId": 346,
@@ -459,8 +459,8 @@
     },
     {
       "taskId": 174,
-      "courseName": "机械制图",
-      "teacherName": "张红梅",
+      "courseName": "Course001",
+      "teacherName": "T002",
       "classGroups": [
         {
           "ttcId": 358,
@@ -493,8 +493,8 @@
     },
     {
       "taskId": 176,
-      "courseName": "电子技术",
-      "teacherName": "许进",
+      "courseName": "Course002",
+      "teacherName": "T003",
       "classGroups": [
         {
           "ttcId": 363,
@@ -527,8 +527,8 @@
     },
     {
       "taskId": 181,
-      "courseName": "传感器与检测技术",
-      "teacherName": "张旭",
+      "courseName": "Course003",
+      "teacherName": "T004",
       "classGroups": [
         {
           "ttcId": 374,
@@ -684,7 +684,7 @@
     {
       "name": "ClassGroup 22 still exists",
       "pass": true,
-      "detail": "\"2024级钢铁智能冶金技术1班（高本贯通）\""
+      "detail": "<REDACTED_TEXT>"
     },
     {
       "name": "Task 168 still exists",

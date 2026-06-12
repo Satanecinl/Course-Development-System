@@ -8,7 +8,9 @@
   "rootCauseEvidence": "Applying preview proposed changes gives hardScore=-2000 (HC6=2) but preview originally reported hardScore=0",
   "fix": {
     "type": "code-only",
-    "files": ["src/lib/scheduler/preview.ts"],
+    "files": [
+      "src/lib/scheduler/preview.ts"
+    ],
     "changes": [
       "scoreAfter now uses bestDetails.hardScore/softScore (from calculateScoreWithDetails) instead of solveResult.bestScore",
       "blocked check now uses scoreAfter.hardScore !== 0 instead of solveResult.bestScore.hardScore !== 0"
@@ -29,24 +31,30 @@
   },
   "slotContext": {
     "slot244": {
-      "courseName": "职业素养",
-      "teacher": "孙文哲",
+      "courseName": "Course001",
+      "teacher": "T001",
       "currentRoomId": null,
       "proposedRoomId": 21,
       "proposedRoomName": "林校305",
-      "classGroups": ["2024级智能轧钢技术1班", "2024级智能轧钢技术2班", "2024级机电一体化技术1班"],
+      "classGroups": [
+        "2024级智能轧钢技术1班",
+        "2024级智能轧钢技术2班",
+        "2024级机电一体化技术1班"
+      ],
       "specialtyClassification": "NON_AUTOMOTIVE_ONLY",
       "isLinxiaoRoom": true,
       "hc6Expected": true,
       "source": "PREVIEW_RESULT (solver-introduced)"
     },
     "slot383": {
-      "courseName": "林业法规与执法实务",
-      "teacher": "徐厚朴",
+      "courseName": "Course002",
+      "teacher": "T002",
       "currentRoomId": 23,
       "currentRoomName": "林校304",
       "proposedRoomId": 23,
-      "classGroups": ["2024级林业技术1班"],
+      "classGroups": [
+        "2024级林业技术1班"
+      ],
       "specialtyClassification": "NON_AUTOMOTIVE_ONLY",
       "isLinxiaoRoom": true,
       "hc6Expected": true,

@@ -43,7 +43,7 @@
       "severity": "LOW",
       "category": "REMARK_PARSING",
       "title": "remark parsing does not distinguish explicit year markers from implicit short forms",
-      "evidence": "parseRemarkKeywords found in: C:/Users/Satanecinl/Desktop/Course Development System/my-app/src/lib/import/importer.ts; 房忠敏+习近平 remark sample: 2025级钢铁智能冶金技术1班（高本贯通） | remark=与森防合班 | 2025级森林草原防火技术1班 | remark=与高本贯通合班 | 2025级护理（二年制）1班 张洪宇[手机号已脱敏] | remark=429 | 2025级护理（二年制）2班张洪宇[手机号已脱敏] | remark=429 | 2025级口腔医学技术1班 | remark=614 | 2025 级口腔医学技术2班 | remark=614 | 2025级高速铁路客运服务1班 | remark=(null) | 2025级高速铁路客运服务1班 | remark=八东一 | 2025级高速铁路客运服务2班 | remark=(null) | 2025级高速铁路客运服务2班 | remark=八东一; cohort-explicit remark count=0",
+      "evidence": "<REDACTED_TEXT>",
       "files": [
         "src/lib/import/importer.ts:200-225 parseRemarkKeywords",
         "src/lib/import/importer.ts:227-296 findMergedClassNames",
@@ -60,7 +60,7 @@
         181
       ],
       "reproductionRisk": "POSSIBLE",
-      "recommendation": "When the remark contains an explicit year marker (e.g. \"2024级森林草原防火技术1班\"), prefer exact-match on the literal substring over the multi-granularity keyword generation. When no explicit year is present, require candidate year to MATCH baseClass year (already done in filterCandidatesByYearAndTrack) AND emit a warning when the merge involves a different track (e.g. 高本贯通 vs 现场工程师).",
+      "recommendation": "<REDACTED_TEXT>",
       "suggestedNextStage": "K19-FIX-A-IMPORT-MATCHING-COHORT-GUARD"
     },
     {
@@ -164,7 +164,7 @@
       "severity": "INFO",
       "category": "STATISTICS",
       "title": "K18 historical error cases (all repaired or marked for review)",
-      "evidence": "tasks 168/174/176/181 (4 个专业课 cross-cohort with 2024 cohort 高本贯通 CG22) — REPAIRED in K18-B; task 37 (习近平思想 with 2024 cohort 森林草原防火 CG35) — REMOVED in K18-E3 (TTC94 deleted)",
+      "evidence": "<REDACTED_TEXT>",
       "files": [
         "docs/k18-cross-cohort-data-repair-execute.md",
         "docs/k18-task37-finalization-execute.md"
@@ -199,7 +199,7 @@
     {
       "taskId": 168,
       "course": "机械制图",
-      "teacher": "赵春超",
+      "teacher": "T001",
       "wrongClassGroup": "2024级钢铁智能冶金技术1班（高本贯通）",
       "expectedClassGroup": "2025级钢铁智能冶金技术1班（高本贯通） (and 2025 cohort 现场工程师 classes only)",
       "rootCauseHypothesis": "2025 cohort 现场工程师 CG18/19 remark \"与高本贯通合班\" (implied) or name-similarity \"钢铁智能冶金\" 跨过 cohort filter. Import matching picked up 2024 cohort CG22 (高本贯通) as a match because the 2024 cohort is a 2024-级 candidate and the existing filter only requires `cy === baseYear` when keyword has no explicit year. The base 2025-级高本贯通 class is the source, and the remark \"合班\" or class name substring \"钢铁智能冶金\" was matched against the 2024 cohort CG22.",
@@ -210,7 +210,7 @@
     {
       "taskId": 174,
       "course": "机械制图",
-      "teacher": "张红梅",
+      "teacher": "T002",
       "wrongClassGroup": "2024级钢铁智能冶金技术1班（高本贯通）",
       "expectedClassGroup": "2025级钢铁智能冶金技术1班（高本贯通） (and 2025 cohort 现场工程师 classes only)",
       "rootCauseHypothesis": "Same as task 168 — 2024 cohort 高本贯通 CG22 incorrectly merged via 合班 remark / name-similarity matching.",
@@ -221,7 +221,7 @@
     {
       "taskId": 176,
       "course": "电子技术",
-      "teacher": "许进",
+      "teacher": "T003",
       "wrongClassGroup": "2024级钢铁智能冶金技术1班（高本贯通）",
       "expectedClassGroup": "2025级钢铁智能冶金技术1班（高本贯通） (and 2025 cohort 现场工程师 classes only)",
       "rootCauseHypothesis": "Same root cause — 2024 cohort 高本贯通 CG22 incorrectly merged via name-similarity \"钢铁智能冶金\" or 合班 remark expansion.",
@@ -232,7 +232,7 @@
     {
       "taskId": 181,
       "course": "传感器与检测技术",
-      "teacher": "张旭",
+      "teacher": "T004",
       "wrongClassGroup": "2024级钢铁智能冶金技术1班（高本贯通）",
       "expectedClassGroup": "2025级钢铁智能冶金技术1班（高本贯通） (and 2025 cohort 现场工程师 classes only)",
       "rootCauseHypothesis": "Same root cause — 2024 cohort 高本贯通 CG22 incorrectly merged via name-similarity or remark expansion.",
@@ -243,7 +243,7 @@
     {
       "taskId": 37,
       "course": "习近平新时代中国特色社会主义思想概论",
-      "teacher": "房忠敏",
+      "teacher": "T005",
       "wrongClassGroup": "2024级森林草原防火技术1班",
       "expectedClassGroup": "2025级钢铁智能冶金技术1班（高本贯通） + 2025级森林草原防火技术1班 (only)",
       "rootCauseHypothesis": "2025 cohort 钢铁智能冶金 1班 (高本贯通) remark \"与森防合班\" → matches \"森防\" → against 2024 cohort 森林草原防火 1班 (CG35). The remark keyword \"森防\" has no explicit year, and baseClass 2025级钢铁智能冶金 is 2025. The cohort filter `cy !== baseYear` only kicks in when keyword has no explicit year, so the filter is active — yet the 2024 candidate is still matched. ACTUAL REPRO: review of source artifacts (K18-C) shows no 2024 record for 房忠敏+习近平 in any parsed JSON. Most likely the import previously (before filter existed) merged it, or the import logic matched via a different path (e.g. previous import batch had a different base year, or seed_db.ts pre-filtered data).",

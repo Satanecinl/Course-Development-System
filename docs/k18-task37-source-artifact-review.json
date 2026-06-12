@@ -5,7 +5,7 @@
   "summary": {
     "taskId": 37,
     "course": "习近平新时代中国特色社会主义思想概论",
-    "teacher": "房忠敏",
+    "teacher": "T001",
     "decision": "LIKELY_ERROR",
     "confidence": "MEDIUM",
     "recommendedAction": "PLAN_REPAIR",
@@ -15,9 +15,9 @@
   "task37CurrentState": {
     "teachingTaskId": 37,
     "courseId": 10,
-    "courseName": "习近平新时代中国特色社会主义思想概论",
+    "courseName": "Course001",
     "teacherId": 16,
-    "teacherName": "房忠敏",
+    "teacherName": "T001",
     "semesterId": 1,
     "importBatchId": 1,
     "importBatchStatus": "confirmed",
@@ -65,7 +65,7 @@
         "dayOfWeek": 1,
         "slotIndex": 5,
         "roomId": 18,
-        "roomName": "1号楼虚拟仿真实训室",
+        "roomName": "Room001",
         "roomCapacity": 100
       }
     ]
@@ -85,625 +85,625 @@
       {
         "source": "uploads/imports/1779884424539-wlidp76z.json",
         "matchType": "remark",
-        "excerpt": "class=2025级钢铁智能冶金技术1班（高本贯通）, remark=\"与森防合班\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779884424539-wlidp76z.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级钢铁智能冶金技术1班（高本贯通）, teacher=房忠敏, remark=与森防合班",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779884424539-wlidp76z.json",
         "matchType": "remark",
-        "excerpt": "class=2025级森林草原防火技术1班, remark=\"与高本贯通合班\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779884424539-wlidp76z.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级森林草原防火技术1班, teacher=房忠敏, remark=与高本贯通合班",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779884429876-r7u2mgcx.json",
         "matchType": "remark",
-        "excerpt": "class=2025级钢铁智能冶金技术1班（高本贯通）, remark=\"与森防合班\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779884429876-r7u2mgcx.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级钢铁智能冶金技术1班（高本贯通）, teacher=房忠敏, remark=与森防合班",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779884429876-r7u2mgcx.json",
         "matchType": "remark",
-        "excerpt": "class=2025级森林草原防火技术1班, remark=\"与高本贯通合班\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779884429876-r7u2mgcx.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级森林草原防火技术1班, teacher=房忠敏, remark=与高本贯通合班",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779884487689-jokh5t82.json",
         "matchType": "remark",
-        "excerpt": "class=2025级钢铁智能冶金技术1班（高本贯通）, remark=\"与森防合班\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779884487689-jokh5t82.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级钢铁智能冶金技术1班（高本贯通）, teacher=房忠敏, remark=与森防合班",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779884487689-jokh5t82.json",
         "matchType": "remark",
-        "excerpt": "class=2025级森林草原防火技术1班, remark=\"与高本贯通合班\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779884487689-jokh5t82.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级森林草原防火技术1班, teacher=房忠敏, remark=与高本贯通合班",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779933822564-7pxf32k7.json",
         "matchType": "remark",
-        "excerpt": "class=2025级钢铁智能冶金技术1班（高本贯通）, remark=\"与森防合班\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779933822564-7pxf32k7.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级钢铁智能冶金技术1班（高本贯通）, teacher=房忠敏, remark=与森防合班",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779933822564-7pxf32k7.json",
         "matchType": "remark",
-        "excerpt": "class=2025级森林草原防火技术1班, remark=\"与高本贯通合班\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779933822564-7pxf32k7.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级森林草原防火技术1班, teacher=房忠敏, remark=与高本贯通合班",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779933960259-p6y2noah.json",
         "matchType": "remark",
-        "excerpt": "class=2025级钢铁智能冶金技术1班（高本贯通）, remark=\"与森防合班\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779933960259-p6y2noah.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级钢铁智能冶金技术1班（高本贯通）, teacher=房忠敏, remark=与森防合班",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779933960259-p6y2noah.json",
         "matchType": "remark",
-        "excerpt": "class=2025级森林草原防火技术1班, remark=\"与高本贯通合班\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779933960259-p6y2noah.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级森林草原防火技术1班, teacher=房忠敏, remark=与高本贯通合班",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779943575320-txese617.json",
         "matchType": "remark",
-        "excerpt": "class=2025级钢铁智能冶金技术1班（高本贯通）, remark=\"与森防合班\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779943575320-txese617.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级钢铁智能冶金技术1班（高本贯通）, teacher=房忠敏, remark=与森防合班",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779943575320-txese617.json",
         "matchType": "remark",
-        "excerpt": "class=2025级森林草原防火技术1班, remark=\"与高本贯通合班\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779943575320-txese617.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级森林草原防火技术1班, teacher=房忠敏, remark=与高本贯通合班",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779944138596-jzaa5cyg.json",
         "matchType": "remark",
-        "excerpt": "class=2023级护理（五年制）1班张洪宇[手机号已脱敏], remark=\"与23学前五年制合班 （） 409\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779944138596-jzaa5cyg.json",
         "matchType": "remark",
-        "excerpt": "class=2023级护理（五年制）1班张洪宇[手机号已脱敏], remark=\"与23学前五年制合班 形势与政策崔春梅后八周（） 413\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779944138596-jzaa5cyg.json",
         "matchType": "remark",
-        "excerpt": "class=2023级口腔医学技术（五年制）1班田洋[手机号已脱敏], remark=\"与23学前五年制合班 （） 409\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779944138596-jzaa5cyg.json",
         "matchType": "remark",
-        "excerpt": "class=2023级口腔医学技术（五年制）1班田洋[手机号已脱敏], remark=\"与23学前五年制合班 形势与政策崔春梅后八周（） 413\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779944138596-jzaa5cyg.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级护理（二年制）1班 张洪宇[手机号已脱敏], teacher=房忠敏, remark=429",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779944138596-jzaa5cyg.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级护理（二年制）2班张洪宇[手机号已脱敏], teacher=房忠敏, remark=429",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779944138596-jzaa5cyg.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级口腔医学技术1班, teacher=房忠敏, remark=614",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779944138596-jzaa5cyg.json",
         "matchType": "teacher",
-        "excerpt": "class=2025 级口腔医学技术2班, teacher=房忠敏, remark=614",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779944138596-jzaa5cyg.json",
         "matchType": "remark",
-        "excerpt": "class=2025级钢铁智能冶金技术1班（高本贯通）, remark=\"与森防合班\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779944138596-jzaa5cyg.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级钢铁智能冶金技术1班（高本贯通）, teacher=房忠敏, remark=与森防合班",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779944138596-jzaa5cyg.json",
         "matchType": "remark",
-        "excerpt": "class=2025级森林草原防火技术1班, remark=\"与高本贯通合班\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779944138596-jzaa5cyg.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级森林草原防火技术1班, teacher=房忠敏, remark=与高本贯通合班",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779944138596-jzaa5cyg.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级高速铁路客运服务1班, teacher=房忠敏, remark=(none)",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779944138596-jzaa5cyg.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级高速铁路客运服务1班, teacher=房忠敏, remark=八东一",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779944138596-jzaa5cyg.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级高速铁路客运服务2班, teacher=房忠敏, remark=(none)",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779944138596-jzaa5cyg.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级高速铁路客运服务2班, teacher=房忠敏, remark=八东一",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779944450360-2fawvrrl.json",
         "matchType": "remark",
-        "excerpt": "class=2025级钢铁智能冶金技术1班（高本贯通）, remark=\"与森防合班\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779944450360-2fawvrrl.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级钢铁智能冶金技术1班（高本贯通）, teacher=房忠敏, remark=与森防合班",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779944450360-2fawvrrl.json",
         "matchType": "remark",
-        "excerpt": "class=2025级森林草原防火技术1班, remark=\"与高本贯通合班\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779944450360-2fawvrrl.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级森林草原防火技术1班, teacher=房忠敏, remark=与高本贯通合班",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779950873258-o7hbe67f.json",
         "matchType": "remark",
-        "excerpt": "class=2025级钢铁智能冶金技术1班（高本贯通）, remark=\"与森防合班\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779950873258-o7hbe67f.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级钢铁智能冶金技术1班（高本贯通）, teacher=房忠敏, remark=与森防合班",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779950873258-o7hbe67f.json",
         "matchType": "remark",
-        "excerpt": "class=2025级森林草原防火技术1班, remark=\"与高本贯通合班\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779950873258-o7hbe67f.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级森林草原防火技术1班, teacher=房忠敏, remark=与高本贯通合班",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779951224407-rzbu5xc5.json",
         "matchType": "remark",
-        "excerpt": "class=2023级护理（五年制）1班张洪宇[手机号已脱敏], remark=\"与23学前五年制合班 （） 409\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779951224407-rzbu5xc5.json",
         "matchType": "remark",
-        "excerpt": "class=2023级护理（五年制）1班张洪宇[手机号已脱敏], remark=\"与23学前五年制合班 形势与政策崔春梅后八周（） 413\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779951224407-rzbu5xc5.json",
         "matchType": "remark",
-        "excerpt": "class=2023级口腔医学技术（五年制）1班田洋[手机号已脱敏], remark=\"与23学前五年制合班 （） 409\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779951224407-rzbu5xc5.json",
         "matchType": "remark",
-        "excerpt": "class=2023级口腔医学技术（五年制）1班田洋[手机号已脱敏], remark=\"与23学前五年制合班 形势与政策崔春梅后八周（） 413\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779951224407-rzbu5xc5.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级护理（二年制）1班 张洪宇[手机号已脱敏], teacher=房忠敏, remark=429",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779951224407-rzbu5xc5.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级护理（二年制）2班张洪宇[手机号已脱敏], teacher=房忠敏, remark=429",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779951224407-rzbu5xc5.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级口腔医学技术1班, teacher=房忠敏, remark=614",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779951224407-rzbu5xc5.json",
         "matchType": "teacher",
-        "excerpt": "class=2025 级口腔医学技术2班, teacher=房忠敏, remark=614",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779951224407-rzbu5xc5.json",
         "matchType": "remark",
-        "excerpt": "class=2025级钢铁智能冶金技术1班（高本贯通）, remark=\"与森防合班\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779951224407-rzbu5xc5.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级钢铁智能冶金技术1班（高本贯通）, teacher=房忠敏, remark=与森防合班",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779951224407-rzbu5xc5.json",
         "matchType": "remark",
-        "excerpt": "class=2025级森林草原防火技术1班, remark=\"与高本贯通合班\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779951224407-rzbu5xc5.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级森林草原防火技术1班, teacher=房忠敏, remark=与高本贯通合班",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779951224407-rzbu5xc5.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级高速铁路客运服务1班, teacher=房忠敏, remark=(none)",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779951224407-rzbu5xc5.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级高速铁路客运服务1班, teacher=房忠敏, remark=八东一",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779951224407-rzbu5xc5.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级高速铁路客运服务2班, teacher=房忠敏, remark=(none)",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779951224407-rzbu5xc5.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级高速铁路客运服务2班, teacher=房忠敏, remark=八东一",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779951316728-rcte9nzg.json",
         "matchType": "remark",
-        "excerpt": "class=2025级钢铁智能冶金技术1班（高本贯通）, remark=\"与森防合班\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779951316728-rcte9nzg.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级钢铁智能冶金技术1班（高本贯通）, teacher=房忠敏, remark=与森防合班",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779951316728-rcte9nzg.json",
         "matchType": "remark",
-        "excerpt": "class=2025级森林草原防火技术1班, remark=\"与高本贯通合班\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779951316728-rcte9nzg.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级森林草原防火技术1班, teacher=房忠敏, remark=与高本贯通合班",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779954351511-hgcdh2pw.json",
         "matchType": "remark",
-        "excerpt": "class=2025级钢铁智能冶金技术1班（高本贯通）, remark=\"与森防合班\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779954351511-hgcdh2pw.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级钢铁智能冶金技术1班（高本贯通）, teacher=房忠敏, remark=与森防合班",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779954351511-hgcdh2pw.json",
         "matchType": "remark",
-        "excerpt": "class=2025级森林草原防火技术1班, remark=\"与高本贯通合班\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779954351511-hgcdh2pw.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级森林草原防火技术1班, teacher=房忠敏, remark=与高本贯通合班",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779959653439-24xx4q2x.json",
         "matchType": "remark",
-        "excerpt": "class=2025级钢铁智能冶金技术1班（高本贯通）, remark=\"与森防合班\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779959653439-24xx4q2x.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级钢铁智能冶金技术1班（高本贯通）, teacher=房忠敏, remark=与森防合班",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779959653439-24xx4q2x.json",
         "matchType": "remark",
-        "excerpt": "class=2025级森林草原防火技术1班, remark=\"与高本贯通合班\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1779959653439-24xx4q2x.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级森林草原防火技术1班, teacher=房忠敏, remark=与高本贯通合班",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1780022027147-ptuir9ma.json",
         "matchType": "remark",
-        "excerpt": "class=2025级钢铁智能冶金技术1班（高本贯通）, remark=\"与森防合班\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1780022027147-ptuir9ma.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级钢铁智能冶金技术1班（高本贯通）, teacher=房忠敏, remark=与森防合班",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1780022027147-ptuir9ma.json",
         "matchType": "remark",
-        "excerpt": "class=2025级森林草原防火技术1班, remark=\"与高本贯通合班\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1780022027147-ptuir9ma.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级森林草原防火技术1班, teacher=房忠敏, remark=与高本贯通合班",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1780034746995-iffaqlb9.json",
         "matchType": "remark",
-        "excerpt": "class=2025级钢铁智能冶金技术1班（高本贯通）, remark=\"与森防合班\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1780034746995-iffaqlb9.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级钢铁智能冶金技术1班（高本贯通）, teacher=房忠敏, remark=与森防合班",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1780034746995-iffaqlb9.json",
         "matchType": "remark",
-        "excerpt": "class=2025级森林草原防火技术1班, remark=\"与高本贯通合班\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1780034746995-iffaqlb9.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级森林草原防火技术1班, teacher=房忠敏, remark=与高本贯通合班",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1780035124021-sejcg9dy.json",
         "matchType": "remark",
-        "excerpt": "class=2025级钢铁智能冶金技术1班（高本贯通）, remark=\"与森防合班\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1780035124021-sejcg9dy.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级钢铁智能冶金技术1班（高本贯通）, teacher=房忠敏, remark=与森防合班",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1780035124021-sejcg9dy.json",
         "matchType": "remark",
-        "excerpt": "class=2025级森林草原防火技术1班, remark=\"与高本贯通合班\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1780035124021-sejcg9dy.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级森林草原防火技术1班, teacher=房忠敏, remark=与高本贯通合班",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1780402522289-7mlo9dn8.json",
         "matchType": "remark",
-        "excerpt": "class=2023级护理（五年制）1班张洪宇[手机号已脱敏], remark=\"与23学前五年制合班 （） 409\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1780402522289-7mlo9dn8.json",
         "matchType": "remark",
-        "excerpt": "class=2023级护理（五年制）1班张洪宇[手机号已脱敏], remark=\"与23学前五年制合班 形势与政策崔春梅后八周（） 413\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1780402522289-7mlo9dn8.json",
         "matchType": "remark",
-        "excerpt": "class=2023级口腔医学技术（五年制）1班田洋[手机号已脱敏], remark=\"与23学前五年制合班 （） 409\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1780402522289-7mlo9dn8.json",
         "matchType": "remark",
-        "excerpt": "class=2023级口腔医学技术（五年制）1班田洋[手机号已脱敏], remark=\"与23学前五年制合班 形势与政策崔春梅后八周（） 413\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1780402522289-7mlo9dn8.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级护理（二年制）1班 张洪宇[手机号已脱敏], teacher=房忠敏, remark=429",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1780402522289-7mlo9dn8.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级护理（二年制）2班张洪宇[手机号已脱敏], teacher=房忠敏, remark=429",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1780402522289-7mlo9dn8.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级口腔医学技术1班, teacher=房忠敏, remark=614",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1780402522289-7mlo9dn8.json",
         "matchType": "teacher",
-        "excerpt": "class=2025 级口腔医学技术2班, teacher=房忠敏, remark=614",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1780402522289-7mlo9dn8.json",
         "matchType": "remark",
-        "excerpt": "class=2025级钢铁智能冶金技术1班（高本贯通）, remark=\"与森防合班\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1780402522289-7mlo9dn8.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级钢铁智能冶金技术1班（高本贯通）, teacher=房忠敏, remark=与森防合班",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1780402522289-7mlo9dn8.json",
         "matchType": "remark",
-        "excerpt": "class=2025级森林草原防火技术1班, remark=\"与高本贯通合班\"",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1780402522289-7mlo9dn8.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级森林草原防火技术1班, teacher=房忠敏, remark=与高本贯通合班",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1780402522289-7mlo9dn8.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级高速铁路客运服务1班, teacher=房忠敏, remark=(none)",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1780402522289-7mlo9dn8.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级高速铁路客运服务1班, teacher=房忠敏, remark=八东一",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1780402522289-7mlo9dn8.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级高速铁路客运服务2班, teacher=房忠敏, remark=(none)",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       },
       {
         "source": "uploads/imports/1780402522289-7mlo9dn8.json",
         "matchType": "teacher",
-        "excerpt": "class=2025级高速铁路客运服务2班, teacher=房忠敏, remark=八东一",
+        "excerpt": "<REDACTED_TEXT>",
         "confidence": "HIGH"
       }
     ],
@@ -714,7 +714,7 @@
   "relatedTasks": [
     {
       "id": 10,
-      "teacher": "张帆",
+      "teacher": "T002",
       "classGroups": [
         "2025级智能轧钢技术1班",
         "2025级智能轧钢技术2班"
@@ -729,7 +729,7 @@
     },
     {
       "id": 16,
-      "teacher": "张帆",
+      "teacher": "T002",
       "classGroups": [
         "2025级智能轧钢技术1班",
         "2025级智能轧钢技术2班"
@@ -744,7 +744,7 @@
     },
     {
       "id": 32,
-      "teacher": "房忠敏",
+      "teacher": "T001",
       "classGroups": [
         "2025级钢铁智能冶金技术1班（高本贯通）",
         "2025级森林草原防火技术1班"
@@ -759,7 +759,7 @@
     },
     {
       "id": 37,
-      "teacher": "房忠敏",
+      "teacher": "T001",
       "classGroups": [
         "2025级钢铁智能冶金技术1班（高本贯通）",
         "2025级森林草原防火技术1班",
@@ -776,7 +776,7 @@
     },
     {
       "id": 40,
-      "teacher": "刘海波",
+      "teacher": "T003",
       "classGroups": [
         "2025级钢铁智能冶金技术2班",
         "2025级钢铁智能冶金技术3班"
@@ -791,7 +791,7 @@
     },
     {
       "id": 50,
-      "teacher": "刘海波",
+      "teacher": "T003",
       "classGroups": [
         "2025级钢铁智能冶金技术2班",
         "2025级钢铁智能冶金技术3班"
@@ -806,7 +806,7 @@
     },
     {
       "id": 63,
-      "teacher": "牛怡亭",
+      "teacher": "T004",
       "classGroups": [
         "2025级机电一体化技术1班",
         "2025级机电一体化技术2班"
@@ -821,7 +821,7 @@
     },
     {
       "id": 65,
-      "teacher": "牛怡亭",
+      "teacher": "T004",
       "classGroups": [
         "2025级机电一体化技术1班",
         "2025级机电一体化技术2班"
@@ -836,7 +836,7 @@
     },
     {
       "id": 83,
-      "teacher": "张帆",
+      "teacher": "T002",
       "classGroups": [
         "2025级机电一体化技术3班",
         "2025级机电一体化技术4班"
@@ -851,7 +851,7 @@
     },
     {
       "id": 90,
-      "teacher": "张帆",
+      "teacher": "T002",
       "classGroups": [
         "2025级机电一体化技术3班",
         "2025级机电一体化技术4班"
@@ -866,7 +866,7 @@
     },
     {
       "id": 104,
-      "teacher": "张帆",
+      "teacher": "T002",
       "classGroups": [
         "2025级汽车制造与试验技术1班",
         "2025级汽车制造与试验技术2班",
@@ -882,7 +882,7 @@
     },
     {
       "id": 109,
-      "teacher": "张帆",
+      "teacher": "T002",
       "classGroups": [
         "2025级汽车制造与试验技术1班",
         "2025级汽车制造与试验技术2班",
@@ -898,7 +898,7 @@
     },
     {
       "id": 125,
-      "teacher": "张帆",
+      "teacher": "T002",
       "classGroups": [
         "2025级林业技术1班",
         "2025级林业技术2班"
@@ -913,7 +913,7 @@
     },
     {
       "id": 130,
-      "teacher": "张帆",
+      "teacher": "T002",
       "classGroups": [
         "2025级林业技术1班",
         "2025级林业技术2班"
@@ -928,7 +928,7 @@
     },
     {
       "id": 139,
-      "teacher": "张黎",
+      "teacher": "T005",
       "classGroups": [
         "2025级森林草原资源保护1班",
         "2025级森林草原资源保护2班"
@@ -943,7 +943,7 @@
     },
     {
       "id": 146,
-      "teacher": "张黎",
+      "teacher": "T005",
       "classGroups": [
         "2025级森林草原资源保护1班",
         "2025级森林草原资源保护2班"
@@ -958,7 +958,7 @@
     },
     {
       "id": 165,
-      "teacher": "房忠敏",
+      "teacher": "T001",
       "classGroups": [
         "2025级森林草原防火技术1班"
       ],
@@ -980,7 +980,7 @@
     "k17DecisionTask37": {
       "taskId": 37,
       "course": "习近平新时代中国特色社会主义思想概论",
-      "teacher": "房忠敏",
+      "teacher": "T001",
       "classGroups": [
         "2025级钢铁智能冶金技术1班（高本贯通）",
         "2025级森林草原防火技术1班",

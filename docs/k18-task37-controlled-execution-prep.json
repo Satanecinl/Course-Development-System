@@ -6,16 +6,16 @@
   "backupCreatedInThisStage": false,
   "summary": {
     "taskId": 37,
-    "courseName": "习近平新时代中国特色社会主义思想概论",
-    "teacherName": "房忠敏",
+    "courseName": "Course001",
+    "teacherName": "T001",
     "importBatchId": 1,
     "importBatchStatus": "confirmed",
     "suggestedNextStage": "K18-E3-TASK37-FINALIZATION-EXECUTE"
   },
   "currentState": {
     "teachingTaskId": 37,
-    "courseName": "习近平新时代中国特色社会主义思想概论",
-    "teacherName": "房忠敏",
+    "courseName": "Course001",
+    "teacherName": "T001",
     "importBatchId": 1,
     "importBatchStatus": "confirmed",
     "currentClassGroupIds": [
@@ -35,7 +35,7 @@
     ],
     "currentIsCrossCohort": true,
     "scheduleSlotId": 43,
-    "roomName": "1号楼虚拟仿真实训室",
+    "roomName": "Room001",
     "roomCapacity": 100
   },
   "candidateState": {
@@ -50,7 +50,7 @@
     "candidateLinkToExcludeFromFutureState": {
       "ttcId": 94,
       "classGroupId": 35,
-      "classGroupName": "2024级森林草原防火技术1班"
+      "classGroupName": "CG001"
     },
     "candidateStudentCount": 61,
     "candidateCohortYears": [
@@ -70,19 +70,19 @@
     {
       "id": "task37_exists",
       "pass": true,
-      "detail": "Task 37 found: 习近平新时代中国特色社会主义思想概论",
+      "detail": "<REDACTED_TEXT>",
       "required": true
     },
     {
       "id": "course_is_xi Jinping",
       "pass": true,
-      "detail": "Course: 习近平新时代中国特色社会主义思想概论",
+      "detail": "<REDACTED_TEXT>",
       "required": true
     },
     {
       "id": "teacher_is_fangZhongMin",
       "pass": true,
-      "detail": "Teacher: 房忠敏",
+      "detail": "<REDACTED_TEXT>",
       "required": true
     },
     {
@@ -118,7 +118,7 @@
     {
       "id": "cg35_exists",
       "pass": true,
-      "detail": "CG 35: 2024级森林草原防火技术1班",
+      "detail": "<REDACTED_TEXT>",
       "required": true
     },
     {
@@ -218,7 +218,7 @@
   },
   "expectedImpact": {
     "display": {
-      "description": "候选 display 只包含 2025级钢铁智能冶金技术1班（高本贯通）和 2025级森林草原防火技术1班",
+      "description": "<REDACTED_TEXT>",
       "candidateClassGroups": [
         "2025级钢铁智能冶金技术1班（高本贯通）",
         "2025级森林草原防火技术1班"
@@ -226,24 +226,24 @@
       "excludedClassGroup": "2024级森林草原防火技术1班"
     },
     "adjustment": {
-      "description": "Slot 43 仍属于 task37，调课功能不受影响",
+      "description": "<REDACTED_TEXT>",
       "slotId": 43,
       "dayOfWeek": 1,
       "slotIndex": 5
     },
     "export": {
-      "description": "候选 export 只包含 CG3 和 CG17",
+      "description": "<REDACTED_TEXT>",
       "candidateClassGroupNames": [
         "2025级钢铁智能冶金技术1班（高本贯通）",
         "2025级森林草原防火技术1班"
       ]
     },
     "solverInput": {
-      "description": "候选 student count 61",
+      "description": "<REDACTED_TEXT>",
       "expectedStudentCount": 61
     },
     "capacity": {
-      "description": "Room capacity 足够",
+      "description": "<REDACTED_TEXT>",
       "roomCapacity": 100,
       "candidateStudentCount": 61,
       "sufficient": true

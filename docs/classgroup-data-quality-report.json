@@ -16,14 +16,14 @@
   "targetClassTasks": [
     {
       "teachingTaskId": 11,
-      "courseName": "机械制图",
-      "teacherName": "于耀淇",
+      "courseName": "Course001",
+      "teacherName": "T001",
       "classGroupNames": [
-        "2025级智能轧钢技术1班",
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG001",
+        "CG002",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         1,
@@ -49,14 +49,14 @@
     },
     {
       "teachingTaskId": 14,
-      "courseName": "金属材料与热处理",
-      "teacherName": "尹和鑫",
+      "courseName": "Course002",
+      "teacherName": "T002",
       "classGroupNames": [
-        "2025级智能轧钢技术1班",
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG001",
+        "CG002",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         1,
@@ -82,14 +82,14 @@
     },
     {
       "teachingTaskId": 22,
-      "courseName": "机械制图",
-      "teacherName": "于耀淇",
+      "courseName": "Course001",
+      "teacherName": "T001",
       "classGroupNames": [
-        "2025级智能轧钢技术2班",
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG005",
+        "CG002",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         2,
@@ -115,14 +115,14 @@
     },
     {
       "teachingTaskId": 23,
-      "courseName": "金属材料与热处理",
-      "teacherName": "尹和鑫",
+      "courseName": "Course002",
+      "teacherName": "T002",
       "classGroupNames": [
-        "2025级智能轧钢技术2班",
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG005",
+        "CG002",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         2,
@@ -148,13 +148,13 @@
     },
     {
       "teachingTaskId": 28,
-      "courseName": "形势与政策",
-      "teacherName": "胡浩",
+      "courseName": "Course003",
+      "teacherName": "T003",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级森林草原防火技术1班",
-        "2024级钢铁智能冶金技术1班（高本贯通）",
-        "2024级森林草原防火技术1班"
+        "CG002",
+        "CG006",
+        "CG004",
+        "CG007"
       ],
       "classGroupIds": [
         3,
@@ -178,13 +178,13 @@
     },
     {
       "teachingTaskId": 31,
-      "courseName": "创新创业教育",
-      "teacherName": "徐燕",
+      "courseName": "Course004",
+      "teacherName": "T004",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级森林草原防火技术1班",
-        "2024级钢铁智能冶金技术1班（高本贯通）",
-        "2024级森林草原防火技术1班"
+        "CG002",
+        "CG006",
+        "CG004",
+        "CG007"
       ],
       "classGroupIds": [
         3,
@@ -208,13 +208,13 @@
     },
     {
       "teachingTaskId": 32,
-      "courseName": "习近平新时代中国特色社会主义思想概论",
-      "teacherName": "房忠敏",
+      "courseName": "Course005",
+      "teacherName": "T005",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级森林草原防火技术1班",
-        "2024级钢铁智能冶金技术1班（高本贯通）",
-        "2024级森林草原防火技术1班"
+        "CG002",
+        "CG006",
+        "CG004",
+        "CG007"
       ],
       "classGroupIds": [
         3,
@@ -238,13 +238,13 @@
     },
     {
       "teachingTaskId": 34,
-      "courseName": "中华优秀传统文化",
-      "teacherName": "杨秀芳",
+      "courseName": "Course006",
+      "teacherName": "T006",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级森林草原防火技术1班",
-        "2024级钢铁智能冶金技术1班（高本贯通）",
-        "2024级森林草原防火技术1班"
+        "CG002",
+        "CG006",
+        "CG004",
+        "CG007"
       ],
       "classGroupIds": [
         3,
@@ -268,13 +268,13 @@
     },
     {
       "teachingTaskId": 38,
-      "courseName": "高等数学",
-      "teacherName": "李媛",
+      "courseName": "Course007",
+      "teacherName": "T007",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -298,14 +298,14 @@
     },
     {
       "teachingTaskId": 48,
-      "courseName": "机械制图",
-      "teacherName": "赵春超",
+      "courseName": "Course001",
+      "teacherName": "T008",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级钢铁智能冶金技术2班",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG008",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -331,15 +331,15 @@
     },
     {
       "teachingTaskId": 49,
-      "courseName": "金属材料与热处理",
-      "teacherName": "王淼",
+      "courseName": "Course002",
+      "teacherName": "T009",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级钢铁智能冶金技术2班",
-        "2025级钢铁智能冶金技术3班",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG008",
+        "CG009",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -367,14 +367,14 @@
     },
     {
       "teachingTaskId": 54,
-      "courseName": "机械制图",
-      "teacherName": "赵春超",
+      "courseName": "Course001",
+      "teacherName": "T008",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级钢铁智能冶金技术3班",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG009",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -400,15 +400,15 @@
     },
     {
       "teachingTaskId": 66,
-      "courseName": "电子技术",
-      "teacherName": "许进",
+      "courseName": "Course008",
+      "teacherName": "T010",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级机电一体化技术1班",
-        "2025级机电一体化技术2班",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG010",
+        "CG011",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -436,14 +436,14 @@
     },
     {
       "teachingTaskId": 67,
-      "courseName": "传感器与检测技术",
-      "teacherName": "张旭",
+      "courseName": "Course009",
+      "teacherName": "T011",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级机电一体化技术1班",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG010",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -469,14 +469,14 @@
     },
     {
       "teachingTaskId": 69,
-      "courseName": "机械制图",
-      "teacherName": "张红梅",
+      "courseName": "Course001",
+      "teacherName": "T012",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级机电一体化技术1班",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG010",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -502,14 +502,14 @@
     },
     {
       "teachingTaskId": 74,
-      "courseName": "传感器与检测技术",
-      "teacherName": "张旭",
+      "courseName": "Course009",
+      "teacherName": "T011",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级机电一体化技术2班",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG011",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -535,14 +535,14 @@
     },
     {
       "teachingTaskId": 76,
-      "courseName": "机械制图",
-      "teacherName": "张红梅",
+      "courseName": "Course001",
+      "teacherName": "T012",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级机电一体化技术2班",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG011",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -568,14 +568,14 @@
     },
     {
       "teachingTaskId": 88,
-      "courseName": "）机械制图",
-      "teacherName": "张红梅",
+      "courseName": "Course010",
+      "teacherName": "T012",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级机电一体化技术3班",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG012",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -601,14 +601,14 @@
     },
     {
       "teachingTaskId": 89,
-      "courseName": "传感器与检测技术",
-      "teacherName": "张旭",
+      "courseName": "Course009",
+      "teacherName": "T011",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级机电一体化技术3班",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG012",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -634,14 +634,14 @@
     },
     {
       "teachingTaskId": 98,
-      "courseName": "） 机械制图",
-      "teacherName": "张红梅",
+      "courseName": "Course011",
+      "teacherName": "T012",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级机电一体化技术4班",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG013",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -667,14 +667,14 @@
     },
     {
       "teachingTaskId": 99,
-      "courseName": "传感器与检测技术",
-      "teacherName": "张旭",
+      "courseName": "Course009",
+      "teacherName": "T011",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级机电一体化技术4班",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG013",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -700,14 +700,14 @@
     },
     {
       "teachingTaskId": 149,
-      "courseName": "林草环境",
-      "teacherName": "刘闯",
+      "courseName": "Course012",
+      "teacherName": "T013",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级森林草原资源保护1班",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG014",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -733,14 +733,14 @@
     },
     {
       "teachingTaskId": 150,
-      "courseName": "无人机应用技术",
-      "teacherName": "董继扬",
+      "courseName": "Course013",
+      "teacherName": "T014",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级森林草原资源保护1班",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG014",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -766,14 +766,14 @@
     },
     {
       "teachingTaskId": 157,
-      "courseName": "林草环境",
-      "teacherName": "刘闯",
+      "courseName": "Course012",
+      "teacherName": "T013",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级森林草原资源保护2班",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG015",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -799,14 +799,14 @@
     },
     {
       "teachingTaskId": 158,
-      "courseName": "无人机应用技术",
-      "teacherName": "董继扬",
+      "courseName": "Course013",
+      "teacherName": "T014",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级森林草原资源保护2班",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG015",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -832,12 +832,12 @@
     },
     {
       "teachingTaskId": 165,
-      "courseName": "习近平新时代中国特色社会主义思想概论",
-      "teacherName": "房忠敏",
+      "courseName": "Course005",
+      "teacherName": "T005",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级森林草原防火技术1班",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG006",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -859,13 +859,13 @@
     },
     {
       "teachingTaskId": 168,
-      "courseName": "机械制图",
-      "teacherName": "赵春超",
+      "courseName": "Course001",
+      "teacherName": "T008",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -889,13 +889,13 @@
     },
     {
       "teachingTaskId": 171,
-      "courseName": "金属材料与热处理",
-      "teacherName": "王淼",
+      "courseName": "Course002",
+      "teacherName": "T009",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -919,13 +919,13 @@
     },
     {
       "teachingTaskId": 174,
-      "courseName": "机械制图",
-      "teacherName": "张红梅",
+      "courseName": "Course001",
+      "teacherName": "T012",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -949,13 +949,13 @@
     },
     {
       "teachingTaskId": 176,
-      "courseName": "电子技术",
-      "teacherName": "许进",
+      "courseName": "Course008",
+      "teacherName": "T010",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -979,13 +979,13 @@
     },
     {
       "teachingTaskId": 179,
-      "courseName": "电机与电气控制技术",
-      "teacherName": "李传鸿",
+      "courseName": "Course014",
+      "teacherName": "T015",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -1009,13 +1009,13 @@
     },
     {
       "teachingTaskId": 181,
-      "courseName": "传感器与检测技术",
-      "teacherName": "张旭",
+      "courseName": "Course009",
+      "teacherName": "T011",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -1039,10 +1039,10 @@
     },
     {
       "teachingTaskId": 198,
-      "courseName": "金属材料与热处理",
-      "teacherName": "尹和鑫",
+      "courseName": "Course002",
+      "teacherName": "T002",
       "classGroupNames": [
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG004"
       ],
       "classGroupIds": [
         22
@@ -1060,10 +1060,10 @@
     },
     {
       "teachingTaskId": 199,
-      "courseName": "大学英语",
-      "teacherName": "于秀杰",
+      "courseName": "Course015",
+      "teacherName": "T016",
       "classGroupNames": [
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG004"
       ],
       "classGroupIds": [
         22
@@ -1081,10 +1081,10 @@
     },
     {
       "teachingTaskId": 200,
-      "courseName": "大学日语",
-      "teacherName": "葛书",
+      "courseName": "Course016",
+      "teacherName": "T017",
       "classGroupNames": [
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG004"
       ],
       "classGroupIds": [
         22
@@ -1102,10 +1102,10 @@
     },
     {
       "teachingTaskId": 201,
-      "courseName": "材料科学基础",
-      "teacherName": "于耀淇",
+      "courseName": "Course017",
+      "teacherName": "T001",
       "classGroupNames": [
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG004"
       ],
       "classGroupIds": [
         22
@@ -1123,10 +1123,10 @@
     },
     {
       "teachingTaskId": 202,
-      "courseName": "冶金传输原理",
-      "teacherName": "尹和鑫",
+      "courseName": "Course018",
+      "teacherName": "T002",
       "classGroupNames": [
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG004"
       ],
       "classGroupIds": [
         22
@@ -1144,12 +1144,12 @@
     },
     {
       "teachingTaskId": 203,
-      "courseName": "美育",
-      "teacherName": "张显慧",
+      "courseName": "Course019",
+      "teacherName": "T018",
       "classGroupNames": [
-        "2024级钢铁智能冶金技术1班（高本贯通）",
-        "2024级钢铁智能冶金技术2班",
-        "2024级钢铁智能冶金技术3班"
+        "CG004",
+        "CG016",
+        "CG017"
       ],
       "classGroupIds": [
         22,
@@ -1171,10 +1171,10 @@
     },
     {
       "teachingTaskId": 204,
-      "courseName": "冶金热工基础",
-      "teacherName": "赵春超",
+      "courseName": "Course020",
+      "teacherName": "T008",
       "classGroupNames": [
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG004"
       ],
       "classGroupIds": [
         22
@@ -1192,12 +1192,12 @@
     },
     {
       "teachingTaskId": 205,
-      "courseName": "职业素养",
-      "teacherName": "董钇含",
+      "courseName": "Course021",
+      "teacherName": "T019",
       "classGroupNames": [
-        "2024级钢铁智能冶金技术1班（高本贯通）",
-        "2024级钢铁智能冶金技术2班",
-        "2024级钢铁智能冶金技术3班"
+        "CG004",
+        "CG016",
+        "CG017"
       ],
       "classGroupIds": [
         22,
@@ -1219,12 +1219,12 @@
     },
     {
       "teachingTaskId": 206,
-      "courseName": "大学生职业发展与就业指导",
-      "teacherName": "董钇含",
+      "courseName": "Course022",
+      "teacherName": "T019",
       "classGroupNames": [
-        "2024级钢铁智能冶金技术1班（高本贯通）",
-        "2024级钢铁智能冶金技术2班",
-        "2024级钢铁智能冶金技术3班"
+        "CG004",
+        "CG016",
+        "CG017"
       ],
       "classGroupIds": [
         22,
@@ -1246,10 +1246,10 @@
     },
     {
       "teachingTaskId": 207,
-      "courseName": "机械设计基础",
-      "teacherName": "于耀淇",
+      "courseName": "Course023",
+      "teacherName": "T001",
       "classGroupNames": [
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG004"
       ],
       "classGroupIds": [
         22
@@ -1267,10 +1267,10 @@
     },
     {
       "teachingTaskId": 208,
-      "courseName": "金属性能检测",
-      "teacherName": "尹和鑫",
+      "courseName": "Course024",
+      "teacherName": "T002",
       "classGroupNames": [
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG004"
       ],
       "classGroupIds": [
         22
@@ -1290,14 +1290,14 @@
   "allCrossYearTasks": [
     {
       "teachingTaskId": 11,
-      "courseName": "机械制图",
-      "teacherName": "于耀淇",
+      "courseName": "Course001",
+      "teacherName": "T001",
       "classGroupNames": [
-        "2025级智能轧钢技术1班",
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG001",
+        "CG002",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         1,
@@ -1322,14 +1322,14 @@
     },
     {
       "teachingTaskId": 14,
-      "courseName": "金属材料与热处理",
-      "teacherName": "尹和鑫",
+      "courseName": "Course002",
+      "teacherName": "T002",
       "classGroupNames": [
-        "2025级智能轧钢技术1班",
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG001",
+        "CG002",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         1,
@@ -1354,14 +1354,14 @@
     },
     {
       "teachingTaskId": 22,
-      "courseName": "机械制图",
-      "teacherName": "于耀淇",
+      "courseName": "Course001",
+      "teacherName": "T001",
       "classGroupNames": [
-        "2025级智能轧钢技术2班",
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG005",
+        "CG002",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         2,
@@ -1386,14 +1386,14 @@
     },
     {
       "teachingTaskId": 23,
-      "courseName": "金属材料与热处理",
-      "teacherName": "尹和鑫",
+      "courseName": "Course002",
+      "teacherName": "T002",
       "classGroupNames": [
-        "2025级智能轧钢技术2班",
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG005",
+        "CG002",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         2,
@@ -1418,13 +1418,13 @@
     },
     {
       "teachingTaskId": 38,
-      "courseName": "高等数学",
-      "teacherName": "李媛",
+      "courseName": "Course007",
+      "teacherName": "T007",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -1448,14 +1448,14 @@
     },
     {
       "teachingTaskId": 48,
-      "courseName": "机械制图",
-      "teacherName": "赵春超",
+      "courseName": "Course001",
+      "teacherName": "T008",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级钢铁智能冶金技术2班",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG008",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -1480,15 +1480,15 @@
     },
     {
       "teachingTaskId": 49,
-      "courseName": "金属材料与热处理",
-      "teacherName": "王淼",
+      "courseName": "Course002",
+      "teacherName": "T009",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级钢铁智能冶金技术2班",
-        "2025级钢铁智能冶金技术3班",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG008",
+        "CG009",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -1514,14 +1514,14 @@
     },
     {
       "teachingTaskId": 54,
-      "courseName": "机械制图",
-      "teacherName": "赵春超",
+      "courseName": "Course001",
+      "teacherName": "T008",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级钢铁智能冶金技术3班",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG009",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -1546,15 +1546,15 @@
     },
     {
       "teachingTaskId": 66,
-      "courseName": "电子技术",
-      "teacherName": "许进",
+      "courseName": "Course008",
+      "teacherName": "T010",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级机电一体化技术1班",
-        "2025级机电一体化技术2班",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG010",
+        "CG011",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -1580,14 +1580,14 @@
     },
     {
       "teachingTaskId": 67,
-      "courseName": "传感器与检测技术",
-      "teacherName": "张旭",
+      "courseName": "Course009",
+      "teacherName": "T011",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级机电一体化技术1班",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG010",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -1612,14 +1612,14 @@
     },
     {
       "teachingTaskId": 69,
-      "courseName": "机械制图",
-      "teacherName": "张红梅",
+      "courseName": "Course001",
+      "teacherName": "T012",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级机电一体化技术1班",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG010",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -1644,14 +1644,14 @@
     },
     {
       "teachingTaskId": 74,
-      "courseName": "传感器与检测技术",
-      "teacherName": "张旭",
+      "courseName": "Course009",
+      "teacherName": "T011",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级机电一体化技术2班",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG011",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -1676,14 +1676,14 @@
     },
     {
       "teachingTaskId": 76,
-      "courseName": "机械制图",
-      "teacherName": "张红梅",
+      "courseName": "Course001",
+      "teacherName": "T012",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级机电一体化技术2班",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG011",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -1708,14 +1708,14 @@
     },
     {
       "teachingTaskId": 88,
-      "courseName": "）机械制图",
-      "teacherName": "张红梅",
+      "courseName": "Course010",
+      "teacherName": "T012",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级机电一体化技术3班",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG012",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -1740,14 +1740,14 @@
     },
     {
       "teachingTaskId": 89,
-      "courseName": "传感器与检测技术",
-      "teacherName": "张旭",
+      "courseName": "Course009",
+      "teacherName": "T011",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级机电一体化技术3班",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG012",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -1772,14 +1772,14 @@
     },
     {
       "teachingTaskId": 98,
-      "courseName": "） 机械制图",
-      "teacherName": "张红梅",
+      "courseName": "Course011",
+      "teacherName": "T012",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级机电一体化技术4班",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG013",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -1804,14 +1804,14 @@
     },
     {
       "teachingTaskId": 99,
-      "courseName": "传感器与检测技术",
-      "teacherName": "张旭",
+      "courseName": "Course009",
+      "teacherName": "T011",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级机电一体化技术4班",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG013",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -1836,14 +1836,14 @@
     },
     {
       "teachingTaskId": 149,
-      "courseName": "林草环境",
-      "teacherName": "刘闯",
+      "courseName": "Course012",
+      "teacherName": "T013",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级森林草原资源保护1班",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG014",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -1868,14 +1868,14 @@
     },
     {
       "teachingTaskId": 150,
-      "courseName": "无人机应用技术",
-      "teacherName": "董继扬",
+      "courseName": "Course013",
+      "teacherName": "T014",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级森林草原资源保护1班",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG014",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -1900,14 +1900,14 @@
     },
     {
       "teachingTaskId": 157,
-      "courseName": "林草环境",
-      "teacherName": "刘闯",
+      "courseName": "Course012",
+      "teacherName": "T013",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级森林草原资源保护2班",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG015",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -1932,14 +1932,14 @@
     },
     {
       "teachingTaskId": 158,
-      "courseName": "无人机应用技术",
-      "teacherName": "董继扬",
+      "courseName": "Course013",
+      "teacherName": "T014",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级森林草原资源保护2班",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG015",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -1964,13 +1964,13 @@
     },
     {
       "teachingTaskId": 168,
-      "courseName": "机械制图",
-      "teacherName": "赵春超",
+      "courseName": "Course001",
+      "teacherName": "T008",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -1994,13 +1994,13 @@
     },
     {
       "teachingTaskId": 171,
-      "courseName": "金属材料与热处理",
-      "teacherName": "王淼",
+      "courseName": "Course002",
+      "teacherName": "T009",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -2024,13 +2024,13 @@
     },
     {
       "teachingTaskId": 174,
-      "courseName": "机械制图",
-      "teacherName": "张红梅",
+      "courseName": "Course001",
+      "teacherName": "T012",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -2054,13 +2054,13 @@
     },
     {
       "teachingTaskId": 176,
-      "courseName": "电子技术",
-      "teacherName": "许进",
+      "courseName": "Course008",
+      "teacherName": "T010",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -2084,13 +2084,13 @@
     },
     {
       "teachingTaskId": 179,
-      "courseName": "电机与电气控制技术",
-      "teacherName": "李传鸿",
+      "courseName": "Course014",
+      "teacherName": "T015",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -2114,13 +2114,13 @@
     },
     {
       "teachingTaskId": 181,
-      "courseName": "传感器与检测技术",
-      "teacherName": "张旭",
+      "courseName": "Course009",
+      "teacherName": "T011",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级钢铁智能冶金技术（现场工程师）",
-        "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG003",
+        "CG001",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -2144,13 +2144,13 @@
     },
     {
       "teachingTaskId": 34,
-      "courseName": "中华优秀传统文化",
-      "teacherName": "杨秀芳",
+      "courseName": "Course006",
+      "teacherName": "T006",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级森林草原防火技术1班",
-        "2024级钢铁智能冶金技术1班（高本贯通）",
-        "2024级森林草原防火技术1班"
+        "CG002",
+        "CG006",
+        "CG004",
+        "CG007"
       ],
       "classGroupIds": [
         3,
@@ -2174,12 +2174,12 @@
     },
     {
       "teachingTaskId": 60,
-      "courseName": "传感器",
-      "teacherName": "张旭",
+      "courseName": "Course025",
+      "teacherName": "T011",
       "classGroupNames": [
-        "2025级机电一体化技术1班",
-        "2025级机电一体化技术2班",
-        "2024级机电一体化技术1班"
+        "CG010",
+        "CG011",
+        "CG018"
       ],
       "classGroupIds": [
         6,
@@ -2202,12 +2202,12 @@
     },
     {
       "teachingTaskId": 82,
-      "courseName": "传感器",
-      "teacherName": "张旭",
+      "courseName": "Course025",
+      "teacherName": "T011",
       "classGroupNames": [
-        "2025级机电一体化技术3班",
-        "2025级机电一体化技术4班",
-        "2024级机电一体化技术3班"
+        "CG012",
+        "CG013",
+        "CG019"
       ],
       "classGroupIds": [
         8,
@@ -2230,13 +2230,13 @@
     },
     {
       "teachingTaskId": 28,
-      "courseName": "形势与政策",
-      "teacherName": "胡浩",
+      "courseName": "Course003",
+      "teacherName": "T003",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级森林草原防火技术1班",
-        "2024级钢铁智能冶金技术1班（高本贯通）",
-        "2024级森林草原防火技术1班"
+        "CG002",
+        "CG006",
+        "CG004",
+        "CG007"
       ],
       "classGroupIds": [
         3,
@@ -2260,13 +2260,13 @@
     },
     {
       "teachingTaskId": 31,
-      "courseName": "创新创业教育",
-      "teacherName": "徐燕",
+      "courseName": "Course004",
+      "teacherName": "T004",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级森林草原防火技术1班",
-        "2024级钢铁智能冶金技术1班（高本贯通）",
-        "2024级森林草原防火技术1班"
+        "CG002",
+        "CG006",
+        "CG004",
+        "CG007"
       ],
       "classGroupIds": [
         3,
@@ -2290,13 +2290,13 @@
     },
     {
       "teachingTaskId": 32,
-      "courseName": "习近平新时代中国特色社会主义思想概论",
-      "teacherName": "房忠敏",
+      "courseName": "Course005",
+      "teacherName": "T005",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级森林草原防火技术1班",
-        "2024级钢铁智能冶金技术1班（高本贯通）",
-        "2024级森林草原防火技术1班"
+        "CG002",
+        "CG006",
+        "CG004",
+        "CG007"
       ],
       "classGroupIds": [
         3,
@@ -2320,12 +2320,12 @@
     },
     {
       "teachingTaskId": 37,
-      "courseName": "习近平新时代中国特色社会主义思想概论",
-      "teacherName": "房忠敏",
+      "courseName": "Course005",
+      "teacherName": "T005",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级森林草原防火技术1班",
-        "2024级森林草原防火技术1班"
+        "CG002",
+        "CG006",
+        "CG007"
       ],
       "classGroupIds": [
         3,
@@ -2348,12 +2348,12 @@
     },
     {
       "teachingTaskId": 165,
-      "courseName": "习近平新时代中国特色社会主义思想概论",
-      "teacherName": "房忠敏",
+      "courseName": "Course005",
+      "teacherName": "T005",
       "classGroupNames": [
-        "2025级钢铁智能冶金技术1班（高本贯通）",
-        "2025级森林草原防火技术1班",
-        "2024级钢铁智能冶金技术1班（高本贯通）"
+        "CG002",
+        "CG006",
+        "CG004"
       ],
       "classGroupIds": [
         3,
@@ -2384,7 +2384,7 @@
         "findMergedClassNames"
       ],
       "risk": "MEDIUM-HIGH",
-      "detail": "When resolving 合班 remarks, character-subsequence matching considers ALL class groups regardless of year. A keyword like \"森防\" matches both \"2024级森林草原防火技术1班\" and \"2025级森林草原防火技术1班\"."
+      "detail": "<REDACTED_TEXT>"
     },
     {
       "finding": "taskKey in prepareRecords omits remark field",
@@ -2404,7 +2404,7 @@
         "GET handler"
       ],
       "risk": "CONFIRMED BUG (display)",
-      "detail": "When filtering by class, the API correctly narrows ScheduleSlots but eagerly loads ALL taskClasses. Line 73 maps all taskClasses into classNames. This means even if DB data is correct, the card shows all 合班 classes."
+      "detail": "<REDACTED_TEXT>"
     }
   ],
   "hcImpactEstimate": {

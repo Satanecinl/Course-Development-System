@@ -5,9 +5,9 @@
   "task37": {
     "id": 37,
     "courseId": 10,
-    "courseName": "习近平新时代中国特色社会主义思想概论",
+    "courseName": "Course001",
     "teacherId": 16,
-    "teacherName": "房忠敏",
+    "teacherName": "T001",
     "semesterId": 1,
     "importBatchId": 1,
     "importBatchStatus": "confirmed",
@@ -45,19 +45,19 @@
       "id": 92,
       "teachingTaskId": 37,
       "classGroupId": 3,
-      "classGroupName": "2025级钢铁智能冶金技术1班（高本贯通）"
+      "classGroupName": "CG001"
     },
     {
       "id": 93,
       "teachingTaskId": 37,
       "classGroupId": 17,
-      "classGroupName": "2025级森林草原防火技术1班"
+      "classGroupName": "CG002"
     },
     {
       "id": 94,
       "teachingTaskId": 37,
       "classGroupId": 35,
-      "classGroupName": "2024级森林草原防火技术1班"
+      "classGroupName": "CG003"
     }
   ],
   "scheduleSlots": [
@@ -67,7 +67,7 @@
       "dayOfWeek": 1,
       "slotIndex": 5,
       "roomId": 18,
-      "roomName": "1号楼虚拟仿真实训室",
+      "roomName": "Room001",
       "roomCapacity": 100
     }
   ],

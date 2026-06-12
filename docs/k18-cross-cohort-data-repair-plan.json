@@ -14,9 +14,9 @@
     {
       "teachingTaskId": 168,
       "courseId": 2,
-      "courseName": "机械制图",
+      "courseName": "Course001",
       "teacherId": 23,
-      "teacherName": "赵春超",
+      "teacherName": "T001",
       "semesterId": 1,
       "importBatchId": 1,
       "importBatchStatus": "confirmed",
@@ -105,7 +105,7 @@
         19
       ],
       "proposedStudentCountAfterRepair": 38,
-      "expectedDisplayAfterRepair": "Task 168 displays only 2025-cohort classes; CG 22 removed from合班 list",
+      "expectedDisplayAfterRepair": "<REDACTED_TEXT>",
       "expectedExportAfterRepair": "Excel export for task 168 shows only 2025-cohort classes",
       "expectedSolverInputAfterRepair": "Solver input treats task 168 as 2025-cohort only; CG 22 not included in student count",
       "repairAction": {
@@ -153,9 +153,9 @@
     {
       "teachingTaskId": 174,
       "courseId": 2,
-      "courseName": "机械制图",
+      "courseName": "Course001",
       "teacherId": 31,
-      "teacherName": "张红梅",
+      "teacherName": "T002",
       "semesterId": 1,
       "importBatchId": 1,
       "importBatchStatus": "confirmed",
@@ -244,7 +244,7 @@
         19
       ],
       "proposedStudentCountAfterRepair": 38,
-      "expectedDisplayAfterRepair": "Task 174 displays only 2025-cohort classes; CG 22 removed from合班 list",
+      "expectedDisplayAfterRepair": "<REDACTED_TEXT>",
       "expectedExportAfterRepair": "Excel export for task 174 shows only 2025-cohort classes",
       "expectedSolverInputAfterRepair": "Solver input treats task 174 as 2025-cohort only; CG 22 not included in student count",
       "repairAction": {
@@ -292,9 +292,9 @@
     {
       "teachingTaskId": 176,
       "courseId": 19,
-      "courseName": "电子技术",
+      "courseName": "Course002",
       "teacherId": 28,
-      "teacherName": "许进",
+      "teacherName": "T003",
       "semesterId": 1,
       "importBatchId": 1,
       "importBatchStatus": "confirmed",
@@ -383,7 +383,7 @@
         19
       ],
       "proposedStudentCountAfterRepair": 38,
-      "expectedDisplayAfterRepair": "Task 176 displays only 2025-cohort classes; CG 22 removed from合班 list",
+      "expectedDisplayAfterRepair": "<REDACTED_TEXT>",
       "expectedExportAfterRepair": "Excel export for task 176 shows only 2025-cohort classes",
       "expectedSolverInputAfterRepair": "Solver input treats task 176 as 2025-cohort only; CG 22 not included in student count",
       "repairAction": {
@@ -431,9 +431,9 @@
     {
       "teachingTaskId": 181,
       "courseId": 23,
-      "courseName": "传感器与检测技术",
+      "courseName": "Course003",
       "teacherId": 30,
-      "teacherName": "张旭",
+      "teacherName": "T004",
       "semesterId": 1,
       "importBatchId": 1,
       "importBatchStatus": "confirmed",
@@ -522,7 +522,7 @@
         19
       ],
       "proposedStudentCountAfterRepair": 38,
-      "expectedDisplayAfterRepair": "Task 181 displays only 2025-cohort classes; CG 22 removed from合班 list",
+      "expectedDisplayAfterRepair": "<REDACTED_TEXT>",
       "expectedExportAfterRepair": "Excel export for task 181 shows only 2025-cohort classes",
       "expectedSolverInputAfterRepair": "Solver input treats task 181 as 2025-cohort only; CG 22 not included in student count",
       "repairAction": {
@@ -571,10 +571,10 @@
   "excludedTasks": [
     {
       "teachingTaskId": 37,
-      "courseName": "习近平新时代中国特色社会主义思想概论",
-      "teacherName": "房忠敏",
+      "courseName": "Course004",
+      "teacherName": "T005",
       "decision": "NEEDS_SOURCE_REVIEW",
-      "reason": "Public/ideology course (习近平新时代中国特色社会主义思想概论) — cross-cohort merge may be legitimate. Requires manual verification against original .docx before any repair action.",
+      "reason": "<REDACTED_TEXT>",
       "nextStep": "Human reviews original .docx to determine if 2024级森林草原防火技术1班 and 2025级森林草原防火技术1班 should attend this course together. If confirmed legitimate → ACCEPTED_CROSS_COHORT. If not → separate repair plan."
     }
   ],

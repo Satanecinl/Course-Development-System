@@ -68,21 +68,21 @@
           228
         ],
         "courseNames": [
-          "机械制图",
-          "机械设计基础"
+          "Course001",
+          "Course002"
         ],
         "teacherNames": [
-          "于耀淇",
-          "李媛"
+          "T001",
+          "T002"
         ],
         "classGroupNames": [
-          "2025级智能轧钢技术1班",
-          "2025级钢铁智能冶金技术1班（高本贯通）",
-          "2025级钢铁智能冶金技术（现场工程师）",
-          "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-          "2024级钢铁智能冶金技术1班（高本贯通）",
-          "2024级机电一体化技术1班",
-          "2024级机电一体化技术2班"
+          "CG001",
+          "CG002",
+          "CG003",
+          "CG001",
+          "CG004",
+          "CG005",
+          "CG006"
         ]
       },
       {
@@ -109,21 +109,21 @@
           253
         ],
         "courseNames": [
-          "机械制图",
-          "美育"
+          "Course001",
+          "Course003"
         ],
         "teacherNames": [
-          "于耀淇",
-          "李恩翠"
+          "T001",
+          "T003"
         ],
         "classGroupNames": [
-          "2025级智能轧钢技术1班",
-          "2025级钢铁智能冶金技术1班（高本贯通）",
-          "2025级钢铁智能冶金技术（现场工程师）",
-          "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-          "2024级钢铁智能冶金技术1班（高本贯通）",
-          "2024级汽车制造与试验技术1班",
-          "2024级汽车制造与试验技术2班"
+          "CG001",
+          "CG002",
+          "CG003",
+          "CG001",
+          "CG004",
+          "CG007",
+          "CG008"
         ]
       },
       {
@@ -150,21 +150,21 @@
           228
         ],
         "courseNames": [
-          "金属材料与热处理",
-          "机械设计基础"
+          "Course004",
+          "Course002"
         ],
         "teacherNames": [
-          "尹和鑫",
-          "李媛"
+          "T004",
+          "T002"
         ],
         "classGroupNames": [
-          "2025级智能轧钢技术1班",
-          "2025级钢铁智能冶金技术1班（高本贯通）",
-          "2025级钢铁智能冶金技术（现场工程师）",
-          "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-          "2024级钢铁智能冶金技术1班（高本贯通）",
-          "2024级机电一体化技术1班",
-          "2024级机电一体化技术2班"
+          "CG001",
+          "CG002",
+          "CG003",
+          "CG001",
+          "CG004",
+          "CG005",
+          "CG006"
         ]
       },
       {
@@ -191,21 +191,21 @@
           253
         ],
         "courseNames": [
-          "金属材料与热处理",
-          "美育"
+          "Course004",
+          "Course003"
         ],
         "teacherNames": [
-          "尹和鑫",
-          "李恩翠"
+          "T004",
+          "T003"
         ],
         "classGroupNames": [
-          "2025级智能轧钢技术1班",
-          "2025级钢铁智能冶金技术1班（高本贯通）",
-          "2025级钢铁智能冶金技术（现场工程师）",
-          "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-          "2024级钢铁智能冶金技术1班（高本贯通）",
-          "2024级汽车制造与试验技术1班",
-          "2024级汽车制造与试验技术2班"
+          "CG001",
+          "CG002",
+          "CG003",
+          "CG001",
+          "CG004",
+          "CG007",
+          "CG008"
         ]
       },
       {
@@ -240,18 +240,18 @@
           253
         ],
         "courseNames": [
-          "机械设计基础",
-          "美育"
+          "Course002",
+          "Course003"
         ],
         "teacherNames": [
-          "李媛",
-          "李恩翠"
+          "T002",
+          "T003"
         ],
         "classGroupNames": [
-          "2024级机电一体化技术1班",
-          "2024级机电一体化技术2班",
-          "2024级汽车制造与试验技术1班",
-          "2024级汽车制造与试验技术2班"
+          "CG005",
+          "CG006",
+          "CG007",
+          "CG008"
         ]
       },
       {
@@ -278,19 +278,19 @@
           190
         ],
         "courseNames": [
-          "大学英语",
-          "大学生职业发展与就业指导"
+          "Course005",
+          "Course006"
         ],
         "teacherNames": [
-          "王琳",
-          "孙文哲"
+          "T005",
+          "T006"
         ],
         "classGroupNames": [
-          "2025级智能轧钢技术1班",
-          "2025级智能轧钢技术2班",
-          "2024级智能轧钢技术1班",
-          "2024级智能轧钢技术2班",
-          "2024级机电一体化技术1班"
+          "CG001",
+          "CG009",
+          "CG010",
+          "CG011",
+          "CG005"
         ]
       },
       {
@@ -313,21 +313,21 @@
           131
         ],
         "courseNames": [
-          "金属材料与热处理",
-          "创新创业教育"
+          "Course004",
+          "Course007"
         ],
         "teacherNames": [
-          "尹和鑫",
-          "王素燕"
+          "T004",
+          "T007"
         ],
         "classGroupNames": [
-          "2025级智能轧钢技术2班",
-          "2025级钢铁智能冶金技术1班（高本贯通）",
-          "2025级钢铁智能冶金技术（现场工程师）",
-          "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-          "2024级钢铁智能冶金技术1班（高本贯通）",
-          "2025级林业技术1班",
-          "2025级林业技术2班"
+          "CG009",
+          "CG002",
+          "CG003",
+          "CG001",
+          "CG004",
+          "CG012",
+          "CG013"
         ]
       },
       {
@@ -350,21 +350,21 @@
           80
         ],
         "courseNames": [
-          "机械制图",
-          "形势与政策"
+          "Course001",
+          "Course008"
         ],
         "teacherNames": [
-          "赵春超",
-          "胡浩"
+          "T008",
+          "T009"
         ],
         "classGroupNames": [
-          "2025级钢铁智能冶金技术1班（高本贯通）",
-          "2025级钢铁智能冶金技术2班",
-          "2025级钢铁智能冶金技术（现场工程师）",
-          "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-          "2024级钢铁智能冶金技术1班（高本贯通）",
-          "2025级机电一体化技术3班",
-          "2025级机电一体化技术4班"
+          "CG002",
+          "CG014",
+          "CG003",
+          "CG001",
+          "CG004",
+          "CG015",
+          "CG016"
         ]
       },
       {
@@ -387,26 +387,26 @@
           80
         ],
         "courseNames": [
-          "机械制图",
-          "形势与政策"
+          "Course001",
+          "Course008"
         ],
         "teacherNames": [
-          "赵春超",
-          "胡浩"
+          "T008",
+          "T009"
         ],
         "classGroupNames": [
-          "2025级钢铁智能冶金技术1班（高本贯通）",
-          "2025级钢铁智能冶金技术3班",
-          "2025级钢铁智能冶金技术（现场工程师）",
-          "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-          "2024级钢铁智能冶金技术1班（高本贯通）",
-          "2025级机电一体化技术3班",
-          "2025级机电一体化技术4班"
+          "CG002",
+          "CG017",
+          "CG003",
+          "CG001",
+          "CG004",
+          "CG015",
+          "CG016"
         ]
       },
       {
         "roomId": 18,
-        "roomName": "1号楼虚拟仿真实训室",
+        "roomName": "Room001",
         "dayOfWeek": 4,
         "slotIndex": 6,
         "overlapWeeks": [
@@ -436,18 +436,18 @@
           280
         ],
         "courseNames": [
-          "习近平新时代中国特色社会主义思想概论",
-          "经济林栽培"
+          "Course009",
+          "Course010"
         ],
         "teacherNames": [
-          "牛怡亭",
-          "刘娜"
+          "T010",
+          "T011"
         ],
         "classGroupNames": [
-          "2025级机电一体化技术1班",
-          "2025级机电一体化技术2班",
-          "2024级林业技术1班",
-          "2024级林业技术2班"
+          "CG018",
+          "CG019",
+          "CG020",
+          "CG021"
         ]
       },
       {
@@ -474,23 +474,23 @@
           254
         ],
         "courseNames": [
-          "形势与政策",
-          "汽车营销（非学徒制）"
+          "Course008",
+          "Course011"
         ],
         "teacherNames": [
-          "董钇含",
-          "刘艳艳"
+          "T012",
+          "T013"
         ],
         "classGroupNames": [
-          "2025级机电一体化技术1班",
-          "2025级机电一体化技术2班",
-          "2024级汽车制造与试验技术1班",
-          "2024级汽车制造与试验技术2班"
+          "CG018",
+          "CG019",
+          "CG007",
+          "CG008"
         ]
       },
       {
         "roomId": 40,
-        "roomName": "11-208 或 12-201",
+        "roomName": "Room002",
         "dayOfWeek": 1,
         "slotIndex": 1,
         "overlapWeeks": [
@@ -520,16 +520,16 @@
           276
         ],
         "courseNames": [
-          "PLC技术与应用",
-          "林业法规与执法实务"
+          "Course012",
+          "Course013"
         ],
         "teacherNames": [
-          "许进",
-          "徐厚朴"
+          "T014",
+          "T015"
         ],
         "classGroupNames": [
-          "2025级机电一体化技术4班",
-          "2024级林业技术1班"
+          "CG016",
+          "CG020"
         ]
       },
       {
@@ -556,21 +556,21 @@
           143
         ],
         "courseNames": [
-          "传感器与检测技术",
-          "林草培育"
+          "Course014",
+          "Course015"
         ],
         "teacherNames": [
-          "张旭",
-          "刘艳"
+          "T016",
+          "T017"
         ],
         "classGroupNames": [
-          "2025级钢铁智能冶金技术1班（高本贯通）",
-          "2025级机电一体化技术4班",
-          "2025级钢铁智能冶金技术（现场工程师）",
-          "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-          "2024级钢铁智能冶金技术1班（高本贯通）",
-          "2025级森林草原资源保护1班",
-          "2025级森林草原资源保护2班"
+          "CG002",
+          "CG016",
+          "CG003",
+          "CG001",
+          "CG004",
+          "CG022",
+          "CG023"
         ]
       },
       {
@@ -597,22 +597,22 @@
           288
         ],
         "courseNames": [
-          "传感器与检测技术",
-          "美育"
+          "Course014",
+          "Course003"
         ],
         "teacherNames": [
-          "张旭",
-          "张显慧"
+          "T016",
+          "T018"
         ],
         "classGroupNames": [
-          "2025级钢铁智能冶金技术1班（高本贯通）",
-          "2025级机电一体化技术4班",
-          "2025级钢铁智能冶金技术（现场工程师）",
-          "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-          "2024级钢铁智能冶金技术1班（高本贯通）",
-          "2024级森林草原资源保护1班",
-          "2024级森林草原资源保护2班",
-          "2024级森林草原防火技术1班"
+          "CG002",
+          "CG016",
+          "CG003",
+          "CG001",
+          "CG004",
+          "CG024",
+          "CG025",
+          "CG026"
         ]
       },
       {
@@ -647,19 +647,19 @@
           288
         ],
         "courseNames": [
-          "林草培育",
-          "美育"
+          "Course015",
+          "Course003"
         ],
         "teacherNames": [
-          "刘艳",
-          "张显慧"
+          "T017",
+          "T018"
         ],
         "classGroupNames": [
-          "2025级森林草原资源保护1班",
-          "2025级森林草原资源保护2班",
-          "2024级森林草原资源保护1班",
-          "2024级森林草原资源保护2班",
-          "2024级森林草原防火技术1班"
+          "CG022",
+          "CG023",
+          "CG024",
+          "CG025",
+          "CG026"
         ]
       },
       {
@@ -694,16 +694,16 @@
           207
         ],
         "courseNames": [
-          "林草环境",
-          "机械设计基础"
+          "Course016",
+          "Course002"
         ],
         "teacherNames": [
-          "刘闯",
-          "于耀淇"
+          "T019",
+          "T001"
         ],
         "classGroupNames": [
-          "2025级森林草原资源保护1班",
-          "2024级钢铁智能冶金技术1班（高本贯通）"
+          "CG022",
+          "CG004"
         ]
       },
       {
@@ -738,23 +738,23 @@
           262
         ],
         "courseNames": [
-          "机电技能实训",
-          "数据库应用技术"
+          "Course017",
+          "Course018"
         ],
         "teacherNames": [
-          "杨志强",
-          "孙伟伟"
+          "T020",
+          "T021"
         ],
         "classGroupNames": [
-          "2024级机电一体化技术2班",
-          "2024级汽车制造与试验技术五年制"
+          "CG006",
+          "CG027"
         ]
       }
     ],
     "HC2": [
       {
         "teacherId": 3,
-        "teacherName": "尹和鑫",
+        "teacherName": "T004",
         "dayOfWeek": 3,
         "slotIndex": 6,
         "overlapWeeks": [
@@ -772,25 +772,25 @@
           275
         ],
         "courseNames": [
-          "金属材料与热处理",
-          "金属性能检测"
+          "Course004",
+          "Course019"
         ],
         "classGroupNames": [
-          "2025级智能轧钢技术1班",
-          "2025级钢铁智能冶金技术1班（高本贯通）",
-          "2025级钢铁智能冶金技术（现场工程师）",
-          "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-          "2024级钢铁智能冶金技术1班（高本贯通）",
-          "2024级钢铁智能冶金技术1班（高本贯通）"
+          "CG001",
+          "CG002",
+          "CG003",
+          "CG001",
+          "CG004",
+          "CG004"
         ],
         "roomNames": [
           "11-239",
-          "11-204 或 11-105"
+          "Room003"
         ]
       },
       {
         "teacherId": 24,
-        "teacherName": "王淼",
+        "teacherName": "T022",
         "dayOfWeek": 1,
         "slotIndex": 2,
         "overlapWeeks": [
@@ -808,18 +808,18 @@
           236
         ],
         "courseNames": [
-          "金属材料与热处理",
-          "炼铁技术"
+          "Course004",
+          "Course020"
         ],
         "classGroupNames": [
-          "2025级钢铁智能冶金技术1班（高本贯通）",
-          "2025级钢铁智能冶金技术2班",
-          "2025级钢铁智能冶金技术3班",
-          "2025级钢铁智能冶金技术（现场工程师）",
-          "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-          "2024级钢铁智能冶金技术1班（高本贯通）",
-          "2024级智能轧钢技术1班",
-          "2024级智能轧钢技术2班"
+          "CG002",
+          "CG014",
+          "CG017",
+          "CG003",
+          "CG001",
+          "CG004",
+          "CG010",
+          "CG011"
         ],
         "roomNames": [
           "1-142",
@@ -828,7 +828,7 @@
       },
       {
         "teacherId": 31,
-        "teacherName": "张红梅",
+        "teacherName": "T023",
         "dayOfWeek": 6,
         "slotIndex": 5,
         "overlapWeeks": [
@@ -846,16 +846,16 @@
           141
         ],
         "courseNames": [
-          "机械制图",
-          "机械制图"
+          "Course001",
+          "Course001"
         ],
         "classGroupNames": [
-          "2025级钢铁智能冶金技术1班（高本贯通）",
-          "2025级机电一体化技术2班",
-          "2025级钢铁智能冶金技术（现场工程师）",
-          "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-          "2024级钢铁智能冶金技术1班（高本贯通）",
-          "2025级汽车制造与试验技术2班"
+          "CG002",
+          "CG019",
+          "CG003",
+          "CG001",
+          "CG004",
+          "CG028"
         ],
         "roomNames": [
           "1-142",
@@ -864,7 +864,7 @@
       },
       {
         "teacherId": 43,
-        "teacherName": "刘艳艳",
+        "teacherName": "T013",
         "dayOfWeek": 1,
         "slotIndex": 5,
         "overlapWeeks": [
@@ -890,21 +890,21 @@
           150
         ],
         "courseNames": [
-          "智能网联汽车概论",
-          "智能网联汽车概论"
+          "Course021",
+          "Course021"
         ],
         "classGroupNames": [
-          "2025级智能网联汽车技术",
-          "2025级智能网联汽车技术"
+          "CG029",
+          "CG029"
         ],
         "roomNames": [
           "10-321",
-          "林校\n305"
+          "Room004"
         ]
       },
       {
         "teacherId": 5,
-        "teacherName": "李媛",
+        "teacherName": "T002",
         "dayOfWeek": 2,
         "slotIndex": 5,
         "overlapWeeks": [
@@ -930,25 +930,25 @@
           307
         ],
         "courseNames": [
-          "液压与气压传动",
-          "机械设计基础"
+          "Course022",
+          "Course002"
         ],
         "classGroupNames": [
-          "2024级智能轧钢技术1班",
-          "2024级智能轧钢技术2班",
-          "2024级机电一体化技术1班",
-          "2024级机电一体化技术2班"
+          "CG010",
+          "CG011",
+          "CG005",
+          "CG006"
         ],
         "roomNames": [
-          "林校301",
-          "1号楼虚拟仿真实训室"
+          "Room005",
+          "Room001"
         ]
       }
     ],
     "HC3": [
       {
         "classGroupId": 1,
-        "classGroupName": "2025级智能轧钢技术1班",
+        "classGroupName": "CG001",
         "dayOfWeek": 3,
         "slotIndex": 6,
         "overlapWeeks": [
@@ -966,21 +966,21 @@
           11
         ],
         "courseNames": [
-          "无机化学",
-          "机械制图"
+          "Course023",
+          "Course001"
         ],
         "teacherNames": [
-          "丹婷婷",
-          "于耀淇"
+          "T024",
+          "T001"
         ],
         "roomNames": [
-          "11-333 或 11-105",
+          "Room006",
           "11-239"
         ]
       },
       {
         "classGroupId": 1,
-        "classGroupName": "2025级智能轧钢技术1班",
+        "classGroupName": "CG001",
         "dayOfWeek": 3,
         "slotIndex": 6,
         "overlapWeeks": [
@@ -998,21 +998,21 @@
           14
         ],
         "courseNames": [
-          "无机化学",
-          "金属材料与热处理"
+          "Course023",
+          "Course004"
         ],
         "teacherNames": [
-          "丹婷婷",
-          "尹和鑫"
+          "T024",
+          "T004"
         ],
         "roomNames": [
-          "11-333 或 11-105",
+          "Room006",
           "11-239"
         ]
       },
       {
         "classGroupId": 22,
-        "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
+        "classGroupName": "CG004",
         "dayOfWeek": 3,
         "slotIndex": 6,
         "overlapWeeks": [
@@ -1030,21 +1030,21 @@
           275
         ],
         "courseNames": [
-          "机械制图",
-          "金属性能检测"
+          "Course001",
+          "Course019"
         ],
         "teacherNames": [
-          "于耀淇",
-          "尹和鑫"
+          "T001",
+          "T004"
         ],
         "roomNames": [
           "11-239",
-          "11-204 或 11-105"
+          "Room003"
         ]
       },
       {
         "classGroupId": 22,
-        "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
+        "classGroupName": "CG004",
         "dayOfWeek": 3,
         "slotIndex": 6,
         "overlapWeeks": [
@@ -1062,21 +1062,21 @@
           275
         ],
         "courseNames": [
-          "金属材料与热处理",
-          "金属性能检测"
+          "Course004",
+          "Course019"
         ],
         "teacherNames": [
-          "尹和鑫",
-          "尹和鑫"
+          "T004",
+          "T004"
         ],
         "roomNames": [
           "11-239",
-          "11-204 或 11-105"
+          "Room003"
         ]
       },
       {
         "classGroupId": 2,
-        "classGroupName": "2025级智能轧钢技术2班",
+        "classGroupName": "CG009",
         "dayOfWeek": 6,
         "slotIndex": 3,
         "overlapWeeks": [
@@ -1094,21 +1094,21 @@
           27
         ],
         "courseNames": [
-          "机械制图",
-          "电工电子技术"
+          "Course001",
+          "Course024"
         ],
         "teacherNames": [
-          "于耀淇",
-          "宋如武"
+          "T001",
+          "T025"
         ],
         "roomNames": [
-          "1号楼虚拟仿真实训室",
+          "Room001",
           "10-410"
         ]
       },
       {
         "classGroupId": 3,
-        "classGroupName": "2025级钢铁智能冶金技术1班（高本贯通）",
+        "classGroupName": "CG002",
         "dayOfWeek": 3,
         "slotIndex": 4,
         "overlapWeeks": [
@@ -1134,21 +1134,21 @@
           33
         ],
         "courseNames": [
-          "机械制图",
-          "大学英语"
+          "Course001",
+          "Course005"
         ],
         "teacherNames": [
-          "于耀淇",
-          "袁景丽"
+          "T001",
+          "T026"
         ],
         "roomNames": [
-          "林校301",
-          "12号楼机器人实训室"
+          "Room005",
+          "Room007"
         ]
       },
       {
         "classGroupId": 22,
-        "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
+        "classGroupName": "CG004",
         "dayOfWeek": 6,
         "slotIndex": 4,
         "overlapWeeks": [
@@ -1166,12 +1166,12 @@
           278
         ],
         "courseNames": [
-          "创新创业教育",
-          "机械设计基础"
+          "Course007",
+          "Course002"
         ],
         "teacherNames": [
-          "徐燕",
-          "于耀淇"
+          "T027",
+          "T001"
         ],
         "roomNames": [
           "1-142",
@@ -1180,7 +1180,7 @@
       },
       {
         "classGroupId": 3,
-        "classGroupName": "2025级钢铁智能冶金技术1班（高本贯通）",
+        "classGroupName": "CG002",
         "dayOfWeek": 6,
         "slotIndex": 5,
         "overlapWeeks": [
@@ -1198,12 +1198,12 @@
           88
         ],
         "courseNames": [
-          "大学英语",
-          "机械制图"
+          "Course005",
+          "Course001"
         ],
         "teacherNames": [
-          "袁景丽",
-          "张红梅"
+          "T026",
+          "T023"
         ],
         "roomNames": [
           "11-307",
@@ -1212,7 +1212,7 @@
       },
       {
         "classGroupId": 22,
-        "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
+        "classGroupName": "CG004",
         "dayOfWeek": 1,
         "slotIndex": 6,
         "overlapWeeks": [
@@ -1238,12 +1238,12 @@
           261
         ],
         "courseNames": [
-          "中华优秀传统文化",
-          "冶金热工基础"
+          "Course025",
+          "Course026"
         ],
         "teacherNames": [
-          "杨秀芳",
-          "赵春超"
+          "T028",
+          "T008"
         ],
         "roomNames": [
           "1-142",
@@ -1252,7 +1252,7 @@
       },
       {
         "classGroupId": 3,
-        "classGroupName": "2025级钢铁智能冶金技术1班（高本贯通）",
+        "classGroupName": "CG002",
         "dayOfWeek": 5,
         "slotIndex": 5,
         "overlapWeeks": [
@@ -1270,12 +1270,12 @@
           103
         ],
         "courseNames": [
-          "线性代数",
-          "）机械制图"
+          "Course027",
+          "Course028"
         ],
         "teacherNames": [
-          "李媛",
-          "张红梅"
+          "T002",
+          "T023"
         ],
         "roomNames": [
           "10-321",
@@ -1284,7 +1284,7 @@
       },
       {
         "classGroupId": 3,
-        "classGroupName": "2025级钢铁智能冶金技术1班（高本贯通）",
+        "classGroupName": "CG002",
         "dayOfWeek": 7,
         "slotIndex": 6,
         "overlapWeeks": [
@@ -1302,12 +1302,12 @@
           44
         ],
         "courseNames": [
-          "习近平新时代中国特色社会主义思想概论",
-          "高等数学"
+          "Course009",
+          "Course029"
         ],
         "teacherNames": [
-          "房忠敏",
-          "李媛"
+          "T029",
+          "T002"
         ],
         "roomNames": [
           "11-239",
@@ -1316,7 +1316,7 @@
       },
       {
         "classGroupId": 6,
-        "classGroupName": "2025级机电一体化技术1班",
+        "classGroupName": "CG018",
         "dayOfWeek": 3,
         "slotIndex": 4,
         "overlapWeeks": [
@@ -1334,12 +1334,12 @@
           73
         ],
         "courseNames": [
-          "创新创业教育",
-          "形势与政策"
+          "Course007",
+          "Course008"
         ],
         "teacherNames": [
-          "孙文哲",
-          "董钇含"
+          "T006",
+          "T012"
         ],
         "roomNames": [
           "11-239",
@@ -1348,7 +1348,7 @@
       },
       {
         "classGroupId": 7,
-        "classGroupName": "2025级机电一体化技术2班",
+        "classGroupName": "CG019",
         "dayOfWeek": 3,
         "slotIndex": 4,
         "overlapWeeks": [
@@ -1366,12 +1366,12 @@
           73
         ],
         "courseNames": [
-          "创新创业教育",
-          "形势与政策"
+          "Course007",
+          "Course008"
         ],
         "teacherNames": [
-          "孙文哲",
-          "董钇含"
+          "T006",
+          "T012"
         ],
         "roomNames": [
           "11-239",
@@ -1380,7 +1380,7 @@
       },
       {
         "classGroupId": 22,
-        "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
+        "classGroupName": "CG004",
         "dayOfWeek": 2,
         "slotIndex": 6,
         "overlapWeeks": [
@@ -1398,21 +1398,21 @@
           268
         ],
         "courseNames": [
-          "机械制图",
-          "机械设计基础"
+          "Course001",
+          "Course002"
         ],
         "teacherNames": [
-          "张红梅",
-          "于耀淇"
+          "T023",
+          "T001"
         ],
         "roomNames": [
           "1-142",
-          "林校\n305"
+          "Room004"
         ]
       },
       {
         "classGroupId": 22,
-        "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
+        "classGroupName": "CG004",
         "dayOfWeek": 6,
         "slotIndex": 5,
         "overlapWeeks": [
@@ -1430,21 +1430,21 @@
           257
         ],
         "courseNames": [
-          "机械制图",
-          "大学日语"
+          "Course001",
+          "Course030"
         ],
         "teacherNames": [
-          "张红梅",
-          "葛书"
+          "T023",
+          "T030"
         ],
         "roomNames": [
           "1-142",
-          "林校\n303"
+          "Room008"
         ]
       },
       {
         "classGroupId": 12,
-        "classGroupName": "2025级智能网联汽车技术",
+        "classGroupName": "CG029",
         "dayOfWeek": 1,
         "slotIndex": 5,
         "overlapWeeks": [
@@ -1470,21 +1470,21 @@
           150
         ],
         "courseNames": [
-          "智能网联汽车概论",
-          "智能网联汽车概论"
+          "Course021",
+          "Course021"
         ],
         "teacherNames": [
-          "刘艳艳",
-          "刘艳艳"
+          "T013",
+          "T013"
         ],
         "roomNames": [
           "10-321",
-          "林校\n305"
+          "Room004"
         ]
       },
       {
         "classGroupId": 13,
-        "classGroupName": "2025级林业技术1班",
+        "classGroupName": "CG012",
         "dayOfWeek": 2,
         "slotIndex": 2,
         "overlapWeeks": [
@@ -1502,12 +1502,12 @@
           164
         ],
         "courseNames": [
-          "森林植物（二）",
-          "创新创业教育"
+          "Course031",
+          "Course007"
         ],
         "teacherNames": [
-          "刘娜",
-          "王素燕"
+          "T011",
+          "T007"
         ],
         "roomNames": [
           "10-124",
@@ -1516,7 +1516,7 @@
       },
       {
         "classGroupId": 15,
-        "classGroupName": "2025级森林草原资源保护1班",
+        "classGroupName": "CG022",
         "dayOfWeek": 6,
         "slotIndex": 4,
         "overlapWeeks": [
@@ -1542,12 +1542,12 @@
           187
         ],
         "courseNames": [
-          "林草环境",
-          "大学英语"
+          "Course016",
+          "Course005"
         ],
         "teacherNames": [
-          "刘闯",
-          "刘明哲"
+          "T019",
+          "T031"
         ],
         "roomNames": [
           "1-133",
@@ -1556,7 +1556,7 @@
       },
       {
         "classGroupId": 16,
-        "classGroupName": "2025级森林草原资源保护2班",
+        "classGroupName": "CG023",
         "dayOfWeek": 5,
         "slotIndex": 3,
         "overlapWeeks": [
@@ -1574,12 +1574,12 @@
           202
         ],
         "courseNames": [
-          "林草培育",
-          "无人机应用技术"
+          "Course015",
+          "Course032"
         ],
         "teacherNames": [
-          "刘艳",
-          "董继扬"
+          "T017",
+          "T032"
         ],
         "roomNames": [
           "11-239",
@@ -1588,7 +1588,7 @@
       },
       {
         "classGroupId": 22,
-        "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
+        "classGroupName": "CG004",
         "dayOfWeek": 5,
         "slotIndex": 3,
         "overlapWeeks": [
@@ -1606,12 +1606,12 @@
           259
         ],
         "courseNames": [
-          "无人机应用技术",
-          "冶金传输原理"
+          "Course032",
+          "Course033"
         ],
         "teacherNames": [
-          "董继扬",
-          "尹和鑫"
+          "T032",
+          "T004"
         ],
         "roomNames": [
           "1-142",
@@ -1620,7 +1620,7 @@
       },
       {
         "classGroupId": 22,
-        "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
+        "classGroupName": "CG004",
         "dayOfWeek": 7,
         "slotIndex": 5,
         "overlapWeeks": [
@@ -1638,21 +1638,21 @@
           272
         ],
         "courseNames": [
-          "习近平新时代中国特色社会主义思想概论",
-          "冶金热工基础"
+          "Course009",
+          "Course026"
         ],
         "teacherNames": [
-          "房忠敏",
-          "赵春超"
+          "T029",
+          "T008"
         ],
         "roomNames": [
           "1-142",
-          "11-333 或 11-105"
+          "Room006"
         ]
       },
       {
         "classGroupId": 22,
-        "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
+        "classGroupName": "CG004",
         "dayOfWeek": 1,
         "slotIndex": 5,
         "overlapWeeks": [
@@ -1678,21 +1678,21 @@
           277
         ],
         "courseNames": [
-          "材料科学基础",
-          "大学日语"
+          "Course034",
+          "Course030"
         ],
         "teacherNames": [
-          "于耀淇",
-          "葛书"
+          "T001",
+          "T030"
         ],
         "roomNames": [
-          "12楼机房",
-          "林校\n303"
+          "Room009",
+          "Room008"
         ]
       },
       {
         "classGroupId": 22,
-        "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
+        "classGroupName": "CG004",
         "dayOfWeek": 3,
         "slotIndex": 4,
         "overlapWeeks": [
@@ -1718,21 +1718,21 @@
           273
         ],
         "courseNames": [
-          "大学日语",
-          "冶金传输原理"
+          "Course030",
+          "Course033"
         ],
         "teacherNames": [
-          "葛书",
-          "尹和鑫"
+          "T030",
+          "T004"
         ],
         "roomNames": [
           "11-212",
-          "11-208 或 10-104"
+          "Room010"
         ]
       },
       {
         "classGroupId": 26,
-        "classGroupName": "2024级机电一体化技术2班",
+        "classGroupName": "CG006",
         "dayOfWeek": 2,
         "slotIndex": 6,
         "overlapWeeks": [
@@ -1758,21 +1758,21 @@
           326
         ],
         "courseNames": [
-          "液压与气压传动",
-          "机电设备故障诊断与维修"
+          "Course022",
+          "Course035"
         ],
         "teacherNames": [
-          "李媛",
-          "任城龙"
+          "T002",
+          "T033"
         ],
         "roomNames": [
-          "1号楼虚拟仿真实训室",
-          "11-333 或 11-105"
+          "Room001",
+          "Room006"
         ]
       },
       {
         "classGroupId": 26,
-        "classGroupName": "2024级机电一体化技术2班",
+        "classGroupName": "CG006",
         "dayOfWeek": 7,
         "slotIndex": 4,
         "overlapWeeks": [
@@ -1790,21 +1790,21 @@
           325
         ],
         "courseNames": [
-          "大学生职业发展与就业指导",
-          "美育"
+          "Course006",
+          "Course003"
         ],
         "teacherNames": [
-          "孙文哲",
-          "苏英周"
+          "T006",
+          "T034"
         ],
         "roomNames": [
-          "1号楼虚拟仿真实训室",
+          "Room001",
           "11-239"
         ]
       },
       {
         "classGroupId": 27,
-        "classGroupName": "2024级机电一体化技术3班",
+        "classGroupName": "CG030",
         "dayOfWeek": 7,
         "slotIndex": 4,
         "overlapWeeks": [
@@ -1822,21 +1822,21 @@
           325
         ],
         "courseNames": [
-          "大学生职业发展与就业指导",
-          "美育"
+          "Course006",
+          "Course003"
         ],
         "teacherNames": [
-          "孙文哲",
-          "苏英周"
+          "T006",
+          "T034"
         ],
         "roomNames": [
-          "1号楼虚拟仿真实训室",
+          "Room001",
           "11-239"
         ]
       },
       {
         "classGroupId": 34,
-        "classGroupName": "2024级森林草原资源保护2班",
+        "classGroupName": "CG025",
         "dayOfWeek": 4,
         "slotIndex": 3,
         "overlapWeeks": [
@@ -1862,15 +1862,15 @@
           428
         ],
         "courseNames": [
-          "经济林栽培",
-          "林业有害生物控制技术"
+          "Course010",
+          "Course036"
         ],
         "teacherNames": [
-          "刘娜",
-          "许哲"
+          "T011",
+          "T035"
         ],
         "roomNames": [
-          "1号楼虚拟仿真实训室",
+          "Room001",
           "11-321"
         ]
       }
@@ -1879,7 +1879,7 @@
       {
         "slotId": 105,
         "teachingTaskId": 90,
-        "courseName": "习近平新时代中国特色社会主义思想概论",
+        "courseName": "Course009",
         "roomId": 8,
         "roomName": "11-529",
         "roomCapacity": 50,
@@ -1887,10 +1887,10 @@
         "shortage": 18,
         "overloadRatio": 1.36,
         "classGroupNames": [
-          "2025级机电一体化技术3班",
-          "2025级机电一体化技术4班"
+          "CG015",
+          "CG016"
         ],
-        "teacherName": "张帆",
+        "teacherName": "T036",
         "dayOfWeek": 5,
         "slotIndex": 2,
         "weekType": "FIRST_HALF",
@@ -1900,19 +1900,19 @@
       {
         "slotId": 118,
         "teachingTaskId": 100,
-        "courseName": "大学英语",
+        "courseName": "Course005",
         "roomId": 21,
-        "roomName": "林校\n305",
+        "roomName": "Room004",
         "roomCapacity": 50,
         "requiredStudents": 83,
         "shortage": 33,
         "overloadRatio": 1.66,
         "classGroupNames": [
-          "2025级汽车制造与试验技术1班",
-          "2025级汽车制造与试验技术2班",
-          "2025级智能网联汽车技术"
+          "CG031",
+          "CG028",
+          "CG029"
         ],
-        "teacherName": "赵新宇",
+        "teacherName": "T037",
         "dayOfWeek": 1,
         "slotIndex": 1,
         "weekType": "ALL",
@@ -1922,7 +1922,7 @@
       {
         "slotId": 159,
         "teachingTaskId": 128,
-        "courseName": "大学英语",
+        "courseName": "Course005",
         "roomId": 9,
         "roomName": "10-316",
         "roomCapacity": 50,
@@ -1930,10 +1930,10 @@
         "shortage": 2,
         "overloadRatio": 1.04,
         "classGroupNames": [
-          "2025级林业技术1班",
-          "2025级林业技术2班"
+          "CG012",
+          "CG013"
         ],
-        "teacherName": "王楠",
+        "teacherName": "T038",
         "dayOfWeek": 2,
         "slotIndex": 4,
         "weekType": "ALL",
@@ -1943,7 +1943,7 @@
       {
         "slotId": 163,
         "teachingTaskId": 130,
-        "courseName": "习近平新时代中国特色社会主义思想概论",
+        "courseName": "Course009",
         "roomId": 8,
         "roomName": "11-529",
         "roomCapacity": 50,
@@ -1951,10 +1951,10 @@
         "shortage": 2,
         "overloadRatio": 1.04,
         "classGroupNames": [
-          "2025级林业技术1班",
-          "2025级林业技术2班"
+          "CG012",
+          "CG013"
         ],
-        "teacherName": "张帆",
+        "teacherName": "T036",
         "dayOfWeek": 4,
         "slotIndex": 3,
         "weekType": "FIRST_HALF",
@@ -1964,7 +1964,7 @@
       {
         "slotId": 239,
         "teachingTaskId": 186,
-        "courseName": "美育",
+        "courseName": "Course003",
         "roomId": 8,
         "roomName": "11-529",
         "roomCapacity": 50,
@@ -1972,11 +1972,11 @@
         "shortage": 25,
         "overloadRatio": 1.5,
         "classGroupNames": [
-          "2024级智能轧钢技术1班",
-          "2024级智能轧钢技术2班",
-          "2024级机电一体化技术1班"
+          "CG010",
+          "CG011",
+          "CG005"
         ],
-        "teacherName": "苏英周",
+        "teacherName": "T034",
         "dayOfWeek": 2,
         "slotIndex": 2,
         "weekType": "ALL",
@@ -1986,18 +1986,18 @@
       {
         "slotId": 350,
         "teachingTaskId": 254,
-        "courseName": "汽车营销（非学徒制）",
+        "courseName": "Course011",
         "roomId": 22,
-        "roomName": "林校\n304",
+        "roomName": "Room011",
         "roomCapacity": 50,
         "requiredStudents": 55,
         "shortage": 5,
         "overloadRatio": 1.1,
         "classGroupNames": [
-          "2024级汽车制造与试验技术1班",
-          "2024级汽车制造与试验技术2班"
+          "CG007",
+          "CG008"
         ],
-        "teacherName": "刘艳艳",
+        "teacherName": "T013",
         "dayOfWeek": 5,
         "slotIndex": 1,
         "weekType": "ALL",
@@ -2007,18 +2007,18 @@
       {
         "slotId": 356,
         "teachingTaskId": 256,
-        "courseName": "汽车保险与理赔（非学徒制）",
+        "courseName": "Course037",
         "roomId": 22,
-        "roomName": "林校\n304",
+        "roomName": "Room011",
         "roomCapacity": 50,
         "requiredStudents": 55,
         "shortage": 5,
         "overloadRatio": 1.1,
         "classGroupNames": [
-          "2024级汽车制造与试验技术1班",
-          "2024级汽车制造与试验技术2班"
+          "CG007",
+          "CG008"
         ],
-        "teacherName": "刘艳艳",
+        "teacherName": "T013",
         "dayOfWeek": 5,
         "slotIndex": 4,
         "weekType": "ALL",
@@ -2028,7 +2028,7 @@
       {
         "slotId": 390,
         "teachingTaskId": 279,
-        "courseName": "学生职业发展与就业指导",
+        "courseName": "Course038",
         "roomId": 8,
         "roomName": "11-529",
         "roomCapacity": 50,
@@ -2036,10 +2036,10 @@
         "shortage": 1,
         "overloadRatio": 1.02,
         "classGroupNames": [
-          "2024级林业技术1班",
-          "2024级林业技术2班"
+          "CG020",
+          "CG021"
         ],
-        "teacherName": "徐燕",
+        "teacherName": "T027",
         "dayOfWeek": 4,
         "slotIndex": 1,
         "weekType": "CUSTOM",
@@ -2049,7 +2049,7 @@
       {
         "slotId": 394,
         "teachingTaskId": 280,
-        "courseName": "经济林栽培",
+        "courseName": "Course010",
         "roomId": 10,
         "roomName": "1-133",
         "roomCapacity": 50,
@@ -2057,10 +2057,10 @@
         "shortage": 1,
         "overloadRatio": 1.02,
         "classGroupNames": [
-          "2024级林业技术1班",
-          "2024级林业技术2班"
+          "CG020",
+          "CG021"
         ],
-        "teacherName": "刘娜",
+        "teacherName": "T011",
         "dayOfWeek": 5,
         "slotIndex": 3,
         "weekType": "ALL",
@@ -2070,7 +2070,7 @@
       {
         "slotId": 414,
         "teachingTaskId": 289,
-        "courseName": "经济林栽培",
+        "courseName": "Course010",
         "roomId": 10,
         "roomName": "1-133",
         "roomCapacity": 50,
@@ -2078,10 +2078,10 @@
         "shortage": 2,
         "overloadRatio": 1.04,
         "classGroupNames": [
-          "2024级森林草原资源保护1班",
-          "2024级森林草原资源保护2班"
+          "CG024",
+          "CG025"
         ],
-        "teacherName": "刘娜",
+        "teacherName": "T011",
         "dayOfWeek": 3,
         "slotIndex": 4,
         "weekType": "ALL",
@@ -2094,10 +2094,10 @@
   "topEntities": {
     "topCapacityGaps": [
       {
-        "courseName": "大学英语",
-        "classGroupNames": "2025级汽车制造与试验技术1班, 2025级汽车制造与试验技术2班, 2025级智能网联汽车技术",
+        "courseName": "Course005",
+        "classGroupNames": "CG002",
         "requiredStudents": 83,
-        "roomName": "林校\n305",
+        "roomName": "Room004",
         "roomCapacity": 50,
         "shortage": 33,
         "overloadRatio": 1.66,
@@ -2105,8 +2105,8 @@
         "slotIndex": 1
       },
       {
-        "courseName": "美育",
-        "classGroupNames": "2024级智能轧钢技术1班, 2024级智能轧钢技术2班, 2024级机电一体化技术1班",
+        "courseName": "Course003",
+        "classGroupNames": "CG003",
         "requiredStudents": 75,
         "roomName": "11-529",
         "roomCapacity": 50,
@@ -2116,8 +2116,8 @@
         "slotIndex": 2
       },
       {
-        "courseName": "习近平新时代中国特色社会主义思想概论",
-        "classGroupNames": "2025级机电一体化技术3班, 2025级机电一体化技术4班",
+        "courseName": "Course009",
+        "classGroupNames": "CG032",
         "requiredStudents": 68,
         "roomName": "11-529",
         "roomCapacity": 50,
@@ -2127,10 +2127,10 @@
         "slotIndex": 2
       },
       {
-        "courseName": "汽车营销（非学徒制）",
-        "classGroupNames": "2024级汽车制造与试验技术1班, 2024级汽车制造与试验技术2班",
+        "courseName": "Course011",
+        "classGroupNames": "CG004",
         "requiredStudents": 55,
-        "roomName": "林校\n304",
+        "roomName": "Room011",
         "roomCapacity": 50,
         "shortage": 5,
         "overloadRatio": 1.1,
@@ -2138,10 +2138,10 @@
         "slotIndex": 1
       },
       {
-        "courseName": "汽车保险与理赔（非学徒制）",
-        "classGroupNames": "2024级汽车制造与试验技术1班, 2024级汽车制造与试验技术2班",
+        "courseName": "Course037",
+        "classGroupNames": "CG004",
         "requiredStudents": 55,
-        "roomName": "林校\n304",
+        "roomName": "Room011",
         "roomCapacity": 50,
         "shortage": 5,
         "overloadRatio": 1.1,
@@ -2151,7 +2151,7 @@
     ],
     "topClassConflicts": [
       {
-        "classGroupName": "2024级钢铁智能冶金技术1班（高本贯通）",
+        "classGroupName": "CG004",
         "conflictCount": 10,
         "worstDayOfWeek": 3,
         "worstSlotIndex": 6,
@@ -2169,7 +2169,7 @@
         ]
       },
       {
-        "classGroupName": "2025级钢铁智能冶金技术1班（高本贯通）",
+        "classGroupName": "CG002",
         "conflictCount": 4,
         "worstDayOfWeek": 3,
         "worstSlotIndex": 4,
@@ -2183,7 +2183,7 @@
         ]
       },
       {
-        "classGroupName": "2025级智能轧钢技术1班",
+        "classGroupName": "CG001",
         "conflictCount": 2,
         "worstDayOfWeek": 3,
         "worstSlotIndex": 6,
@@ -2194,7 +2194,7 @@
         ]
       },
       {
-        "classGroupName": "2024级机电一体化技术2班",
+        "classGroupName": "CG006",
         "conflictCount": 2,
         "worstDayOfWeek": 2,
         "worstSlotIndex": 6,
@@ -2206,7 +2206,7 @@
         ]
       },
       {
-        "classGroupName": "2025级智能轧钢技术2班",
+        "classGroupName": "CG009",
         "conflictCount": 1,
         "worstDayOfWeek": 6,
         "worstSlotIndex": 3,
@@ -2247,7 +2247,7 @@
         ]
       },
       {
-        "roomName": "1号楼虚拟仿真实训室",
+        "roomName": "Room001",
         "conflictCount": 1,
         "dayOfWeek": 4,
         "slotIndex": 6,
@@ -2257,7 +2257,7 @@
         ]
       },
       {
-        "roomName": "11-208 或 12-201",
+        "roomName": "Room002",
         "conflictCount": 1,
         "dayOfWeek": 1,
         "slotIndex": 1,
@@ -2280,7 +2280,7 @@
     "topTeacherConflicts": [
       {
         "teacherId": 3,
-        "teacherName": "尹和鑫",
+        "teacherName": "T004",
         "dayOfWeek": 3,
         "slotIndex": 6,
         "overlapWeeks": [
@@ -2298,25 +2298,25 @@
           275
         ],
         "courseNames": [
-          "金属材料与热处理",
-          "金属性能检测"
+          "Course004",
+          "Course019"
         ],
         "classGroupNames": [
-          "2025级智能轧钢技术1班",
-          "2025级钢铁智能冶金技术1班（高本贯通）",
-          "2025级钢铁智能冶金技术（现场工程师）",
-          "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-          "2024级钢铁智能冶金技术1班（高本贯通）",
-          "2024级钢铁智能冶金技术1班（高本贯通）"
+          "CG001",
+          "CG002",
+          "CG003",
+          "CG001",
+          "CG004",
+          "CG004"
         ],
         "roomNames": [
           "11-239",
-          "11-204 或 11-105"
+          "Room003"
         ]
       },
       {
         "teacherId": 24,
-        "teacherName": "王淼",
+        "teacherName": "T022",
         "dayOfWeek": 1,
         "slotIndex": 2,
         "overlapWeeks": [
@@ -2334,18 +2334,18 @@
           236
         ],
         "courseNames": [
-          "金属材料与热处理",
-          "炼铁技术"
+          "Course004",
+          "Course020"
         ],
         "classGroupNames": [
-          "2025级钢铁智能冶金技术1班（高本贯通）",
-          "2025级钢铁智能冶金技术2班",
-          "2025级钢铁智能冶金技术3班",
-          "2025级钢铁智能冶金技术（现场工程师）",
-          "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-          "2024级钢铁智能冶金技术1班（高本贯通）",
-          "2024级智能轧钢技术1班",
-          "2024级智能轧钢技术2班"
+          "CG002",
+          "CG014",
+          "CG017",
+          "CG003",
+          "CG001",
+          "CG004",
+          "CG010",
+          "CG011"
         ],
         "roomNames": [
           "1-142",
@@ -2354,7 +2354,7 @@
       },
       {
         "teacherId": 31,
-        "teacherName": "张红梅",
+        "teacherName": "T023",
         "dayOfWeek": 6,
         "slotIndex": 5,
         "overlapWeeks": [
@@ -2372,16 +2372,16 @@
           141
         ],
         "courseNames": [
-          "机械制图",
-          "机械制图"
+          "Course001",
+          "Course001"
         ],
         "classGroupNames": [
-          "2025级钢铁智能冶金技术1班（高本贯通）",
-          "2025级机电一体化技术2班",
-          "2025级钢铁智能冶金技术（现场工程师）",
-          "2025级智能轧钢技术（现场工程师）+2025级机电一体化技术（现场工程师）",
-          "2024级钢铁智能冶金技术1班（高本贯通）",
-          "2025级汽车制造与试验技术2班"
+          "CG002",
+          "CG019",
+          "CG003",
+          "CG001",
+          "CG004",
+          "CG028"
         ],
         "roomNames": [
           "1-142",
@@ -2390,7 +2390,7 @@
       },
       {
         "teacherId": 43,
-        "teacherName": "刘艳艳",
+        "teacherName": "T013",
         "dayOfWeek": 1,
         "slotIndex": 5,
         "overlapWeeks": [
@@ -2416,21 +2416,21 @@
           150
         ],
         "courseNames": [
-          "智能网联汽车概论",
-          "智能网联汽车概论"
+          "Course021",
+          "Course021"
         ],
         "classGroupNames": [
-          "2025级智能网联汽车技术",
-          "2025级智能网联汽车技术"
+          "CG029",
+          "CG029"
         ],
         "roomNames": [
           "10-321",
-          "林校\n305"
+          "Room004"
         ]
       },
       {
         "teacherId": 5,
-        "teacherName": "李媛",
+        "teacherName": "T002",
         "dayOfWeek": 2,
         "slotIndex": 5,
         "overlapWeeks": [
@@ -2456,18 +2456,18 @@
           307
         ],
         "courseNames": [
-          "液压与气压传动",
-          "机械设计基础"
+          "Course022",
+          "Course002"
         ],
         "classGroupNames": [
-          "2024级智能轧钢技术1班",
-          "2024级智能轧钢技术2班",
-          "2024级机电一体化技术1班",
-          "2024级机电一体化技术2班"
+          "CG010",
+          "CG011",
+          "CG005",
+          "CG006"
         ],
         "roomNames": [
-          "林校301",
-          "1号楼虚拟仿真实训室"
+          "Room005",
+          "Room001"
         ]
       }
     ],
