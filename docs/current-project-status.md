@@ -21,6 +21,7 @@
 > **K38-A 调课规则诊断增强版已完成...K38-B 计划 UI 持久化）。Verify 22/22 PASS。
 > **K38-B 调课规则推荐数量配置已完成**（[K38-B](k38-b-adjustment-rules-config-limit.md)）。新增 AdjustmentRuleConfig 表 + migration + backfill。API PATCH defaultRecommendationLimit（1-20）。Recommendation 使用 config 作为默认 limit（request > config > code fallback）。Verify 23/23 PASS。K22-C 73/0/0/0 不变。
 > **K38-B1 调课规则推荐数量 UI 编辑闭环已完成**（[K38-B1](k38-b1-adjustment-rules-limit-ui-editing-fix.md)）。Panel badge → 基础可配置版。新增 number input / 保存 / 取消 / loading / toast / dirty indicator。Client PATCH helper 已补齐。Verify 21/21 PASS。
+> **K39-A 导入规则设置诊断增强已完成**（[K39-A](k39-a-import-rules-settings-diagnostics.md)）。Badge → 诊断增强版。API 增加 moduleVersion/enhancedSummary/sourceEvidence/crossCohortGuard/importLifecycleRules/duplicateImportPolicy/editability/ruleGroups（backward-compatible）。UI 升级：8 summary cards + source evidence 覆盖率进度条 + cross-cohort guard 卡片 + 6 阶段生命周期 + 6 组 14 条规则。所有规则 hard-locked。Verify 26/26 PASS。K22-C 73/0/0/0 不变。
 >
 > 详细阶段 closeout 文档位于 `docs/`，按 `k<stage>-*.md` / `k<stage>-*.json` 命名。
 > 本文件只汇总 readiness、baseline、known artifacts、下一步建议。
@@ -38,6 +39,7 @@
 | **User/Role/Permission RBAC (H-series)** | READY | 15 permission keys; 3 roles |
 | **Adjustment rules + dry-run/apply/plan (K23 / K24 / K31)** | READY | schedule-adjustment API + UI |
 | **Import pipeline (K34-A)** | READY | parse → quality → confirm → rollback → abandon |
+| **Import rules settings (K39-A)** | READY | 诊断增强版: source evidence 覆盖率 + cross-cohort guard + lifecycle rules + grouped rules |
 | **Import management page (K34-A)** | READY_FOR_REAL_USE | `/admin/db` 入口 + 详情渲染修复 |
 | **Room name normalization (K34-A2)** | READY_FOR_REAL_USE | composite `或` 解析后 primary+additional 拆分 |
 | **Multi-room support (K34-A3)** | **READY_FOR_REAL_USE** | primary OR additional room display/filter/capacity; composite 已通过 K34-A3E 浏览器人工验收 |

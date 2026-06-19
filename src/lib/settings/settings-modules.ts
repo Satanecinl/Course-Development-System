@@ -72,12 +72,12 @@ export const SETTINGS_MODULES: SettingsModule[] = [
   {
     key: 'import-rules',
     title: '导入规则设置',
-    description: '查看默认导入学期、跨年级合班、source evidence、覆盖/重复导入策略和最近导入批次。基础只读版。',
+    description: '查看默认导入学期、跨年级合班 guard、source evidence 覆盖率、批次生命周期规则、回滚/废弃安全边界、数据安全策略和最近导入批次。诊断增强版。',
     status: 'ready',
     priority: 'P1',
-    recommendedStage: 'K26-N1-BASIC',
+    recommendedStage: 'K39-A-DIAGNOSTIC',
     riskLevel: 'medium',
-    notes: '只读基础版。展示导入相关规则和数据状态，不提供编辑。',
+    notes: 'K39-A: 诊断增强版。规则按学期/跨年级合班/source evidence/生命周期/回滚废弃/数据安全分组。所有规则 hard-locked。K39-B 计划增加默认导入行为配置。',
   },
   {
     key: 'rbac-settings',

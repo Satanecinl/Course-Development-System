@@ -1,0 +1,119 @@
+{
+  "stage": "K39-A",
+  "title": "Import Rules Settings Diagnostics Enhancement",
+  "status": "CLOSED",
+  "closedAt": "2026-06-19",
+  "moduleVersion": "K39-A",
+  "summary": {
+    "import-rules-api": "Enhanced GET /api/admin/settings/import-rules with backward-compatible new fields",
+    "import-rules-ui": "Upgraded badge from '只读基础版' to '诊断增强版'; grouped rules, source evidence coverage, cross-cohort guard card, lifecycle rules",
+    "settings-modules": "Updated recommendedStage to K39-A-DIAGNOSTIC, description and notes updated",
+    "schema-changes": "none",
+    "migration-changes": "none",
+    "permission-changes": "none",
+    "importer-changes": "none",
+    "new-patch-api": "none"
+  },
+  "api-changes": {
+    "backward-compatible": true,
+    "new-top-level-keys": [
+      "moduleVersion",
+      "enhancedSummary",
+      "sourceEvidence",
+      "crossCohortGuard",
+      "importLifecycleRules",
+      "duplicateImportPolicy",
+      "editability",
+      "ruleGroups"
+    ],
+    "existing-fields-preserved": ["summary", "rules", "safeguards", "recentBatches"]
+  },
+  "ui-changes": {
+    "badge": "诊断增强版",
+    "summary-cards": 8,
+    "source-evidence-section": "Coverage progress bar + 8 field counts + forward-fill explanation",
+    "cross-cohort-guard-card": "Detection/approval/hardLocked status + warning/error codes",
+    "lifecycle-rules": "6 phases: parse, dry-run, confirm, rollback, abandon, semester-scoping",
+    "grouped-rules": "6 groups: semester, cross-cohort, source-evidence, lifecycle, rollback, data-safety",
+    "editability-notice": "Next steps: K39-B/K39-C/K39-D"
+  },
+  "source-evidence-coverage": {
+    "historical-backfill-available": false,
+    "forward-only": true,
+    "explanation": "Only newly imported links get evidence. Historical links (pre-K20) are not backfilled."
+  },
+  "cross-cohort-guard": {
+    "detection-enabled": true,
+    "approval-required": true,
+    "hard-locked": true,
+    "dry-run-warning-code": "CROSS_COHORT_SUSPECTED",
+    "confirm-error-code": "CROSS_COHORT_APPROVAL_REQUIRED",
+    "approval-field": "crossCohortApprovals"
+  },
+  "import-lifecycle-rules": [
+    { "phase": "parse", "writes-db": false, "permission": "import:manage" },
+    { "phase": "dry-run", "writes-db": false, "permission": "import:manage" },
+    { "phase": "confirm", "writes-db": true, "permission": "import:manage" },
+    { "phase": "rollback", "writes-db": true, "permission": "import:manage" },
+    { "phase": "abandon", "writes-db": true, "permission": "import:manage" },
+    { "phase": "semester-scoping", "writes-db": false, "permission": "import:manage" }
+  ],
+  "editability": {
+    "all-rules-editable": false,
+    "default-semester-editable": false,
+    "cross-cohort-approval-editable": false,
+    "source-evidence-backfill-editable": false,
+    "duplicate-policy-editable": false,
+    "next-config-stage": "K39-B"
+  },
+  "permission-boundary": {
+    "settings-view": "settings:manage",
+    "import-operations": "import:manage",
+    "no-new-permissions": true,
+    "no-new-patch-api": true
+  },
+  "rule-groups": [
+    { "key": "semester", "label": "学期作用域", "rule-count": 1 },
+    { "key": "cross-cohort", "label": "跨年级合班", "rule-count": 2 },
+    { "key": "source-evidence", "label": "Source Evidence", "rule-count": 2 },
+    { "key": "lifecycle", "label": "批次生命周期", "rule-count": 3 },
+    { "key": "rollback", "label": "回滚与废弃", "rule-count": 3 },
+    { "key": "data-safety", "label": "数据安全", "rule-count": 3 }
+  ],
+  "why-no-patch-or-schema": {
+    "reason": "本阶段定位为诊断增强版：增强 API response + UI 展示，不改变任何业务行为",
+    "patch-not-added": "导入规则当前全部 hard-locked，无需要编辑的配置项",
+    "schema-not-added": "ImportBatch / TeachingTaskClass schema 无需变更",
+    "next-configurable": "K39-B 可考虑默认导入行为配置（default semester editable）"
+  },
+  "verify-results": {
+    "script": "scripts/verify-import-rules-settings-diagnostics-k39-a.ts",
+    "checks": 26,
+    "auto-pass": "see regression phase",
+    "browser-manual-required": true
+  },
+  "browser-manual-validation-required": true,
+  "browser-manual-validation-items": [
+    "导航到 /admin/settings → 导入规则设置，badge 显示 '诊断增强版'",
+    "Summary cards 显示 8 项（总数/已确认/待确认/失败/已回滚/已废弃/Evidence覆盖率/默认学期）",
+    "Source Evidence section 显示覆盖率进度条和 8 项字段计数",
+    "Source Evidence 显示前向填充策略说明",
+    "Cross-cohort Guard 卡片显示检测/审批/hardLocked 状态和 warning/error code",
+    "批次生命周期规则显示 6 个阶段（parse/dry-run/confirm/rollback/abandon/semester-scoping）",
+    "规则列表按 6 个分组显示（学期/跨年级合班/Source Evidence/生命周期/回滚废弃/数据安全）",
+    "每条规则显示 status badge、lock icon、来源和 nextStage 标记",
+    "底部显示编辑边界说明，无关闭 cross-cohort guard 按钮",
+    "底部显示历史回填按钮不存在"
+  ],
+  "future-stages": {
+    "K39-B": "默认导入行为配置（default semester editable）",
+    "K39-C": "Source evidence backfill plan（历史数据证据回填方案）",
+    "K39-D": "Duplicate import policy config（重复导入策略配置）"
+  },
+  "remaining-risks": [
+    "历史 TeachingTaskClass link 缺失 source evidence（约 785 条中缺失的量由运行时决定）",
+    "import:manage 和 settings:manage 权限分离，settings 角色无法执行实际导入操作",
+    "batch state machine 由代码控制，无外部配置化入口",
+    "K22-C 73/0/0/0 baseline 未被本次变更影响"
+  ]
+}

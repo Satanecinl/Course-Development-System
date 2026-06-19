@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { fetchImportRules, type ImportRulesData } from '@/lib/settings/import-rules-client'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -14,6 +14,12 @@ import {
   CheckCircle2,
   XCircle,
   History,
+  Calendar,
+  FileSearch,
+  RotateCcw,
+  Settings,
+  Layers,
+  Clock,
 } from 'lucide-react'
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
@@ -21,6 +27,8 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
   fixed: { label: '固定行为', color: 'bg-blue-100 text-blue-700' },
   partial: { label: '部分实现', color: 'bg-amber-100 text-amber-700' },
   planned: { label: '待配置化', color: 'bg-amber-100 text-amber-700' },
+  'hard-locked': { label: 'Hard Locked', color: 'bg-red-100 text-red-700' },
+  'historical-gap': { label: '历史缺口', color: 'bg-orange-100 text-orange-700' },
   unknown: { label: '未知', color: 'bg-gray-100 text-gray-500' },
 }
 
@@ -36,6 +44,16 @@ const BATCH_STATUS_MAP: Record<string, { color: string; icon: React.ReactNode }>
   rolled_back: { color: 'bg-gray-100 text-gray-700', icon: <History className="w-3 h-3" /> },
   pending: { color: 'bg-blue-100 text-blue-700', icon: <Info className="w-3 h-3" /> },
   confirming: { color: 'bg-blue-100 text-blue-700', icon: <Info className="w-3 h-3" /> },
+  abandoned: { color: 'bg-orange-100 text-orange-700', icon: <XCircle className="w-3 h-3" /> },
+}
+
+const GROUP_ICONS: Record<string, React.ReactNode> = {
+  semester: <Calendar className="w-4 h-4" />,
+  'cross-cohort': <ShieldAlert className="w-4 h-4" />,
+  'source-evidence': <FileSearch className="w-4 h-4" />,
+  lifecycle: <RefreshCw className="w-4 h-4" />,
+  rollback: <RotateCcw className="w-4 h-4" />,
+  'data-safety': <ShieldCheck className="w-4 h-4" />,
 }
 
 export function ImportRulesSettingsPanel() {
@@ -52,20 +70,20 @@ export function ImportRulesSettingsPanel() {
     return () => { cancelled = true }
   }, [])
 
-  const reload = () => {
+  const reload = useCallback(() => {
     setLoading(true)
     setError(null)
     fetchImportRules()
       .then(setData)
       .catch((e) => setError(e instanceof Error ? e.message : '加载失败'))
       .finally(() => setLoading(false))
-  }
+  }, [])
 
   if (loading) return <div className="bg-white rounded-lg border border-gray-200 p-6"><div className="flex items-center gap-2 text-gray-500"><RefreshCw className="w-4 h-4 animate-spin" /><span className="text-sm">加载中...</span></div></div>
   if (error) return <div className="bg-white rounded-lg border border-red-200 p-6"><div className="flex items-center gap-2 text-red-600 mb-2"><AlertTriangle className="w-4 h-4" /><span className="text-sm font-medium">加载失败</span></div><p className="text-sm text-red-500">{error}</p><button onClick={reload} className="mt-2 text-sm text-blue-600 hover:underline">重试</button></div>
   if (!data) return null
 
-  const { summary, rules, safeguards, recentBatches } = data
+  const { summary, recentBatches, sourceEvidence, crossCohortGuard, importLifecycleRules, ruleGroups, editability, enhancedSummary } = data
 
   return (
     <div className="space-y-6">
@@ -74,64 +92,170 @@ export function ImportRulesSettingsPanel() {
         <div className="flex items-center gap-2">
           <FileUp className="w-5 h-5 text-teal-600" />
           <h2 className="text-lg font-bold text-gray-900">导入规则设置</h2>
-          <Badge className="text-xs bg-teal-100 text-teal-700 border-teal-200">只读基础版</Badge>
+          <Badge className="text-xs bg-teal-100 text-teal-700 border-teal-200">诊断增强版</Badge>
         </div>
         <button onClick={reload} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700">
           <RefreshCw className="w-4 h-4" /> 刷新
         </button>
       </div>
 
-      {/* Summary */}
+      {/* ── Summary Cards ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <SummaryCard label="ImportBatch 总数" value={String(summary.importBatchCount)} />
         <SummaryCard label="已确认" value={String(summary.confirmedImportCount)} ok={summary.confirmedImportCount > 0} />
+        <SummaryCard label="待确认" value={String(enhancedSummary.pendingCount)} ok={false} />
         <SummaryCard label="失败" value={String(summary.failedImportCount)} danger={summary.failedImportCount > 0} />
         <SummaryCard label="已回滚" value={String(summary.rolledBackImportCount)} />
+        <SummaryCard label="已废弃" value={String(enhancedSummary.abandonedCount)} />
+        <SummaryCard label="Evidence 覆盖率" value={`${sourceEvidence.evidenceCoveragePercent}%`} ok={sourceEvidence.evidenceCoveragePercent >= 80} danger={sourceEvidence.evidenceCoveragePercent < 50} />
+        <SummaryCard
+          label="默认导入学期"
+          value={enhancedSummary.activeSemester ? enhancedSummary.activeSemester.name : '无'}
+          ok={!!enhancedSummary.activeSemester}
+        />
       </div>
 
-      {/* Source evidence summary */}
+      {/* ── Source Evidence Coverage ── */}
       <div className="bg-white rounded-lg border border-gray-200 p-5">
         <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4" /> Source Evidence 状态
+          <FileSearch className="w-4 h-4" /> Source Evidence 覆盖状态
         </h3>
+        {/* Coverage progress bar */}
+        <div className="mb-4">
+          <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+            <span>importBatchId 覆盖率</span>
+            <span className="font-mono">{sourceEvidence.withImportBatchId}/{sourceEvidence.totalTeachingTaskClassLinks} ({sourceEvidence.evidenceCoveragePercent}%)</span>
+          </div>
+          <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all ${sourceEvidence.evidenceCoveragePercent >= 80 ? 'bg-green-500' : sourceEvidence.evidenceCoveragePercent >= 50 ? 'bg-amber-500' : 'bg-red-500'}`}
+              style={{ width: `${sourceEvidence.evidenceCoveragePercent}%` }}
+            />
+          </div>
+        </div>
+        {/* Detailed field counts */}
         <div className="grid grid-cols-2 gap-3 text-sm">
-          <div><span className="text-gray-500">link 有 importBatchId:</span> <code className="text-xs bg-gray-100 px-1">{summary.teachingTaskClassWithEvidenceCount}</code></div>
-          <div><span className="text-gray-500">link 缺 importBatchId:</span> <code className="text-xs bg-gray-100 px-1">{summary.teachingTaskClassWithoutEvidenceCount}</code></div>
-          <div><span className="text-gray-500">有 sourceKeyword:</span> <code className="text-xs bg-gray-100 px-1">{summary.tcsWithKeyword}</code></div>
-          <div><span className="text-gray-500">有 sourceClassName:</span> <code className="text-xs bg-gray-100 px-1">{summary.tcsWithClassName}</code></div>
-          <div><span className="text-gray-500">有 matchStrategy:</span> <code className="text-xs bg-gray-100 px-1">{summary.tcsWithStrategy}</code></div>
+          <EvidenceRow label="有 importBatchId" value={sourceEvidence.withImportBatchId} total={sourceEvidence.totalTeachingTaskClassLinks} />
+          <EvidenceRow label="缺 importBatchId" value={sourceEvidence.missingImportBatchId} total={sourceEvidence.totalTeachingTaskClassLinks} danger={sourceEvidence.missingImportBatchId > 0} />
+          <EvidenceRow label="有 sourceRowIndex" value={sourceEvidence.withSourceRowIndex} total={sourceEvidence.totalTeachingTaskClassLinks} />
+          <EvidenceRow label="有 sourceKeyword" value={sourceEvidence.withSourceKeyword} total={sourceEvidence.totalTeachingTaskClassLinks} />
+          <EvidenceRow label="有 sourceClassName" value={sourceEvidence.withSourceClassName} total={sourceEvidence.totalTeachingTaskClassLinks} />
+          <EvidenceRow label="有 sourceRemark" value={sourceEvidence.withSourceRemark} total={sourceEvidence.totalTeachingTaskClassLinks} />
+          <EvidenceRow label="有 sourceArtifactFilename" value={sourceEvidence.withSourceArtifactFilename} total={sourceEvidence.totalTeachingTaskClassLinks} />
+          <EvidenceRow label="有 matchStrategy" value={sourceEvidence.withMatchStrategy} total={sourceEvidence.totalTeachingTaskClassLinks} />
+        </div>
+        {/* Explanation */}
+        <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+            <div>
+              <p className="font-medium mb-0.5">前向填充策略说明</p>
+              <p>仅新导入的 link 写入 evidence。{sourceEvidence.missingImportBatchId} 条历史 link 缺失 evidence，属于 K20 之前导入数据。不自动回填历史数据。</p>
+              <p className="mt-1 text-amber-600">historicalBackfillAvailable: false | forwardOnly: true</p>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Rules */}
+      {/* ── Cross-cohort Guard ── */}
       <div className="bg-white rounded-lg border border-gray-200 p-5">
-        <h3 className="text-sm font-semibold text-gray-900 mb-3">规则列表</h3>
-        <div className="space-y-3">
-          {rules.map((r) => {
-            const st = STATUS_MAP[r.status] ?? STATUS_MAP.unknown
+        <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+          <ShieldAlert className="w-4 h-4" /> 跨年级合班 Guard
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <GuardRow label="检测启用" value={crossCohortGuard.detectionEnabled} locked />
+            <GuardRow label="审批必需" value={crossCohortGuard.approvalRequired} locked />
+            <GuardRow label="Hard Locked" value={crossCohortGuard.hardLocked} locked />
+          </div>
+          <div className="space-y-2">
+            <div className="text-sm">
+              <span className="text-gray-500">Dry-run warning code:</span>{' '}
+              <code className="text-xs bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">{crossCohortGuard.dryRunWarningCode}</code>
+            </div>
+            <div className="text-sm">
+              <span className="text-gray-500">Confirm error code:</span>{' '}
+              <code className="text-xs bg-red-100 text-red-800 px-1.5 py-0.5 rounded">{crossCohortGuard.confirmErrorCode}</code>
+            </div>
+            <div className="text-sm">
+              <span className="text-gray-500">Approval field:</span>{' '}
+              <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded">{crossCohortGuard.approvalField}</code>
+            </div>
+          </div>
+        </div>
+        <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded text-xs text-red-800 flex items-start gap-2">
+          <Lock className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+          <span>跨年级合班检测和审批为 hard-locked，不可通过配置关闭。绕过审批将导致 confirm 返回 409 错误。</span>
+        </div>
+      </div>
+
+      {/* ── Import Lifecycle Rules ── */}
+      <div className="bg-white rounded-lg border border-gray-200 p-5">
+        <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+          <RefreshCw className="w-4 h-4" /> 批次生命周期规则
+        </h3>
+        <div className="space-y-2">
+          {importLifecycleRules.map((phase) => (
+            <div key={phase.phase} className="p-3 rounded bg-gray-50 border border-gray-100">
+              <div className="flex items-center gap-2 mb-1">
+                <Badge className={`text-xs ${phase.writesDb ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>
+                  {phase.writesDb ? '写 DB' : '不写 DB'}
+                </Badge>
+                <span className="text-sm font-medium text-gray-900">{phase.label}</span>
+                <span className="text-xs text-gray-400 ml-auto">{phase.permission}</span>
+              </div>
+              <p className="text-xs text-gray-600">{phase.safetyGuard}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Grouped Rules ── */}
+      <div className="bg-white rounded-lg border border-gray-200 p-5">
+        <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+          <Layers className="w-4 h-4" /> 规则列表（分组）
+        </h3>
+        <div className="space-y-4">
+          {ruleGroups.map((group) => {
+            const groupIcon = GROUP_ICONS[group.groupKey] ?? <Settings className="w-4 h-4" />
             return (
-              <div key={r.key} className="p-3 rounded bg-gray-50 border border-gray-100">
-                <div className="flex items-center gap-2 mb-1">
-                  <Badge className={`text-xs ${st.color}`}>{st.label}</Badge>
-                  <span className="text-sm font-medium text-gray-900">{r.label}</span>
-                  <span className="text-xs text-gray-400 ml-auto flex items-center gap-1">
-                    {typeof r.value === 'boolean' ? (r.value ? '✓' : '✗') : String(r.value)}
-                    <Lock className="w-3 h-3" />
-                  </span>
+              <div key={group.groupKey}>
+                <div className="flex items-center gap-2 mb-2">
+                  {groupIcon}
+                  <span className="text-sm font-semibold text-gray-800">{group.groupLabel}</span>
+                  <Badge className="text-xs bg-gray-100 text-gray-500">{group.rules.length} 条</Badge>
                 </div>
-                <p className="text-xs text-gray-600">{r.description}</p>
-                <p className="text-xs text-gray-400 mt-1">来源: {r.source}</p>
+                <div className="space-y-2 ml-6">
+                  {group.rules.map((rule) => {
+                    const st = STATUS_MAP[rule.status] ?? STATUS_MAP.unknown
+                    return (
+                      <div key={rule.id} className="p-3 rounded bg-gray-50 border border-gray-100">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge className={`text-xs ${st.color}`}>{st.label}</Badge>
+                          <span className="text-sm font-medium text-gray-900">{rule.title}</span>
+                          {rule.locked && <Lock className="w-3 h-3 text-gray-400" />}
+                          <span className="text-xs text-gray-400 ml-auto">{rule.impact}</span>
+                        </div>
+                        <p className="text-xs text-gray-600">{rule.description}</p>
+                        <div className="flex items-center gap-3 mt-1 text-xs text-gray-400">
+                          <span>来源: {rule.source}</span>
+                          {rule.nextStage && <span className="text-amber-600">→ {rule.nextStage} 可配置化</span>}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             )
           })}
         </div>
       </div>
 
-      {/* Safeguards */}
+      {/* ── Safeguards ── */}
       <div className="bg-white rounded-lg border border-gray-200 p-5">
         <h3 className="text-sm font-semibold text-gray-900 mb-3">数据质量 Guard</h3>
         <div className="space-y-2">
-          {safeguards.map((g) => {
+          {data.safeguards.map((g) => {
             const sev = SEVERITY_MAP[g.severity] ?? SEVERITY_MAP.info
             return (
               <div key={g.key} className={`flex items-start gap-2 p-2 rounded border ${sev.color}`}>
@@ -151,7 +275,7 @@ export function ImportRulesSettingsPanel() {
         </div>
       </div>
 
-      {/* Recent batches */}
+      {/* ── Recent Batches ── */}
       <div className="bg-white rounded-lg border border-gray-200 p-5">
         <h3 className="text-sm font-semibold text-gray-900 mb-3">最近 ImportBatch</h3>
         {recentBatches.length === 0 ? (
@@ -194,23 +318,73 @@ export function ImportRulesSettingsPanel() {
         )}
       </div>
 
-      {/* Read-only notice */}
-      <div className="bg-gray-50 rounded-lg border border-gray-200 p-4 flex items-start gap-2">
-        <Info className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+      {/* ── Editability Notice ── */}
+      <div className="bg-gray-50 rounded-lg border border-gray-200 p-4 space-y-2">
+        <h4 className="text-xs font-semibold text-gray-700 flex items-center gap-1">
+          <Info className="w-3.5 h-3.5" /> 编辑边界说明
+        </h4>
         <div className="text-xs text-gray-500 space-y-1">
-          <p>当前为只读基础版，不提供编辑功能。</p>
-          <p>导入规则行为由代码固定，如需修改请在后续阶段设计配置化方案。</p>
+          <div className="flex items-start gap-2">
+            <Lock className="w-3 h-3 mt-0.5 shrink-0 text-gray-400" />
+            <span>当前为<strong>诊断增强版</strong>，不提供规则编辑功能。所有规则 hard-locked。</span>
+          </div>
+          <div className="flex items-start gap-2">
+            <Lock className="w-3 h-3 mt-0.5 shrink-0 text-gray-400" />
+            <span>不开放关闭 cross-cohort guard。</span>
+          </div>
+          <div className="flex items-start gap-2">
+            <Lock className="w-3 h-3 mt-0.5 shrink-0 text-gray-400" />
+            <span>不开放 source evidence 历史自动回填。</span>
+          </div>
+          <div className="flex items-start gap-2">
+            <Clock className="w-3 h-3 mt-0.5 shrink-0 text-blue-500" />
+            <span><strong>{editability.nextConfigStage}</strong> 可考虑默认导入行为配置（默认 semester 可编辑化）。</span>
+          </div>
+          <div className="flex items-start gap-2">
+            <Clock className="w-3 h-3 mt-0.5 shrink-0 text-blue-500" />
+            <span><strong>K39-C</strong> 可考虑 source evidence backfill plan（历史数据证据回填方案）。</span>
+          </div>
+          <div className="flex items-start gap-2">
+            <Clock className="w-3 h-3 mt-0.5 shrink-0 text-blue-500" />
+            <span><strong>K39-D</strong> 可考虑 duplicate import policy config（重复导入策略配置）。</span>
+          </div>
         </div>
       </div>
     </div>
   )
 }
 
+/* ── Sub-components ── */
+
 function SummaryCard({ label, value, ok, danger }: { label: string; value: string; ok?: boolean; danger?: boolean }) {
   return (
     <div className={`bg-white rounded-lg border p-4 ${danger ? 'border-red-300 bg-red-50' : ok ? 'border-green-200' : 'border-gray-200'}`}>
       <div className="text-xs text-gray-500 mb-1">{label}</div>
-      <div className={`text-2xl font-bold ${danger ? 'text-red-600' : 'text-gray-900'}`}>{value}</div>
+      <div className={`text-lg font-bold ${danger ? 'text-red-600' : 'text-gray-900'}`}>{value}</div>
+    </div>
+  )
+}
+
+function EvidenceRow({ label, value, total, danger }: { label: string; value: number; total: number; danger?: boolean }) {
+  return (
+    <div className={`flex items-center justify-between ${danger ? 'text-red-700' : 'text-gray-700'}`}>
+      <span className="text-gray-500">{label}:</span>
+      <span>
+        <code className={`text-xs px-1 ${danger ? 'bg-red-100' : 'bg-gray-100'}`}>{value}</code>
+        <span className="text-gray-400 text-xs">/{total}</span>
+      </span>
+    </div>
+  )
+}
+
+function GuardRow({ label, value, locked }: { label: string; value: boolean; locked?: boolean }) {
+  return (
+    <div className="flex items-center gap-2 text-sm">
+      <span className={`w-4 h-4 rounded-full flex items-center justify-center ${value ? 'bg-green-100' : 'bg-red-100'}`}>
+        {value ? <CheckCircle2 className="w-3 h-3 text-green-600" /> : <XCircle className="w-3 h-3 text-red-600" />}
+      </span>
+      <span className="text-gray-700">{label}</span>
+      {locked && <Lock className="w-3 h-3 text-gray-400" />}
     </div>
   )
 }
