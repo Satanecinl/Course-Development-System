@@ -1,0 +1,34 @@
+{
+  "stage": "K39-C2",
+  "title": "Source Evidence Safe Fields Backfill Apply",
+  "status": "CLOSED",
+  "dbBackup": "prisma/dev.db.backup-before-k39-c2-20260619-193254 (gitignored, ~62MB)",
+  "dryRun": {
+    "candidates": 446,
+    "blocked": 0,
+    "fields": ["importBatchId", "sourceArtifactFilename"]
+  },
+  "apply": {
+    "updated": 446,
+    "transaction": true,
+    "fields": ["importBatchId", "sourceArtifactFilename"]
+  },
+  "coverage": {
+    "importBatchId": "446/446 (was 0)",
+    "sourceArtifactFilename": "446/446 (was 0)",
+    "sourceRowIndex": "0/446 (unchanged)",
+    "sourceKeyword": "0/446 (unchanged)",
+    "sourceClassName": "0/446 (unchanged)",
+    "sourceRemark": "0/446 (unchanged)",
+    "matchStrategy": "0/446 (unchanged)",
+    "matchConfidence": "0/446 (unchanged)"
+  },
+  "businessDataUnchanged": {
+    "ImportBatch": 38,
+    "TeachingTask": 308,
+    "ScheduleSlot": 440,
+    "ScheduleAdjustment": 67
+  },
+  "allowedFields": ["importBatchId", "sourceArtifactFilename"],
+  "blockedFields": ["sourceRowIndex", "sourceKeyword", "sourceClassName", "sourceRemark", "matchStrategy", "matchConfidence"]
+}
