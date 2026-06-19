@@ -41,4 +41,11 @@ were completely ignored, causing under-counting of violations.
 - K22 harness alignment may need follow-up
 - Git history not cleaned
 - Repo not public-ready
-- Not pushed; pending review
+
+## Push Status
+
+- Commit `4d66a53` (K36-B1A5) pushed to `origin/master` (fast-forward).
+- Confirmed in sync at HEAD `568708f` (K36-B1A6B closeout checkpoint).
+- The earlier "Not pushed; pending review" note was a stale residual from
+  the pre-push review window; it is removed here for documentation
+  consistency. No code change accompanies this doc fix.

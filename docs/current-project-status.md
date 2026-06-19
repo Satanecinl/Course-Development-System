@@ -3,6 +3,7 @@
 > **K35-A housekeeping 已完成**。最近功能 closeout：[K34-A3F](k34-a3f-multi-room-worktree-cleanup-and-acceptance-closeout.md)。
 > K36-A2 已完成本地 repository hygiene commit；本文不声明该 commit 已同步到远端。
 > K36-A3 只做状态文档对齐，未重跑 build、lint、auth、score 或 verify 命令。
+> **K36-B1A multi-room / secondary room 主线 final closeout 已完成**（[K36-B1A7](k36-b1a7-multi-room-final-closeout.md)）。K22-C 恢复 73/0/0/0；K36-B1A6B 修复 I11 HC5 delta regression 已 push。
 >
 > 详细阶段 closeout 文档位于 `docs/`，按 `k<stage>-*.md` / `k<stage>-*.json` 命名。
 > 本文件只汇总 readiness、baseline、known artifacts、下一步建议。
