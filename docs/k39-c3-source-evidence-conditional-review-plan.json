@@ -1,0 +1,22 @@
+{
+  "stage": "K39-C3",
+  "title": "Conditional Source Evidence Manual Review Plan",
+  "status": "PLAN_COMPLETE",
+  "coverage": {
+    "importBatchId": "446/446",
+    "sourceArtifactFilename": "446/446",
+    "sourceRowIndex": "0/446",
+    "sourceKeyword": "0/446",
+    "sourceClassName": "0/446",
+    "sourceRemark": "0/446",
+    "matchStrategy": "0/446",
+    "matchConfidence": "0/446"
+  },
+  "candidates": {
+    "unique": 192,
+    "multiple": 254,
+    "uniquePercent": 43,
+    "multiplePercent": 57
+  },
+  "recommendation": "K39-C4 manual review package for 192 unique candidates only"
+}
