@@ -410,6 +410,16 @@ model ImportBatch {
   @@index([semesterId])
 }
 
+// ─── Import Rule Config (K39-B1) ───────────────────────────────────────
+
+model ImportRuleConfig {
+  id                               Int      @id @default(autoincrement())
+  key                              String   @unique @default("default")
+  requireExplicitSemesterForImport Boolean  @default(false)
+  createdAt                        DateTime @default(now())
+  updatedAt                        DateTime @updatedAt
+}
+
 // ─── Auth / RBAC Models ─────────────────────────────────────────────
 
 model User {

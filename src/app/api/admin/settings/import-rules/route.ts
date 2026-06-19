@@ -1,18 +1,21 @@
 /**
- * K39-A: Import rules — read-only diagnostic enhanced API.
+ * K39-B1: Import rules — diagnostic + configurable API.
  *
  * GET /api/admin/settings/import-rules
+ * PATCH /api/admin/settings/import-rules
  *
  * Returns import batch stats, source evidence coverage, cross-cohort guard status,
- * lifecycle rules, duplicate import policy, editability boundaries, and grouped rules.
- * Read-only. No PATCH/POST.
+ * lifecycle rules, duplicate import policy, editability boundaries, grouped rules,
+ * and config (requireExplicitSemesterForImport).
  *
+ * PATCH updates ImportRuleConfig.requireExplicitSemesterForImport.
  * Backward-compatible: legacy summary/rules/safeguards/recentBatches still present.
  */
 
 import { NextResponse, type NextRequest } from 'next/server'
 import { requirePermission } from '@/lib/auth/require-permission'
 import { prisma } from '@/lib/prisma'
+import { getImportRuleConfig, updateImportRuleConfig, validateRequireExplicitSemesterForImport } from '@/lib/settings/import-rule-config'
 
 export async function GET(_request: NextRequest) {
   const auth = await requirePermission('settings:manage', _request)
@@ -47,6 +50,9 @@ export async function GET(_request: NextRequest) {
 
     // ── Source evidence stats (expanded) ──
     const totalTcs = await prisma.teachingTaskClass.count()
+
+    // ── K39-B1: Import rule config ──
+    const importRuleConfig = await getImportRuleConfig()
     const tcsWithBatch = await prisma.teachingTaskClass.count({ where: { importBatchId: { not: null } } })
     const tcsWithoutBatch = await prisma.teachingTaskClass.count({ where: { importBatchId: null } })
     const tcsWithKeyword = await prisma.teachingTaskClass.count({ where: { sourceKeyword: { not: null } } })
@@ -309,14 +315,15 @@ export async function GET(_request: NextRequest) {
       configurable: false,
     }
 
-    /* ── K39-A: Editability ── */
+    /* ── K39-B1: Editability ── */
     const editability = {
       allRulesEditable: false,
-      defaultSemesterEditable: false,
+      defaultSemesterEditable: true,
       crossCohortApprovalEditable: false,
       sourceEvidenceBackfillEditable: false,
       duplicatePolicyEditable: false,
-      nextConfigStage: 'K39-B',
+      requireExplicitSemesterForImportEditable: true,
+      nextConfigStage: 'K39-C',
     }
 
     /* ── K39-A: Rule groups ── */
@@ -331,14 +338,15 @@ export async function GET(_request: NextRequest) {
             title: '默认导入学期',
             status: 'active',
             severity: 'info',
-            locked: true,
+            locked: false,
             source: 'resolveSchedulerSemester — active semester',
             description: activeSemester
               ? `默认导入学期: ${activeSemester.name} (id=${activeSemester.id})`
               : '无 active semester，导入将报错',
-            impact: '所有导入操作绑定到 active semester',
-            editable: false,
-            nextStage: 'K39-B',
+            impact: importRuleConfig.requireExplicitSemesterForImport
+              ? '上传前必须确认目标学期'
+              : '所有导入操作绑定到 active semester',
+            editable: true,
           },
         ],
       },
@@ -545,7 +553,7 @@ export async function GET(_request: NextRequest) {
       recentBatches: recentBatchesList,
 
       /* K39-A enhanced fields */
-      moduleVersion: 'K39-A',
+      moduleVersion: 'K39-B1',
       enhancedSummary,
       sourceEvidence,
       crossCohortGuard,
@@ -553,11 +561,66 @@ export async function GET(_request: NextRequest) {
       duplicateImportPolicy,
       editability,
       ruleGroups,
+
+      /* K39-B1 config */
+      config: {
+        requireExplicitSemesterForImport: {
+          current: importRuleConfig.requireExplicitSemesterForImport,
+          editable: true,
+          source: importRuleConfig.id > 0 ? 'database' as const : 'fallback' as const,
+          description: importRuleConfig.requireExplicitSemesterForImport
+            ? '上传前必须确认目标学期'
+            : '保持当前 active semester fallback 行为',
+        },
+      },
     })
   } catch (error) {
     console.error('Import rules API error:', error)
     return NextResponse.json(
       { success: false, error: 'INTERNAL_ERROR', message: '获取导入规则失败' },
+      { status: 500 },
+    )
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  const auth = await requirePermission('settings:manage', request)
+  if ('error' in auth) return auth.error
+
+  try {
+    const body = await request.json()
+
+    // Only allow requireExplicitSemesterForImport updates
+    if (body.requireExplicitSemesterForImport !== undefined) {
+      const validation = validateRequireExplicitSemesterForImport(body.requireExplicitSemesterForImport)
+      if (!validation.ok) {
+        return NextResponse.json(
+          { success: false, error: validation.error },
+          { status: 400 },
+        )
+      }
+      await updateImportRuleConfig({ requireExplicitSemesterForImport: validation.parsed })
+    }
+
+    // Return refreshed config
+    const config = await getImportRuleConfig()
+    return NextResponse.json({
+      success: true,
+      config: {
+        requireExplicitSemesterForImport: {
+          current: config.requireExplicitSemesterForImport,
+          editable: true,
+          source: config.id > 0 ? 'database' as const : 'fallback' as const,
+          description: config.requireExplicitSemesterForImport
+            ? '上传前必须确认目标学期'
+            : '保持当前 active semester fallback 行为',
+        },
+      },
+    })
+  } catch (error) {
+    console.error('Import rules PATCH error:', error)
+    return NextResponse.json(
+      { success: false, error: 'INTERNAL_ERROR', message: '更新导入规则配置失败' },
       { status: 500 },
     )
   }

@@ -136,6 +136,15 @@ export interface ImportRuleGroup {
   }>
 }
 
+/* ── K39-B1 config field ── */
+
+export interface ImportRuleConfigField {
+  current: boolean
+  editable: boolean
+  source: 'database' | 'fallback'
+  description: string
+}
+
 /* ── Combined response type ── */
 
 export interface ImportRulesData {
@@ -154,6 +163,11 @@ export interface ImportRulesData {
   duplicateImportPolicy: ImportDuplicatePolicy
   editability: ImportEditability
   ruleGroups: ImportRuleGroup[]
+
+  /* K39-B1 config */
+  config: {
+    requireExplicitSemesterForImport: ImportRuleConfigField
+  }
 }
 
 export async function fetchImportRules(): Promise<ImportRulesData> {
@@ -162,4 +176,19 @@ export async function fetchImportRules(): Promise<ImportRulesData> {
   const data = await res.json()
   if (!data.success) throw new Error(data.message || data.error || '请求失败')
   return data as ImportRulesData
+}
+
+export async function patchImportRulesSettings(input: {
+  requireExplicitSemesterForImport?: boolean
+}): Promise<{ success: boolean; config: ImportRulesData['config'] }> {
+  const res = await fetch('/api/admin/settings/import-rules', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+  const data = await res.json()
+  if (!res.ok || !data.success) {
+    throw new Error(data.error || data.message || `HTTP ${res.status}`)
+  }
+  return data
 }

@@ -158,6 +158,11 @@ export default function ImportManagementContent() {
   const [uploadResult, setUploadResult] = useState<{ batchId: number; filename: string; recordCount: number } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // K39-B1: semester confirmation state
+  const [requireSemesterConfirm, setRequireSemesterConfirm] = useState(false)
+  const [semesterConfirmChecked, setSemesterConfirmChecked] = useState(false)
+  const [activeSemesterName, setActiveSemesterName] = useState<string | null>(null)
+
   // ── List loaders ────────────────────────────────────────────────────────
 
   const loadBatches = useCallback(async () => {
@@ -360,8 +365,21 @@ export default function ImportManagementContent() {
   function openUploadDialog() {
     setUploadFile(null)
     setUploadResult(null)
+    setSemesterConfirmChecked(false)
     if (fileInputRef.current) fileInputRef.current.value = ''
     setUploadOpen(true)
+    // K39-B1: fetch config to determine if semester confirmation required
+    fetch('/api/admin/settings/import-rules')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success) {
+          setRequireSemesterConfirm(data.config?.requireExplicitSemesterForImport?.current ?? false)
+          setActiveSemesterName(data.enhancedSummary?.activeSemester?.name ?? null)
+        }
+      })
+      .catch(() => {
+        setRequireSemesterConfirm(false)
+      })
   }
 
   async function executeUpload() {
@@ -782,20 +800,37 @@ export default function ImportManagementContent() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-2">
-                <Label>选择文件</Label>
-                <Input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".docx"
-                  onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
-                />
-                {uploadFile && (
-                  <p className="text-xs text-gray-500 flex items-center gap-1">
-                    <FileSpreadsheet className="w-3.5 h-3.5" />
-                    {uploadFile.name} ({(uploadFile.size / 1024).toFixed(1)} KB)
-                  </p>
+              <div className="space-y-3">
+                {/* K39-B1: Semester confirmation banner */}
+                {requireSemesterConfirm && activeSemesterName && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-amber-800">
+                    <p className="font-medium text-sm">当前目标导入学期：{activeSemesterName}</p>
+                    <label className="flex items-center gap-2 mt-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={semesterConfirmChecked}
+                        onChange={(e) => setSemesterConfirmChecked(e.target.checked)}
+                        className="rounded border-gray-300"
+                      />
+                      <span className="text-sm">我已确认本次导入目标学期正确</span>
+                    </label>
+                  </div>
                 )}
+                <div className="space-y-2">
+                  <Label>选择文件</Label>
+                  <Input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".docx"
+                    onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
+                  />
+                  {uploadFile && (
+                    <p className="text-xs text-gray-500 flex items-center gap-1">
+                      <FileSpreadsheet className="w-3.5 h-3.5" />
+                      {uploadFile.name} ({(uploadFile.size / 1024).toFixed(1)} KB)
+                    </p>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -804,7 +839,7 @@ export default function ImportManagementContent() {
               关闭
             </Button>
             {!uploadResult && (
-              <Button onClick={() => void executeUpload()} disabled={!uploadFile || uploadUploading}>
+              <Button onClick={() => void executeUpload()} disabled={!uploadFile || uploadUploading || (requireSemesterConfirm && !semesterConfirmChecked)}>
                 {uploadUploading ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-1 animate-spin" />

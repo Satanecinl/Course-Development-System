@@ -1,0 +1,30 @@
+{
+  "stage": "K39-B1",
+  "title": "Import Rules Explicit Semester Config Implementation",
+  "status": "CLOSED",
+  "closedAt": "2026-06-19",
+  "schema": {
+    "model": "ImportRuleConfig",
+    "fields": ["id", "key (unique, default='default')", "requireExplicitSemesterForImport (Boolean, default=false)", "createdAt", "updatedAt"],
+    "migration": "20260619000000_add_import_rule_config_k39_b1"
+  },
+  "db-backup": "pending user manual backup",
+  "backfill": {
+    "dry-run": "would create config row",
+    "apply": "created config row id=1 key=default requireExplicitSemesterForImport=false",
+    "business-data-unchanged": true
+  },
+  "api": {
+    "GET": "moduleVersion=K39-B1, config.requireExplicitSemesterForImport included",
+    "PATCH": "settings:manage, validates boolean, upserts ImportRuleConfig"
+  },
+  "ui": {
+    "settings-panel": "badge=基础可配置版, toggle with save/cancel, toast",
+    "upload-dialog": "semester banner + checkbox when config=true, button disabled when unchecked"
+  },
+  "config-default": false,
+  "backward-compatible": true,
+  "cross-cohort-unchanged": true,
+  "source-evidence-unchanged": true,
+  "import-lifecycle-unchanged": true
+}

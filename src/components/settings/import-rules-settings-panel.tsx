@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { fetchImportRules, type ImportRulesData } from '@/lib/settings/import-rules-client'
+import { fetchImportRules, patchImportRulesSettings, type ImportRulesData } from '@/lib/settings/import-rules-client'
 import { Badge } from '@/components/ui/badge'
 import {
   RefreshCw,
@@ -60,6 +60,10 @@ export function ImportRulesSettingsPanel() {
   const [data, setData] = useState<ImportRulesData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  // K39-B1: config toggle state
+  const [configDirty, setConfigDirty] = useState(false)
+  const [configSaving, setConfigSaving] = useState(false)
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -79,20 +83,47 @@ export function ImportRulesSettingsPanel() {
       .finally(() => setLoading(false))
   }, [])
 
+  // K39-B1: save config
+  const handleSaveConfig = useCallback(async () => {
+    if (!data) return
+    setConfigSaving(true)
+    try {
+      const result = await patchImportRulesSettings({
+        requireExplicitSemesterForImport: data.config.requireExplicitSemesterForImport.current,
+      })
+      setData((prev) => prev ? { ...prev, config: result.config } : prev)
+      setConfigDirty(false)
+      setToast({ type: 'success', message: '配置已保存' })
+      setTimeout(() => setToast(null), 4000)
+    } catch (e) {
+      setToast({ type: 'error', message: e instanceof Error ? e.message : '保存失败' })
+      setTimeout(() => setToast(null), 4000)
+    } finally {
+      setConfigSaving(false)
+    }
+  }, [data])
+
   if (loading) return <div className="bg-white rounded-lg border border-gray-200 p-6"><div className="flex items-center gap-2 text-gray-500"><RefreshCw className="w-4 h-4 animate-spin" /><span className="text-sm">加载中...</span></div></div>
   if (error) return <div className="bg-white rounded-lg border border-red-200 p-6"><div className="flex items-center gap-2 text-red-600 mb-2"><AlertTriangle className="w-4 h-4" /><span className="text-sm font-medium">加载失败</span></div><p className="text-sm text-red-500">{error}</p><button onClick={reload} className="mt-2 text-sm text-blue-600 hover:underline">重试</button></div>
   if (!data) return null
 
-  const { summary, recentBatches, sourceEvidence, crossCohortGuard, importLifecycleRules, ruleGroups, editability, enhancedSummary } = data
+  const { summary, recentBatches, sourceEvidence, crossCohortGuard, importLifecycleRules, ruleGroups, enhancedSummary } = data
 
   return (
     <div className="space-y-6">
+      {/* Toast */}
+      {toast && (
+        <div className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-sm font-medium ${toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>
+          {toast.message}
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <FileUp className="w-5 h-5 text-teal-600" />
           <h2 className="text-lg font-bold text-gray-900">导入规则设置</h2>
-          <Badge className="text-xs bg-teal-100 text-teal-700 border-teal-200">诊断增强版</Badge>
+          <Badge className="text-xs bg-teal-100 text-teal-700 border-teal-200">基础可配置版</Badge>
         </div>
         <button onClick={reload} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700">
           <RefreshCw className="w-4 h-4" /> 刷新
@@ -113,6 +144,75 @@ export function ImportRulesSettingsPanel() {
           value={enhancedSummary.activeSemester ? enhancedSummary.activeSemester.name : '无'}
           ok={!!enhancedSummary.activeSemester}
         />
+      </div>
+
+      {/* ── K39-B1: Config Toggle ── */}
+      <div className="bg-white rounded-lg border border-gray-200 p-5">
+        <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+          <Settings className="w-4 h-4" /> 导入学期确认要求
+        </h3>
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-sm text-gray-700">上传前必须确认目标学期</div>
+            <div className="text-xs text-gray-500 mt-0.5">
+              {data.config.requireExplicitSemesterForImport.current
+                ? '开启：上传对话框将显示目标学期并要求确认'
+                : '关闭：保持当前 active semester fallback 行为'}
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={data.config.requireExplicitSemesterForImport.current}
+                onChange={(e) => {
+                  setData((prev) => prev ? {
+                    ...prev,
+                    config: {
+                      ...prev.config,
+                      requireExplicitSemesterForImport: {
+                        ...prev.config.requireExplicitSemesterForImport,
+                        current: e.target.checked,
+                      },
+                    },
+                  } : prev)
+                  setConfigDirty(true)
+                }}
+              />
+              <div className="w-9 h-5 bg-gray-200 peer-focus:ring-2 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-teal-600"></div>
+            </label>
+            {configDirty && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setData((prev) => prev ? {
+                      ...prev,
+                      config: {
+                        ...prev.config,
+                        requireExplicitSemesterForImport: {
+                          ...prev.config.requireExplicitSemesterForImport,
+                          current: !prev.config.requireExplicitSemesterForImport.current,
+                        },
+                      },
+                    } : prev)
+                    setConfigDirty(false)
+                  }}
+                  className="text-xs text-gray-500 hover:text-gray-700"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={() => void handleSaveConfig()}
+                  disabled={configSaving}
+                  className="text-xs bg-teal-600 text-white px-3 py-1 rounded hover:bg-teal-700 disabled:opacity-50"
+                >
+                  {configSaving ? '保存中...' : '保存'}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* ── Source Evidence Coverage ── */}
@@ -325,8 +425,8 @@ export function ImportRulesSettingsPanel() {
         </h4>
         <div className="text-xs text-gray-500 space-y-1">
           <div className="flex items-start gap-2">
-            <Lock className="w-3 h-3 mt-0.5 shrink-0 text-gray-400" />
-            <span>当前为<strong>诊断增强版</strong>，不提供规则编辑功能。所有规则 hard-locked。</span>
+            <CheckCircle2 className="w-3 h-3 mt-0.5 shrink-0 text-teal-500" />
+            <span>当前为<strong>基础可配置版</strong>。&ldquo;导入学期确认要求&rdquo;已可配置。</span>
           </div>
           <div className="flex items-start gap-2">
             <Lock className="w-3 h-3 mt-0.5 shrink-0 text-gray-400" />
@@ -335,10 +435,6 @@ export function ImportRulesSettingsPanel() {
           <div className="flex items-start gap-2">
             <Lock className="w-3 h-3 mt-0.5 shrink-0 text-gray-400" />
             <span>不开放 source evidence 历史自动回填。</span>
-          </div>
-          <div className="flex items-start gap-2">
-            <Clock className="w-3 h-3 mt-0.5 shrink-0 text-blue-500" />
-            <span><strong>{editability.nextConfigStage}</strong> 可考虑默认导入行为配置（默认 semester 可编辑化）。</span>
           </div>
           <div className="flex items-start gap-2">
             <Clock className="w-3 h-3 mt-0.5 shrink-0 text-blue-500" />
