@@ -1,0 +1,18 @@
+{
+  "stage": "K39-C5",
+  "title": "Approved Source Evidence Conditional Fields Apply",
+  "status": "BLOCKED_BY_NO_APPROVED_RECORDS",
+  "blockedReason": "Review package contains 192 pending records, 0 approved. No records eligible for apply.",
+  "reviewPackagePath": "temp/local-artifacts/k39-c4/source-evidence-manual-review-package.json",
+  "reviewPackageSha256": "4b1c7a3c08f10ff668d6e01a2245d19cdb82e236a71895fca5733f833cdbf70e",
+  "decisionCounts": {
+    "approve": 0,
+    "reject": 0,
+    "needs-review": 0,
+    "pending": 192
+  },
+  "dbBackupCreated": false,
+  "dbWrites": false,
+  "applyExecuted": false,
+  "nextAction": "Reviewer must edit temp/local-artifacts/k39-c4/source-evidence-manual-review-package.json and change decision from pending to approve/reject/needs-review for each record before re-running K39-C5."
+}
