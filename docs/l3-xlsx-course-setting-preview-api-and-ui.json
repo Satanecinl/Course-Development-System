@@ -1,0 +1,52 @@
+{
+  "stage": "L3-XLSX-COURSE-SETTING-PREVIEW-API-AND-UI",
+  "status": "PASS",
+  "generatedAt": "2026-06-19T16:42:38.386Z",
+  "api": {
+    "route": "/api/admin/import/course-setting-xlsx/preview",
+    "method": "POST",
+    "permission": "import:manage",
+    "previewOnly": true,
+    "canConfirm": false,
+    "canApply": false,
+    "writesDb": false,
+    "acceptsXlsxOnly": true,
+    "rejectsDocx": true
+  },
+  "ui": {
+    "page": "/admin/import",
+    "component": "CourseSettingXlsxPreview",
+    "previewSection": true,
+    "previewOnlyWarning": true,
+    "manualReviewSummary": true,
+    "confirmApplyDisabled": true,
+    "fileInputAcceptsXlsx": true
+  },
+  "parser": {
+    "parserVersion": "l2-parser-v1",
+    "callsParseCourseSettingXlsx": true,
+    "noDbWrites": true
+  },
+  "privacy": {
+    "rawTeacherNamesReturned": false,
+    "rawClassNamesReturned": false,
+    "rawCourseNamesReturned": false,
+    "rawRemarksReturned": false,
+    "rawRowsReturned": false
+  },
+  "safety": {
+    "schemaChanged": false,
+    "migrationAdded": false,
+    "wordParserChanged": false,
+    "schedulerScoreChanged": false,
+    "dbWritten": false,
+    "importBatchCreated": false
+  },
+  "validation": {
+    "l3Verify": "PASS",
+    "l2ParserVerify": "PASS",
+    "l1Audit": "PASS",
+    "k39ImportRules": "PASS",
+    "build": "PASS"
+  }
+}

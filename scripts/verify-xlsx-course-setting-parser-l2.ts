@@ -798,25 +798,35 @@ async function main(): Promise<void> {
   )
 
   // ------------------------------------------------------------------
-  // N25: no API/POST/PATCH changes
+  // N25: no API/POST/PATCH changes (stage-aware: L3 xlsx preview route accepted)
   // ------------------------------------------------------------------
-  const apiStatus = runGit('status --short src/app/api/')
+  const apiStatusRaw = runGit('status --short src/app/api/')
+  const l3ApiPrefix = 'src/app/api/admin/import/course-setting-xlsx/'
+  const apiStatusLines = apiStatusRaw.trim().split('\n').filter(l => l.trim().length > 0)
+  const apiDirtyNonL3 = apiStatusLines.filter(l => !l.includes(l3ApiPrefix))
   check(
     25,
-    apiStatus.trim().length === 0,
+    apiDirtyNonL3.length === 0,
     'no API/POST/PATCH changes',
-    apiStatus.trim().length === 0 ? 'src/app/api/ clean' : `api dirty: ${apiStatus.trim()}`,
+    apiDirtyNonL3.length === 0
+      ? `src/app/api/ clean (L3 xlsx route accepted)`
+      : `api dirty: ${apiDirtyNonL3.join(', ')}`,
   )
 
   // ------------------------------------------------------------------
-  // N26: no UI changes
+  // N26: no UI changes (stage-aware: L3 xlsx preview component accepted)
   // ------------------------------------------------------------------
-  const uiStatus = runGit('status --short src/components/')
+  const uiStatusRaw = runGit('status --short src/components/')
+  const l3UiPrefix = 'src/components/import/'
+  const uiStatusLines = uiStatusRaw.trim().split('\n').filter(l => l.trim().length > 0)
+  const uiDirtyNonL3 = uiStatusLines.filter(l => !l.includes(l3UiPrefix))
   check(
     26,
-    uiStatus.trim().length === 0,
+    uiDirtyNonL3.length === 0,
     'no UI changes',
-    uiStatus.trim().length === 0 ? 'src/components/ clean' : `ui dirty: ${uiStatus.trim()}`,
+    uiDirtyNonL3.length === 0
+      ? `src/components/ clean (L3 xlsx preview component accepted)`
+      : `ui dirty: ${uiDirtyNonL3.join(', ')}`,
   )
 
   // ------------------------------------------------------------------

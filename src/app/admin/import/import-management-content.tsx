@@ -59,6 +59,7 @@ import type {
   ImportBatchDetail,
   ImportRollbackPlan,
 } from '@/types/import'
+import CourseSettingXlsxPreview from '@/components/import/course-setting-xlsx-preview'
 
 // ── Status presentation ─────────────────────────────────────────────────────
 
@@ -586,6 +587,9 @@ export default function ImportManagementContent() {
           </div>
         )}
       </div>
+
+      {/* Excel 课程设置 preview */}
+      <CourseSettingXlsxPreview />
 
       {/* Quick links */}
       <div className="bg-white rounded-lg shadow px-4 py-3 flex items-center gap-2 text-sm text-gray-600 flex-wrap">

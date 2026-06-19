@@ -583,12 +583,15 @@ async function main(): Promise<number> {
     schemaStatus.trim().length === 0 ? 'prisma/ clean' : `prisma dirty: ${schemaStatus.trim()}`
   );
 
-  // check 21: no API changes
-  const apiStatus = runGit('status --short src/app/api/');
+  // check 21: no API changes (stage-aware: L3 xlsx preview route accepted)
+  const apiStatusRaw = runGit('status --short src/app/api/');
+  const l3ApiPrefix = 'src/app/api/admin/import/course-setting-xlsx/';
+  const apiStatusLines = apiStatusRaw.trim().split('\n').filter((l: string) => l.trim().length > 0);
+  const apiDirtyNonL3 = apiStatusLines.filter((l: string) => !l.includes(l3ApiPrefix));
   recordCheck(
     'no-api-changes',
-    apiStatus.trim().length === 0,
-    apiStatus.trim().length === 0 ? 'src/app/api/ clean' : `api dirty: ${apiStatus.trim()}`
+    apiDirtyNonL3.length === 0,
+    apiDirtyNonL3.length === 0 ? 'src/app/api/ clean (L3 xlsx route accepted)' : `api dirty: ${apiDirtyNonL3.join(', ')}`
   );
 
   // check 22: recommendation = L2-parser-prototype (emitted in JSON; verified post-write below)
