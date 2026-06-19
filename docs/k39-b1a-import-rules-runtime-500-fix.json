@@ -1,0 +1,13 @@
+{
+  "stage": "K39-B1A",
+  "title": "Import Rules Runtime 500 Fix",
+  "status": "CLOSED",
+  "rootCause": "Stale Prisma Client in dev server — server started before ImportRuleConfig was added to schema. prisma.importRuleConfig delegate did not exist at runtime.",
+  "fix": "Added defensive try/catch to config helper (getImportRuleConfig, updateImportRuleConfig) with safe fallback to defaults. User must restart dev server + prisma generate.",
+  "dbBackup": "prisma/dev.db.backup-before-k39-b1a-20260619-185409 (gitignored)",
+  "migrationEvidence": "prisma/migrations/20260619000000_add_import_rule_config_k39_b1/migration.sql present and git-tracked",
+  "prismaMigrateStatus": "up to date (13 migrations)",
+  "configHelperDefensive": true,
+  "apiStable": true,
+  "businessDataUnchanged": true
+}

@@ -3,6 +3,7 @@
  *
  * Singleton config for import rule behaviors. Default key = "default".
  * Config row missing → fallback to safe defaults (false).
+ * Stale Prisma Client → catch and fallback (defensive).
  */
 
 import { prisma } from '@/lib/prisma'
@@ -16,23 +17,26 @@ export interface ImportRuleConfigData {
 }
 
 const DEFAULT_KEY = 'default'
-const FALLBACK_CONFIG = { requireExplicitSemesterForImport: false }
+const FALLBACK_CONFIG: ImportRuleConfigData = {
+  id: 0,
+  key: DEFAULT_KEY,
+  requireExplicitSemesterForImport: false,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+}
 
 /**
- * Get the import rule config. Returns fallback if row missing.
+ * Get the import rule config. Returns fallback if row missing or Prisma error.
  */
 export async function getImportRuleConfig(): Promise<ImportRuleConfigData> {
-  const row = await prisma.importRuleConfig.findUnique({ where: { key: DEFAULT_KEY } })
-  if (!row) {
-    return {
-      id: 0,
-      key: DEFAULT_KEY,
-      ...FALLBACK_CONFIG,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }
+  try {
+    const row = await prisma.importRuleConfig.findUnique({ where: { key: DEFAULT_KEY } })
+    if (!row) return FALLBACK_CONFIG
+    return row
+  } catch {
+    // Stale Prisma Client or table missing — safe fallback
+    return FALLBACK_CONFIG
   }
-  return row
 }
 
 /**
@@ -58,12 +62,17 @@ export async function updateImportRuleConfig(input: {
     return getImportRuleConfig()
   }
 
-  const row = await prisma.importRuleConfig.upsert({
-    where: { key: DEFAULT_KEY },
-    create: { key: DEFAULT_KEY, ...data },
-    update: data,
-  })
-  return row
+  try {
+    const row = await prisma.importRuleConfig.upsert({
+      where: { key: DEFAULT_KEY },
+      create: { key: DEFAULT_KEY, ...data },
+      update: data,
+    })
+    return row
+  } catch {
+    // Stale Prisma Client — return fallback
+    return FALLBACK_CONFIG
+  }
 }
 
 /**
