@@ -1,0 +1,48 @@
+{
+  "stage": "K37-A1-CAMPUS-ROOM-RULES-DIAGNOSTIC-MANUAL-VALIDATION",
+  "status": "AUTO_VERIFIED",
+  "browserValidation": "PENDING_USER",
+  "currentState": {
+    "branch": "master",
+    "head": "95bf255b5084a04969aab97719564b0c59e6c503",
+    "originMaster": "95bf255b5084a04969aab97719564b0c59e6c503",
+    "aheadBehind": "0/0",
+    "gitStatusShort": "empty"
+  },
+  "autoVerification": {
+    "k37aVerify": "24/24 PASS",
+    "k36b1a5Verify": "19/19 PASS",
+    "k22cRegression": "73/0/0/0 (no drift)",
+    "piiScan": "0 BLOCKING",
+    "prismaValidate": "valid",
+    "build": "PASS"
+  },
+  "manualChecklistSummary": {
+    "totalChecks": 37,
+    "autoPassed": 19,
+    "manualPending": 18,
+    "manualFailed": 0,
+    "categories": {
+      "entryModuleStatus": { "auto": 1, "pending": 5 },
+      "summaryCards": { "auto": 0, "pending": 5 },
+      "rulesSection": { "auto": 5, "pending": 1 },
+      "violationsDetail": { "auto": 4, "pending": 2 },
+      "roomTable": { "auto": 4, "pending": 4 },
+      "editabilityBoundary": { "auto": 4, "pending": 0 },
+      "permissionCheck": { "auto": 1, "pending": 1 }
+    }
+  },
+  "issuesFound": "None (auto-verified); manual browser pending",
+  "uiBugFound": false,
+  "needsK37a2Polish": false,
+  "recommendation": "All auto-checks pass. Browser testing pending. Ready for K37-B after manual confirmation.",
+  "commit": {
+    "message": "docs(settings): validate campus room rules diagnostics",
+    "expectedFiles": [
+      "docs/k37-a1-campus-room-rules-diagnostic-manual-validation.md",
+      "docs/k37-a1-campus-room-rules-diagnostic-manual-validation.json",
+      "docs/current-project-status.md"
+    ],
+    "pushed": false
+  }
+}
