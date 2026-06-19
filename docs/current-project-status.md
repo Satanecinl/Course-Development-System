@@ -31,6 +31,7 @@
 > **K39-C3 Conditional Source Evidence 人工审核方案已完成**（[K39-C3](k39-c3-source-evidence-conditional-review-plan.md)）。192/446 unique candidates 可供人工审核，254/446 MULTIPLE_CANDIDATES blocked。推荐 K39-C4 生成 gitignored 审核包。matchStrategy/matchConfidence 继续禁止。Audit 22/22 PASS。
 > **K39-C4 人工审核包已生成**（[K39-C4](k39-c4-source-evidence-manual-review-package.md)）。192 records in `temp/local-artifacts/k39-c4/source-evidence-manual-review-package.json` (gitignored, SHA256 4b1c7a3c...). All decisions pending. Committed summary only contains aggregate. Verify 31/31 PASS。
 > **K39-C5 条件字段 apply 已 BLOCKED**（[K39-C5](k39-c5-approved-source-evidence-conditional-apply.md)）。Review package 192/192 仍为 pending, 0 approved。按规则不写 DB, 不创建 apply 脚本, 不创建 DB backup。等待人工审核。
+> **L1 Excel 课程设置导入审计已完成**（[L1](l1-xlsx-course-setting-import-audit.md)）。只读审查 + parser 方案设计：9 个 sheet / 1854 行 / 1116 course row / 3080 merged cells。Class count 859 行需 newline/space split，teacher 92 行 multi-scope。Word parser 保持 legacy。L2 推荐做 parser prototype only（不写 DB，不接 UI）。Audit 25/25 PASS。K22-C 73/0/0/0 不变；K39 全套仍 PASS。
 >
 > 详细阶段 closeout 文档位于 `docs/`，按 `k<stage>-*.md` / `k<stage>-*.json` 命名。
 > 本文件只汇总 readiness、baseline、known artifacts、下一步建议。

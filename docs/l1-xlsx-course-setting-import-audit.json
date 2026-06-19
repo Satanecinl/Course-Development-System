@@ -1,0 +1,474 @@
+{
+  "meta": {
+    "generatedAt": "2026-06-19T12:57:42.645Z",
+    "scriptVersion": "l1-audit-v1",
+    "sampleFileNameHash": "d5c590e19e3f",
+    "sampleFilePathHash": "34ae69f10ac7",
+    "sampleFileSize": 131200
+  },
+  "workbook": {
+    "sheetCount": 9,
+    "sheetNames": [
+      "2024级三年制",
+      "2021级五年制",
+      "2022级五年制和中职",
+      "2023级五年制和中专",
+      "2023级三年制",
+      "2024级五年制",
+      "2025级三年制",
+      "2025级五年制、中专",
+      "2025级二年制"
+    ],
+    "sheets": [
+      {
+        "name": "2024级三年制",
+        "rowCount": 522,
+        "colCount": 15,
+        "mergedCellCount": 1065,
+        "headerDetected": true,
+        "expectedColumnsDetected": 8,
+        "inheritanceSpans": {
+          "gradeMajor": {
+            "min": 10,
+            "max": 24,
+            "total": 484,
+            "count": 34
+          },
+          "classCount": {
+            "min": 10,
+            "max": 24,
+            "total": 485,
+            "count": 34
+          }
+        }
+      },
+      {
+        "name": "2021级五年制",
+        "rowCount": 74,
+        "colCount": 12,
+        "mergedCellCount": 124,
+        "headerDetected": true,
+        "expectedColumnsDetected": 8,
+        "inheritanceSpans": {
+          "gradeMajor": {
+            "min": 9,
+            "max": 25,
+            "total": 58,
+            "count": 4
+          },
+          "classCount": {
+            "min": 9,
+            "max": 25,
+            "total": 58,
+            "count": 4
+          }
+        }
+      },
+      {
+        "name": "2022级五年制和中职",
+        "rowCount": 66,
+        "colCount": 8,
+        "mergedCellCount": 132,
+        "headerDetected": true,
+        "expectedColumnsDetected": 8,
+        "inheritanceSpans": {
+          "gradeMajor": {
+            "min": 7,
+            "max": 17,
+            "total": 59,
+            "count": 5
+          },
+          "classCount": {
+            "min": 7,
+            "max": 17,
+            "total": 59,
+            "count": 5
+          }
+        }
+      },
+      {
+        "name": "2023级五年制和中专",
+        "rowCount": 70,
+        "colCount": 11,
+        "mergedCellCount": 133,
+        "headerDetected": true,
+        "expectedColumnsDetected": 8,
+        "inheritanceSpans": {
+          "gradeMajor": {
+            "min": 10,
+            "max": 17,
+            "total": 62,
+            "count": 5
+          },
+          "classCount": {
+            "min": 10,
+            "max": 17,
+            "total": 62,
+            "count": 5
+          }
+        }
+      },
+      {
+        "name": "2023级三年制",
+        "rowCount": 282,
+        "colCount": 9,
+        "mergedCellCount": 521,
+        "headerDetected": true,
+        "expectedColumnsDetected": 8,
+        "inheritanceSpans": {
+          "gradeMajor": {
+            "min": 5,
+            "max": 24,
+            "total": 256,
+            "count": 24
+          },
+          "classCount": {
+            "min": 5,
+            "max": 24,
+            "total": 256,
+            "count": 24
+          }
+        }
+      },
+      {
+        "name": "2024级五年制",
+        "rowCount": 97,
+        "colCount": 9,
+        "mergedCellCount": 196,
+        "headerDetected": true,
+        "expectedColumnsDetected": 8,
+        "inheritanceSpans": {
+          "gradeMajor": {
+            "min": 10,
+            "max": 20,
+            "total": 88,
+            "count": 7
+          },
+          "classCount": {
+            "min": 10,
+            "max": 20,
+            "total": 88,
+            "count": 7
+          }
+        }
+      },
+      {
+        "name": "2025级三年制",
+        "rowCount": 610,
+        "colCount": 9,
+        "mergedCellCount": 1148,
+        "headerDetected": true,
+        "expectedColumnsDetected": 8,
+        "inheritanceSpans": {
+          "gradeMajor": {
+            "min": 10,
+            "max": 24,
+            "total": 569,
+            "count": 39
+          },
+          "classCount": {
+            "min": 10,
+            "max": 24,
+            "total": 569,
+            "count": 39
+          }
+        }
+      },
+      {
+        "name": "2025级五年制、中专",
+        "rowCount": 61,
+        "colCount": 9,
+        "mergedCellCount": 121,
+        "headerDetected": true,
+        "expectedColumnsDetected": 8,
+        "inheritanceSpans": {
+          "gradeMajor": {
+            "min": 10,
+            "max": 20,
+            "total": 55,
+            "count": 4
+          },
+          "classCount": {
+            "min": 10,
+            "max": 20,
+            "total": 55,
+            "count": 4
+          }
+        }
+      },
+      {
+        "name": "2025级二年制",
+        "rowCount": 72,
+        "colCount": 9,
+        "mergedCellCount": 139,
+        "headerDetected": true,
+        "expectedColumnsDetected": 8,
+        "inheritanceSpans": {
+          "gradeMajor": {
+            "min": 11,
+            "max": 15,
+            "total": 65,
+            "count": 5
+          },
+          "classCount": {
+            "min": 11,
+            "max": 15,
+            "total": 65,
+            "count": 5
+          }
+        }
+      }
+    ],
+    "mergedCellGrandTotal": 3579
+  },
+  "rowClassification": {
+    "titleRows": 9,
+    "headerRows": 9,
+    "courseRows": 1116,
+    "subtotalRows": 695,
+    "blankRows": 25,
+    "malformedRows": 0
+  },
+  "inheritance": {
+    "gradeMajorMerged": true,
+    "classCountMerged": true,
+    "spans": {
+      "minSpan": 15,
+      "maxSpan": 25,
+      "avgSpan": 20.7
+    }
+  },
+  "classCountPatterns": {
+    "multiNewline": 178,
+    "multiSpaces": 681,
+    "single": 445,
+    "countOnly": 228,
+    "blank": 114,
+    "other": 165
+  },
+  "teacherAssignmentPatterns": {
+    "single": 876,
+    "numbered": 12,
+    "bankSplit": 80,
+    "blank": 781,
+    "other": 62,
+    "uniqueHashCount": 359
+  },
+  "mergeRemarkPatterns": {
+    "blank": 1705,
+    "合班授课": 30,
+    "classSpecific": 13,
+    "ambiguous": 63
+  },
+  "weeklyHoursQuality": {
+    "numeric": 1074,
+    "halfStep": 43,
+    "blank": 675,
+    "nonNumeric": 19
+  },
+  "examTypeValues": {
+    "试": 394,
+    "查": 551,
+    "blank": 724,
+    "other": 142,
+    "uniqueOtherHashCount": 2
+  },
+  "sourceEvidenceDesign": {
+    "description": "Per-row source-evidence mapping proposed for the L2 parser prototype. Each parsed row gets a deterministic pointer back into the xlsx so audit trails can be reconstructed without persisting raw sensitive data.",
+    "fields": {
+      "sourceArtifactFilename": {
+        "type": "string",
+        "example": "<hashed-12-chars>",
+        "notes": "hashed filename (sha256 prefix) so PII like the original filename leak is avoided in committed JSON"
+      },
+      "sourceSheetName": {
+        "type": "string",
+        "allowed": [
+          "2024级三年制",
+          "2021级五年制",
+          "2022级五年制和中职",
+          "2023级五年制和中专",
+          "2023级三年制",
+          "2024级五年制",
+          "2025级三年制",
+          "2025级五年制、中专",
+          "2025级二年制"
+        ],
+        "notes": "one of the 9 known sheet names — these are public labels (no PII)"
+      },
+      "sourceRowIndex": {
+        "type": "integer",
+        "notes": "1-based row number in the xlsx (data row, not including the title row)"
+      },
+      "sourceMajorName": {
+        "type": "string",
+        "notes": "sha256 prefix of the inherited grade-major string"
+      },
+      "sourceClassCountRaw": {
+        "type": "string",
+        "notes": "sha256 prefix of the raw 班级人数 cell text"
+      },
+      "sourceCourseName": {
+        "type": "string",
+        "notes": "sha256 prefix of the course name cell text"
+      },
+      "sourceTeacherRaw": {
+        "type": "string",
+        "notes": "sha256 prefix of the teacher assignment raw text"
+      },
+      "sourceRemark": {
+        "type": "string",
+        "notes": "sha256 prefix of the 备注 cell text"
+      },
+      "sourceMergeRemark": {
+        "type": "string",
+        "notes": "sha256 prefix of the 合班说明 cell text"
+      }
+    },
+    "notes": "Hash length 12 is enough to disambiguate ~10k unique values with negligible collision risk for a single artifact. Length can be raised later if required for forensic accuracy."
+  },
+  "relationshipToExisting": {
+    "proposedParserType": "courseSettingXlsx",
+    "importBatchSourceTypeNeeded": "maybe-yes (defer to L2)",
+    "schemaChangesRequired": [
+      "none-in-L1",
+      "candidate: ImportBatch.sourceType"
+    ],
+    "reusesSourceEvidence": true,
+    "keepsWordParserLegacy": true
+  },
+  "recommendation": "L2-parser-prototype",
+  "futureRoadmap": {
+    "L2": "parser-prototype — implement courseSettingXlsx parser that consumes this structural map and emits sanitized normalized rows",
+    "L3": "dry-run + transaction harness — same dry-run/simulate/confirm pattern as Word import but with new sourceType",
+    "L4": "merge with Word import — let operators choose between docx and xlsx source on a per-batch basis",
+    "L5": "frontend upload UX — extend /admin/settings or import center to accept xlsx and show pre-flight structural report"
+  },
+  "checks": [
+    {
+      "name": "sample-file-exists",
+      "passed": true,
+      "detail": "path-hash = 34ae69f10ac7"
+    },
+    {
+      "name": "sample-not-git-tracked",
+      "passed": true,
+      "detail": "filename-hash d5c590e19e3f not in git ls-files output"
+    },
+    {
+      "name": "workbook-readable",
+      "passed": true,
+      "detail": "ExcelJS loaded workbook"
+    },
+    {
+      "name": "sheet-count-9",
+      "passed": true,
+      "detail": "actual sheet count = 9"
+    },
+    {
+      "name": "sheet-names-detected",
+      "passed": true,
+      "detail": "names = [2024级三年制, 2021级五年制, 2022级五年制和中职, 2023级五年制和中专, 2023级三年制, 2024级五年制, 2025级三年制, 2025级五年制、中专, 2025级二年制]"
+    },
+    {
+      "name": "expected-headers-detected",
+      "passed": true,
+      "detail": "min expected columns per sheet = 8"
+    },
+    {
+      "name": "merged-cells-detected",
+      "passed": true,
+      "detail": "total merged cells across all sheets = 3579"
+    },
+    {
+      "name": "grade-major-inheritance-needed",
+      "passed": true,
+      "detail": "sheets with A-column master merges > 1 = 9"
+    },
+    {
+      "name": "class-count-inheritance-needed",
+      "passed": true,
+      "detail": "sheets with B-column master merges > 1 = 9"
+    },
+    {
+      "name": "course-rows-count-positive",
+      "passed": true,
+      "detail": "total course rows = 1116"
+    },
+    {
+      "name": "subtotal-blank-rows-aggregated",
+      "passed": true,
+      "detail": "blank = 25, subtotal = 695"
+    },
+    {
+      "name": "class-count-patterns-aggregated",
+      "passed": true,
+      "detail": "multiBan=178, multiSpaces=681, single=445, countOnly=228, blank=114, other=165"
+    },
+    {
+      "name": "teacher-patterns-aggregated",
+      "passed": true,
+      "detail": "single=876, numbered=12, bankSplit=80, blank=781, other=62, uniqueHash=359"
+    },
+    {
+      "name": "merge-remark-patterns-aggregated",
+      "passed": true,
+      "detail": "blank=1705, 合班授课=30, classSpecific=13, ambiguous=63"
+    },
+    {
+      "name": "weekly-hours-quality-aggregated",
+      "passed": true,
+      "detail": "numeric=1074, halfStep=43, blank=675, nonNumeric=19"
+    },
+    {
+      "name": "exam-type-aggregated",
+      "passed": true,
+      "detail": "试=394, 查=551, blank=724, other=142, uniqueOtherHash=2"
+    },
+    {
+      "name": "source-evidence-mapping-proposed",
+      "passed": true,
+      "detail": "field design declared in JSON"
+    },
+    {
+      "name": "word-parser-untouched",
+      "passed": true,
+      "detail": "parse_schedule.py mtime=1781229170344, audit mtime=1781873822150, head=17366e214e25"
+    },
+    {
+      "name": "no-prisma-import",
+      "passed": true,
+      "detail": "no prisma import in this script"
+    },
+    {
+      "name": "schema-unchanged",
+      "passed": true,
+      "detail": "prisma/ clean"
+    },
+    {
+      "name": "no-api-changes",
+      "passed": true,
+      "detail": "src/app/api/ clean"
+    },
+    {
+      "name": "recommendation-is-l2-parser-prototype",
+      "passed": true,
+      "detail": "declared in JSON.recommendation"
+    },
+    {
+      "name": "k39-import-rules-still-pass",
+      "passed": true,
+      "detail": "exit code = 0"
+    },
+    {
+      "name": "k22-c-still-pass",
+      "passed": true,
+      "detail": "exit code = 0"
+    },
+    {
+      "name": "no-raw-sensitive-content",
+      "passed": true,
+      "detail": "no raw names / phones / class strings detected in committed JSON"
+    }
+  ]
+}
