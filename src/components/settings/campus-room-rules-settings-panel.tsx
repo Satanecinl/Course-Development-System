@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { fetchCampusRoomRules, patchRoomLinxiao, type CampusRoomRulesData } from '@/lib/settings/campus-room-rules-client'
+import { useSemesterStore } from '@/store/semesterStore'
 import { Badge } from '@/components/ui/badge'
 import {
   ShieldCheck,
@@ -16,6 +17,7 @@ import {
   ToggleLeft,
   ToggleRight,
   Loader2,
+  GraduationCap,
 } from 'lucide-react'
 
 type RoomFilter = 'all' | 'linxiao' | 'non-linxiao'
@@ -29,27 +31,33 @@ export function CampusRoomRulesSettingsPanel() {
   const [togglingRoomId, setTogglingRoomId] = useState<number | null>(null)
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
-  useEffect(() => {
-    let cancelled = false
-    fetchCampusRoomRules()
-      .then((result) => { if (!cancelled) setData(result) })
-      .catch((e) => { if (!cancelled) setError(e instanceof Error ? e.message : '加载失败') })
-      .finally(() => { if (!cancelled) setLoading(false) })
-    return () => { cancelled = true }
-  }, [])
+  // K37-C: subscribe to selected semester (read-only)
+  const currentSemesterId = useSemesterStore((s) => s.currentSemesterId)
+  const getCurrentSemesterId = useSemesterStore((s) => s.getCurrentSemesterId)
 
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const result = await fetchCampusRoomRules()
+      const semesterId = getCurrentSemesterId() ?? currentSemesterId
+      const result = await fetchCampusRoomRules({ semesterId })
       setData(result)
     } catch (e) {
       setError(e instanceof Error ? e.message : '加载失败')
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [getCurrentSemesterId, currentSemesterId])
+
+  useEffect(() => {
+    let cancelled = false
+    const semesterId = getCurrentSemesterId() ?? currentSemesterId
+    fetchCampusRoomRules({ semesterId })
+      .then((result) => { if (!cancelled) setData(result) })
+      .catch((e) => { if (!cancelled) setError(e instanceof Error ? e.message : '加载失败') })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [getCurrentSemesterId, currentSemesterId])
 
   const handleToggle = useCallback(async (roomId: number, currentIsLinxiao: boolean) => {
     const newValue = !currentIsLinxiao
@@ -68,8 +76,9 @@ export function CampusRoomRulesSettingsPanel() {
       } else {
         setToast({ type: 'success', message: `${roomName} 已${label}` })
       }
-      // Refresh full data
-      const refreshed = await fetchCampusRoomRules()
+      // Refresh full data with current semester scope
+      const semesterId = getCurrentSemesterId() ?? currentSemesterId
+      const refreshed = await fetchCampusRoomRules({ semesterId })
       setData(refreshed)
     } catch (e) {
       setToast({ type: 'error', message: e instanceof Error ? e.message : '操作失败' })
@@ -77,7 +86,7 @@ export function CampusRoomRulesSettingsPanel() {
       setTogglingRoomId(null)
       setTimeout(() => setToast(null), 5000)
     }
-  }, [data])
+  }, [data, getCurrentSemesterId, currentSemesterId])
 
   if (loading) {
     return (
@@ -140,6 +149,23 @@ export function CampusRoomRulesSettingsPanel() {
           刷新
         </button>
       </div>
+
+      {/* Semester scope banner (K37-C) */}
+      {data?.resolvedSemester && (
+        <div className="bg-blue-50 rounded-lg border border-blue-200 p-3 flex items-center gap-2 text-xs text-blue-700">
+          <GraduationCap className="w-4 h-4 shrink-0" />
+          <span>
+            当前诊断学期：
+            <span className="font-semibold ml-1">
+              {data.resolvedSemester.name}
+              {data.resolvedSemester.isActive ? '（active）' : ''}
+            </span>
+            <span className="ml-2 text-blue-500">
+              ({data.diagnosticsScope === 'selected-semester' ? 'selected' : 'active'}-semester, id={data.resolvedSemester.id})
+            </span>
+          </span>
+        </div>
+      )}
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -338,7 +364,8 @@ export function CampusRoomRulesSettingsPanel() {
         <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
         <div className="text-xs text-green-700 space-y-1">
           <p className="font-medium">支持林校教室标记维护。HC6 hard rule 不可关闭。</p>
-          <p>林校识别基于 <code className="px-1 py-0.5 bg-green-100 rounded">Room.isLinxiao</code> 持久字段（K37-B）。点击表格操作列按钮可标记/取消林校。</p>
+          <p>林校识别基于 <code className="px-1 py-0.5 bg-green-100 rounded">Room.isLinxiao</code> 持久字段（K37-B），是全局教室属性，不随学期变化。</p>
+          <p>HC5 / HC6 违规明细按当前诊断学期统计（K37-C）。切换学期后，违规与 summary 自动刷新。</p>
           <p>修改林校标记不影响现有课表数据。如修改后产生 HC6 违规，系统会提醒但不阻断保存。</p>
         </div>
       </div>

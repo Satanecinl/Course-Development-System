@@ -1,6 +1,7 @@
 /**
- * K26-L1 / K37-A / K37-B: Campus room rules settings UI client helper.
+ * K26-L1 / K37-A / K37-B / K37-C: Campus room rules settings UI client helper.
  * K37-B: Added PATCH support for updating Room.isLinxiao.
+ * K37-C: Added semesterId query param to GET.
  */
 
 export interface CampusRoomRulesSummary {
@@ -14,10 +15,18 @@ export interface CampusRoomRulesSummary {
   linxiaoMismatchCount?: number
 }
 
+export interface ResolvedSemester {
+  id: number
+  code: string
+  name: string
+  isActive?: boolean
+}
+
 export interface CampusRoomRulesEditability {
   linxiaoEditable: boolean
   detectionMethod: string
   legacyDetection?: string
+  scope?: string
 }
 
 export interface AutomotiveClassificationEntry {
@@ -27,6 +36,11 @@ export interface AutomotiveClassificationEntry {
 }
 
 export interface CampusRoomRulesData {
+  success: boolean
+  semesterScoped?: boolean
+  diagnosticsScope?: 'selected-semester' | 'active-semester'
+  resolvedSemester?: ResolvedSemester
+  semesterWarning?: string | null
   summary: CampusRoomRulesSummary
   rules: {
     nonAutomotiveForbidLinxiao: { enabled: boolean; severity: string; editable: boolean; description: string }
@@ -69,8 +83,17 @@ export interface PatchRoomResult {
   warnings: string[]
 }
 
-export async function fetchCampusRoomRules(): Promise<CampusRoomRulesData> {
-  const res = await fetch('/api/admin/settings/campus-room-rules')
+/**
+ * Fetch campus room rules. K37-C: optionally pass semesterId to scope
+ * HC5/HC6 diagnostics. If omitted, server falls back to active semester.
+ */
+export async function fetchCampusRoomRules(options?: { semesterId?: number | null }): Promise<CampusRoomRulesData> {
+  const params = new URLSearchParams()
+  if (options?.semesterId != null) {
+    params.set('semesterId', String(options.semesterId))
+  }
+  const url = `/api/admin/settings/campus-room-rules${params.toString() ? `?${params.toString()}` : ''}`
+  const res = await fetch(url)
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   const data = await res.json()
   if (!data.success) throw new Error(data.message || data.error || '请求失败')

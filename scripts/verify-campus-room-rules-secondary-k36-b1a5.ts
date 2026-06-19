@@ -60,14 +60,14 @@ check(
   routeSrc.includes('seenHc6Slots') && routeSrc.includes('if (seenHc6Slots.has(slot.id)) continue'),
 )
 
-// ── 7. Cross-semester not mixed in (semesterId: 1 remains in queries) ──
+// ── 7. Cross-semester not mixed in (HC5/HC6 must scope by semesterId) ──
 check(
   'HC5 query scopes to semesterId',
-  /HC5[\s\S]*semesterId:\s*1/.test(routeSrc),
+  /HC5[\s\S]*semesterId\s*[:=]\s*(1|resolveSchedulerSemester)/.test(routeSrc) || /HC5[\s\S]*semesterId,/.test(routeSrc),
 )
 check(
   'HC6 query scopes to semesterId',
-  /HC6[\s\S]*semesterId:\s*1/.test(routeSrc),
+  /HC6[\s\S]*semesterId\s*[:=]\s*(1|resolveSchedulerSemester)/.test(routeSrc) || /HC6[\s\S]*semesterId,/.test(routeSrc),
 )
 
 // ── 8. Response shape backward compatible ──

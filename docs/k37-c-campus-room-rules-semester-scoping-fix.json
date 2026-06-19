@@ -1,0 +1,59 @@
+{
+  "stage": "K37-C-CAMPUS-ROOM-RULES-SEMESTER-SCOPING-FIX",
+  "status": "CLOSED",
+  "type": "semester scoping fix",
+  "rootCause": "HC5/HC6 violations hardcoded to semesterId=1 in campus-room-rules API",
+  "fixStrategy": "Use resolveSchedulerSemester (priority: query > active > error). Support ?semesterId query param. Fall back to active semester.",
+  "schemaChange": false,
+  "prismaMigration": false,
+  "apiChanges": {
+    "get": {
+      "newFields": ["semesterScoped", "diagnosticsScope", "resolvedSemester"],
+      "queryParam": "?semesterId=<id>",
+      "removed": ["hardcoded semesterId: 1 in HC5/HC6 queries"],
+      "globalPreserved": ["totalRooms", "linxiaoRooms", "mismatch"]
+    },
+    "patch": "Unchanged (only updates Room.isLinxiao)"
+  },
+  "uiChanges": {
+    "semesterBanner": "Shows current 诊断学期 with id, isActive, diagnosticsScope",
+    "storeHook": "useSemesterStore currentSemesterId + getCurrentSemesterId",
+    "fetchWithSemester": "All fetchCampusRoomRules calls pass { semesterId }"
+  },
+  "verificationResults": {
+    "k37cVerify": "23/23 PASS",
+    "k37b2RuntimeFix": "17/17 PASS",
+    "k37bVerify": "25/25 PASS",
+    "k37aVerify": "25/25 PASS",
+    "k36b1a5Verify": "19/19 PASS (updated for K37-C)",
+    "k22cRegression": "73/0/0/0 (restored)",
+    "piiScan": "0 BLOCKING",
+    "prismaValidate": "valid",
+    "prismaMigrateStatus": "up to date",
+    "build": "PASS",
+    "eslint": "0 errors"
+  },
+  "dataBaseline": {
+    "roomCount": 42,
+    "isLinxiaoTrueCount": 5,
+    "scheduleSlotCount": 440,
+    "teachingTaskCount": 308,
+    "scheduleAdjustmentCount": 67,
+    "activeSemesterId": 1,
+    "activeSemesterName": "2025-2026春季学期"
+  },
+  "commit": {
+    "message": "fix(settings): scope campus room diagnostics by semester",
+    "expectedFiles": [
+      "src/app/api/admin/settings/campus-room-rules/route.ts",
+      "src/components/settings/campus-room-rules-settings-panel.tsx",
+      "src/lib/settings/campus-room-rules-client.ts",
+      "scripts/verify-campus-room-rules-semester-scoping-k37-c.ts",
+      "scripts/verify-campus-room-rules-secondary-k36-b1a5.ts",
+      "docs/k37-c-campus-room-rules-semester-scoping-fix.md",
+      "docs/k37-c-campus-room-rules-semester-scoping-fix.json",
+      "docs/current-project-status.md"
+    ],
+    "pushed": false
+  }
+}

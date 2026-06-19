@@ -1,17 +1,21 @@
 /**
- * K26-L1 / K37-A / K37-B: Campus room rules — editable API.
+ * K26-L1 / K37-A / K37-B / K37-C: Campus room rules — editable, semester-scoped API.
  *
  * GET  /api/admin/settings/campus-room-rules
+ *      ?semesterId=<id>  (optional; falls back to active semester)
+ *
  * PATCH /api/admin/settings/campus-room-rules/rooms/[roomId]
  *
- * K37-B: Source of truth for linxiao is now Room.isLinxiao (persistent field).
- * Legacy name inference retained as advisory mismatch detection.
+ * K37-C: HC5/HC6 diagnostics now resolve the semester via
+ * resolveSchedulerSemester (explicit > active > error). Room.isLinxiao and
+ * room-level mismatch remain global (not semester-scoped).
  */
 
 import { NextResponse, type NextRequest } from 'next/server'
 import { requirePermission } from '@/lib/auth/require-permission'
 import { prisma } from '@/lib/prisma'
 import { classifySpecialty, AUTOMOTIVE_KEYWORDS } from '@/lib/scheduler/score'
+import { resolveSchedulerSemester } from '@/lib/semester'
 import type { TaskWithRelations } from '@/lib/scheduler/types'
 
 /** Legacy name-based inference (advisory only — not source of truth) */
@@ -19,13 +23,68 @@ function nameSuggestsLinxiao(name: string, building: string | null): boolean {
   return name.includes('林校') || (building?.includes('林校') ?? false)
 }
 
-export async function GET(_request: NextRequest) {
-  const auth = await requirePermission('settings:manage', _request)
+export async function GET(request: NextRequest) {
+  const auth = await requirePermission('settings:manage', request)
   if ('error' in auth) return auth.error
 
   try {
-    // K37-B2: explicit select to ensure isLinxiao is always returned even if
-    // dev server's Prisma Client singleton was loaded before migration.
+    // ── Resolve semester (K37-C) ──
+    const url = new URL(request.url)
+    const semesterParam = url.searchParams.get('semesterId')
+    const explicitSemesterId = semesterParam ? Number(semesterParam) : null
+
+    let diagnosticsScope: 'selected-semester' | 'active-semester' = 'active-semester'
+    let resolvedSemester: { id: number; code: string; name: string; isActive?: boolean }
+    const semesterWarning: string | null = null
+
+    try {
+      const resolved = await resolveSchedulerSemester({
+        semesterId: explicitSemesterId,
+      })
+      // Fetch isActive flag for response
+      const semester = await prisma.semester.findUnique({ where: { id: resolved.id } })
+      resolvedSemester = {
+        id: resolved.id,
+        code: resolved.code,
+        name: resolved.name,
+        isActive: semester?.isActive ?? false,
+      }
+      diagnosticsScope = explicitSemesterId ? 'selected-semester' : 'active-semester'
+    } catch (semError) {
+      // No active semester and no explicit — return a clean error so the UI can show it
+      const message = (semError as Error)?.message ?? 'Unknown semester resolution error'
+      if (message.includes('NO_ACTIVE_SEMESTER')) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'NO_ACTIVE_SEMESTER',
+            message: '系统中没有 active semester。请先在学期设置中激活一个学期。',
+            summary: { totalRooms: 0, linxiaoRooms: 0, nonLinxiaoRooms: 0, missingCapacityRooms: 0, missingTypeRooms: 0, hc5ViolationCount: 0, hc6ViolationCount: 0, linxiaoMismatchCount: 0 },
+            rooms: [],
+            violations: [],
+          },
+          { status: 200 }, // Return 200 with empty data so UI can still render room table
+        )
+      }
+      if (message.includes('SEMESTER_NOT_FOUND')) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'SEMESTER_NOT_FOUND',
+            message: `指定学期 ${explicitSemesterId} 不存在。`,
+            summary: { totalRooms: 0, linxiaoRooms: 0, nonLinxiaoRooms: 0, missingCapacityRooms: 0, missingTypeRooms: 0, hc5ViolationCount: 0, hc6ViolationCount: 0, linxiaoMismatchCount: 0 },
+            rooms: [],
+            violations: [],
+          },
+          { status: 400 },
+        )
+      }
+      throw semError
+    }
+
+    const semesterId = resolvedSemester.id
+
+    // ── Rooms (global, not semester-scoped) ──
     const rooms = await prisma.room.findMany({
       select: {
         id: true,
@@ -43,7 +102,6 @@ export async function GET(_request: NextRequest) {
 
     const roomList = rooms.map((r) => {
       const nameSuggests = nameSuggestsLinxiao(r.name, r.building)
-      // Defensive: if isLinxiao is somehow missing (stale client), fall back to name inference
       const isLx = typeof r.isLinxiao === 'boolean' ? r.isLinxiao : nameSuggests
       return {
         id: r.id,
@@ -62,7 +120,7 @@ export async function GET(_request: NextRequest) {
     const missingCapacity = roomList.filter((r) => r.capacity == null || r.capacity === 0)
     const missingType = roomList.filter((r) => !r.type || r.type === '')
 
-    // ── Violations (using isLinxiao as source of truth) ──
+    // ── Violations (semester-scoped) ──
     const linxiaoIds = linxiaoRooms.map((r) => r.id)
     const violations: Array<{
       type: 'HC5_ROOM_UNAVAILABLE' | 'HC6_NON_AUTOMOTIVE_FORBID_LINXIAO'
@@ -75,7 +133,7 @@ export async function GET(_request: NextRequest) {
       source?: string
     }> = []
 
-    // HC5: room unavailability — include secondary rooms (K36-B1A5)
+    // HC5: room unavailability — include secondary rooms (K36-B1A5) — K37-C: scoped to semesterId
     const unavailRecords = await prisma.roomAvailability.findMany({
       where: { available: false },
       include: { room: true },
@@ -84,7 +142,7 @@ export async function GET(_request: NextRequest) {
     for (const ua of unavailRecords) {
       const slotsAtPos = await prisma.scheduleSlot.findMany({
         where: {
-          semesterId: 1,
+          semesterId,
           dayOfWeek: ua.dayOfWeek,
           slotIndex: ua.slotIndex,
           OR: [
@@ -113,11 +171,11 @@ export async function GET(_request: NextRequest) {
       }
     }
 
-    // HC6: non-automotive in Linxiao — include secondary rooms (K36-B1A5)
+    // HC6: non-automotive in Linxiao — include secondary rooms (K36-B1A5) — K37-C: scoped to semesterId
     if (linxiaoIds.length > 0) {
       const slotsInLinxiao = await prisma.scheduleSlot.findMany({
         where: {
-          semesterId: 1,
+          semesterId,
           OR: [
             { roomId: { in: linxiaoIds } },
             { additionalRooms: { some: { roomId: { in: linxiaoIds } } } },
@@ -171,6 +229,10 @@ export async function GET(_request: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      semesterScoped: true,
+      diagnosticsScope,
+      resolvedSemester,
+      semesterWarning,
       summary: {
         totalRooms: roomList.length,
         linxiaoRooms: linxiaoRooms.length,
@@ -196,9 +258,10 @@ export async function GET(_request: NextRequest) {
         },
       },
       editability: {
-        linxiaoEditable: true, // K37-B: now editable
+        linxiaoEditable: true,
         detectionMethod: 'room.isLinxiao (persistent DB field)',
         legacyDetection: 'room.name contains "林校"',
+        scope: 'Room.isLinxiao is a global Room attribute (not semester-scoped)',
       },
       automotiveKeywords: AUTOMOTIVE_KEYWORDS,
       automotiveClassification: {
