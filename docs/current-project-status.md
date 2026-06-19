@@ -29,6 +29,7 @@
 > **K39-C1 Source Evidence 回填候选已生成**（[K39-C1](k39-c1-source-evidence-backfill-dry-run-candidates.md)）。Dry-run only：446/446 safe importBatchId candidates，192/446 conditional record candidates，254/446 blocked。matchStrategy/matchConfidence DO_NOT_BACKFILL。输出脱敏 JSON。Verify 24/24 PASS。
 > **K39-C2 Source Evidence 安全字段回填已完成**（[K39-C2](k39-c2-source-evidence-safe-fields-backfill.md)）。446 TeachingTaskClass links: importBatchId 0→446, sourceArtifactFilename 0→446。conditional/unsafe fields unchanged。Business data unchanged (ImportBatch=38, TeachingTask=308, ScheduleSlot=440, ScheduleAdjustment=67)。DB backup: dev.db.backup-before-k39-c2-20260619-193254。Verify 30/30 PASS。
 > **K39-C3 Conditional Source Evidence 人工审核方案已完成**（[K39-C3](k39-c3-source-evidence-conditional-review-plan.md)）。192/446 unique candidates 可供人工审核，254/446 MULTIPLE_CANDIDATES blocked。推荐 K39-C4 生成 gitignored 审核包。matchStrategy/matchConfidence 继续禁止。Audit 22/22 PASS。
+> **K39-C4 人工审核包已生成**（[K39-C4](k39-c4-source-evidence-manual-review-package.md)）。192 records in `temp/local-artifacts/k39-c4/source-evidence-manual-review-package.json` (gitignored, SHA256 4b1c7a3c...). All decisions pending. Committed summary only contains aggregate. Verify 31/31 PASS。
 >
 > 详细阶段 closeout 文档位于 `docs/`，按 `k<stage>-*.md` / `k<stage>-*.json` 命名。
 > 本文件只汇总 readiness、baseline、known artifacts、下一步建议。

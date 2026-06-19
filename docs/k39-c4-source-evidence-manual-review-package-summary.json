@@ -1,0 +1,26 @@
+{
+  "stage": "K39-C4",
+  "dryRunOnly": true,
+  "writesDb": false,
+  "packagePath": "temp/local-artifacts/k39-c4/source-evidence-manual-review-package.json",
+  "packageGitignored": true,
+  "packageRecordCount": 192,
+  "packageSha256": "4b1c7a3c08f10ff668d6e01a2245d19cdb82e236a71895fca5733f833cdbf70e",
+  "uniqueCandidates": 192,
+  "multipleCandidates": 254,
+  "includedScope": "UNIQUE_CONDITIONAL_ONLY",
+  "excludedScope": "MULTIPLE_CANDIDATES",
+  "fieldsIncludedForReview": [
+    "sourceRowIndex",
+    "sourceKeyword",
+    "sourceClassName",
+    "sourceRemark"
+  ],
+  "fieldsExcludedFromApply": [
+    "matchStrategy",
+    "matchConfidence"
+  ],
+  "noDbWrites": true,
+  "noApprovedByDefault": true,
+  "nextStageRecommendation": "K39-C5-SOURCE-EVIDENCE-CONDITIONAL-FIELDS-APPROVED-APPLY"
+}
