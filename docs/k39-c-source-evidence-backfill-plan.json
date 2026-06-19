@@ -1,0 +1,68 @@
+{
+  "stage": "K39-C",
+  "title": "Source Evidence Backfill Plan",
+  "status": "PLAN_COMPLETE",
+  "createdAt": "2026-06-19",
+  "定位": "只读审查 + 回填方案设计。不写 DB，不执行回填，不改 importer。",
+  "source-evidence-coverage": {
+    "totalLinks": 446,
+    "withImportBatchId": 0,
+    "withSourceRowIndex": 0,
+    "withSourceKeyword": 0,
+    "withSourceClassName": 0,
+    "withSourceRemark": 0,
+    "withSourceArtifactFilename": 0,
+    "withMatchStrategy": 0,
+    "withMatchConfidence": 0,
+    "coveragePercent": 0,
+    "reason": "ALL 446 TeachingTaskClass links created before K20-FIX-B added source evidence fields"
+  },
+  "importBatch-traceability": {
+    "totalBatches": 38,
+    "confirmed": 1,
+    "pending": 2,
+    "failed": 0,
+    "rolledBack": 0,
+    "abandoned": 35,
+    "confirmedBatchId": 1,
+    "teachingTaskImportBatchId": "308/308 (100%) — TeachingTask has importBatchId",
+    "propagationPath": "TeachingTaskClass → TeachingTask → ImportBatch (via teachingTaskId)"
+  },
+  "artifact-availability": {
+    "confirmedBatchJsonExists": true,
+    "parsedJsonPath": "uploads/imports/1780035124021-sejcg9dy.json",
+    "records": 585,
+    "artifactOnDisk": true,
+    "sensitiveContentInArtifact": true
+  },
+  "backfill-feasibility": {
+    "importBatchId": "SAFE — deterministic via TeachingTask.join, no artifact needed",
+    "sourceRowIndex": "FEASIBLE with artifact — re-match records to TeachingTaskClass",
+    "sourceKeyword": "FEASIBLE with artifact — re-run class name matching",
+    "sourceClassName": "FEASIBLE with artifact — re-run class name matching",
+    "sourceRemark": "FEASIBLE with artifact — re-extract from parsed records",
+    "sourceArtifactFilename": "SAFE — static value from confirmed batch",
+    "matchStrategy": "RISKY — requires re-running importer matching logic, may differ from original",
+    "matchConfidence": "RISKY — same as matchStrategy"
+  },
+  "field-safety": {
+    "safe-for-auto": ["importBatchId", "sourceArtifactFilename"],
+    "conditional": ["sourceRowIndex", "sourceKeyword", "sourceClassName", "sourceRemark"],
+    "unsafe-for-auto": ["matchStrategy", "matchConfidence"]
+  },
+  "candidate-strategies": {
+    "A-no-backfill": "保持 forward-only. 最安全，诊断缺口继续存在",
+    "B-importBatchId-only": "只回填 importBatchId via TeachingTask join. 安全中高，价值有限",
+    "C-artifact-based": "读取 JSON artifact + 复跑匹配. 价值高，风险高",
+    "D-manual-reviewed": "生成候选 JSON + 管理员确认. 最安全可写路线",
+    "E-prohibit": "明确历史 evidence 不可信. 最保守"
+  },
+  "recommendation": "K39-C1: dry-run candidate generator（不写 DB）",
+  "recommended-next": {
+    "stage": "K39-C1",
+    "scope": "读取 confirmed batch JSON artifact + TeachingTask join → 生成 backfill candidates JSON",
+    "writesDb": false,
+    "requiresManualReview": true,
+    "fields": "importBatchId + sourceArtifactFilename（safe），sourceRowIndex/sourceKeyword/sourceClassName/sourceRemark（conditional），matchStrategy/matchConfidence（unsafe — skip）"
+  }
+}

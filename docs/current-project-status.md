@@ -25,6 +25,7 @@
 > **K39-B 导入规则默认学期配置计划已完成**（[K39-B](k39-b-import-rules-default-semester-config-plan.md)）。只读审查：parse API 无 semesterId 参数（始终 active semester），confirm API 支持 ?semesterId 覆盖，rollback/abandon 使用 active semester。推荐 K39-B1 实现 requireExplicitSemesterForImport（boolean 配置）。Audit 17/17 PASS。
 > **K39-B1 导入学期确认配置已实现**（[K39-B1](k39-b1-import-rules-explicit-semester-config.md)）。ImportRuleConfig schema + migration + backfill。GET/PATCH API。Settings panel badge → 基础可配置版，toggle with save/cancel。Upload dialog semester banner + checkbox。Default false。Verify 26/26 PASS。K22-C 73/0/0/0 不变。
 > **K39-B1A 运行时 500 修复**（[K39-B1A](k39-b1a-import-rules-runtime-500-fix.md)）。Root cause: dev server stale Prisma Client。修复: config helper defensive try/catch + fallback。DB backup: dev.db.backup-before-k39-b1a-20260619-185409 (gitignored)。Migration evidence 补齐。**用户必须重启 dev server**。
+> **K39-C Source Evidence 回填方案已完成**（[K39-C](k39-c-source-evidence-backfill-plan.md)）。只读审查：446 条 TeachingTaskClass link 全部缺失 source evidence（0% 覆盖率）。importBatchId 可通过 TeachingTask.join 安全回填。artifact-based 回填需复跑匹配逻辑。推荐 K39-C1 dry-run candidate generator（不写 DB）。
 >
 > 详细阶段 closeout 文档位于 `docs/`，按 `k<stage>-*.md` / `k<stage>-*.json` 命名。
 > 本文件只汇总 readiness、baseline、known artifacts、下一步建议。
