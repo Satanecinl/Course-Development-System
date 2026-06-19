@@ -1,0 +1,92 @@
+{
+  "stage": "K36-A5G-RELEASE-PACKAGING-GUARD",
+  "status": "CLOSED",
+  "type": "release-guard infrastructure",
+  "currentState": {
+    "branch": "master",
+    "originMaster": "09677d4b5fb95b6dc5bbd00e90572d96d7a6c4c2",
+    "aheadBehind": "0/0",
+    "gitStatusShort": "empty"
+  },
+  "guardScript": {
+    "path": "scripts/guard-release-package-k36-a5g.ts",
+    "modes": ["--root <path>", "--root-raw <path>", "--manifest <path>", "--strict", "--self-test", "--json"],
+    "exitCodes": { "0": "PASS", "1": "FAIL", "2": "USAGE_ERROR" },
+    "contentPolicy": "never reads file contents, only path/filename matching",
+    "defaultScanSkipsIgnored": true,
+    "strictWarningsAsBlocking": true,
+    "blockingRuleCount": 22,
+    "warningRuleCount": 12
+  },
+  "verifyScript": {
+    "path": "scripts/verify-release-package-guard-k36-a5g.ts",
+    "testCases": 17,
+    "testResult": "17/17 PASS",
+    "categories": [
+      "clean manifest PASS",
+      "blocking on dev.db, .env, .env.*, uploads, temp, teachers.txt, generate-report, semester_2026, output.json, 汇报材料",
+      "temp/README.md + .gitkeep allowlist",
+      "docx WARNING-only in default, BLOCKING in strict",
+      "output format (no file content, valid JSON)",
+      "verify.json has required fields"
+    ]
+  },
+  "rootScanResult": {
+    "defaultMode": "FAIL — .env correctly blocked",
+    "rawMode": "FAIL — .env + 15+ backup files + prisma/dev.db correctly blocked",
+    "behaviorExplanation": ".env at root is correctly BLOCKED because even though .gitignored, a file-level package release might accidentally include it. The guard's job is to prevent this."
+  },
+  "npmScript": {
+    "key": "guard:release",
+    "command": "tsx scripts/guard-release-package-k36-a5g.ts",
+    "working": true
+  },
+  "verificationResults": {
+    "selfTest": "17/17 PASS",
+    "verifyScript": "17/17 PASS",
+    "guardScriptEslint": "0 errors",
+    "verifyScriptEslint": "0 errors",
+    "scanDocsPii": "0 blocking, 2 existing warnings (unchanged)",
+    "prismaValidate": "schema valid",
+    "build": "Compiled successfully (1 pre-existing Turbopack NFT warning, unchanged)",
+    "packageJsonGuardRelease": "working (self-test 17/17 PASS via npm run guard:release)"
+  },
+  "blockingRuleIds": [
+    "VCS_GIT", "NODE_MODULES", "NEXT_BUILD", "TSBUILDINFO", "COVERAGE",
+    "CODEGRAPH", "CLAUDE", "ENV_FILE", "ENV_FILE_VARIANT",
+    "PRISMA_DEV_DB", "PRISMA_DB", "PRISMA_BACKUP", "PRISMA_BACKUPS_DIR",
+    "GENERIC_DB", "SQLITE_DB", "SQLITE3_DB", "BACKUP_FILE",
+    "UPLOADS", "IMPORTS", "TEMP",
+    "TEACHERS_LIST", "TEACHERS_XLSX", "TEACHERS_LIST_GLOB", "TEACHERS_XLSX_GLOB",
+    "CLASS_STUDENT_COUNT_CSV", "ROOM_CAPACITY_CSV",
+    "SEMESTER_2026_OUTPUT", "OUTPUT_JSON",
+    "GENERATE_REPORT", "REPORT_TECH_MD", "REPORT_USAGE_MD",
+    "REPORT_DOCX_GLOB", "REPORT_DOCX_GLOB2"
+  ],
+  "warningRuleIds": [
+    "DOCX_FILE", "XLSX_FILE", "CSV_FILE",
+    "ARCHIVE_ZIP", "ARCHIVE_7Z", "ARCHIVE_RAR",
+    "IMG_PNG", "IMG_JPG", "IMG_JPEG", "IMG_WEBP",
+    "PATH_REPORT_KEYWORD", "PATH_REAL_KEYWORD",
+    "PATH_TEACHER_KEYWORD", "PATH_STUDENT_KEYWORD", "PATH_PHONE_KEYWORD"
+  ],
+  "residualRisks": [
+    "Git history sensitive data not cleaned",
+    "guard ≠ history sanitization (prevents future, does not fix past)",
+    "Public repo No-Go (history + guard not a history cleaner)",
+    "External source delivery No-Go (needs history rewrite or fresh repo decision)",
+    "dev.db / uploads / temp artifacts not deliverable (guard correctly blocks)"
+  ],
+  "commit": {
+    "message": "chore(repo): add release packaging guard",
+    "expectedFiles": [
+      "scripts/guard-release-package-k36-a5g.ts",
+      "scripts/verify-release-package-guard-k36-a5g.ts",
+      "docs/k36-a5g-release-packaging-guard.md",
+      "docs/k36-a5g-release-packaging-guard.json",
+      "package.json"
+    ],
+    "notIncluded": ["src/**", "prisma/**", "temp/**", "docx", "generate-report js"],
+    "pushed": false
+  }
+}

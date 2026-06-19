@@ -51,7 +51,8 @@
     "diagnose:classgroup-data-quality": "tsx scripts/diagnose-classgroup-data-quality.ts",
     "test:classgroup-matching": "tsx scripts/test-classgroup-matching.ts",
     "verify:batch-classgroup-matching": "tsx scripts/verify-batch-classgroup-matching.ts",
-    "scan:docs-pii": "tsx scripts/scan-docs-pii.ts"
+    "scan:docs-pii": "tsx scripts/scan-docs-pii.ts",
+    "guard:release": "tsx scripts/guard-release-package-k36-a5g.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
