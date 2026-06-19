@@ -14,6 +14,7 @@
 > **K36-A5L fresh repo 已初始化并 push**（[K36-A5L](k36-a5l-fresh-repo-init-execution.md)）。Public repo: https://github.com/Satanecinl/Academic-Affairs-System 。Single commit `ff56036`（951 files）。Guard strict PASS。Build PASS。Old private repo 保持 private-only，history 未清理。
 > **K37-A 校区教室规则诊断增强版已完成**（[K37-A](k37-a-campus-room-rules-settings-editable-basic.md)）。Route B（不可编辑）：Room schema 无 campus/isLinxiao 字段，building 全为 null。UI 增强：全部教室表格+筛选搜索、HC5/HC6 违规明细（含 dayOfWeek/slotIndex/primary-secondary source）、汽车专业关键词和分类说明、识别方式说明。K37-B 可实现持久编辑（需 migration）。
 > **K37-A1 自动验证已通过**（[K37-A1](k37-a1-campus-room-rules-diagnostic-manual-validation.md)）。19/37 auto PASS（K37-A 24/24, K36-B1A5 19/19, K22-C 73/0/0/0, PII 0, build PASS）。18 项浏览器人工验收 pending（用户需启动 dev server + ADMIN 登录确认）。
+> **K37-B 校区教室规则可编辑版已完成**（[K37-B](k37-b-campus-room-rules-schema-and-editing.md)）。新增 `Room.isLinxiao` 字段 + migration + 5 间林校教室回填。PATCH API 实现林校标记维护。UI 升级为"基础可编辑版"，含标记/取消按钮。HC6 hard rule 不可关闭。K22-C 73/0/0/0 不变。需浏览器验收。
 >
 > 详细阶段 closeout 文档位于 `docs/`，按 `k<stage>-*.md` / `k<stage>-*.json` 命名。
 > 本文件只汇总 readiness、baseline、known artifacts、下一步建议。

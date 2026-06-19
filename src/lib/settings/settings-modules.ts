@@ -52,12 +52,12 @@ export const SETTINGS_MODULES: SettingsModule[] = [
   {
     key: 'campus-room-rules',
     title: '校区 / 教室规则设置',
-    description: '查看林校教室、教室容量类型、HC5/HC6 违规检查结果、汽车专业分类和当前 hard rule 说明。诊断增强版（不可编辑）。',
+    description: '管理林校教室标记、查看教室容量类型、HC5/HC6 违规检查结果、汽车专业分类和当前 hard rule 说明。基础可编辑版。',
     status: 'ready',
     priority: 'P2',
-    recommendedStage: 'K37-A-ENHANCED',
+    recommendedStage: 'K37-B-EDITABLE',
     riskLevel: 'medium',
-    notes: 'K37-A: 诊断增强版。HC6 hard rule 不可关闭。林校编辑需后续 schema stage（K37-B）。',
+    notes: 'K37-B: 基础可编辑版。Room.isLinxiao 持久字段。HC6 hard rule 不可关闭。',
   },
   {
     key: 'adjustment-rules',

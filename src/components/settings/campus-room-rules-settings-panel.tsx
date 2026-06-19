@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { fetchCampusRoomRules, type CampusRoomRulesData } from '@/lib/settings/campus-room-rules-client'
+import { fetchCampusRoomRules, patchRoomLinxiao, type CampusRoomRulesData } from '@/lib/settings/campus-room-rules-client'
 import { Badge } from '@/components/ui/badge'
 import {
   ShieldCheck,
@@ -10,10 +10,12 @@ import {
   Building2,
   AlertTriangle,
   CheckCircle2,
-  Info,
   Lock,
   Eye,
   Search,
+  ToggleLeft,
+  ToggleRight,
+  Loader2,
 } from 'lucide-react'
 
 type RoomFilter = 'all' | 'linxiao' | 'non-linxiao'
@@ -24,6 +26,8 @@ export function CampusRoomRulesSettingsPanel() {
   const [error, setError] = useState<string | null>(null)
   const [roomFilter, setRoomFilter] = useState<RoomFilter>('all')
   const [searchTerm, setSearchTerm] = useState('')
+  const [togglingRoomId, setTogglingRoomId] = useState<number | null>(null)
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -46,6 +50,34 @@ export function CampusRoomRulesSettingsPanel() {
       setLoading(false)
     }
   }, [])
+
+  const handleToggle = useCallback(async (roomId: number, currentIsLinxiao: boolean) => {
+    const newValue = !currentIsLinxiao
+    const label = newValue ? '标记为林校' : '取消林校'
+    const room = data?.rooms.find((r) => r.id === roomId)
+    const roomName = room?.name ?? `Room ${roomId}`
+
+    if (!confirm(`确认${label}？\n教室：${roomName}\n操作：isLinxiao → ${newValue}`)) return
+
+    setTogglingRoomId(roomId)
+    setToast(null)
+    try {
+      const result = await patchRoomLinxiao(roomId, newValue)
+      if (result.warnings.length > 0) {
+        setToast({ type: 'error', message: result.warnings.join('\n') })
+      } else {
+        setToast({ type: 'success', message: `${roomName} 已${label}` })
+      }
+      // Refresh full data
+      const refreshed = await fetchCampusRoomRules()
+      setData(refreshed)
+    } catch (e) {
+      setToast({ type: 'error', message: e instanceof Error ? e.message : '操作失败' })
+    } finally {
+      setTogglingRoomId(null)
+      setTimeout(() => setToast(null), 5000)
+    }
+  }, [data])
 
   if (loading) {
     return (
@@ -75,22 +107,33 @@ export function CampusRoomRulesSettingsPanel() {
 
   const { summary, rules, rooms, violations, editability, automotiveKeywords, automotiveClassification } = data
 
-  // Room filtering
   const filteredRooms = rooms.filter((r) => {
     if (roomFilter === 'linxiao' && !r.isLinxiao) return false
     if (roomFilter === 'non-linxiao' && r.isLinxiao) return false
-    if (searchTerm && !r.name.toLowerCase().includes(searchTerm.toLowerCase())) return false
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase()
+      if (!r.name.toLowerCase().includes(term) && !String(r.id).includes(term)) return false
+    }
     return true
   })
 
   return (
     <div className="space-y-6">
+      {/* Toast */}
+      {toast && (
+        <div className={`fixed top-4 right-4 z-50 p-3 rounded-lg shadow-lg text-sm max-w-md ${
+          toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+        }`}>
+          {toast.message}
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Building2 className="w-5 h-5 text-blue-600" />
           <h2 className="text-lg font-bold text-gray-900">校区 / 教室规则设置</h2>
-          <Badge className="text-xs bg-amber-100 text-amber-700 border-amber-200">诊断增强版（不可编辑）</Badge>
+          <Badge className="text-xs bg-green-100 text-green-700 border-green-200">基础可编辑版</Badge>
         </div>
         <button onClick={load} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700">
           <RefreshCw className="w-4 h-4" />
@@ -110,6 +153,14 @@ export function CampusRoomRulesSettingsPanel() {
           danger={summary.hc6ViolationCount > 0} />
       </div>
 
+      {/* Mismatch warning */}
+      {summary.linxiaoMismatchCount && summary.linxiaoMismatchCount > 0 && (
+        <div className="bg-amber-50 rounded-lg border border-amber-200 p-3 flex items-center gap-2 text-sm text-amber-700">
+          <AlertTriangle className="w-4 h-4 shrink-0" />
+          有 {summary.linxiaoMismatchCount} 间教室的 isLinxiao 与名称推断不一致。请检查是否需要调整。
+        </div>
+      )}
+
       {/* Rules */}
       <div className="bg-white rounded-lg border border-gray-200 p-5">
         <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
@@ -120,14 +171,12 @@ export function CampusRoomRulesSettingsPanel() {
             name="非汽车专业禁止林校"
             severity="hard"
             enabled={rules.nonAutomotiveForbidLinxiao.enabled}
-            editable={false}
             description={rules.nonAutomotiveForbidLinxiao.description}
           />
           <RuleRow
             name="汽车专业优先林校"
             severity="soft"
             enabled={rules.automotivePreferLinxiao.enabled}
-            editable={false}
             description={rules.automotivePreferLinxiao.description}
           />
         </div>
@@ -136,13 +185,12 @@ export function CampusRoomRulesSettingsPanel() {
           <span>HC6 hard rule 不可通过 UI 关闭。如需调整规则语义，需修改 solver/score 代码。</span>
         </div>
 
-        {/* Detection method & automotive keywords */}
         <div className="mt-4 space-y-2 border-t border-gray-100 pt-3">
           <div className="text-xs text-gray-600">
             <span className="font-medium">林校识别方式：</span>
-            <code className="ml-1 px-1 py-0.5 bg-gray-100 rounded text-gray-700">{editability.detectionMethod}</code>
-            {editability.detectionFallback && (
-              <span className="ml-2 text-gray-400">备用：{editability.detectionFallback}</span>
+            <code className="ml-1 px-1 py-0.5 bg-green-50 text-green-700 rounded">{editability.detectionMethod}</code>
+            {editability.legacyDetection && (
+              <span className="ml-2 text-gray-400">旧方式：{editability.legacyDetection}</span>
             )}
           </div>
           <div className="text-xs text-gray-600">
@@ -155,19 +203,10 @@ export function CampusRoomRulesSettingsPanel() {
             <span className="font-medium">分类依据：</span>
             <span>{automotiveClassification.primarySignal}；辅助：{automotiveClassification.auxiliarySignal}</span>
           </div>
-          <div className="text-xs text-gray-400 mt-1">
-            分类结果：
-            {automotiveClassification.classifications.map((c) => (
-              <span key={c.key} className="ml-2">
-                <code className="px-1 py-0.5 bg-gray-50 rounded">{c.label}</code>
-                {c.hc6Exempt ? '（HC6 豁免）' : '（HC6 不豁免）'}
-              </span>
-            ))}
-          </div>
         </div>
       </div>
 
-      {/* Violations detail */}
+      {/* Violations */}
       <div className="bg-white rounded-lg border border-gray-200 p-5">
         <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
           <Eye className="w-4 h-4" /> 违规检查结果
@@ -179,7 +218,6 @@ export function CampusRoomRulesSettingsPanel() {
           </div>
         ) : (
           <div className="space-y-2">
-            {/* HC5 violations */}
             {violations.filter(v => v.type === 'HC5_ROOM_UNAVAILABLE').length > 0 && (
               <div className="mb-2">
                 <h4 className="text-xs font-medium text-amber-700 mb-1">HC5 — 教室不可用（{violations.filter(v => v.type === 'HC5_ROOM_UNAVAILABLE').length}）</h4>
@@ -188,7 +226,6 @@ export function CampusRoomRulesSettingsPanel() {
                 ))}
               </div>
             )}
-            {/* HC6 violations */}
             {violations.filter(v => v.type === 'HC6_NON_AUTOMOTIVE_FORBID_LINXIAO').length > 0 && (
               <div>
                 <h4 className="text-xs font-medium text-red-700 mb-1">HC6 — 非汽车专业在林校（{violations.filter(v => v.type === 'HC6_NON_AUTOMOTIVE_FORBID_LINXIAO').length}）</h4>
@@ -201,21 +238,21 @@ export function CampusRoomRulesSettingsPanel() {
         )}
       </div>
 
-      {/* All rooms table with filter/search */}
+      {/* Room management table */}
       <div className="bg-white rounded-lg border border-gray-200 p-5">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-            <Building2 className="w-4 h-4" /> 教室管理
+            <Building2 className="w-4 h-4" /> 教室管理（林校标记可编辑）
           </h3>
           <div className="flex items-center gap-2">
             <div className="relative">
               <Search className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder="搜索教室..."
+                placeholder="搜索教室名称或 ID..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-7 pr-3 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-300 w-32"
+                className="pl-7 pr-3 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-300 w-40"
               />
             </div>
             <select
@@ -238,13 +275,14 @@ export function CampusRoomRulesSettingsPanel() {
                 <th className="text-left py-2 pr-4 font-medium text-gray-500">名称</th>
                 <th className="text-left py-2 pr-4 font-medium text-gray-500">容量</th>
                 <th className="text-left py-2 pr-4 font-medium text-gray-500">类型</th>
-                <th className="text-left py-2 pr-4 font-medium text-gray-500">林校</th>
+                <th className="text-left py-2 pr-4 font-medium text-gray-500">是否林校</th>
                 <th className="text-left py-2 pr-4 font-medium text-gray-500">识别来源</th>
+                <th className="text-left py-2 pr-4 font-medium text-gray-500">操作</th>
               </tr>
             </thead>
             <tbody>
               {filteredRooms.map((r) => (
-                <tr key={r.id} className="border-b border-gray-100">
+                <tr key={r.id} className={`border-b border-gray-100 ${r.linxiaoMismatch ? 'bg-amber-50' : ''}`}>
                   <td className="py-1.5 pr-4 font-mono text-xs text-gray-500">{r.id}</td>
                   <td className="py-1.5 pr-4">{r.name}</td>
                   <td className="py-1.5 pr-4">{r.capacity ?? '-'}</td>
@@ -255,9 +293,35 @@ export function CampusRoomRulesSettingsPanel() {
                     ) : (
                       <span className="text-xs text-gray-400">否</span>
                     )}
+                    {r.linxiaoMismatch && (
+                      <span className="ml-1 text-xs text-amber-600" title={`名称${r.nameSuggestsLinxiao ? '建议' : '不建议'}林校`}>⚠</span>
+                    )}
                   </td>
                   <td className="py-1.5 pr-4 text-xs text-gray-500">
                     {r.linxiaoSource || '-'}
+                    {r.linxiaoMismatch && r.nameSuggestsLinxiao !== undefined && (
+                      <span className="ml-1 text-xs text-amber-500">(name: {r.nameSuggestsLinxiao ? '是' : '否'})</span>
+                    )}
+                  </td>
+                  <td className="py-1.5 pr-4">
+                    <button
+                      onClick={() => handleToggle(r.id, r.isLinxiao)}
+                      disabled={togglingRoomId === r.id}
+                      className={`flex items-center gap-1 text-xs px-2 py-1 rounded transition-colors ${
+                        r.isLinxiao
+                          ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'
+                          : 'bg-green-50 text-green-600 hover:bg-green-100 border border-green-200'
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      {togglingRoomId === r.id ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : r.isLinxiao ? (
+                        <ToggleRight className="w-3 h-3" />
+                      ) : (
+                        <ToggleLeft className="w-3 h-3" />
+                      )}
+                      {r.isLinxiao ? '取消林校' : '标记为林校'}
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -270,12 +334,12 @@ export function CampusRoomRulesSettingsPanel() {
       </div>
 
       {/* Editability notice */}
-      <div className="bg-amber-50 rounded-lg border border-amber-200 p-4 flex items-start gap-2">
-        <Info className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
-        <div className="text-xs text-amber-700 space-y-1">
-          <p className="font-medium">当前不支持编辑林校教室标记。</p>
-          <p>{editability.reason}</p>
-          <p>支持的后续方案：K37-B 添加 Room.campus / Room.isLinxiao 字段后实现持久编辑。</p>
+      <div className="bg-green-50 rounded-lg border border-green-200 p-4 flex items-start gap-2">
+        <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
+        <div className="text-xs text-green-700 space-y-1">
+          <p className="font-medium">支持林校教室标记维护。HC6 hard rule 不可关闭。</p>
+          <p>林校识别基于 <code className="px-1 py-0.5 bg-green-100 rounded">Room.isLinxiao</code> 持久字段（K37-B）。点击表格操作列按钮可标记/取消林校。</p>
+          <p>修改林校标记不影响现有课表数据。如修改后产生 HC6 违规，系统会提醒但不阻断保存。</p>
         </div>
       </div>
     </div>
@@ -296,7 +360,7 @@ function SummaryCard({ label, value, icon, danger }: { label: string; value: num
   )
 }
 
-function RuleRow({ name, severity, enabled, description }: { name: string; severity: string; enabled: boolean; editable: boolean; description: string }) {
+function RuleRow({ name, severity, enabled, description }: { name: string; severity: string; enabled: boolean; description: string }) {
   return (
     <div className="flex items-start gap-3 p-2 rounded bg-gray-50">
       <div className="flex items-center gap-2 min-w-[200px]">

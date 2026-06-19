@@ -1,16 +1,11 @@
 /**
- * K26-L1 / K37-A: Campus room rules — enhanced read-only API.
+ * K26-L1 / K37-A / K37-B: Campus room rules — editable API.
  *
- * GET /api/admin/settings/campus-room-rules
+ * GET  /api/admin/settings/campus-room-rules
+ * PATCH /api/admin/settings/campus-room-rules/rooms/[roomId]
  *
- * Returns room summary, HC rules status, room list, current violations,
- * linxiao detection source, and automotive keywords.
- * K37-A: Added editable capability flags, detection source info, and
- * automotive keyword disclosure.
- *
- * Editability: Route B — building field is null for all rooms; linxiao
- * detection is purely name-based. Persistent editing requires a future
- * schema stage (Room.isLinxiao or Room.campus).
+ * K37-B: Source of truth for linxiao is now Room.isLinxiao (persistent field).
+ * Legacy name inference retained as advisory mismatch detection.
  */
 
 import { NextResponse, type NextRequest } from 'next/server'
@@ -19,15 +14,9 @@ import { prisma } from '@/lib/prisma'
 import { classifySpecialty, AUTOMOTIVE_KEYWORDS } from '@/lib/scheduler/score'
 import type { TaskWithRelations } from '@/lib/scheduler/types'
 
-function isLinxiao(name: string, building: string | null): boolean {
+/** Legacy name-based inference (advisory only — not source of truth) */
+function nameSuggestsLinxiao(name: string, building: string | null): boolean {
   return name.includes('林校') || (building?.includes('林校') ?? false)
-}
-
-/** Detect linxiao source for a given room */
-function linxiaoSource(name: string, building: string | null): string {
-  if (name.includes('林校')) return 'room.name'
-  if (building?.includes('林校')) return 'room.building'
-  return 'not-linxiao'
 }
 
 export async function GET(_request: NextRequest) {
@@ -35,27 +24,32 @@ export async function GET(_request: NextRequest) {
   if ('error' in auth) return auth.error
 
   try {
-    // ── Rooms ──
     const rooms = await prisma.room.findMany({
       include: { availabilities: true },
       orderBy: { id: 'asc' },
     })
 
-    const roomList = rooms.map((r) => ({
-      id: r.id,
-      name: r.name,
-      capacity: r.capacity,
-      type: r.type,
-      building: r.building,
-      isLinxiao: isLinxiao(r.name, r.building),
-      linxiaoSource: isLinxiao(r.name, r.building) ? linxiaoSource(r.name, r.building) : null,
-    }))
+    const roomList = rooms.map((r) => {
+      const nameSuggests = nameSuggestsLinxiao(r.name, r.building)
+      return {
+        id: r.id,
+        name: r.name,
+        capacity: r.capacity,
+        type: r.type,
+        building: r.building,
+        isLinxiao: r.isLinxiao, // K37-B: persistent field (source of truth)
+        linxiaoSource: r.isLinxiao ? 'room.isLinxiao' : null,
+        // Legacy advisory: flag if name inference disagrees with persistent field
+        nameSuggestsLinxiao: nameSuggests,
+        linxiaoMismatch: nameSuggests !== r.isLinxiao,
+      }
+    })
 
     const linxiaoRooms = roomList.filter((r) => r.isLinxiao)
     const missingCapacity = roomList.filter((r) => r.capacity == null || r.capacity === 0)
     const missingType = roomList.filter((r) => !r.type || r.type === '')
 
-    // ── Violations ──
+    // ── Violations (using isLinxiao as source of truth) ──
     const linxiaoIds = linxiaoRooms.map((r) => r.id)
     const violations: Array<{
       type: 'HC5_ROOM_UNAVAILABLE' | 'HC6_NON_AUTOMOTIVE_FORBID_LINXIAO'
@@ -160,6 +154,7 @@ export async function GET(_request: NextRequest) {
 
     const hc5Count = violations.filter((v) => v.type === 'HC5_ROOM_UNAVAILABLE').length
     const hc6Count = violations.filter((v) => v.type === 'HC6_NON_AUTOMOTIVE_FORBID_LINXIAO').length
+    const mismatchCount = roomList.filter((r) => r.linxiaoMismatch).length
 
     return NextResponse.json({
       success: true,
@@ -171,6 +166,7 @@ export async function GET(_request: NextRequest) {
         missingTypeRooms: missingType.length,
         hc5ViolationCount: hc5Count,
         hc6ViolationCount: hc6Count,
+        linxiaoMismatchCount: mismatchCount,
       },
       rules: {
         nonAutomotiveForbidLinxiao: {
@@ -186,12 +182,10 @@ export async function GET(_request: NextRequest) {
           description: '汽车专业课程优先安排在林校教室（SC6 软约束）',
         },
       },
-      // K37-A: editability & detection source info
       editability: {
-        linxiaoEditable: false,
-        reason: '当前 Room schema 无 campus/isLinxiao 字段。building 字段全为空。林校识别基于教室名称含"林校"关键词。持久编辑需后续 schema stage（K37-B）。',
-        detectionMethod: 'room.name contains "林校"',
-        detectionFallback: 'room.building contains "林校" (currently unused — all building fields are null)',
+        linxiaoEditable: true, // K37-B: now editable
+        detectionMethod: 'room.isLinxiao (persistent DB field)',
+        legacyDetection: 'room.name contains "林校"',
       },
       automotiveKeywords: AUTOMOTIVE_KEYWORDS,
       automotiveClassification: {
@@ -219,7 +213,7 @@ export async function GET(_request: NextRequest) {
 
 export async function POST() {
   return NextResponse.json(
-    { success: false, error: 'METHOD_NOT_ALLOWED', message: '校区教室规则设置为只读，不支持 POST' },
+    { success: false, error: 'METHOD_NOT_ALLOWED', message: '校区教室规则设置不支持 POST，请使用 PATCH 更新教室林校状态' },
     { status: 405 },
   )
 }

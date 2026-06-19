@@ -1,7 +1,6 @@
 /**
- * K26-L1 / K37-A: Campus room rules settings UI client helper.
- * Read-only fetch wrapper for campus-room-rules API.
- * K37-A: Added editability, automotive keywords, detection source fields.
+ * K26-L1 / K37-A / K37-B: Campus room rules settings UI client helper.
+ * K37-B: Added PATCH support for updating Room.isLinxiao.
  */
 
 export interface CampusRoomRulesSummary {
@@ -12,13 +11,13 @@ export interface CampusRoomRulesSummary {
   missingTypeRooms: number
   hc5ViolationCount: number
   hc6ViolationCount: number
+  linxiaoMismatchCount?: number
 }
 
 export interface CampusRoomRulesEditability {
   linxiaoEditable: boolean
-  reason: string
   detectionMethod: string
-  detectionFallback: string
+  legacyDetection?: string
 }
 
 export interface AutomotiveClassificationEntry {
@@ -48,6 +47,8 @@ export interface CampusRoomRulesData {
     building: string | null
     isLinxiao: boolean
     linxiaoSource: string | null
+    nameSuggestsLinxiao?: boolean
+    linxiaoMismatch?: boolean
   }>
   violations: Array<{
     type: 'HC5_ROOM_UNAVAILABLE' | 'HC6_NON_AUTOMOTIVE_FORBID_LINXIAO'
@@ -61,14 +62,30 @@ export interface CampusRoomRulesData {
   }>
 }
 
+export interface PatchRoomResult {
+  success: boolean
+  room: { id: number; name: string; isLinxiao: boolean }
+  summary: { totalRooms: number; linxiaoRooms: number; hc6ViolationCount: number }
+  warnings: string[]
+}
+
 export async function fetchCampusRoomRules(): Promise<CampusRoomRulesData> {
   const res = await fetch('/api/admin/settings/campus-room-rules')
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status}`)
-  }
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
   const data = await res.json()
-  if (!data.success) {
-    throw new Error(data.message || data.error || '请求失败')
-  }
+  if (!data.success) throw new Error(data.message || data.error || '请求失败')
   return data as CampusRoomRulesData
+}
+
+export async function patchRoomLinxiao(roomId: number, isLinxiao: boolean): Promise<PatchRoomResult> {
+  const res = await fetch(`/api/admin/settings/campus-room-rules/rooms/${roomId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ isLinxiao }),
+  })
+  const data = await res.json()
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || data.error || `HTTP ${res.status}`)
+  }
+  return data as PatchRoomResult
 }

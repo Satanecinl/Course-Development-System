@@ -70,6 +70,8 @@ model Room {
   building       String?
   capacity       Int                  @default(50)
   type           String               @default("NORMAL")
+  // K37-B: persistent linxiao campus flag (replaces name-based inference)
+  isLinxiao      Boolean              @default(false)
   slots          ScheduleSlot[]
   adjustments    ScheduleAdjustment[]
   availabilities RoomAvailability[]

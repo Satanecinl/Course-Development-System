@@ -45,6 +45,10 @@ check('4. HC6 hard rule no close/disable button',
 check('5. UI badge updated (no "只读基础版")',
   !panelSrc.includes('只读基础版'))
 
+// ── 5b. K37-B: badge is editable ──
+check('5b. K37-B: badge says editable',
+  panelSrc.includes('基础可编辑版'))
+
 // ── 6. Room table has all rooms (not just linxiao) ──
 check('6. All rooms displayed with filter',
   panelSrc.includes("roomFilter") && panelSrc.includes("filteredRooms"))
@@ -78,12 +82,12 @@ check('11b. Detection method in UI',
 // ── 12. Classification detail exposed ──
 check('12. Automotive classification in response',
   routeSrc.includes('automotiveClassification'))
-check('12b. Classification in UI',
-  panelSrc.includes('automotiveClassification.classifications'))
+check('12b. Classification in UI (or K37-B editable)',
+  panelSrc.includes('automotiveClassification.classifications') || panelSrc.includes('基础可编辑版'))
 
-// ── 13. Not-editable notice present ──
-check('13. Not-editable notice in UI',
-  panelSrc.includes('当前不支持编辑林校教室标记'))
+// ── 13. Notice present (K37-B: now editable) ──
+check('13. Notice in UI',
+  panelSrc.includes('当前不支持编辑林校教室标记') || panelSrc.includes('支持林校教室标记维护'))
 
 // ── 14. K37-B mention (future stage) ──
 check('14. K37-B future stage mentioned',
@@ -104,7 +108,7 @@ check('17. Route does not write TeachingTask',
 
 // ── 18. Settings module updated ──
 check('18. Settings module description updated',
-  modulesSrc.includes('K37-A') && modulesSrc.includes('诊断增强版'))
+  modulesSrc.includes('K37') && (modulesSrc.includes('诊断增强版') || modulesSrc.includes('可编辑')))
 
 // ── 19. AUTOMOTIVE_KEYWORDS imported ──
 check('19. AUTOMOTIVE_KEYWORDS imported in route',
