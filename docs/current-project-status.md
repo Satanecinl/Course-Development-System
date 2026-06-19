@@ -22,6 +22,7 @@
 > **K38-B 调课规则推荐数量配置已完成**（[K38-B](k38-b-adjustment-rules-config-limit.md)）。新增 AdjustmentRuleConfig 表 + migration + backfill。API PATCH defaultRecommendationLimit（1-20）。Recommendation 使用 config 作为默认 limit（request > config > code fallback）。Verify 23/23 PASS。K22-C 73/0/0/0 不变。
 > **K38-B1 调课规则推荐数量 UI 编辑闭环已完成**（[K38-B1](k38-b1-adjustment-rules-limit-ui-editing-fix.md)）。Panel badge → 基础可配置版。新增 number input / 保存 / 取消 / loading / toast / dirty indicator。Client PATCH helper 已补齐。Verify 21/21 PASS。
 > **K39-A 导入规则设置诊断增强已完成**（[K39-A](k39-a-import-rules-settings-diagnostics.md)）。Badge → 诊断增强版。API 增加 moduleVersion/enhancedSummary/sourceEvidence/crossCohortGuard/importLifecycleRules/duplicateImportPolicy/editability/ruleGroups（backward-compatible）。UI 升级：8 summary cards + source evidence 覆盖率进度条 + cross-cohort guard 卡片 + 6 阶段生命周期 + 6 组 14 条规则。所有规则 hard-locked。Verify 26/26 PASS。K22-C 73/0/0/0 不变。
+> **K39-B 导入规则默认学期配置计划已完成**（[K39-B](k39-b-import-rules-default-semester-config-plan.md)）。只读审查：parse API 无 semesterId 参数（始终 active semester），confirm API 支持 ?semesterId 覆盖，rollback/abandon 使用 active semester。推荐 K39-B1 实现 requireExplicitSemesterForImport（boolean 配置）。Audit 17/17 PASS。
 >
 > 详细阶段 closeout 文档位于 `docs/`，按 `k<stage>-*.md` / `k<stage>-*.json` 命名。
 > 本文件只汇总 readiness、baseline、known artifacts、下一步建议。

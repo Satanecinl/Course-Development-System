@@ -1,0 +1,105 @@
+{
+  "stage": "K39-B",
+  "title": "Import Rules Default Semester Config Plan",
+  "status": "PLAN_COMPLETE",
+  "createdAt": "2026-06-19",
+  "定位": "只读审查 + 配置方案设计。不实现功能，不迁移数据库，不修改导入行为。",
+  "audit-script": {
+    "file": "scripts/audit-import-rules-config-plan-k39-b.ts",
+    "result": "17/17 PASS",
+    "checks": 17
+  },
+  "current-implementation": {
+    "parse-api": "resolveSchedulerSemester() — 无参数，始终使用 active semester",
+    "confirm-api": "resolveSchedulerSemester({ semesterId: querySemesterId }) — 支持 ?semesterId 覆盖",
+    "rollback-api": "resolveSchedulerSemester() — 无参数，使用 active semester",
+    "abandon-api": "resolveSchedulerSemester() — 无参数，使用 active semester",
+    "semester-helper": "priority: explicit > active > error (NO_ACTIVE_SEMESTER / MULTIPLE_ACTIVE_SEMESTERS)",
+    "import-ui": "无学期选择器。parseImportFile 只发送文件，不传 semesterId"
+  },
+  "import-batch-scoping": {
+    "semesterId": "NOT NULL (K25-C)",
+    "parse-creates-batch": true,
+    "confirm-uses-batch-semesterId": true,
+    "rollback-checks-semester": true,
+    "abandon-checks-semester": true,
+    "single-confirmed-per-semester": true,
+    "legacy-null-fixup": "confirmImportBatch 会将 null semesterId 绑定到目标学期"
+  },
+  "source-evidence": {
+    "importBatchId-linked": true,
+    "semester-traceable-via-batch": true,
+    "historical-missing": "不影响配置实施",
+    "backfill-required-before-config": false
+  },
+  "cross-cohort-guard": {
+    "detection-not-semester-dependent": true,
+    "approval-keyed-by-taskKey": true,
+    "not-affected-by-semester-config": true
+  },
+  "permission-boundary": {
+    "import-operations": "import:manage",
+    "settings-view": "settings:manage",
+    "recommended-for-patch": "settings:manage",
+    "rationale": "配置是 settings 领域；导入操作是 import 领域。分离清晰"
+  },
+  "config-candidates": {
+    "A-defaultImportSemesterMode": {
+      "values": ["activeSemesterOnly", "selectedSemesterPreferred", "explicitDefaultSemester"],
+      "safety": "medium",
+      "risk": "silent wrong-semester import if UI doesn't clearly show target",
+      "recommendation": "defer — complex UI + backend changes"
+    },
+    "B-requireExplicitSemesterForImport": {
+      "values": ["true", "false"],
+      "safety": "high",
+      "risk": "low — false = current behavior, true = safety gate",
+      "recommendation": "RECOMMENDED — simplest, safest first step"
+    },
+    "C-defaultDuplicateImportPolicy": {
+      "values": ["warnOnly", "blockSameArtifactSameSemester", "requireManualConfirm"],
+      "safety": "medium",
+      "risk": "may break existing import flow",
+      "recommendation": "defer — separate concern from semester config"
+    },
+    "D-sourceEvidenceBackfillPolicy": {
+      "values": ["disabled", "planOnly", "controlledBackfill"],
+      "safety": "medium",
+      "risk": "backfill may have data quality issues",
+      "recommendation": "defer — K39-C scope"
+    }
+  },
+  "recommended-implementation": {
+    "config-item": "requireExplicitSemesterForImport",
+    "schema-needed": true,
+    "table-name": "ImportRuleConfig",
+    "fields": {
+      "id": "Int @id @default(autoincrement())",
+      "key": "String @unique @default('default')",
+      "requireExplicitSemesterForImport": "Boolean @default(false)",
+      "createdAt": "DateTime @default(now())",
+      "updatedAt": "DateTime @updatedAt"
+    },
+    "migration-risk": "low — single new table, no existing data",
+    "default-value": "false (current behavior preserved)",
+    "backward-compatible": true,
+    "rollback": "DROP TABLE ImportRuleConfig — config only, no data dependency"
+  },
+  "api-contract": {
+    "GET": "GET /api/admin/settings/import-rules — already returns editability config",
+    "PATCH": "PATCH /api/admin/settings/import-rules — new, requires settings:manage",
+    "body": "{ requireExplicitSemesterForImport: boolean }",
+    "response": "{ success: true, config: { ... } }"
+  },
+  "ui-contract": {
+    "location": "import-rules-settings-panel.tsx — editability notice section",
+    "widget": "Boolean toggle with save/cancel",
+    "feedback": "Toast success/error",
+    "guard": "When true: upload dialog shows '必须选择目标学期' banner + disabled upload button until semester selected"
+  },
+  "future-stages": {
+    "K39-B1": "Schema + API + UI for requireExplicitSemesterForImport",
+    "K39-C": "Source evidence backfill plan",
+    "K39-D": "Duplicate import policy config"
+  }
+}
