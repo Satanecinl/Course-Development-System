@@ -1,0 +1,60 @@
+{
+  "stage": "K38-B-ADJUSTMENT-RULES-CONFIG-SCHEMA-AND-LIMIT-EDITING",
+  "status": "CLOSED",
+  "type": "schema + config + editing implementation",
+  "schemaChange": true,
+  "migration": "20260619000001_add_adjustment_rule_config_k38_b",
+  "backfill": {
+    "script": "scripts/backfill-adjustment-rule-config-k38-b.ts",
+    "dryRun": "no row → would create defaultRecommendationLimit=5",
+    "apply": "created config row with limit=5",
+    "idempotent": true
+  },
+  "dbBackup": "prisma/dev.db.backup-before-k38-b-adjustment-rule-config-20260619-163007 (62MB, gitignored)",
+  "apiChanges": {
+    "get": "Returns moduleVersion=K38-B, defaultRecommendationLimit.editable=true, reads adjustment-rule-config",
+    "patch": "New endpoint: PATCH /api/admin/settings/adjustment-rules — updates only defaultRecommendationLimit (1-20)",
+    "validation": "integer + range check via validateDefaultRecommendationLimit",
+    "writes": "Only AdjustmentRuleConfig table"
+  },
+  "recommendationChanges": {
+    "source": "src/lib/schedule/adjustment-plan-recommendations.ts",
+    "import": "imports getDefaultRecommendationLimit from '@/lib/settings/adjustment-rule-config'",
+    "behavior": "request limit > config default > fallback DEFAULT_LIMIT=5. DEFAULT_LIMIT constant preserved as fallback."
+  },
+  "verificationResults": {
+    "k38bVerify": "23/23 PASS",
+    "k38aVerify": "22/22 PASS (updated for K38-B)",
+    "k37cVerify": "23/23 PASS",
+    "k22cRegression": "73/0/0/0 (restored)",
+    "piiScan": "0 BLOCKING",
+    "prismaValidate": "valid",
+    "prismaMigrateStatus": "up to date (12 migrations)",
+    "build": "PASS",
+    "eslint": "0 errors"
+  },
+  "dataBaseline": {
+    "scheduleAdjustmentCount": 67,
+    "scheduleSlotCount": 440,
+    "teachingTaskCount": 308,
+    "configDefaultRecommendationLimit": 5,
+    "configSource": "database"
+  },
+  "commit": {
+    "message": "feat(settings): add adjustment rule recommendation limit config",
+    "expectedFiles": [
+      "prisma/schema.prisma",
+      "prisma/migrations/20260619000001_add_adjustment_rule_config_k38_b/migration.sql",
+      "src/lib/settings/adjustment-rule-config.ts",
+      "src/lib/schedule/adjustment-plan-recommendations.ts",
+      "src/app/api/admin/settings/adjustment-rules/route.ts",
+      "scripts/backfill-adjustment-rule-config-k38-b.ts",
+      "scripts/verify-adjustment-rules-config-limit-k38-b.ts",
+      "scripts/verify-adjustment-rules-settings-safe-basics-k38-a.ts",
+      "docs/k38-b-adjustment-rules-config-limit.md",
+      "docs/k38-b-adjustment-rules-config-limit.json",
+      "docs/current-project-status.md"
+    ],
+    "pushed": false
+  }
+}

@@ -40,6 +40,9 @@ import {
   isWorkTimeSlotAllowed,
   type ResolvedWorkTimeForSchedule,
 } from '@/lib/worktime/worktime-schedule-resolver'
+import {
+  getDefaultRecommendationLimit,
+} from '@/lib/settings/adjustment-rule-config'
 // ─── Constants for the search space ──────────────────────
 
 const DEFAULT_WEEK_WINDOW = 1

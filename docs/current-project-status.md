@@ -18,7 +18,8 @@
 > **K37-B1 自动验证已通过**（[K37-B1](k37-b1-campus-room-rules-editing-manual-validation.md)）。Pre-test data state: 42 rooms, 5 linxiao (林校301/303/304/305/306). 8/35 auto PASS (K37-B 25/25, K37-A 25/25, K36-B1A5 19/19, K22-C 73/0/0/0, PII 0, build PASS). 27 项浏览器手动验收 pending.
 > **K37-B2 runtime 修复已完成**（[K37-B2](k37-b2-campus-room-rules-editing-runtime-fix.md)）。Root cause: dev server Prisma Client 单例 stale（migration 之前加载）。DB state 始终正确（5/42, 0 mismatch）。修复：GET/PATCH route explicit select + fallback + 安全错误处理 + Prisma helper restart note。Verify 17/17 PASS。**用户必须重启 dev server**（Ctrl+C + npm run dev）使修复生效。
 > **K37-C 学期感知 scoping 已修复**（[K37-C](k37-c-campus-room-rules-semester-scoping-fix.md)）。HC5/HC6 不再 hardcode semesterId=1。使用 `resolveSchedulerSemester` (query > active > error)。`?semesterId` query param 支持。UI 显示"当前诊断学期"banner。Room.isLinxiao 仍为全局属性。Verify 23/23 PASS + K37-B2/B/K37-A/K36-B1A5/K22-C 全部绿。
-> **K38-A 调课规则诊断增强版已完成**（[K38-A](k38-a-adjustment-rules-settings-safe-basics.md)）。Route B（不新增 schema/PATCH）。规则按 worktime/recommendation/dry-run/apply 分组展示。UI badge 改为"诊断增强版"。所有规则 hard-locked。defaultRecommendationLimit 仍由代码控制（K38-B 计划 UI 持久化）。Verify 22/22 PASS。
+> **K38-A 调课规则诊断增强版已完成...K38-B 计划 UI 持久化）。Verify 22/22 PASS。
+> **K38-B 调课规则推荐数量配置已完成**（[K38-B](k38-b-adjustment-rules-config-limit.md)）。新增 AdjustmentRuleConfig 表 + migration + backfill。API PATCH defaultRecommendationLimit（1-20）。Recommendation 使用 config 作为默认 limit（request > config > code fallback）。Verify 23/23 PASS。K22-C 73/0/0/0 不变。
 >
 > 详细阶段 closeout 文档位于 `docs/`，按 `k<stage>-*.md` / `k<stage>-*.json` 命名。
 > 本文件只汇总 readiness、baseline、known artifacts、下一步建议。

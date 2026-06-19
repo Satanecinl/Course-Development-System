@@ -529,3 +529,12 @@ model TimeSlotDefinition {
   @@index([workTimeConfigId])
   @@index([slotIndex])
 }
+
+// K38-B: singleton config for adjustment rules (defaultRecommendationLimit etc.)
+model AdjustmentRuleConfig {
+  id                         Int      @id @default(autoincrement())
+  key                        String   @unique @default("default")
+  defaultRecommendationLimit Int      @default(5)
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+}
