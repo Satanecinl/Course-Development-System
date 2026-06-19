@@ -12,6 +12,7 @@
 > **K36-A5J1 strict warning clearance 已完成**（[K36-A5J1](k36-a5j1-clean-export-strict-warning-clearance.md)）。Guard 新增 `--allowlist` 参数支持受控 suppression。Staging + archive manifest strict guard 均 PASS（0 blocking, 12 allowed, 0 unresolved）。Package 现可正式外部交付。
 > **K36-A5K fresh repo init plan 已完成**（[K36-A5K](k36-a5k-fresh-repo-init-plan.md)）。10 步初始化流程：SHA256 verify → extract → safety checks → guard strict → PII scan → git init → create GitHub → push → configure → verify clone。15 项发布前 checklist（11 blocking + 4 recommended）。Fresh repo 可从 clean export 包安全创建，当前 private repo 仍不公开。
 > **K36-A5L fresh repo 已初始化并 push**（[K36-A5L](k36-a5l-fresh-repo-init-execution.md)）。Public repo: https://github.com/Satanecinl/Academic-Affairs-System 。Single commit `ff56036`（951 files）。Guard strict PASS。Build PASS。Old private repo 保持 private-only，history 未清理。
+> **K37-A 校区教室规则诊断增强版已完成**（[K37-A](k37-a-campus-room-rules-settings-editable-basic.md)）。Route B（不可编辑）：Room schema 无 campus/isLinxiao 字段，building 全为 null。UI 增强：全部教室表格+筛选搜索、HC5/HC6 违规明细（含 dayOfWeek/slotIndex/primary-secondary source）、汽车专业关键词和分类说明、识别方式说明。K37-B 可实现持久编辑（需 migration）。
 >
 > 详细阶段 closeout 文档位于 `docs/`，按 `k<stage>-*.md` / `k<stage>-*.json` 命名。
 > 本文件只汇总 readiness、baseline、known artifacts、下一步建议。

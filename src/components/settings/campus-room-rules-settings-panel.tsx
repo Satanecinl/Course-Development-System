@@ -13,12 +13,17 @@ import {
   Info,
   Lock,
   Eye,
+  Search,
 } from 'lucide-react'
+
+type RoomFilter = 'all' | 'linxiao' | 'non-linxiao'
 
 export function CampusRoomRulesSettingsPanel() {
   const [data, setData] = useState<CampusRoomRulesData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [roomFilter, setRoomFilter] = useState<RoomFilter>('all')
+  const [searchTerm, setSearchTerm] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -68,8 +73,15 @@ export function CampusRoomRulesSettingsPanel() {
 
   if (!data) return null
 
-  const { summary, rules, rooms, violations } = data
-  const linxiaoRooms = rooms.filter((r) => r.isLinxiao)
+  const { summary, rules, rooms, violations, editability, automotiveKeywords, automotiveClassification } = data
+
+  // Room filtering
+  const filteredRooms = rooms.filter((r) => {
+    if (roomFilter === 'linxiao' && !r.isLinxiao) return false
+    if (roomFilter === 'non-linxiao' && r.isLinxiao) return false
+    if (searchTerm && !r.name.toLowerCase().includes(searchTerm.toLowerCase())) return false
+    return true
+  })
 
   return (
     <div className="space-y-6">
@@ -78,7 +90,7 @@ export function CampusRoomRulesSettingsPanel() {
         <div className="flex items-center gap-2">
           <Building2 className="w-5 h-5 text-blue-600" />
           <h2 className="text-lg font-bold text-gray-900">校区 / 教室规则设置</h2>
-          <Badge className="text-xs bg-blue-100 text-blue-700 border-blue-200">只读基础版</Badge>
+          <Badge className="text-xs bg-amber-100 text-amber-700 border-amber-200">诊断增强版（不可编辑）</Badge>
         </div>
         <button onClick={load} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700">
           <RefreshCw className="w-4 h-4" />
@@ -108,24 +120,54 @@ export function CampusRoomRulesSettingsPanel() {
             name="非汽车专业禁止林校"
             severity="hard"
             enabled={rules.nonAutomotiveForbidLinxiao.enabled}
-            editable={rules.nonAutomotiveForbidLinxiao.editable}
+            editable={false}
             description={rules.nonAutomotiveForbidLinxiao.description}
           />
           <RuleRow
             name="汽车专业优先林校"
             severity="soft"
             enabled={rules.automotivePreferLinxiao.enabled}
-            editable={rules.automotivePreferLinxiao.editable}
+            editable={false}
             description={rules.automotivePreferLinxiao.description}
           />
         </div>
         <div className="mt-3 flex items-center gap-2 text-xs text-gray-500">
           <Lock className="w-3 h-3" />
-          <span>Hard rule 不可通过 UI 关闭。林校识别规则由系统内部判定，不可编辑。</span>
+          <span>HC6 hard rule 不可通过 UI 关闭。如需调整规则语义，需修改 solver/score 代码。</span>
+        </div>
+
+        {/* Detection method & automotive keywords */}
+        <div className="mt-4 space-y-2 border-t border-gray-100 pt-3">
+          <div className="text-xs text-gray-600">
+            <span className="font-medium">林校识别方式：</span>
+            <code className="ml-1 px-1 py-0.5 bg-gray-100 rounded text-gray-700">{editability.detectionMethod}</code>
+            {editability.detectionFallback && (
+              <span className="ml-2 text-gray-400">备用：{editability.detectionFallback}</span>
+            )}
+          </div>
+          <div className="text-xs text-gray-600">
+            <span className="font-medium">汽车专业关键词：</span>
+            {automotiveKeywords.map((kw) => (
+              <Badge key={kw} className="ml-1 text-xs bg-green-50 text-green-700 border-green-200">{kw}</Badge>
+            ))}
+          </div>
+          <div className="text-xs text-gray-600">
+            <span className="font-medium">分类依据：</span>
+            <span>{automotiveClassification.primarySignal}；辅助：{automotiveClassification.auxiliarySignal}</span>
+          </div>
+          <div className="text-xs text-gray-400 mt-1">
+            分类结果：
+            {automotiveClassification.classifications.map((c) => (
+              <span key={c.key} className="ml-2">
+                <code className="px-1 py-0.5 bg-gray-50 rounded">{c.label}</code>
+                {c.hc6Exempt ? '（HC6 豁免）' : '（HC6 不豁免）'}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Violations */}
+      {/* Violations detail */}
       <div className="bg-white rounded-lg border border-gray-200 p-5">
         <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
           <Eye className="w-4 h-4" /> 违规检查结果
@@ -137,27 +179,57 @@ export function CampusRoomRulesSettingsPanel() {
           </div>
         ) : (
           <div className="space-y-2">
-            {violations.map((v, i) => (
-              <div key={i} className={`flex items-start gap-2 text-sm p-2 rounded ${
-                v.type === 'HC6_NON_AUTOMOTIVE_FORBID_LINXIAO' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'
-              }`}>
-                <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
-                <div>
-                  <span className="font-mono text-xs">{v.type}</span>
-                  <span className="mx-1">·</span>
-                  <span>{v.reason}</span>
-                </div>
+            {/* HC5 violations */}
+            {violations.filter(v => v.type === 'HC5_ROOM_UNAVAILABLE').length > 0 && (
+              <div className="mb-2">
+                <h4 className="text-xs font-medium text-amber-700 mb-1">HC5 — 教室不可用（{violations.filter(v => v.type === 'HC5_ROOM_UNAVAILABLE').length}）</h4>
+                {violations.filter(v => v.type === 'HC5_ROOM_UNAVAILABLE').map((v, i) => (
+                  <ViolationRow key={`hc5-${i}`} v={v} />
+                ))}
               </div>
-            ))}
+            )}
+            {/* HC6 violations */}
+            {violations.filter(v => v.type === 'HC6_NON_AUTOMOTIVE_FORBID_LINXIAO').length > 0 && (
+              <div>
+                <h4 className="text-xs font-medium text-red-700 mb-1">HC6 — 非汽车专业在林校（{violations.filter(v => v.type === 'HC6_NON_AUTOMOTIVE_FORBID_LINXIAO').length}）</h4>
+                {violations.filter(v => v.type === 'HC6_NON_AUTOMOTIVE_FORBID_LINXIAO').map((v, i) => (
+                  <ViolationRow key={`hc6-${i}`} v={v} />
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* Linxiao rooms table */}
+      {/* All rooms table with filter/search */}
       <div className="bg-white rounded-lg border border-gray-200 p-5">
-        <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-          <Building2 className="w-4 h-4" /> 林校教室 ({linxiaoRooms.length})
-        </h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+            <Building2 className="w-4 h-4" /> 教室管理
+          </h3>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="搜索教室..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-7 pr-3 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-300 w-32"
+              />
+            </div>
+            <select
+              value={roomFilter}
+              onChange={(e) => setRoomFilter(e.target.value as RoomFilter)}
+              className="text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-300"
+            >
+              <option value="all">全部 ({rooms.length})</option>
+              <option value="linxiao">林校 ({summary.linxiaoRooms})</option>
+              <option value="non-linxiao">非林校 ({summary.nonLinxiaoRooms})</option>
+            </select>
+          </div>
+        </div>
+
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -166,29 +238,44 @@ export function CampusRoomRulesSettingsPanel() {
                 <th className="text-left py-2 pr-4 font-medium text-gray-500">名称</th>
                 <th className="text-left py-2 pr-4 font-medium text-gray-500">容量</th>
                 <th className="text-left py-2 pr-4 font-medium text-gray-500">类型</th>
+                <th className="text-left py-2 pr-4 font-medium text-gray-500">林校</th>
+                <th className="text-left py-2 pr-4 font-medium text-gray-500">识别来源</th>
               </tr>
             </thead>
             <tbody>
-              {linxiaoRooms.map((r) => (
+              {filteredRooms.map((r) => (
                 <tr key={r.id} className="border-b border-gray-100">
                   <td className="py-1.5 pr-4 font-mono text-xs text-gray-500">{r.id}</td>
                   <td className="py-1.5 pr-4">{r.name}</td>
                   <td className="py-1.5 pr-4">{r.capacity ?? '-'}</td>
                   <td className="py-1.5 pr-4 text-gray-600">{r.type ?? '-'}</td>
+                  <td className="py-1.5 pr-4">
+                    {r.isLinxiao ? (
+                      <Badge className="text-xs bg-green-100 text-green-700 border-green-200">是</Badge>
+                    ) : (
+                      <span className="text-xs text-gray-400">否</span>
+                    )}
+                  </td>
+                  <td className="py-1.5 pr-4 text-xs text-gray-500">
+                    {r.linxiaoSource || '-'}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+        {filteredRooms.length === 0 && (
+          <div className="text-sm text-gray-400 text-center py-4">无匹配教室</div>
+        )}
       </div>
 
-      {/* Read-only notice */}
-      <div className="bg-gray-50 rounded-lg border border-gray-200 p-4 flex items-start gap-2">
-        <Info className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
-        <div className="text-xs text-gray-500 space-y-1">
-          <p>当前为只读基础版，不提供编辑功能。</p>
-          <p>如需修改教室数据，请使用 admin DB 面板。</p>
-          <p>HC6 hard rule 不可通过 UI 关闭。</p>
+      {/* Editability notice */}
+      <div className="bg-amber-50 rounded-lg border border-amber-200 p-4 flex items-start gap-2">
+        <Info className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
+        <div className="text-xs text-amber-700 space-y-1">
+          <p className="font-medium">当前不支持编辑林校教室标记。</p>
+          <p>{editability.reason}</p>
+          <p>支持的后续方案：K37-B 添加 Room.campus / Room.isLinxiao 字段后实现持久编辑。</p>
         </div>
       </div>
     </div>
@@ -209,7 +296,7 @@ function SummaryCard({ label, value, icon, danger }: { label: string; value: num
   )
 }
 
-function RuleRow({ name, severity, enabled, editable, description }: { name: string; severity: string; enabled: boolean; editable: boolean; description: string }) {
+function RuleRow({ name, severity, enabled, description }: { name: string; severity: string; enabled: boolean; editable: boolean; description: string }) {
   return (
     <div className="flex items-start gap-3 p-2 rounded bg-gray-50">
       <div className="flex items-center gap-2 min-w-[200px]">
@@ -222,7 +309,28 @@ function RuleRow({ name, severity, enabled, editable, description }: { name: str
       <div className="flex items-center gap-1 text-xs text-gray-400">
         {enabled ? <CheckCircle2 className="w-3 h-3 text-green-500" /> : <AlertTriangle className="w-3 h-3 text-red-500" />}
         {enabled ? '启用' : '禁用'}
-        {!editable && <Lock className="w-3 h-3 ml-1" />}
+        <Lock className="w-3 h-3 ml-1" />
+      </div>
+    </div>
+  )
+}
+
+const DAY_LABELS: Record<number, string> = { 1: '周一', 2: '周二', 3: '周三', 4: '周四', 5: '周五', 6: '周六', 7: '周日' }
+
+function ViolationRow({ v }: { v: { type: string; slotId: number; courseName: string; roomName: string | null; reason: string; dayOfWeek?: number; slotIndex?: number; source?: string } }) {
+  return (
+    <div className={`flex items-start gap-2 text-sm p-2 rounded mb-1 ${
+      v.type === 'HC6_NON_AUTOMOTIVE_FORBID_LINXIAO' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'
+    }`}>
+      <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+      <div className="flex-1">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="font-mono text-xs px-1 py-0.5 bg-white/50 rounded">{v.type}</span>
+          {v.dayOfWeek != null && <span className="text-xs">{DAY_LABELS[v.dayOfWeek] ?? `D${v.dayOfWeek}`}</span>}
+          {v.slotIndex != null && <span className="text-xs">第{v.slotIndex}节</span>}
+          {v.source && <span className="text-xs opacity-70">({v.source})</span>}
+        </div>
+        <div className="mt-0.5">{v.reason}</div>
       </div>
     </div>
   )

@@ -1,6 +1,7 @@
 /**
- * K26-L1: Campus room rules settings UI client helper.
+ * K26-L1 / K37-A: Campus room rules settings UI client helper.
  * Read-only fetch wrapper for campus-room-rules API.
+ * K37-A: Added editability, automotive keywords, detection source fields.
  */
 
 export interface CampusRoomRulesSummary {
@@ -13,19 +14,50 @@ export interface CampusRoomRulesSummary {
   hc6ViolationCount: number
 }
 
+export interface CampusRoomRulesEditability {
+  linxiaoEditable: boolean
+  reason: string
+  detectionMethod: string
+  detectionFallback: string
+}
+
+export interface AutomotiveClassificationEntry {
+  key: string
+  label: string
+  hc6Exempt: boolean
+}
+
 export interface CampusRoomRulesData {
   summary: CampusRoomRulesSummary
   rules: {
     nonAutomotiveForbidLinxiao: { enabled: boolean; severity: string; editable: boolean; description: string }
     automotivePreferLinxiao: { enabled: boolean; severity: string; editable: boolean; description: string }
   }
-  rooms: Array<{ id: number; name: string; capacity: number | null; type: string | null; building: string | null; isLinxiao: boolean }>
+  editability: CampusRoomRulesEditability
+  automotiveKeywords: string[]
+  automotiveClassification: {
+    primarySignal: string
+    auxiliarySignal: string
+    classifications: AutomotiveClassificationEntry[]
+  }
+  rooms: Array<{
+    id: number
+    name: string
+    capacity: number | null
+    type: string | null
+    building: string | null
+    isLinxiao: boolean
+    linxiaoSource: string | null
+  }>
   violations: Array<{
     type: 'HC5_ROOM_UNAVAILABLE' | 'HC6_NON_AUTOMOTIVE_FORBID_LINXIAO'
     slotId: number
     courseName: string
     roomName: string | null
     reason: string
+    dayOfWeek?: number
+    slotIndex?: number
+    source?: string
   }>
 }
 

@@ -1,0 +1,44 @@
+{
+  "stage": "K37-A-CAMPUS-ROOM-RULES-SETTINGS-EDITABLE-BASIC",
+  "status": "CLOSED",
+  "type": "diagnostics enhancement",
+  "route": "B — not editable",
+  "routeReason": "Room schema has no campus/isLinxiao field; building is null for all 42 rooms; linxiao detection is purely name-based",
+  "schemaChange": false,
+  "prismaMigration": false,
+  "apiChanges": {
+    "get": "Enhanced with editability, automotiveKeywords, automotiveClassification, room linxiaoSource, violation dayOfWeek/slotIndex/source",
+    "post": "No change (405)",
+    "patch": "Not implemented (Route B)"
+  },
+  "uiChanges": {
+    "badge": "诊断增强版（不可编辑）",
+    "rulesSection": "Added detection method, automotive keywords, classification detail",
+    "violationsSection": "Split HC5/HC6, added dayOfWeek/slotIndex/source",
+    "roomsSection": "All rooms with filter/search, linxiao status per room",
+    "editabilityNotice": "Explicit K37-B mention for future schema stage"
+  },
+  "verificationResults": {
+    "k37aVerify": "24/24 PASS",
+    "k36b1a5Verify": "19/19 PASS",
+    "k22cRegression": "73/0/0/0 (no drift)",
+    "piiScan": "0 BLOCKING",
+    "prismaValidate": "valid",
+    "eslint": "0 errors",
+    "build": "PASS"
+  },
+  "commit": {
+    "message": "feat(settings): enhance campus room rules diagnostics",
+    "changedFiles": [
+      "src/app/api/admin/settings/campus-room-rules/route.ts",
+      "src/components/settings/campus-room-rules-settings-panel.tsx",
+      "src/lib/settings/campus-room-rules-client.ts",
+      "src/lib/settings/settings-modules.ts",
+      "scripts/verify-campus-room-rules-editable-basic-k37-a.ts",
+      "docs/k37-a-campus-room-rules-settings-editable-basic.md",
+      "docs/k37-a-campus-room-rules-settings-editable-basic.json",
+      "docs/current-project-status.md"
+    ],
+    "pushed": false
+  }
+}
