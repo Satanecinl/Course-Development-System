@@ -1,0 +1,57 @@
+{
+  "stage": "K37-B1-CAMPUS-ROOM-RULES-EDITING-MANUAL-VALIDATION",
+  "status": "AUTO_VERIFIED",
+  "browserValidation": "PENDING_USER",
+  "currentState": {
+    "branch": "master",
+    "head": "47e35d6a0a38f4bd20274f9c566dab1c4173d6f8",
+    "originMaster": "47e35d6a0a38f4bd20274f9c566dab1c4173d6f8",
+    "aheadBehind": "0/0",
+    "gitStatusShort": "empty"
+  },
+  "preValidationDataState": {
+    "roomCount": 42,
+    "isLinxiaoTrueCount": 5,
+    "linxiaoRooms": ["林校301", "林校303", "林校304", "林校305", "林校306"],
+    "scheduleSlotCount": 440,
+    "teachingTaskCount": 308,
+    "scheduleAdjustmentCount": 67
+  },
+  "autoVerification": {
+    "k37bVerify": "25/25 PASS",
+    "k37aVerify": "25/25 PASS",
+    "k36b1a5Verify": "19/19 PASS",
+    "k22cRegression": "73/0/0/0 (restored)",
+    "piiScan": "0 BLOCKING",
+    "prismaValidate": "valid",
+    "prismaMigrateStatus": "up to date (11 migrations)",
+    "build": "PASS",
+    "dbDataCheck": "42 rooms, 5 linxiao, slot/task/adj unchanged"
+  },
+  "manualChecklistSummary": {
+    "totalChecks": 35,
+    "autoPassed": 8,
+    "manualPending": 27,
+    "manualFailed": 0,
+    "categories": {
+      "pageBasic": { "auto": 4, "pending": 5 },
+      "roomTable": { "auto": 2, "pending": 5 },
+      "editingMark": { "auto": 0, "pending": 7 },
+      "editingUnmark": { "auto": 0, "pending": 6 },
+      "postRecovery": { "auto": 2, "pending": 4 }
+    }
+  },
+  "issuesFound": "None (auto-verified); manual browser pending",
+  "uiBugFound": false,
+  "needsK37b2Polish": false,
+  "readyForRealUse": "PENDING_USER_BROWSER_CONFIRMATION",
+  "commit": {
+    "message": "docs(settings): validate campus room rule editing",
+    "expectedFiles": [
+      "docs/k37-b1-campus-room-rules-editing-manual-validation.md",
+      "docs/k37-b1-campus-room-rules-editing-manual-validation.json",
+      "docs/current-project-status.md"
+    ],
+    "pushed": false
+  }
+}
