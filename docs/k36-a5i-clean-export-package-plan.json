@@ -1,0 +1,97 @@
+{
+  "stage": "K36-A5I-CLEAN-EXPORT-PACKAGE-PLAN",
+  "status": "CLOSED",
+  "type": "read-only delivery plan",
+  "currentState": {
+    "branch": "master",
+    "head": "be2157ef4eb76fe301661a7f5a86994f96e8d911",
+    "originMaster": "be2157ef4eb76fe301661a7f5a86994f96e8d911",
+    "aheadBehind": "0/0",
+    "gitStatusShort": "empty",
+    "trackedFiles": 948,
+    "totalCommits": 301
+  },
+  "exportDesign": {
+    "method": "rsync or git archive from HEAD, then filter",
+    "allowlistCategories": [
+      "src/** (232 files)",
+      "prisma/schema.prisma + prisma/migrations/** (12 files)",
+      "scripts/** excluding templates/串课申请表模板.xlsx (295 files)",
+      "docs/** excluding PII-flagged json until review (386 files)",
+      "public/** (5 svg files)",
+      "data/*.template.csv (2 files)",
+      "root configs: package.json, package-lock.json, tsconfig.json, next.config.ts, eslint.config.mjs, postcss.config.mjs, components.json, .gitignore, README.md, CLAUDE.md, AGENTS.md, test_parse.py, test_parse_schedule.py",
+      "scripts/fixtures/** (synthetic: schedule.synthetic.json, teachers.synthetic.txt)"
+    ],
+    "excludeCategories": [
+      ".git/**",
+      ".env / .env.*",
+      "prisma/dev.db / *.db / dev.db.backup-* / backups/**",
+      "uploads/** / imports/**",
+      "temp/**",
+      ".claude/** / .codegraph/** / .next/** / node_modules/** / coverage/**",
+      "tsconfig.tsbuildinfo",
+      "scripts/teachers.txt / teachers.xlsx (real, not tracked)",
+      "data/class-student-count.csv / room-capacity.csv (real, not tracked)",
+      "output.json / scripts/output.json (real, not tracked)",
+      "scripts/semester_2026.* (real, not tracked)",
+      "templates/串课申请表模板.xlsx (tracked xlsx — must exclude)",
+      "*.docx / *.xlsx / *.png / *.jpg (archive-level exclude)"
+    ],
+    "newFilesToCreate": [
+      ".env.example (placeholder secrets)",
+      "FIXTURES.md (synthetic data documentation)"
+    ]
+  },
+  "verificationFlow": [
+    "1. Extract from HEAD via rsync with exclude rules",
+    "2. Remove tracked-but-excluded files (templates xlsx)",
+    "3. Create .env.example + FIXTURES.md",
+    "4. Run guard-release-package --root . --strict on staging",
+    "5. Run scan:docs-pii on docs/",
+    "6. Optional: npm install + prisma generate + npm run build",
+    "7. Generate tar.gz / zip",
+    "8. Verify archive manifest with guard",
+    "9. Record sha256 + manifest + guard output + PII scan output"
+  ],
+  "freshRepoDesign": {
+    "init": "git init in empty directory",
+    "content": "Copy clean export (steps 1-5)",
+    "initialCommit": "feat: initial clean export",
+    "readmeUpdate": "Add Data Notice section (synthetic fixtures only)",
+    "transfers": "None — no .git history, no issues, no secrets, no webhooks",
+    "prohibitions": ["mirror old repo", "push --mirror", "copy .git/"]
+  },
+  "fileCountSummary": {
+    "src": 232,
+    "prisma": 12,
+    "scripts": 296,
+    "docs": 386,
+    "public": 5,
+    "data": 2,
+    "rootConfigs": 13,
+    "totalTracked": 948,
+    "excludedFromTracked": "1 (templates/串课申请表模板.xlsx)",
+    "estimatedExportFiles": "~947"
+  },
+  "verificationResults": {
+    "gitStatus": "clean",
+    "aheadBehind": "0/0",
+    "scanDocsPii": "0 blocking, 2 existing warnings (unchanged)",
+    "guardSelfTest": "17/17 PASS",
+    "guardRootScan": "FAIL — correct (.env blocked)",
+    "guardRootRawScan": "FAIL — correct (temp/uploads/backups blocked)",
+    "prismaValidate": "schema valid",
+    "build": "Compiled successfully"
+  },
+  "commit": {
+    "message": "docs(repo): plan clean export delivery",
+    "expectedFiles": [
+      "docs/k36-a5i-clean-export-package-plan.md",
+      "docs/k36-a5i-clean-export-package-plan.json",
+      "docs/current-project-status.md"
+    ],
+    "notIncluded": ["src/**", "prisma/**", "scripts/**", "temp/**", "docx", "generate-report js"],
+    "pushed": false
+  }
+}
