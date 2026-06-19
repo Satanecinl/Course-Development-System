@@ -1,0 +1,53 @@
+{
+  "stage": "K37-B2-CAMPUS-ROOM-RULES-EDITING-RUNTIME-FIX",
+  "status": "CLOSED",
+  "type": "runtime fix",
+  "rootCause": "Dev server's Prisma Client singleton was stale (loaded before K37-B migration). DB state was always correct; API field reads returned undefined for stale client.",
+  "userIssue": {
+    "linxiaoCount": 0,
+    "mismatchCount": 42,
+    "patchFailed": true
+  },
+  "dbStateActual": {
+    "roomCount": 42,
+    "isLinxiaoTrue": 5,
+    "linxiaoRooms": ["林校301", "林校303", "林校304", "林校305", "林校306"],
+    "mismatchCount": 0,
+    "scheduleSlotCount": 440,
+    "teachingTaskCount": 308,
+    "scheduleAdjustmentCount": 67
+  },
+  "fixes": {
+    "getRoute": "Explicit select isLinxiao: true; defensive fallback to name inference if undefined",
+    "patchRoute": "Explicit select; error handler logs server-side but doesn't leak stack",
+    "prismaHelper": "Added K37-B2 restart note"
+  },
+  "userActionRequired": "Restart dev server (Ctrl+C then npm run dev)",
+  "verificationResults": {
+    "diagnoseScript": "Baseline correct (5/42, 0 mismatch)",
+    "k37b2RuntimeFixVerify": "17/17 PASS",
+    "k37bVerify": "25/25 PASS",
+    "k37aVerify": "25/25 PASS",
+    "k36b1a5Verify": "19/19 PASS",
+    "k22cRegression": "73/0/0/0 (restored)",
+    "piiScan": "0 BLOCKING",
+    "prismaValidate": "valid",
+    "build": "PASS",
+    "eslint": "0 errors"
+  },
+  "commit": {
+    "message": "fix(settings): repair campus room rule editing runtime",
+    "expectedFiles": [
+      "src/app/api/admin/settings/campus-room-rules/route.ts",
+      "src/app/api/admin/settings/campus-room-rules/rooms/[roomId]/route.ts",
+      "src/lib/prisma.ts",
+      "scripts/verify-campus-room-rules-schema-editing-k37-b.ts",
+      "scripts/diagnose-campus-room-rules-runtime-k37-b2.ts",
+      "scripts/verify-campus-room-rules-runtime-fix-k37-b2.ts",
+      "docs/k37-b2-campus-room-rules-editing-runtime-fix.md",
+      "docs/k37-b2-campus-room-rules-editing-runtime-fix.json",
+      "docs/current-project-status.md"
+    ],
+    "pushed": false
+  }
+}

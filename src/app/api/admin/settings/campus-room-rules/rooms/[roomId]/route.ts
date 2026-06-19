@@ -46,7 +46,10 @@ export async function PATCH(
   }
 
   try {
-    const room = await prisma.room.findUnique({ where: { id: roomId } })
+    const room = await prisma.room.findUnique({
+      where: { id: roomId },
+      select: { id: true, name: true, isLinxiao: true },
+    })
     if (!room) {
       return NextResponse.json(
         { success: false, error: 'ROOM_NOT_FOUND', message: `教室 ${roomId} 不存在` },
@@ -57,6 +60,7 @@ export async function PATCH(
     const updated = await prisma.room.update({
       where: { id: roomId },
       data: { isLinxiao: body.isLinxiao },
+      select: { id: true, name: true, isLinxiao: true },
     })
 
     // Compute warnings: check if HC6 violations increased
@@ -113,7 +117,14 @@ export async function PATCH(
       warnings,
     })
   } catch (error) {
-    console.error('PATCH campus room rules error:', error)
+    // Log full error server-side for diagnostics, but don't leak to user.
+    console.error('[PATCH campus-room-rules] error:', {
+      roomId,
+      isLinxiao: body.isLinxiao,
+      errorName: (error as Error)?.name,
+      errorMessage: (error as Error)?.message,
+      // Don't include stack in response
+    })
     return NextResponse.json(
       { success: false, error: 'INTERNAL_ERROR', message: '更新教室林校状态失败' },
       { status: 500 },

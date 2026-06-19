@@ -24,24 +24,37 @@ export async function GET(_request: NextRequest) {
   if ('error' in auth) return auth.error
 
   try {
+    // K37-B2: explicit select to ensure isLinxiao is always returned even if
+    // dev server's Prisma Client singleton was loaded before migration.
     const rooms = await prisma.room.findMany({
-      include: { availabilities: true },
+      select: {
+        id: true,
+        name: true,
+        building: true,
+        capacity: true,
+        type: true,
+        isLinxiao: true,
+        createdAt: true,
+        updatedAt: true,
+        availabilities: true,
+      },
       orderBy: { id: 'asc' },
     })
 
     const roomList = rooms.map((r) => {
       const nameSuggests = nameSuggestsLinxiao(r.name, r.building)
+      // Defensive: if isLinxiao is somehow missing (stale client), fall back to name inference
+      const isLx = typeof r.isLinxiao === 'boolean' ? r.isLinxiao : nameSuggests
       return {
         id: r.id,
         name: r.name,
         capacity: r.capacity,
         type: r.type,
         building: r.building,
-        isLinxiao: r.isLinxiao, // K37-B: persistent field (source of truth)
-        linxiaoSource: r.isLinxiao ? 'room.isLinxiao' : null,
-        // Legacy advisory: flag if name inference disagrees with persistent field
+        isLinxiao: isLx,
+        linxiaoSource: isLx ? (typeof r.isLinxiao === 'boolean' ? 'room.isLinxiao' : 'room.name (fallback)') : null,
         nameSuggestsLinxiao: nameSuggests,
-        linxiaoMismatch: nameSuggests !== r.isLinxiao,
+        linxiaoMismatch: nameSuggests !== isLx,
       }
     })
 

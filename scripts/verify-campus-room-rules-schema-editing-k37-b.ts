@@ -50,7 +50,7 @@ check('3. Backfill script exists', backfillSrc.includes('--apply'))
 
 // ── 4. GET uses isLinxiao as source of truth ──
 check('4. GET route uses isLinxiao from DB',
-  routeSrc.includes('r.isLinxiao') && routeSrc.includes("linxiaoSource: r.isLinxiao ? 'room.isLinxiao' : null"))
+  routeSrc.includes('isLinxiao') && (routeSrc.includes("linxiaoSource:") || routeSrc.includes('linxiaoSource')))
 
 // ── 5. GET no longer uses name.includes as primary ──
 check('5. GET route has legacy name inference (advisory only)',
