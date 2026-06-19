@@ -1,7 +1,8 @@
 /**
- * K26-M1 / K38-A: Adjustment rules settings UI client helper.
+ * K26-M1 / K38-A / K38-B / K38-B1: Adjustment rules settings UI client helper.
  * K38-A: Added groups, editability, workTimeContext, defaultRecommendationLimit.
- * Read-only — no PATCH in this stage.
+ * K38-B: Config-backed defaultRecommendationLimit.
+ * K38-B1: Added PATCH helper for editing limit.
  */
 
 export interface AdjustmentRule {
@@ -69,10 +70,33 @@ export interface AdjustmentRulesData {
   }
 }
 
+export interface PatchAdjustmentRulesResult {
+  success: boolean
+  config: {
+    defaultRecommendationLimit: number
+    source: string
+  }
+}
+
 export async function fetchAdjustmentRules(): Promise<AdjustmentRulesData> {
   const res = await fetch('/api/admin/settings/adjustment-rules')
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   const data = await res.json()
   if (!data.success) throw new Error(data.message || data.error || '请求失败')
   return data as AdjustmentRulesData
+}
+
+export async function patchAdjustmentRulesSettings(input: {
+  defaultRecommendationLimit?: number
+}): Promise<PatchAdjustmentRulesResult> {
+  const res = await fetch('/api/admin/settings/adjustment-rules', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+  const data = await res.json()
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || data.error || `HTTP ${res.status}`)
+  }
+  return data as PatchAdjustmentRulesResult
 }

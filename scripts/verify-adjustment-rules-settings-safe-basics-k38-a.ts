@@ -79,7 +79,7 @@ check('13. editability.allRulesEditable = false',
 
 // ── 14. UI badge updated (no "只读基础版") ──
 check('14. UI badge updated (no "只读基础版")',
-  !panelSrc.includes('只读基础版') && panelSrc.includes('诊断增强版'))
+  !panelSrc.includes('只读基础版') && (panelSrc.includes('诊断增强版') || panelSrc.includes('可配置版')))
 
 // ── 15. UI does not expose hard-guard disable buttons ──
 check('15. UI has no hard-guard disable buttons',

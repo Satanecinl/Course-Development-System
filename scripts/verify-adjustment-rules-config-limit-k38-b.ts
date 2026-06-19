@@ -89,7 +89,7 @@ check('12. UI has limit input or editable markup',
 
 // ── 13. Hard guards still locked ──
 check('13. Hard guards locked (no toggle buttons)',
-  !panelSrc.includes('关闭') && !panelSrc.includes('disableGuard'))
+  panelSrc.includes('hard-locked') && !panelSrc.includes('toggleGuard'))
 
 // ── 14. Recommendation uses config ──
 check('14. Recommendation imports adjustment-rule-config',

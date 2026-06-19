@@ -20,6 +20,7 @@
 > **K37-C 学期感知 scoping 已修复**（[K37-C](k37-c-campus-room-rules-semester-scoping-fix.md)）。HC5/HC6 不再 hardcode semesterId=1。使用 `resolveSchedulerSemester` (query > active > error)。`?semesterId` query param 支持。UI 显示"当前诊断学期"banner。Room.isLinxiao 仍为全局属性。Verify 23/23 PASS + K37-B2/B/K37-A/K36-B1A5/K22-C 全部绿。
 > **K38-A 调课规则诊断增强版已完成...K38-B 计划 UI 持久化）。Verify 22/22 PASS。
 > **K38-B 调课规则推荐数量配置已完成**（[K38-B](k38-b-adjustment-rules-config-limit.md)）。新增 AdjustmentRuleConfig 表 + migration + backfill。API PATCH defaultRecommendationLimit（1-20）。Recommendation 使用 config 作为默认 limit（request > config > code fallback）。Verify 23/23 PASS。K22-C 73/0/0/0 不变。
+> **K38-B1 调课规则推荐数量 UI 编辑闭环已完成**（[K38-B1](k38-b1-adjustment-rules-limit-ui-editing-fix.md)）。Panel badge → 基础可配置版。新增 number input / 保存 / 取消 / loading / toast / dirty indicator。Client PATCH helper 已补齐。Verify 21/21 PASS。
 >
 > 详细阶段 closeout 文档位于 `docs/`，按 `k<stage>-*.md` / `k<stage>-*.json` 命名。
 > 本文件只汇总 readiness、baseline、known artifacts、下一步建议。

@@ -1,0 +1,41 @@
+{
+  "stage": "K38-B1-ADJUSTMENT-RULES-LIMIT-UI-EDITING-FIX",
+  "type": "ui-editing-fix",
+  "rootCause": "K38-B added PATCH API and config table but UI panel never updated with editing controls",
+  "fixes": [
+    "Client PATCH helper: patchAdjustmentRulesSettings()",
+    "UI: badge changed to 基础可配置版",
+    "UI: number input with min=1/max=20",
+    "UI: 保存 button with loading spinner",
+    "UI: 取消/重置 button (RotateCcw icon)",
+    "UI: success/error toasts",
+    "UI: dirty state indicator",
+    "UI: frontend validation (isNaN, range check)",
+    "Panel: updated editability notice to K38-B1"
+  ],
+  "lockedRules": {
+    "dryRunGuard": "hard-locked",
+    "applyGuard": "hard-locked",
+    "workTimeAllowWeekend": "controlled by WorkTime settings page",
+    "conflictGuards": "hard-locked"
+  },
+  "verificationResults": {
+    "k38b1Verify": "21/21 PASS",
+    "k38bVerify": "23/23 PASS",
+    "k38aVerify": "22/22 PASS (updated)",
+    "k37cVerify": "23/23 PASS",
+    "k22cRegression": "73/0/0/0",
+    "build": "PASS",
+    "eslint": "0 errors"
+  },
+  "filesChanged": [
+    "src/components/settings/adjustment-rules-settings-panel.tsx",
+    "src/lib/settings/adjustment-rules-client.ts",
+    "scripts/verify-adjustment-rules-limit-ui-editing-k38-b1.ts",
+    "scripts/verify-adjustment-rules-config-limit-k38-b.ts",
+    "scripts/verify-adjustment-rules-settings-safe-basics-k38-a.ts",
+    "docs/k38-b1-adjustment-rules-limit-ui-editing-fix.md",
+    "docs/k38-b1-adjustment-rules-limit-ui-editing-fix.json",
+    "docs/current-project-status.md"
+  ]
+}
