@@ -1,0 +1,74 @@
+{
+  "stage": "K36-A5J-CLEAN-EXPORT-EXECUTION",
+  "status": "CLOSED",
+  "type": "export execution",
+  "currentState": {
+    "branch": "master",
+    "head": "679781e332785afe87d60efdbedc6bce70fd6765",
+    "originMaster": "679781e332785afe87d60efdbedc6bce70fd6765",
+    "aheadBehind": "0/0",
+    "gitStatusShort": "empty"
+  },
+  "exportResult": {
+    "stagingPath": "temp/clean-export/k36-a5j/staging/",
+    "archivePath": "temp/clean-export/k36-a5j/package/courscheduling-system-v1.0.0-clean.tar.gz",
+    "sha256": "ca452f57c0037a4ab2d79052f92a249f09959ec7c169519d658848b394ecbe38",
+    "archiveSizeBytes": 2428212,
+    "archiveSizeHuman": "2.4 MB",
+    "includedFileCount": 949,
+    "trackedAtHead": 948,
+    "excludedFromTracked": "1 (templates/串课申请表模板.xlsx)",
+    "piiDocsRemoved": 2,
+    "newFilesCreated": ["SETUP.md", "FIXTURES.md"]
+  },
+  "guardResults": {
+    "stagingDefault": { "verdict": "PASS", "blocking": 0, "warning": 12 },
+    "stagingStrict": { "verdict": "FAIL", "blocking": 0, "warning": 12, "note": "strict treats warnings as blocking; all 12 are false positives" },
+    "archiveManifest": { "verdict": "PASS", "blocking": 0, "warning": 12 }
+  },
+  "warningAnalysis": [
+    { "rule": "CSV_FILE", "path": "data/class-student-count.template.csv", "safe": true, "reason": "3-line synthetic template" },
+    { "rule": "CSV_FILE", "path": "data/room-capacity.template.csv", "safe": true, "reason": "4-line synthetic template" },
+    { "rule": "PATH_TEACHER_KEYWORD", "path": "docs/k22-teacher-day-balance-constraint-impl.json", "safe": true, "reason": "code constraint spec, no real data" },
+    { "rule": "PATH_TEACHER_KEYWORD", "path": "docs/k22-teacher-day-balance-constraint-impl.md", "safe": true, "reason": "markdown version of above" },
+    { "rule": "PATH_TEACHER_KEYWORD", "path": "docs/k22-teacher-day-balance-soft-constraint-audit.json", "safe": true, "reason": "audit record, no real data" },
+    { "rule": "PATH_TEACHER_KEYWORD", "path": "docs/k22-teacher-day-balance-soft-constraint-audit.md", "safe": true, "reason": "markdown version" },
+    { "rule": "PATH_TEACHER_KEYWORD", "path": "scripts/audit-teacher-day-balance-soft-constraint-k22-f1.ts", "safe": true, "reason": "TypeScript audit script" },
+    { "rule": "PATH_TEACHER_KEYWORD", "path": "scripts/build_teacher_whitelist.py", "safe": true, "reason": "Python helper script" },
+    { "rule": "PATH_TEACHER_KEYWORD", "path": "scripts/diagnose_teachers.ts", "safe": true, "reason": "TypeScript diagnostic script" },
+    { "rule": "PATH_TEACHER_KEYWORD", "path": "scripts/fixtures/teachers.synthetic.txt", "safe": true, "reason": "synthetic fixture, not real" },
+    { "rule": "PATH_TEACHER_KEYWORD", "path": "scripts/verify-teacher-day-balance-constraint-k22-f4.ts", "safe": true, "reason": "TypeScript verify script" },
+    { "rule": "PATH_TEACHER_KEYWORD", "path": "src/app/api/teachers/route.ts", "safe": true, "reason": "API route source code" }
+  ],
+  "piiHandling": {
+    "mainRepoScanPii": "0 BLOCKING, 2 WARNING",
+    "k18Task37SourceArtifactReviewJson": "EXCLUDED from export (masked phone number)",
+    "k22RealSolverQualityEvaluationJson": "EXCLUDED from export (masked phone number)",
+    "exportPiiRisk": "NONE"
+  },
+  "deliveryReadiness": {
+    "guardBlockingZero": true,
+    "guardWarningsExplained": true,
+    "piiDocsExcluded": true,
+    "noRealData": true,
+    "noGitHistory": true,
+    "noSecrets": true,
+    "noDevDbUploadsTemp": true,
+    "packageDeliverable": "YES"
+  },
+  "repoStatus": {
+    "currentRepoPublic": "No-Go",
+    "gitHistoryCleaned": "No",
+    "futurePublicRepo": "Requires Route C history rewrite or fresh repo"
+  },
+  "commit": {
+    "message": "docs(repo): execute clean export package",
+    "expectedFiles": [
+      "docs/k36-a5j-clean-export-execution.md",
+      "docs/k36-a5j-clean-export-execution.json",
+      "docs/current-project-status.md"
+    ],
+    "notIncluded": ["temp/clean-export/**", "src/**", "prisma/**", "scripts/**"],
+    "pushed": false
+  }
+}
