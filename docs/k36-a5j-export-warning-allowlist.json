@@ -1,0 +1,77 @@
+{
+  "description": "K36-A5J1: Verified-safe warning suppressions for clean export. Each entry is a path+ruleId pair that has been manually reviewed and confirmed to contain no real sensitive data. Used with guard --allowlist to achieve strict PASS.",
+  "allowedWarnings": [
+    {
+      "path": "data/class-student-count.template.csv",
+      "ruleId": "CSV_FILE",
+      "reason": "3-line CSV: 1 header + 2 synthetic class rows (测试专业2026级甲班, 测试专业2026级乙班). No real class names.",
+      "approvedForExternalExport": true
+    },
+    {
+      "path": "data/room-capacity.template.csv",
+      "ruleId": "CSV_FILE",
+      "reason": "4-line CSV: 1 header + 3 synthetic room rows (SYN-R101, SYN-R102, SYN-LAB01). No real room data.",
+      "approvedForExternalExport": true
+    },
+    {
+      "path": "docs/k22-teacher-day-balance-constraint-impl.json",
+      "ruleId": "PATH_TEACHER_KEYWORD",
+      "reason": "Design spec for soft constraint SC5 (teacher day balance). Contains constraint parameters, not real teacher names. 0 Chinese surname matches.",
+      "approvedForExternalExport": true
+    },
+    {
+      "path": "docs/k22-teacher-day-balance-constraint-impl.md",
+      "ruleId": "PATH_TEACHER_KEYWORD",
+      "reason": "Markdown version of constraint design spec. No real teacher data.",
+      "approvedForExternalExport": true
+    },
+    {
+      "path": "docs/k22-teacher-day-balance-soft-constraint-audit.json",
+      "ruleId": "PATH_TEACHER_KEYWORD",
+      "reason": "Read-only design audit for SC5 constraint. Phase name only, no real teacher data.",
+      "approvedForExternalExport": true
+    },
+    {
+      "path": "docs/k22-teacher-day-balance-soft-constraint-audit.md",
+      "ruleId": "PATH_TEACHER_KEYWORD",
+      "reason": "Markdown version of design audit. No real teacher data.",
+      "approvedForExternalExport": true
+    },
+    {
+      "path": "scripts/audit-teacher-day-balance-soft-constraint-k22-f1.ts",
+      "ruleId": "PATH_TEACHER_KEYWORD",
+      "reason": "TypeScript audit script. Contains score constraint design docs, no real teacher names or paths. Uses synthetic test fixtures.",
+      "approvedForExternalExport": true
+    },
+    {
+      "path": "scripts/build_teacher_whitelist.py",
+      "ruleId": "PATH_TEACHER_KEYWORD",
+      "reason": "Python utility for cleaning teacher names from contact files. Processes input from command-line args; contains no hardcoded real names, phone numbers, or file paths.",
+      "approvedForExternalExport": true
+    },
+    {
+      "path": "scripts/diagnose_teachers.ts",
+      "ruleId": "PATH_TEACHER_KEYWORD",
+      "reason": "TypeScript diagnostic that queries Prisma DB for suspicious teacher names. Contains only keyword filters (班, 合班, etc.) and regex patterns; no real teacher data.",
+      "approvedForExternalExport": true
+    },
+    {
+      "path": "scripts/fixtures/teachers.synthetic.txt",
+      "ruleId": "PATH_TEACHER_KEYWORD",
+      "reason": "Synthetic fixture: 3 placeholder names (测试教师甲/乙/丙). Explicitly marked synthetic.",
+      "approvedForExternalExport": true
+    },
+    {
+      "path": "scripts/verify-teacher-day-balance-constraint-k22-f4.ts",
+      "ruleId": "PATH_TEACHER_KEYWORD",
+      "reason": "TypeScript verify script for SC5 constraint. Uses synthetic test data; no real teacher names.",
+      "approvedForExternalExport": true
+    },
+    {
+      "path": "src/app/api/teachers/route.ts",
+      "ruleId": "PATH_TEACHER_KEYWORD",
+      "reason": "Standard Next.js API route. Reads from Prisma DB at runtime; contains no hardcoded data. 'teacher' is the entity name, not a data disclosure.",
+      "approvedForExternalExport": true
+    }
+  ]
+}

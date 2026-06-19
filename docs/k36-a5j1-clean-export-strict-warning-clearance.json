@@ -1,0 +1,84 @@
+{
+  "stage": "K36-A5J1-CLEAN-EXPORT-STRICT-WARNING-CLEARANCE",
+  "status": "CLOSED",
+  "type": "export strict clearance",
+  "currentState": {
+    "branch": "master",
+    "head": "66907f1eb40701d67fd934d1377ca2268d07be8b",
+    "originMaster": "66907f1eb40701d67fd934d1377ca2268d07be8b",
+    "aheadBehind": "0/0",
+    "gitStatusShort": "empty"
+  },
+  "blockingPoint": "K36-A5J strict guard FAIL: 12 warnings treated as blocking",
+  "strategy": "A: --allowlist flag on guard + verified-safe suppression file",
+  "guardChanges": {
+    "flag": "--allowlist <path>",
+    "resultField": "allowedWarningCount",
+    "verdictLogic": "strict && (warning - allowed > 0) → FAIL",
+    "selfTest": "17/17 PASS (unchanged, no allowlist needed)"
+  },
+  "warningResolution": [
+    { "path": "data/class-student-count.template.csv", "rule": "CSV_FILE", "decision": "allowlisted", "reason": "synthetic template" },
+    { "path": "data/room-capacity.template.csv", "rule": "CSV_FILE", "decision": "allowlisted", "reason": "synthetic template" },
+    { "path": "docs/k22-teacher-day-balance-constraint-impl.json", "rule": "PATH_TEACHER", "decision": "allowlisted", "reason": "constraint spec" },
+    { "path": "docs/k22-teacher-day-balance-constraint-impl.md", "rule": "PATH_TEACHER", "decision": "allowlisted", "reason": "constraint spec" },
+    { "path": "docs/k22-teacher-day-balance-soft-constraint-audit.json", "rule": "PATH_TEACHER", "decision": "allowlisted", "reason": "audit record" },
+    { "path": "docs/k22-teacher-day-balance-soft-constraint-audit.md", "rule": "PATH_TEACHER", "decision": "allowlisted", "reason": "audit record" },
+    { "path": "scripts/audit-teacher-day-balance-soft-constraint-k22-f1.ts", "rule": "PATH_TEACHER", "decision": "allowlisted", "reason": "audit script, no real data" },
+    { "path": "scripts/build_teacher_whitelist.py", "rule": "PATH_TEACHER", "decision": "allowlisted", "reason": "utility, no hardcoded names" },
+    { "path": "scripts/diagnose_teachers.ts", "rule": "PATH_TEACHER", "decision": "allowlisted", "reason": "diagnostic, keyword filters only" },
+    { "path": "scripts/fixtures/teachers.synthetic.txt", "rule": "PATH_TEACHER", "decision": "allowlisted", "reason": "synthetic fixture" },
+    { "path": "scripts/verify-teacher-day-balance-constraint-k22-f4.ts", "rule": "PATH_TEACHER", "decision": "allowlisted", "reason": "verify script, synthetic data" },
+    { "path": "src/app/api/teachers/route.ts", "rule": "PATH_TEACHER", "decision": "allowlisted", "reason": "API route, no hardcoded data" }
+  ],
+  "additionalExclusions": [
+    { "path": "docs/k18-task37-source-artifact-review.json", "reason": "PII: masked phone number" },
+    { "path": "docs/k22-real-solver-quality-evaluation.json", "reason": "PII: masked phone number" },
+    { "path": "templates/串课申请表模板.xlsx", "reason": "tracked xlsx" }
+  ],
+  "exportResult": {
+    "stagingPath": "temp/clean-export/k36-a5j/staging/",
+    "archivePath": "temp/clean-export/k36-a5j/package/courscheduling-system-v1.0.0-clean.tar.gz",
+    "sha256": "5f0b2a520a595d445ecabbb58683ca1925282974eb6e0e27ac2c46f767088c70",
+    "fileCount": 951,
+    "sizeHuman": "2.4 MB"
+  },
+  "guardResults": {
+    "stagingStrictAllowlist": { "verdict": "PASS", "blocking": 0, "warnings": 12, "allowed": 12, "unresolved": 0 },
+    "archiveManifestStrictAllowlist": { "verdict": "PASS", "blocking": 0, "warnings": 12, "allowed": 12, "unresolved": 0 },
+    "selfTest": { "verdict": "PASS", "passed": "17/17" }
+  },
+  "verificationResults": {
+    "scanDocsPii": "0 blocking, 2 existing warnings (unchanged)",
+    "prismaValidate": "schema valid",
+    "build": "Compiled successfully",
+    "eslintGuard": "0 errors",
+    "gitDiffCheck": "empty",
+    "gitDiffCachedCheck": "empty"
+  },
+  "deliveryReadiness": {
+    "strictPass": true,
+    "blockingZero": true,
+    "unresolvedWarningsZero": true,
+    "piiDocsExcluded": true,
+    "allowlistDocumented": true,
+    "packageDeliverable": "YES"
+  },
+  "repoStatus": {
+    "currentRepoPublic": "No-Go",
+    "gitHistoryCleaned": "No",
+    "futurePublicRepo": "Requires Route C history rewrite or fresh repo"
+  },
+  "commit": {
+    "message": "chore(repo): clear clean export strict warnings",
+    "expectedFiles": [
+      "scripts/guard-release-package-k36-a5g.ts",
+      "docs/k36-a5j-export-warning-allowlist.json",
+      "docs/k36-a5j1-clean-export-strict-warning-clearance.md",
+      "docs/k36-a5j1-clean-export-strict-warning-clearance.json",
+      "docs/current-project-status.md"
+    ],
+    "notIncluded": ["temp/clean-export/**", "src/**", "prisma/**", "dev.db", ".env", "K22 expected drift"],
+    "pushed": false
+  }
+}

@@ -78,6 +78,7 @@ interface ScanResult {
   scannedFileCount: number
   bannedHitCount: number
   warningHitCount: number
+  allowedWarningCount: number
   blockingHits: Hit[]
   warningHits: Hit[]
   finalVerdict: 'PASS' | 'FAIL'
@@ -257,6 +258,43 @@ const COMPILED_WARNING = WARNING_RULES.map((r) => ({
   keyword: r.pattern.replace('__KEYWORD__:', ''),
 }))
 
+// ── Allowlist (K36-A5J1: suppress verified-safe warnings) ──────────
+
+interface AllowlistEntry {
+  path: string
+  ruleId: string
+  reason: string
+  approvedForExternalExport: boolean
+}
+interface AllowlistFile {
+  description: string
+  allowedWarnings: AllowlistEntry[]
+}
+
+let ALLOWED_WARNINGS: Set<string> | null = null
+
+function loadAllowlist(filePath: string): void {
+  try {
+    const raw = fs.readFileSync(filePath, 'utf8')
+    const data: AllowlistFile = JSON.parse(raw)
+    ALLOWED_WARNINGS = new Set<string>()
+    for (const entry of data.allowedWarnings) {
+      if (entry.approvedForExternalExport) {
+        ALLOWED_WARNINGS.add(`${entry.path}|${entry.ruleId}`)
+      }
+    }
+  } catch (err) {
+    console.error(`Failed to read allowlist: ${(err as Error).message}`)
+    process.exit(2)
+  }
+}
+
+function isWarningAllowed(relPath: string, ruleId: string): boolean {
+  if (!ALLOWED_WARNINGS) return false
+  const normalized = normalizePath(relPath)
+  return ALLOWED_WARNINGS.has(`${normalized}|${ruleId}`)
+}
+
 // ── Path classification ─────────────────────────────────────────────
 
 function normalizePath(p: string): string {
@@ -402,6 +440,7 @@ interface ScanOptions {
   root: string
   paths: string[]
   strict: boolean
+  allowlist?: boolean
 }
 
 async function scanPaths(opts: ScanOptions): Promise<ScanResult> {
@@ -421,14 +460,19 @@ async function scanPaths(opts: ScanOptions): Promise<ScanResult> {
 
   const blocking = blockingHits.length
   const warning = warningHits.length
+  const allowed = opts.allowlist
+    ? warningHits.filter((h) => isWarningAllowed(h.path, h.ruleId)).length
+    : 0
+
   let verdict: 'PASS' | 'FAIL' = 'PASS'
   if (blocking > 0) verdict = 'FAIL'
-  else if (opts.strict && warning > 0) verdict = 'FAIL'
+  else if (opts.strict && warning - allowed > 0) verdict = 'FAIL'
 
   return {
     scannedFileCount,
     bannedHitCount: blocking,
     warningHitCount: warning,
+    allowedWarningCount: allowed,
     blockingHits,
     warningHits,
     finalVerdict: verdict,
@@ -453,6 +497,10 @@ function formatHumanReadable(result: ScanResult): string {
   lines.push(`Scanned files:  ${result.scannedFileCount}`)
   lines.push(`Blocking hits:  ${result.bannedHitCount}`)
   lines.push(`Warning hits:   ${result.warningHitCount}`)
+  if (result.allowedWarningCount > 0) {
+    lines.push(`Allowed warn:   ${result.allowedWarningCount} (suppressed by allowlist)`)
+    lines.push(`Unresolved:     ${result.warningHitCount - result.allowedWarningCount}`)
+  }
   lines.push('')
   if (result.blockingHits.length > 0) {
     lines.push('--- BLOCKING HITS ---')
@@ -643,7 +691,7 @@ async function runSelfTest(): Promise<{ passed: number; failed: number; failures
 
 // ── CLI entry ───────────────────────────────────────────────────────
 
-function parseArgs(argv: string[]): { opts: { mode: 'manifest' | 'root' | 'root-raw'; root: string; manifest?: string; strict: boolean; json: boolean; selfTest: boolean } } {
+function parseArgs(argv: string[]): { opts: { mode: 'manifest' | 'root' | 'root-raw'; root: string; manifest?: string; strict: boolean; json: boolean; selfTest: boolean; allowlist?: string } } {
   const args = argv.slice(2)
   const opts = {
     mode: 'root' as 'manifest' | 'root' | 'root-raw',
@@ -652,6 +700,7 @@ function parseArgs(argv: string[]): { opts: { mode: 'manifest' | 'root' | 'root-
     strict: false,
     json: false,
     selfTest: false,
+    allowlist: undefined as string | undefined,
   }
   for (let i = 0; i < args.length; i++) {
     const a = args[i]
@@ -663,17 +712,19 @@ function parseArgs(argv: string[]): { opts: { mode: 'manifest' | 'root' | 'root-
     else if (a === '--strict') opts.strict = true
     else if (a === '--json') opts.json = true
     else if (a === '--self-test') opts.selfTest = true
+    else if (a === '--allowlist') opts.allowlist = args[++i]
     else if (a === '--help' || a === '-h') {
       console.log(
         [
           'Usage:',
-          '  tsx scripts/guard-release-package-k36-a5g.ts [--root <path>|--root-raw <path>|--manifest <path>] [--strict] [--json] [--self-test]',
+          '  tsx scripts/guard-release-package-k36-a5g.ts [--root <path>|--root-raw <path>|--manifest <path>] [--strict] [--json] [--self-test] [--allowlist <path>]',
           '',
           'Options:',
           '  --root <path>     Walk target directory. Default: skip ignored paths.',
           '  --root-raw <path> Walk target directory and include ignored paths.',
           '  --manifest <path> Read manifest (one path per line, # comments).',
-          '  --strict          Treat WARNING hits as BLOCKING.',
+          '  --strict          Treat WARNING hits as BLOCKING (except allowed).',
+          '  --allowlist <f>   JSON file with allowed warning paths to suppress.',
           '  --json            Emit JSON only.',
           '  --self-test       Run built-in self-test suite.',
           '',
@@ -727,7 +778,11 @@ async function main(): Promise<void> {
     paths = await walkRoot({ root: rootAbs, includeIgnored: mode === 'root-raw' })
   }
 
-  const result = await scanPaths({ mode, root: opts.root, paths, strict: opts.strict })
+  if (opts.allowlist) {
+    loadAllowlist(opts.allowlist)
+  }
+
+  const result = await scanPaths({ mode, root: opts.root, paths, strict: opts.strict, allowlist: !!opts.allowlist })
 
   if (opts.json) {
     process.stdout.write(JSON.stringify(result, null, 2) + '\n')

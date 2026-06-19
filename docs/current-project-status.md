@@ -8,7 +8,8 @@
 > **K36-A5G release packaging guard 已建立**（[K36-A5G](k36-a5g-release-packaging-guard.md)）。Guard 脚本 + verify 脚本已可用，`npm run guard:release -- --self-test` 17/17 PASS。注意：guard 仅保护未来 package，不等于 Git history 脱敏；公开仓库仍需 history rewrite 或 fresh repo 决策。
 > **K36-A5H Git history sanitization & delivery decision 已完成**（[K36-A5H](k36-a5h-git-history-sanitization-and-delivery-decision.md)）。结论：public=No-Go, external delivery=No-Go, private-only=Go。推荐外部交付用 Route B（fresh clean export），公开 repo 用 Route C（filter-repo）。
 > **K36-A5I clean export package plan 已完成**（[K36-A5I](k36-a5i-clean-export-package-plan.md)）。11 步可执行流程：rsync from HEAD → allowlist filter → env.example → guard verify → PII scan → build → zip → manifest verify → sha256。~947 files, 1 tracked xlsx excluded.
-> **K36-A5J clean export 已执行**（[K36-A5J](k36-a5j-clean-export-execution.md)）。Archive: `temp/clean-export/k36-a5j/package/courscheduling-system-v1.0.0-clean.tar.gz`（2.4MB, 949 files）。Guard PASS（0 blocking, 12 false-positive warnings documented）。Package deliverable for external review。当前 repo 仍 private-only，history 未清理。
+> **K36-A5J clean export 已执行**（[K36-A5J](k36-a5j-clean-export-execution.md)）。Archive: `temp/clean-export/k36-a5j/package/courscheduling-system-v1.0.0-clean.tar.gz`（2.4MB, 951 files）。Guard PASS（0 blocking, 12 false-positive warnings documented）。Package deliverable for external review。当前 repo 仍 private-only，history 未清理。
+> **K36-A5J1 strict warning clearance 已完成**（[K36-A5J1](k36-a5j1-clean-export-strict-warning-clearance.md)）。Guard 新增 `--allowlist` 参数支持受控 suppression。Staging + archive manifest strict guard 均 PASS（0 blocking, 12 allowed, 0 unresolved）。Package 现可正式外部交付。
 >
 > 详细阶段 closeout 文档位于 `docs/`，按 `k<stage>-*.md` / `k<stage>-*.json` 命名。
 > 本文件只汇总 readiness、baseline、known artifacts、下一步建议。
