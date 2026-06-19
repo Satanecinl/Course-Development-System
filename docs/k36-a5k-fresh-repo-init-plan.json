@@ -1,0 +1,85 @@
+{
+  "stage": "K36-A5K-FRESH-REPO-INIT-PLAN",
+  "status": "CLOSED",
+  "type": "read-only fresh repo init plan",
+  "currentState": {
+    "branch": "master",
+    "head": "0dc2a3067f953ea97c72887d2837476a6ad018f3",
+    "originMaster": "0dc2a3067f953ea97c72887d2837476a6ad018f3",
+    "aheadBehind": "0/0",
+    "gitStatusShort": "empty"
+  },
+  "cleanExportPackage": {
+    "path": "temp/clean-export/k36-a5j/package/courscheduling-system-v1.0.0-clean.tar.gz",
+    "sha256": "5f0b2a520a595d445ecabbb58683ca1925282974eb6e0e27ac2c46f767088c70",
+    "fileCount": 951,
+    "size": "2.4 MB",
+    "strictGuardPass": true
+  },
+  "freshRepoInitSteps": [
+    "1. Verify clean export package SHA256",
+    "2. Extract tar.gz to staging directory",
+    "3. Pre-init safety checks (no .git/.env/dev.db/uploads/temp)",
+    "4. Run release guard strict with allowlist",
+    "5. Run PII scanner",
+    "6. git init + git add . + git commit",
+    "7. Create GitHub repository",
+    "8. Push fresh repo",
+    "9. Configure branch protection + secrets",
+    "10. Verify from clone (commit count = 1, build pass, no sensitive files)"
+  ],
+  "readmeRequirements": [
+    "Data Notice: sanitized clean export, no original Git history",
+    "Synthetic fixtures only — no real teacher/class/room data",
+    "Real deployment requires local .env",
+    "No production DB or uploads included",
+    "Original private repo remains private"
+  ],
+  "prePublicationChecklist": {
+    "totalChecks": 15,
+    "blocking": 11,
+    "recommended": 4,
+    "checks": [
+      { "id": 1, "name": "SHA256 match", "blocking": true },
+      { "id": 2, "name": "Guard strict PASS", "blocking": true },
+      { "id": 3, "name": "PII scan 0 BLOCKING", "blocking": true },
+      { "id": 4, "name": "Build PASS", "blocking": true },
+      { "id": 5, "name": "No old .git history", "blocking": true },
+      { "id": 6, "name": "No .env/dev.db/uploads", "blocking": true },
+      { "id": 7, "name": "No temp/backups", "blocking": true },
+      { "id": 8, "name": "Synthetic fixtures only", "blocking": true },
+      { "id": 9, "name": "README data notice", "blocking": true },
+      { "id": 10, "name": "FIXTURES.md exists", "blocking": false },
+      { "id": 11, "name": "SETUP.md exists", "blocking": false },
+      { "id": 12, "name": "No real teacher names in docs", "blocking": true },
+      { "id": 13, "name": "Guard self-test 17/17", "blocking": true },
+      { "id": 14, "name": "Prisma schema valid", "blocking": false },
+      { "id": 15, "name": "Commit count = 1", "blocking": true }
+    ]
+  },
+  "verificationResults": {
+    "gitStatus": "clean",
+    "aheadBehind": "0/0",
+    "sha256": "5f0b2a520a595d445ecabbb58683ca1925282974eb6e0e27ac2c46f767088c70",
+    "archiveManifestStrictGuard": "PASS (0 blocking, 12 allowed, 0 unresolved)",
+    "guardSelfTest": "17/17 PASS",
+    "scanDocsPii": "0 BLOCKING, 2 WARNING",
+    "prismaValidate": "schema valid",
+    "build": "PASS"
+  },
+  "repoStatus": {
+    "currentRepoPublic": "No-Go",
+    "freshRepoFromCleanExport": "YES — safe for public hosting",
+    "currentRepoHistoryRewrite": "Not recommended unless explicitly needed"
+  },
+  "commit": {
+    "message": "docs(repo): plan fresh clean repo initialization",
+    "expectedFiles": [
+      "docs/k36-a5k-fresh-repo-init-plan.md",
+      "docs/k36-a5k-fresh-repo-init-plan.json",
+      "docs/current-project-status.md"
+    ],
+    "notIncluded": ["temp/clean-export/**", "src/**", "prisma/**", "scripts/**"],
+    "pushed": false
+  }
+}

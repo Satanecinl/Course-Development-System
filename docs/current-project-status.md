@@ -10,6 +10,7 @@
 > **K36-A5I clean export package plan 已完成**（[K36-A5I](k36-a5i-clean-export-package-plan.md)）。11 步可执行流程：rsync from HEAD → allowlist filter → env.example → guard verify → PII scan → build → zip → manifest verify → sha256。~947 files, 1 tracked xlsx excluded.
 > **K36-A5J clean export 已执行**（[K36-A5J](k36-a5j-clean-export-execution.md)）。Archive: `temp/clean-export/k36-a5j/package/courscheduling-system-v1.0.0-clean.tar.gz`（2.4MB, 951 files）。Guard PASS（0 blocking, 12 false-positive warnings documented）。Package deliverable for external review。当前 repo 仍 private-only，history 未清理。
 > **K36-A5J1 strict warning clearance 已完成**（[K36-A5J1](k36-a5j1-clean-export-strict-warning-clearance.md)）。Guard 新增 `--allowlist` 参数支持受控 suppression。Staging + archive manifest strict guard 均 PASS（0 blocking, 12 allowed, 0 unresolved）。Package 现可正式外部交付。
+> **K36-A5K fresh repo init plan 已完成**（[K36-A5K](k36-a5k-fresh-repo-init-plan.md)）。10 步初始化流程：SHA256 verify → extract → safety checks → guard strict → PII scan → git init → create GitHub → push → configure → verify clone。15 项发布前 checklist（11 blocking + 4 recommended）。Fresh repo 可从 clean export 包安全创建，当前 private repo 仍不公开。
 >
 > 详细阶段 closeout 文档位于 `docs/`，按 `k<stage>-*.md` / `k<stage>-*.json` 命名。
 > 本文件只汇总 readiness、baseline、known artifacts、下一步建议。
