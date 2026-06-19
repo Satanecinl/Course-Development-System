@@ -938,6 +938,24 @@ export function calculateDeltaScore(
     old.slotIndex,
   )
 
+  // K36-B1A6B: HC5 transition-into-orphan penalty (delta-only signal).
+  // When a slot moves from a position with an effective room set to a position
+  // with an empty effective room set, the slot becomes "orphaned" (no room to
+  // hold the lesson). Full score treats room=0 slots as "no-room" (skipped in
+  // HC4/HC5/HC6), but the delta needs to surface the transition as a hard
+  // penalty so LAHC solver can see the score worsen.
+  // - Transition INTO orphan: penalty (slot was valid, now orphaned)
+  // - Transition OUT of orphan: no penalty (slot was orphan, now valid)
+  // - Both states same: no penalty
+  // This reproduces K22-C I11-DELTA-REAL-TO-ROOM_ZERO expected deltaHard=-1000.
+  {
+    const oldEffective = getEffectiveRoomIds(slot, old.roomId)
+    const newEffective = getEffectiveRoomIds(slot, move.newRoomId)
+    if (oldEffective.size > 0 && newEffective.size === 0) {
+      deltaHard += HARD_PENALTY
+    }
+  }
+
   // HC6 锁定课程移动
   // HC6 is intentionally not counted in delta scoring because full scoring (calculateScoreWithDetails)
   // currently does not count HC6. Locked slots are controlled by solver movability / lockedSlotIds,

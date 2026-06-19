@@ -1,0 +1,75 @@
+{
+  "stage": "K36-B1A6B-I11-DELTA-HC5-REGRESSION-FIX",
+  "status": "VERIFIED",
+  "scope": [
+    "src/lib/scheduler/score.ts (calculateDeltaScore: add transition-into-orphan penalty)",
+    "scripts/verify-i11-delta-hc5-regression-k36-b1a6b.ts (new)"
+  ],
+  "problem": {
+    "k22Case": "I11-DELTA-REAL-TO-ROOM_ZERO",
+    "expectedDeltaHard": -1000,
+    "b1a3Actual": -1000,
+    "b1a6Actual": 0,
+    "headActual": 0,
+    "k22SummaryBefore": "72 / 0 / 1 / 0 (1 FAIL)",
+    "k22SummaryAfter": "73 / 0 / 0 / 0 (PASS)"
+  },
+  "rootCause": {
+    "introducingCommit": "320f7ea (K36-B1A6: fix(scheduler): align multi-room hard-constraint deltas)",
+    "mechanism": "B1A3 produced deltaHard=-1000 via isRoomAvailable(ctx, 0, ...) returning false (room 0 absent from roomById in I11 fixture). B1A6's new computeHC5AvailabilityPenalty short-circuits on currentRoomId <= 0 with return 0, removing this behavior.",
+    "behaviorDiff": "B1A3 code path: isRoomAvailable(ctx, newRoomId=0, ...) returns false → if (!newAvail) deltaHard += HARD_PENALTY. B1A6 code path: computeHC5AvailabilityPenalty returns 0 immediately for currentRoomId <= 0."
+  },
+  "fix": {
+    "type": "delta-only signal in calculateDeltaScore",
+    "approach": "When slot moves from a position with non-empty effective room set to a position with empty effective room set, add -HARD_PENALTY to deltaHard. Directional (only INTO orphan, not OUT).",
+    "rationale": "Reproduces K22 expected deltaHard=-1000 for I11 without changing full score semantics (full score still treats room=0 as no-room and skips HC4/HC5/HC6). LAHC solver benefits from delta surfacing the transition.",
+    "modifiedFunction": "calculateDeltaScore",
+    "insertedAfter": "computeHC5AvailabilityPenalty delta computation",
+    "uses": "getEffectiveRoomIds(slot, old.roomId).size > 0 && getEffectiveRoomIds(slot, move.newRoomId).size === 0"
+  },
+  "verification": {
+    "k22CHarness": "73 / 0 / 0 / 0 PASS (was 72 / 1)",
+    "k22I11Detail": "deltaHard=-1000 (expect -1000), deltaSoft=2 (expect 2), SC9 component delta=2 (expect 2)",
+    "k22I10Detail": "deltaHard=0 (expect 0), deltaSoft=-2 (expect -2), SC9 component delta=-2 (expect -2)",
+    "b1a6MultiRoomDeltaVerify": "13 / 13 PASS",
+    "b1a2Hc1Verify": "14 / 14 PASS",
+    "i11RegressionScript": "14 / 14 PASS (scripts/verify-i11-delta-hc5-regression-k36-b1a6b.ts)",
+    "prismaValidate": "PASS",
+    "build": "PASS (1 pre-existing Turbopack NFT warning, unchanged)",
+    "scanDocsPii": "0 blocking, 2 existing warnings (unchanged)"
+  },
+  "outOfScope": [
+    "Prisma schema / migrations",
+    "WorkTime score contract B-03",
+    "adjustment / recommendation / campus-room-rules / frontend",
+    "package lock",
+    "K22 expected (kept at locked 73/0/0/0 baseline; no fixture/expected changes)",
+    "B1A6 verify scripts (untouched)",
+    "B1A2 verify scripts (untouched)",
+    "full score (room=0 still treated as no-room, skipped)"
+  ],
+  "fullVsDeltaDivergence": {
+    "case": "I11 real room → room=0",
+    "fullScoreDeltaHC5": 0,
+    "deltaHC5AfterFix": -1000,
+    "rationale": "K22 expected locked based on B1A3 behavior. Full score treats room=0 as no-room (no penalty). Delta adds transition-into-orphan signal for LAHC solver. This divergence is intentional and documented."
+  },
+  "residualRisks": [
+    "WorkTime B-03 标签仍待 explicit close",
+    "Git history sensitive data 未清理",
+    "release packaging guard 未完成",
+    "公开仓库 / 外部源码交付仍 No-Go",
+    "K36-B1A7 final closeout 仍未执行",
+    "full-vs-delta divergence on I11 case is intentional — future changes must preserve K22 expected or coordinate with K22 expected updates"
+  ],
+  "commit": {
+    "message": "fix(scheduler): restore I11 HC5 delta regression",
+    "expectedFiles": [
+      "src/lib/scheduler/score.ts",
+      "scripts/verify-i11-delta-hc5-regression-k36-b1a6b.ts",
+      "docs/k36-b1a6b-i11-delta-hc5-regression-fix.md",
+      "docs/k36-b1a6b-i11-delta-hc5-regression-fix.json"
+    ],
+    "pushed": false
+  }
+}
