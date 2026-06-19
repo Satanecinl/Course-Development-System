@@ -1,9 +1,22 @@
 /**
- * K26-M1: Adjustment rules settings UI client helper.
- * Read-only fetch wrapper.
+ * K26-M1 / K38-A: Adjustment rules settings UI client helper.
+ * K38-A: Added groups, editability, workTimeContext, defaultRecommendationLimit.
+ * Read-only — no PATCH in this stage.
  */
 
+export interface AdjustmentRule {
+  key: string
+  group: string
+  label: string
+  value: string | boolean | number | null
+  status: 'active' | 'fixed' | 'planned' | 'unknown'
+  editable: boolean
+  source: string
+  description: string
+}
+
 export interface AdjustmentRulesData {
+  moduleVersion?: string
   summary: {
     crossWeekAdjustmentSupported: boolean
     weekendAdjustmentControlledByWorkTime: boolean
@@ -15,19 +28,22 @@ export interface AdjustmentRulesData {
     totalAdjustments: number
     activeAdjustments: number
     workTimeSource: string
+    workTimeConfigName?: string | null
     allowWeekend: boolean
     activeSlotIndexes: number[]
     legacySlotIndexes: number[]
+    activeSlotCount?: number
   }
-  rules: Array<{
-    key: string
-    label: string
-    value: string | boolean | number | null
-    status: 'active' | 'fixed' | 'planned' | 'unknown'
-    editable: boolean
+  workTimeContext?: {
     source: string
-    description: string
-  }>
+    configName: string | null
+    allowWeekend: boolean
+    activeSlotIndexes: number[]
+    legacySlotIndexes: number[]
+    weekendBehavior: string
+  }
+  groups?: Record<string, { label: string; description: string }>
+  rules: Record<string, AdjustmentRule[]> | Array<AdjustmentRule>
   safeguards: Array<{
     key: string
     label: string
@@ -35,6 +51,22 @@ export interface AdjustmentRulesData {
     severity: 'hard' | 'warning' | 'info'
     description: string
   }>
+  editability?: {
+    allRulesEditable: boolean
+    defaultRecommendationLimitEditable: boolean
+    allowWeekendEditableInThisPage: boolean
+    dryRunGuardClosable: boolean
+    applyGuardClosable: boolean
+    note: string
+  }
+  defaultRecommendationLimit?: {
+    current: number
+    min: number
+    max: number
+    editable: boolean
+    source: string
+    note: string
+  }
 }
 
 export async function fetchAdjustmentRules(): Promise<AdjustmentRulesData> {

@@ -1,0 +1,55 @@
+{
+  "stage": "K38-A-ADJUSTMENT-RULES-SETTINGS-EDITABLE-PLAN-AND-SAFE-BASICS",
+  "status": "CLOSED",
+  "type": "diagnostics enhancement",
+  "route": "B (no PATCH, no schema change)",
+  "routeReason": "No safe persistent config location for defaultRecommendationLimit; all rules hard-locked",
+  "schemaChange": false,
+  "prismaMigration": false,
+  "apiChanges": {
+    "moduleVersion": "K38-A",
+    "newFields": ["workTimeContext", "groups", "editability", "defaultRecommendationLimit", "moduleVersion"],
+    "rulesFormat": "Record<group, Rule[]> (grouped)",
+    "groupTaxonomy": ["worktime", "recommendation", "dry-run", "apply", "hard-guard"]
+  },
+  "uiChanges": {
+    "badge": "诊断增强版 (was 只读基础版)",
+    "summaryCards": "8 (added dry-run guard, apply guard, defaultRecommendationLimit, active slots)",
+    "workTimeContext": "Enhanced with weekendBehavior explanation",
+    "rulesList": "Grouped by category with icons and group labels",
+    "defaultRecommendationLimit": "Surfaced with current/min/max + source + editability flag",
+    "editabilityNotice": "New K38-B future stage note"
+  },
+  "editability": {
+    "dryRunGuardClosable": false,
+    "applyGuardClosable": false,
+    "allowWeekendEditableInThisPage": false,
+    "defaultRecommendationLimitEditable": false,
+    "allRulesEditable": false
+  },
+  "verificationResults": {
+    "k38aVerify": "22/22 PASS",
+    "k37cVerify": "23/23 PASS",
+    "k37b2RuntimeFix": "17/17 PASS",
+    "k22cRegression": "73/0/0/0 (restored)",
+    "piiScan": "0 BLOCKING",
+    "prismaValidate": "valid",
+    "prismaMigrateStatus": "up to date (11 migrations)",
+    "build": "PASS",
+    "eslint": "0 errors"
+  },
+  "commit": {
+    "message": "feat(settings): enhance adjustment rule diagnostics",
+    "expectedFiles": [
+      "src/app/api/admin/settings/adjustment-rules/route.ts",
+      "src/components/settings/adjustment-rules-settings-panel.tsx",
+      "src/lib/settings/adjustment-rules-client.ts",
+      "src/lib/settings/settings-modules.ts",
+      "scripts/verify-adjustment-rules-settings-safe-basics-k38-a.ts",
+      "docs/k38-a-adjustment-rules-settings-safe-basics.md",
+      "docs/k38-a-adjustment-rules-settings-safe-basics.json",
+      "docs/current-project-status.md"
+    ],
+    "pushed": false
+  }
+}

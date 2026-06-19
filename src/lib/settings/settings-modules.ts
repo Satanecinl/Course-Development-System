@@ -62,12 +62,12 @@ export const SETTINGS_MODULES: SettingsModule[] = [
   {
     key: 'adjustment-rules',
     title: '调课规则设置',
-    description: '查看跨周调课、周末调课、推荐方案、WorkTime guard、dry-run/apply 规则和安全限制。基础只读版。',
+    description: '查看跨周调课、周末调课、推荐方案、WorkTime guard、dry-run/apply 规则、安全限制、规则分组和 hard-locked 状态。诊断增强版。',
     status: 'ready',
     priority: 'P1',
-    recommendedStage: 'K26-M1-BASIC',
+    recommendedStage: 'K38-A-DIAGNOSTIC',
     riskLevel: 'medium',
-    notes: '只读基础版。展示当前调课规则和 guard 状态，不提供编辑。',
+    notes: 'K38-A: 诊断增强版。规则按 WorkTime/推荐/dry-run/apply/hard-guard 分组。所有规则 hard-locked。K38-B 计划增加可配置项。',
   },
   {
     key: 'import-rules',
