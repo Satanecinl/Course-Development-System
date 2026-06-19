@@ -1,0 +1,733 @@
+{
+  "stage": "L2-XLSX-COURSE-SETTING-PARSER-PROTOTYPE",
+  "status": "PASS",
+  "generatedAt": "2026-06-19T15:02:57.303Z",
+  "parserVersion": "l2-parser-v1",
+  "input": {
+    "samplePathExists": true,
+    "sampleGitTracked": false,
+    "sampleFileNameHash": "d5c590e19e3f",
+    "sampleFilePathHash": "34ae69f10ac7",
+    "sampleFileSize": 131200,
+    "sampleSha256": "d6974958bb6d5dc3660752c9d6c787c06ecd56d022282dd311c99c34aac98ffe"
+  },
+  "parser": {
+    "parserFile": "src/lib/import/course-setting-xlsx-parser.ts",
+    "exportedFunctions": [
+      "parseCourseSettingXlsx",
+      "parseCourseSettingXlsxFile"
+    ],
+    "bufferInputSupported": true,
+    "deterministic": true,
+    "includeRawValuesDefault": false
+  },
+  "workbookSummary": {
+    "sheetCount": 9,
+    "parsedSheetCount": 9,
+    "totalRows": 1854,
+    "totalCourseRows": 1116,
+    "totalWarnings": 142
+  },
+  "sheets": [
+    {
+      "sheetIndex": 1,
+      "sheetNameHash": "82f99cbbbf20",
+      "rowCount": 522,
+      "columnCount": 15,
+      "mergedCellCount": 1074,
+      "headerRowIndex": 2,
+      "columnMapKeys": [
+        "gradeMajor",
+        "classCount",
+        "courseName",
+        "examType",
+        "weeklyHours",
+        "teacherAssignment",
+        "remark",
+        "mergeRemark"
+      ],
+      "rowClassification": {
+        "title": 1,
+        "header": 1,
+        "course": 416,
+        "subtotal": 100,
+        "blank": 4,
+        "malformed": 0
+      },
+      "fieldCoverage": {
+        "gradeMajor": 416,
+        "classCount": 416,
+        "courseName": 416,
+        "examType": 416,
+        "weeklyHours": 416,
+        "teacherAssignment": 416,
+        "remark": 416,
+        "mergeRemark": 416
+      },
+      "diagnostics": {
+        "MERGED_CELL_EXPANDED": 1,
+        "INHERITED_GRADE_MAJOR": 34,
+        "INHERITED_CLASS_COUNT": 34
+      },
+      "courseConfidence": {
+        "avg": 0.943,
+        "min": 0.65,
+        "max": 1
+      }
+    },
+    {
+      "sheetIndex": 2,
+      "sheetNameHash": "df504861551d",
+      "rowCount": 74,
+      "columnCount": 12,
+      "mergedCellCount": 132,
+      "headerRowIndex": 2,
+      "columnMapKeys": [
+        "gradeMajor",
+        "classCount",
+        "courseName",
+        "examType",
+        "weeklyHours",
+        "teacherAssignment",
+        "remark",
+        "mergeRemark"
+      ],
+      "rowClassification": {
+        "title": 1,
+        "header": 1,
+        "course": 2,
+        "subtotal": 58,
+        "blank": 12,
+        "malformed": 0
+      },
+      "fieldCoverage": {
+        "gradeMajor": 2,
+        "classCount": 2,
+        "courseName": 2,
+        "examType": 2,
+        "weeklyHours": 2,
+        "teacherAssignment": 2,
+        "remark": 2,
+        "mergeRemark": 2
+      },
+      "diagnostics": {
+        "MERGED_CELL_EXPANDED": 1,
+        "INHERITED_GRADE_MAJOR": 4,
+        "INHERITED_CLASS_COUNT": 4
+      },
+      "courseConfidence": {
+        "avg": 1,
+        "min": 1,
+        "max": 1
+      }
+    },
+    {
+      "sheetIndex": 3,
+      "sheetNameHash": "395ff208a0ce",
+      "rowCount": 66,
+      "columnCount": 8,
+      "mergedCellCount": 132,
+      "headerRowIndex": 2,
+      "columnMapKeys": [
+        "gradeMajor",
+        "classCount",
+        "courseName",
+        "examType",
+        "weeklyHours",
+        "teacherAssignment",
+        "remark",
+        "mergeRemark"
+      ],
+      "rowClassification": {
+        "title": 1,
+        "header": 1,
+        "course": 47,
+        "subtotal": 17,
+        "blank": 0,
+        "malformed": 0
+      },
+      "fieldCoverage": {
+        "gradeMajor": 47,
+        "classCount": 47,
+        "courseName": 47,
+        "examType": 47,
+        "weeklyHours": 47,
+        "teacherAssignment": 47,
+        "remark": 47,
+        "mergeRemark": 47
+      },
+      "diagnostics": {
+        "MERGED_CELL_EXPANDED": 1,
+        "INHERITED_GRADE_MAJOR": 5,
+        "INHERITED_CLASS_COUNT": 5
+      },
+      "courseConfidence": {
+        "avg": 0.914,
+        "min": 0.75,
+        "max": 1
+      }
+    },
+    {
+      "sheetIndex": 4,
+      "sheetNameHash": "2572c2687d09",
+      "rowCount": 70,
+      "columnCount": 11,
+      "mergedCellCount": 133,
+      "headerRowIndex": 2,
+      "columnMapKeys": [
+        "gradeMajor",
+        "classCount",
+        "courseName",
+        "examType",
+        "weeklyHours",
+        "teacherAssignment",
+        "remark",
+        "mergeRemark"
+      ],
+      "rowClassification": {
+        "title": 1,
+        "header": 1,
+        "course": 60,
+        "subtotal": 8,
+        "blank": 0,
+        "malformed": 0
+      },
+      "fieldCoverage": {
+        "gradeMajor": 60,
+        "classCount": 60,
+        "courseName": 60,
+        "examType": 60,
+        "weeklyHours": 60,
+        "teacherAssignment": 60,
+        "remark": 60,
+        "mergeRemark": 60
+      },
+      "diagnostics": {
+        "MERGED_CELL_EXPANDED": 1,
+        "INHERITED_GRADE_MAJOR": 5,
+        "INHERITED_CLASS_COUNT": 5
+      },
+      "courseConfidence": {
+        "avg": 0.949,
+        "min": 0.75,
+        "max": 1
+      }
+    },
+    {
+      "sheetIndex": 5,
+      "sheetNameHash": "15d03dbe155f",
+      "rowCount": 282,
+      "columnCount": 9,
+      "mergedCellCount": 524,
+      "headerRowIndex": 2,
+      "columnMapKeys": [
+        "gradeMajor",
+        "classCount",
+        "courseName",
+        "examType",
+        "weeklyHours",
+        "teacherAssignment",
+        "remark",
+        "mergeRemark"
+      ],
+      "rowClassification": {
+        "title": 1,
+        "header": 1,
+        "course": 76,
+        "subtotal": 198,
+        "blank": 6,
+        "malformed": 0
+      },
+      "fieldCoverage": {
+        "gradeMajor": 76,
+        "classCount": 76,
+        "courseName": 76,
+        "examType": 76,
+        "weeklyHours": 76,
+        "teacherAssignment": 76,
+        "remark": 76,
+        "mergeRemark": 76
+      },
+      "diagnostics": {
+        "MERGED_CELL_EXPANDED": 1,
+        "INHERITED_GRADE_MAJOR": 24,
+        "INHERITED_CLASS_COUNT": 24
+      },
+      "courseConfidence": {
+        "avg": 0.941,
+        "min": 0.775,
+        "max": 1
+      }
+    },
+    {
+      "sheetIndex": 6,
+      "sheetNameHash": "aadb06e5046d",
+      "rowCount": 97,
+      "columnCount": 9,
+      "mergedCellCount": 197,
+      "headerRowIndex": 2,
+      "columnMapKeys": [
+        "gradeMajor",
+        "classCount",
+        "courseName",
+        "examType",
+        "weeklyHours",
+        "teacherAssignment",
+        "remark",
+        "mergeRemark"
+      ],
+      "rowClassification": {
+        "title": 1,
+        "header": 1,
+        "course": 68,
+        "subtotal": 27,
+        "blank": 0,
+        "malformed": 0
+      },
+      "fieldCoverage": {
+        "gradeMajor": 68,
+        "classCount": 68,
+        "courseName": 68,
+        "examType": 68,
+        "weeklyHours": 68,
+        "teacherAssignment": 68,
+        "remark": 68,
+        "mergeRemark": 68
+      },
+      "diagnostics": {
+        "MERGED_CELL_EXPANDED": 1,
+        "INHERITED_GRADE_MAJOR": 7,
+        "INHERITED_CLASS_COUNT": 7
+      },
+      "courseConfidence": {
+        "avg": 0.899,
+        "min": 0.663,
+        "max": 1
+      }
+    },
+    {
+      "sheetIndex": 7,
+      "sheetNameHash": "c08bc22bedf0",
+      "rowCount": 610,
+      "columnCount": 9,
+      "mergedCellCount": 1150,
+      "headerRowIndex": 2,
+      "columnMapKeys": [
+        "gradeMajor",
+        "classCount",
+        "courseName",
+        "examType",
+        "weeklyHours",
+        "teacherAssignment",
+        "remark",
+        "mergeRemark"
+      ],
+      "rowClassification": {
+        "title": 1,
+        "header": 1,
+        "course": 390,
+        "subtotal": 215,
+        "blank": 3,
+        "malformed": 0
+      },
+      "fieldCoverage": {
+        "gradeMajor": 390,
+        "classCount": 390,
+        "courseName": 390,
+        "examType": 390,
+        "weeklyHours": 390,
+        "teacherAssignment": 390,
+        "remark": 390,
+        "mergeRemark": 390
+      },
+      "diagnostics": {
+        "MERGED_CELL_EXPANDED": 1,
+        "INHERITED_GRADE_MAJOR": 39,
+        "INHERITED_CLASS_COUNT": 39
+      },
+      "courseConfidence": {
+        "avg": 0.975,
+        "min": 0.85,
+        "max": 1
+      }
+    },
+    {
+      "sheetIndex": 8,
+      "sheetNameHash": "5fc6e72ecb46",
+      "rowCount": 61,
+      "columnCount": 9,
+      "mergedCellCount": 122,
+      "headerRowIndex": 2,
+      "columnMapKeys": [
+        "gradeMajor",
+        "classCount",
+        "courseName",
+        "examType",
+        "weeklyHours",
+        "teacherAssignment",
+        "remark",
+        "mergeRemark"
+      ],
+      "rowClassification": {
+        "title": 1,
+        "header": 1,
+        "course": 28,
+        "subtotal": 31,
+        "blank": 0,
+        "malformed": 0
+      },
+      "fieldCoverage": {
+        "gradeMajor": 28,
+        "classCount": 28,
+        "courseName": 28,
+        "examType": 28,
+        "weeklyHours": 28,
+        "teacherAssignment": 28,
+        "remark": 28,
+        "mergeRemark": 28
+      },
+      "diagnostics": {
+        "MERGED_CELL_EXPANDED": 1,
+        "INHERITED_GRADE_MAJOR": 4,
+        "INHERITED_CLASS_COUNT": 4
+      },
+      "courseConfidence": {
+        "avg": 1,
+        "min": 1,
+        "max": 1
+      }
+    },
+    {
+      "sheetIndex": 9,
+      "sheetNameHash": "f3aa8b0674bc",
+      "rowCount": 72,
+      "columnCount": 9,
+      "mergedCellCount": 139,
+      "headerRowIndex": 2,
+      "columnMapKeys": [
+        "gradeMajor",
+        "classCount",
+        "courseName",
+        "examType",
+        "weeklyHours",
+        "teacherAssignment",
+        "remark",
+        "mergeRemark"
+      ],
+      "rowClassification": {
+        "title": 1,
+        "header": 1,
+        "course": 29,
+        "subtotal": 41,
+        "blank": 0,
+        "malformed": 0
+      },
+      "fieldCoverage": {
+        "gradeMajor": 29,
+        "classCount": 29,
+        "courseName": 29,
+        "examType": 29,
+        "weeklyHours": 29,
+        "teacherAssignment": 29,
+        "remark": 29,
+        "mergeRemark": 29
+      },
+      "diagnostics": {
+        "MERGED_CELL_EXPANDED": 1,
+        "INHERITED_GRADE_MAJOR": 5,
+        "INHERITED_CLASS_COUNT": 5
+      },
+      "courseConfidence": {
+        "avg": 0.966,
+        "min": 0.8,
+        "max": 1
+      }
+    }
+  ],
+  "rowClassification": {
+    "title": 9,
+    "header": 9,
+    "course": 1116,
+    "subtotal": 695,
+    "blank": 25,
+    "malformed": 0
+  },
+  "fieldCoverage": {
+    "gradeMajor": 1116,
+    "classCount": 1116,
+    "courseName": 1116,
+    "examType": 1116,
+    "weeklyHours": 1116,
+    "teacherAssignment": 1116,
+    "remark": 1116,
+    "mergeRemark": 1116
+  },
+  "classCountParsing": {
+    "multiBan": 127,
+    "multiSpaces": 453,
+    "single": 277,
+    "other": 134,
+    "countOnly": 124,
+    "blank": 1
+  },
+  "teacherAssignmentParsing": {
+    "blank": 86,
+    "numbered": 71,
+    "other": 62,
+    "single": 876,
+    "bankSplit": 21
+  },
+  "examTypeParsing": {
+    "expected": 945,
+    "blank": 29,
+    "other": 142
+  },
+  "weeklyHoursParsing": {
+    "numeric": 1057,
+    "halfStep": 34,
+    "blank": 6,
+    "nonNumeric": 19
+  },
+  "remarkParsing": {
+    "blank": 980,
+    "other": 130,
+    "classSpecific": 6
+  },
+  "mergeRemarkParsing": {
+    "blank": 1011,
+    "classSpecific": 13,
+    "ambiguous": 62,
+    "合班授课": 30
+  },
+  "sourceEvidenceCoverage": {
+    "courseRowsWithDraft": 1116,
+    "fieldCounts": {
+      "sourceSheetNameHash": 1116,
+      "sourceRowIndex": 1116,
+      "sourceMajorNameHash": 1116,
+      "sourceClassCountRawHash": 1116,
+      "sourceCourseNameHash": 1116,
+      "sourceTeacherRawHash": 1116,
+      "sourceRemarkHash": 1116,
+      "sourceMergeRemarkHash": 1116
+    }
+  },
+  "confidence": {
+    "avgCourseRow": 0.953,
+    "minCourseRow": 0.65,
+    "maxCourseRow": 1
+  },
+  "diagnostics": {
+    "byCode": {
+      "MERGED_CELL_EXPANDED": 9,
+      "INHERITED_GRADE_MAJOR": 127,
+      "INHERITED_CLASS_COUNT": 127
+    }
+  },
+  "privacy": {
+    "rawTeacherNamesCommitted": false,
+    "rawClassNamesCommitted": false,
+    "rawCourseNamesCommitted": false,
+    "rawRemarksCommitted": false,
+    "rawRowsCommitted": false,
+    "rawSheetNamesCommitted": false,
+    "examTypeNormalizedLeaked": true,
+    "examTypeNormalizedLeakDetail": "试/查 are public enum values, not PII"
+  },
+  "safety": {
+    "dbWritten": false,
+    "schemaChanged": false,
+    "apiChanged": false,
+    "uiChanged": false,
+    "wordParserChanged": false,
+    "schedulerChanged": false,
+    "scoreChanged": false,
+    "k22ExpectedChanged": false
+  },
+  "checks": [
+    {
+      "id": 1,
+      "name": "sample file exists",
+      "passed": true,
+      "detail": "size=131200"
+    },
+    {
+      "id": 2,
+      "name": "sample file not git-tracked",
+      "passed": true,
+      "detail": "name-hash d5c590e19e3f"
+    },
+    {
+      "id": 3,
+      "name": "parser file exists",
+      "passed": true,
+      "detail": "D:\\Desktop\\Course Development System\\my-app\\src\\lib\\import\\course-setting-xlsx-parser.ts"
+    },
+    {
+      "id": 4,
+      "name": "parser exports parseCourseSettingXlsx",
+      "passed": true,
+      "detail": "export found"
+    },
+    {
+      "id": 5,
+      "name": "workbook readable (parser ran)",
+      "passed": true,
+      "detail": "parserVersion=l2-parser-v1"
+    },
+    {
+      "id": 6,
+      "name": "sheet count = 9",
+      "passed": true,
+      "detail": "actual=9"
+    },
+    {
+      "id": 7,
+      "name": "parsed sheets > 0",
+      "passed": true,
+      "detail": "parsedSheetCount=9"
+    },
+    {
+      "id": 8,
+      "name": "total course rows > 1000",
+      "passed": true,
+      "detail": "totalCourseRows=1116"
+    },
+    {
+      "id": 9,
+      "name": "expected column detection coverage = 8 per parsed sheet",
+      "passed": true,
+      "detail": "all sheets have all 8 keys"
+    },
+    {
+      "id": 10,
+      "name": "merged cell expansion executed",
+      "passed": true,
+      "detail": "min merged cells per sheet=122"
+    },
+    {
+      "id": 11,
+      "name": "gradeMajor inheritance detected",
+      "passed": true,
+      "detail": "INHERITED_GRADE_MAJOR diagnostic present"
+    },
+    {
+      "id": 12,
+      "name": "classCount inheritance detected",
+      "passed": true,
+      "detail": "INHERITED_CLASS_COUNT diagnostic present"
+    },
+    {
+      "id": 13,
+      "name": "row classification is mutually exclusive",
+      "passed": true,
+      "detail": "all rowKind values in enum"
+    },
+    {
+      "id": 14,
+      "name": "class count parser returns primaryClassification + warnings",
+      "passed": true,
+      "detail": "all course rows have valid primaryClassification + warnings[]"
+    },
+    {
+      "id": 15,
+      "name": "teacher parser returns primaryClassification + warnings",
+      "passed": true,
+      "detail": "all course rows have valid primaryClassification + warnings[]"
+    },
+    {
+      "id": 16,
+      "name": "exam type parser handles expected/blank/other",
+      "passed": true,
+      "detail": "expected=945 blank=29 other=142"
+    },
+    {
+      "id": 17,
+      "name": "weekly hours parser handles numeric/halfStep/blank/nonNumeric",
+      "passed": true,
+      "detail": "numeric=1057 halfStep=34 blank=6 nonNumeric=19"
+    },
+    {
+      "id": 18,
+      "name": "sourceEvidence draft generated for course rows",
+      "passed": true,
+      "detail": "all 1116 course rows have sourceSheetNameHash+sourceRowIndex"
+    },
+    {
+      "id": 19,
+      "name": "committed JSON contains no raw teacher names",
+      "passed": true,
+      "detail": "only public enum values (试/查) appear in normalized fields"
+    },
+    {
+      "id": 20,
+      "name": "committed JSON contains no raw class names",
+      "passed": true,
+      "detail": "no \"X班Y\" patterns"
+    },
+    {
+      "id": 21,
+      "name": "committed JSON contains no raw course names",
+      "passed": true,
+      "detail": "no raw course names (only 试/查 allowed)"
+    },
+    {
+      "id": 22,
+      "name": "committed JSON contains no raw remarks",
+      "passed": true,
+      "detail": "all valueShape values are abstract signatures"
+    },
+    {
+      "id": 23,
+      "name": "old Word parser untouched",
+      "passed": true,
+      "detail": "parse_schedule.py mtime=1781229170344, parser mtime=1781881337341, head=17366e214e25"
+    },
+    {
+      "id": 24,
+      "name": "no schema/migration changes",
+      "passed": true,
+      "detail": "prisma/ clean"
+    },
+    {
+      "id": 25,
+      "name": "no API/POST/PATCH changes",
+      "passed": true,
+      "detail": "src/app/api/ clean"
+    },
+    {
+      "id": 26,
+      "name": "no UI changes",
+      "passed": true,
+      "detail": "src/components/ clean"
+    },
+    {
+      "id": 27,
+      "name": "parser contains no DB writes (no prisma / db-module import)",
+      "passed": true,
+      "detail": "clean"
+    },
+    {
+      "id": 28,
+      "name": "parser output can be produced from Buffer input",
+      "passed": true,
+      "detail": "same workbook shape: sheetCount=9 totalCourseRows=1116"
+    },
+    {
+      "id": 29,
+      "name": "parser output is deterministic on same input",
+      "passed": true,
+      "detail": "JSON.stringify(r1) === JSON.stringify(r2)"
+    },
+    {
+      "id": 30,
+      "name": "recommendation is L3 preview-only, not DB apply",
+      "passed": true,
+      "detail": "will be embedded in MD: \"Recommended next stage: L3 preview-only API/UI integration\""
+    }
+  ],
+  "summary": {
+    "passed": 30,
+    "failed": 0
+  }
+}

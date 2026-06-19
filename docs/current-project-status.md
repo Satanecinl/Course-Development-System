@@ -32,6 +32,7 @@
 > **K39-C4 人工审核包已生成**（[K39-C4](k39-c4-source-evidence-manual-review-package.md)）。192 records in `temp/local-artifacts/k39-c4/source-evidence-manual-review-package.json` (gitignored, SHA256 4b1c7a3c...). All decisions pending. Committed summary only contains aggregate. Verify 31/31 PASS。
 > **K39-C5 条件字段 apply 已 BLOCKED**（[K39-C5](k39-c5-approved-source-evidence-conditional-apply.md)）。Review package 192/192 仍为 pending, 0 approved。按规则不写 DB, 不创建 apply 脚本, 不创建 DB backup。等待人工审核。
 > **L1 Excel 课程设置导入审计已完成**（[L1](l1-xlsx-course-setting-import-audit.md)）。只读审查 + parser 方案设计：9 个 sheet / 1854 行 / 1116 course row / 3080 merged cells。Class count 859 行需 newline/space split，teacher 92 行 multi-scope。Word parser 保持 legacy。L2 推荐做 parser prototype only（不写 DB，不接 UI）。Audit 25/25 PASS。K22-C 73/0/0/0 不变；K39 全套仍 PASS。
+> **L2 Excel 课程设置 parser prototype 已完成**（[L2](l2-xlsx-course-setting-parser-prototype.md)）。新增 `src/lib/import/course-setting-xlsx-parser.ts`（1051 行，纯函数），导出 `parseCourseSettingXlsx` + `parseCourseSettingXlsxFile`；支持 Buffer/Uint8Array 输入；merged cell 扩展 / A-B 列继承 / 8 关键词 header detection / 6 种 row 分类（互斥）/ class/teacher/exam/weekly hours/remark/mergeRemark 解析 + confidence + warnings / source evidence draft (9 字段 hash 化) / `includeRawValues` 默认 false。Verify 30/30 PASS。K22-C 73/0/0/0 不变；K39 全套仍 PASS。不写 DB / 不接 UI / 不改 confirm；不修改旧 Word import。
 >
 > 详细阶段 closeout 文档位于 `docs/`，按 `k<stage>-*.md` / `k<stage>-*.json` 命名。
 > 本文件只汇总 readiness、baseline、known artifacts、下一步建议。
