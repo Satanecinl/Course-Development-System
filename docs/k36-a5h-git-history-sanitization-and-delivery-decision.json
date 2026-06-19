@@ -1,0 +1,76 @@
+{
+  "stage": "K36-A5H-GIT-HISTORY-SANITIZATION-AND-DELIVERY-DECISION",
+  "status": "CLOSED",
+  "type": "read-only risk assessment",
+  "currentState": {
+    "branch": "master",
+    "head": "fcaa7881e0b3d2b9e6d3bc047e05c19233ef3682",
+    "originMaster": "fcaa7881e0b3d2b9e6d3bc047e05c19233ef3682",
+    "aheadBehind": "0/0",
+    "gitStatusShort": "empty",
+    "totalCommits": 301,
+    "uniquePathsInHistory": 976
+  },
+  "riskInventory": {
+    "baselineCommit": "bfc678e — HANDOVER-REPORT-20260529 — single largest concentration of sensitive data",
+    "historicalSensitivePaths": [
+      { "pattern": "scripts/teachers.txt", "risk": "HIGH", "reason": "real teacher whitelist", "currentlyTracked": false },
+      { "pattern": "scripts/teachers.xlsx", "risk": "HIGH", "reason": "real teacher spreadsheet", "currentlyTracked": false },
+      { "pattern": "data/class-student-count.csv", "risk": "HIGH", "reason": "real class enrollment", "currentlyTracked": false },
+      { "pattern": "data/room-capacity.csv", "risk": "HIGH", "reason": "real room capacities", "currentlyTracked": false },
+      { "pattern": "output.json", "risk": "HIGH", "reason": "real schedule output", "currentlyTracked": false },
+      { "pattern": "scripts/semester_2026.*", "risk": "HIGH", "reason": "real semester data", "currentlyTracked": false },
+      { "pattern": "prisma/backups/*.json", "risk": "MEDIUM", "reason": "DB backup JSON snapshot", "currentlyTracked": false },
+      { "pattern": "scripts/mock_schedule.docx", "risk": "MEDIUM", "reason": "docx fixture", "currentlyTracked": false }
+    ],
+    "neverInHistory": [".env", "prisma/dev.db", "uploads/"],
+    "trackedAtHeadLowRisk": ["data/class-student-count.template.csv", "data/room-capacity.template.csv"]
+  },
+  "routeComparison": {
+    "routeA": {
+      "name": "Private-only continuation",
+      "recommendation": "Go for internal development",
+      "tradeoff": "Cannot publish or deliver externally"
+    },
+    "routeB": {
+      "name": "Fresh clean repo / clean export",
+      "recommendation": "Recommended for external delivery",
+      "tradeoff": "Loses Git history; needs synthetic fixtures"
+    },
+    "routeC": {
+      "name": "git filter-repo / history rewrite",
+      "recommendation": "Only if publishing current repo",
+      "tradeoff": "Destructive; all collaborators must re-clone"
+    }
+  },
+  "goNoGo": {
+    "publicGitHub": "No-Go",
+    "externalSourceDelivery": "No-Go",
+    "internalPrivateDevelopment": "Go"
+  },
+  "recommendedNextStages": {
+    "externalDelivery": "K36-A5I-CLEAN-EXPORT-PACKAGE-PLAN",
+    "publicRepo": "K36-A5I-GIT-HISTORY-REWRITE-PLAN",
+    "continueDevelopment": "Proceed to next business/feature stage"
+  },
+  "verificationResults": {
+    "gitStatus": "clean",
+    "aheadBehind": "0/0",
+    "scanDocsPii": "0 blocking, 2 existing warnings (unchanged)",
+    "guardSelfTest": "17/17 PASS",
+    "guardRootScan": "FAIL — correct (.env blocked, 179 blocking, 49 warnings)",
+    "guardRootRawScan": "FAIL — correct (224 blocking including temp/uploads, 49 warnings)",
+    "prismaValidate": "schema valid",
+    "build": "Compiled successfully"
+  },
+  "commit": {
+    "message": "docs(repo): decide history sanitization delivery path",
+    "expectedFiles": [
+      "docs/k36-a5h-git-history-sanitization-and-delivery-decision.md",
+      "docs/k36-a5h-git-history-sanitization-and-delivery-decision.json",
+      "docs/current-project-status.md"
+    ],
+    "notIncluded": ["src/**", "prisma/**", "scripts/**", "temp/**", "docx", "generate-report js"],
+    "pushed": false
+  }
+}

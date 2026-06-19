@@ -6,6 +6,7 @@
 > **K36-B1A multi-room / secondary room 主线 final closeout 已完成**（[K36-B1A7](k36-b1a7-multi-room-final-closeout.md)）。K22-C 恢复 73/0/0/0；K36-B1A6B 修复 I11 HC5 delta regression 已 push。
 > **K36-B2 WorkTime B-03 score contract 标签已 explicit close**（[K36-B2](k36-b2-worktime-b03-explicit-close.md)）。K26-J 在 52f200d 处已 CLOSED workTimeSolverScoreIntegration；B-03 仅是 K36-B1A 系列的 meta-label。
 > **K36-A5G release packaging guard 已建立**（[K36-A5G](k36-a5g-release-packaging-guard.md)）。Guard 脚本 + verify 脚本已可用，`npm run guard:release -- --self-test` 17/17 PASS。注意：guard 仅保护未来 package，不等于 Git history 脱敏；公开仓库仍需 history rewrite 或 fresh repo 决策。
+> **K36-A5H Git history sanitization & delivery decision 已完成**（[K36-A5H](k36-a5h-git-history-sanitization-and-delivery-decision.md)）。结论：public=No-Go, external delivery=No-Go, private-only=Go。推荐外部交付用 Route B（fresh clean export），公开 repo 用 Route C（filter-repo）。
 >
 > 详细阶段 closeout 文档位于 `docs/`，按 `k<stage>-*.md` / `k<stage>-*.json` 命名。
 > 本文件只汇总 readiness、baseline、known artifacts、下一步建议。
