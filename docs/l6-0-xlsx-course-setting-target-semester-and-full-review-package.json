@@ -1,0 +1,307 @@
+{
+  "stage": "L6-0-XLSX-COURSE-SETTING-TARGET-SEMESTER-AND-FULL-REVIEW-PACKAGE",
+  "status": "PASS",
+  "generatedAt": "2026-06-20T06:16:04.444Z",
+  "applyAllowedInL60": false,
+  "reviewOnly": true,
+  "dryRunOnly": true,
+  "dbWritten": false,
+  "targetSemesterConfirmed": false,
+  "input": {
+    "samplePathHash": "34ae69f10ac7",
+    "samplePathExists": true,
+    "sampleGitTracked": true,
+    "sampleFileNameHash": "d5c590e19e3f",
+    "sampleFileSize": 131200
+  },
+  "l4DryRunSummary": {
+    "totalCourseRows": 1116,
+    "teachingTaskCandidates": 1116,
+    "teachingTaskClassCandidates": 1742,
+    "rowsNeedingManualReview": 1099
+  },
+  "fullReviewPackage": {
+    "reviewItems": 1116,
+    "autoSafeCandidates": 0,
+    "blockedCandidates": 1116,
+    "manualReviewRequired": 0,
+    "rejectedByRule": 0,
+    "allDecisionsPending": true,
+    "localPackagePath": "D:/Desktop/Course Development System/my-app/temp/local-artifacts/l6-0/xlsx-course-setting-review-package.full.redacted.json",
+    "localPackageSha256": "769192b5bbd34b0390ab91def2e3885d967dc946b67a0de1ba533f7b020c400d",
+    "packageVersion": "l5-review-package-v1"
+  },
+  "bucketSummary": [
+    {
+      "bucket": "AUTO_SAFE_CANDIDATE",
+      "count": 0,
+      "description": "all entities exact, no risky diagnostics, confidence >= threshold; still requires human review in L5"
+    },
+    {
+      "bucket": "TARGET_SEMESTER_REQUIRED",
+      "count": 1116,
+      "description": "gate-level bucket: target semester not confirmed yet; all rows route here when targetSemesterConfirmed=false"
+    },
+    {
+      "bucket": "MISSING_COURSE",
+      "count": 0,
+      "description": "course not found in existing courses"
+    },
+    {
+      "bucket": "MISSING_TEACHER",
+      "count": 0,
+      "description": "teacher not found in existing teachers"
+    },
+    {
+      "bucket": "MISSING_CLASS_GROUP",
+      "count": 0,
+      "description": "constructed class group name not found in existing class groups"
+    },
+    {
+      "bucket": "COUNT_ONLY_CLASS_GROUP",
+      "count": 0,
+      "description": "class count has only a student count, no class label resolvable"
+    },
+    {
+      "bucket": "UNRESOLVED_CLASS_GROUP",
+      "count": 0,
+      "description": "class count did not match any known pattern (other)"
+    },
+    {
+      "bucket": "TEACHER_BLANK",
+      "count": 0,
+      "description": "teacher assignment is blank (business-empty)"
+    },
+    {
+      "bucket": "TEACHER_SCOPE_SPLIT_REQUIRED",
+      "count": 0,
+      "description": "bankSplit or numbered teacher scope requires task split review"
+    },
+    {
+      "bucket": "INVALID_WEEKLY_HOURS",
+      "count": 0,
+      "description": "weekly hours not numeric"
+    },
+    {
+      "bucket": "INVALID_EXAM_TYPE",
+      "count": 0,
+      "description": "exam type not 试 or 查"
+    },
+    {
+      "bucket": "MERGE_REMARK_AMBIGUOUS",
+      "count": 0,
+      "description": "merge remark is non-empty with no class marker"
+    },
+    {
+      "bucket": "LOW_CONFIDENCE",
+      "count": 0,
+      "description": "parsed row confidence below threshold"
+    },
+    {
+      "bucket": "POSSIBLE_EXISTING_TASK",
+      "count": 0,
+      "description": "course exact AND an existing teaching task has the same courseId (potential duplicate)"
+    },
+    {
+      "bucket": "BLOCKED",
+      "count": 0,
+      "description": "catch-all blocked bucket for items that did not match a more specific bucket"
+    }
+  ],
+  "diagnosticsSummary": {
+    "total": 2335,
+    "byCode": {
+      "TEACHER_BLANK": 86,
+      "COURSE_MISSING": 866,
+      "TASK_SPLIT_REQUIRED": 92,
+      "TEACHER_MISSING": 686,
+      "TEACHER_ASSIGNMENT_OTHER_REQUIRES_REVIEW": 62,
+      "MERGE_REMARK_AMBIGUOUS": 62,
+      "EXAM_TYPE_OTHER": 142,
+      "TEACHER_BANK_SPLIT_REQUIRES_REVIEW": 21,
+      "WEEKLY_HOURS_NON_NUMERIC": 19,
+      "LOW_CONFIDENCE_ROW": 40,
+      "CLASS_COUNT_OTHER_REQUIRES_REVIEW": 134,
+      "CLASS_COUNT_ONLY_REQUIRES_REVIEW": 125
+    }
+  },
+  "targetSemesterAnalysis": {
+    "readOnly": true,
+    "semesterCount": 3,
+    "activeSemester": {
+      "id": 1,
+      "nameHash": "403faabe7bb0",
+      "codeHash": "98c9ec1c3c71",
+      "isActive": true
+    },
+    "candidateSemesters": [
+      {
+        "id": 1,
+        "nameHash": "403faabe7bb0",
+        "codeHash": "98c9ec1c3c71",
+        "isActive": true,
+        "matchSignals": [
+          "year-2025-or-earlier-fall-window",
+          "term-2-or-second"
+        ],
+        "confidence": 0.7,
+        "recommendedAsTarget": false
+      },
+      {
+        "id": 2,
+        "nameHash": "de09f4acea23",
+        "codeHash": "138103e76b68",
+        "isActive": false,
+        "matchSignals": [
+          "token-qiu",
+          "inactive"
+        ],
+        "confidence": 0.45,
+        "recommendedAsTarget": false
+      },
+      {
+        "id": 3,
+        "nameHash": "84d9662d836b",
+        "codeHash": "00906e7bc88f",
+        "isActive": false,
+        "matchSignals": [
+          "year-2025-or-earlier-fall-window",
+          "token-qiu",
+          "inactive"
+        ],
+        "confidence": 0.7,
+        "recommendedAsTarget": false
+      }
+    ],
+    "targetSemesterDecision": {
+      "status": "existingCandidateFoundNeedsUserConfirmation",
+      "recommendedOption": "useExisting2025FallCandidate",
+      "forceActiveSemesterRecommended": false,
+      "reason": "Found 1 inactive semester candidate with confidence >= 0.5 (id=3); user must confirm before L6 apply."
+    },
+    "gates": {
+      "targetSemesterConfirmed": false,
+      "targetSemesterCreatedOrSelected": false,
+      "activeSemesterForceImportAllowed": false
+    }
+  },
+  "safeConfirmPlan": {
+    "applyAllowedInL5": false,
+    "applyAllowedInL60": false,
+    "requiredGates": {
+      "targetSemesterConfirmed": false,
+      "reviewPackageApproved": false,
+      "dbBackupCreated": false,
+      "dryRunReplayMatchesApprovedPackage": false,
+      "importBatchPlanGenerated": false,
+      "rollbackPlanGenerated": false,
+      "sourceEvidencePlanConfirmed": false
+    },
+    "transactionPlan": {
+      "steps": [
+        "BEGIN TRANSACTION",
+        "UPSERT Course (idempotent by nameHash)",
+        "UPSERT Teacher (idempotent by nameHash)",
+        "UPSERT ClassGroup scoped to targetSemesterId (idempotent by (semesterId, nameHash))",
+        "CREATE TeachingTask (idempotent by (semesterId, courseId, teacherId, remark))",
+        "CREATE TeachingTaskClass (idempotent by (teachingTaskId, classGroupId))",
+        "FORWARD-FILL source evidence on TeachingTaskClass (importBatchId, sourceArtifactFilename, sourceRowIndex, sourceSheetNameHash, sourceKeyword, sourceClassName, sourceRemark, matchStrategy, matchConfidence)",
+        "CREATE ImportBatch provenance record",
+        "COMMIT"
+      ],
+      "rollbackStrategy": [
+        "capture DB backup before BEGIN (prisma/dev.db.backup-before-l6-<timestamp>)",
+        "on any error during transaction: ROLLBACK",
+        "if transaction commits but post-apply audit fails: restore from pre-L6 backup",
+        "log dry-run plan + actual diff for audit trail"
+      ],
+      "idempotencyStrategy": [
+        "match Course by nameHash (sha256-prefix-12)",
+        "match Teacher by nameHash",
+        "match ClassGroup by (semesterId, nameHash)",
+        "match TeachingTask by (semesterId, courseId, teacherId, remark)",
+        "match TeachingTaskClass by (teachingTaskId, classGroupId)",
+        "use upsert with the above match keys so re-running the same approved package is a no-op"
+      ]
+    },
+    "applyPlanDraft": {
+      "createImportBatch": true,
+      "createMissingCourses": true,
+      "createMissingTeachers": true,
+      "createMissingClassGroups": true,
+      "createTeachingTasks": true,
+      "createTeachingTaskClasses": true,
+      "writeSourceEvidence": true,
+      "createScheduleSlots": false
+    },
+    "safetyChecksBeforeApply": [
+      "review package approved by ADMIN",
+      "target semester confirmed (Option A selected and Semester row exists)",
+      "DB backup created and SHA256 verified",
+      "dry-run replay produces identical result to approved package (re-execute L4 against same xlsx + existingData, compare JSON-strip-generatedAt)",
+      "no parallel writers (single-instance apply gate)",
+      "confirmText entered verbatim (\"CONFIRM_APPLY_L5\")"
+    ],
+    "safetyChecksAfterApply": [
+      "row count diff vs dry-run plan (TeachingTask / TeachingTaskClass / ClassGroup counts within tolerance)",
+      "TeachingTaskClass source evidence coverage (every link has importBatchId + sourceRowIndex + sourceArtifactFilename)",
+      "no orphan rows (every ClassGroup linked to a TeachingTask)",
+      "K22-C regression still PASS (73/0/0/0)",
+      "audit log emitted to docs/l6-audit.json with sha256 fingerprints"
+    ]
+  },
+  "privacy": {
+    "rawTeacherNamesCommitted": false,
+    "rawClassNamesCommitted": false,
+    "rawCourseNamesCommitted": false,
+    "rawRemarksCommitted": false,
+    "rawRowsCommitted": false,
+    "rawSheetNamesCommitted": false,
+    "phoneNumbersCommitted": false
+  },
+  "safety": {
+    "dbWritten": false,
+    "dbCountsUnchanged": true,
+    "dbCountsBefore": {
+      "course": 104,
+      "teacher": 84,
+      "classGroup": 36,
+      "teachingTask": 308,
+      "teachingTaskClass": 446,
+      "importBatch": 38,
+      "scheduleSlot": 440,
+      "scheduleAdjustment": 67,
+      "semester": 3
+    },
+    "importBatchCreated": false,
+    "schemaChanged": false,
+    "migrationAdded": false,
+    "apiChanged": false,
+    "uiChanged": false,
+    "wordParserChanged": false,
+    "l2ParserChanged": false,
+    "l4HelperChanged": false,
+    "l5HelperChanged": false,
+    "schedulerChanged": false,
+    "scoreChanged": false,
+    "k22ExpectedChanged": false
+  },
+  "analysisVersion": "l6-0-target-semester-analysis-v1",
+  "validation": {
+    "l60Verify": "PASS",
+    "l5Verify": "PASS",
+    "l4Verify": "PASS",
+    "l3Verify": "PASS",
+    "l2ParserVerify": "PASS",
+    "l1Audit": "PASS",
+    "k39B1": "PASS",
+    "k39B1A": "PASS",
+    "k39C2": "PASS",
+    "k39C4": "PASS",
+    "k22C": "PASS",
+    "scanDocsPii": "PASS",
+    "build": "PASS",
+    "tsc": "PASS",
+    "eslint": "PASS"
+  }
+}

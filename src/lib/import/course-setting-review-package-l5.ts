@@ -28,6 +28,13 @@
  *  - L4: dry-run candidate mapping → `CourseSettingTeachingTaskDryRunResult`.
  *  - L5 (this): review package + safe confirm plan (still no DB, no apply).
  *    L6 will be the actual apply stage (with target semester + approval gate).
+ *
+ * L6-0 reuse: the helpers below (`buildFullCourseSettingReviewPackage` and
+ * `serializeFullReviewPackageLocalArtifact`) consume this file unchanged to
+ * emit a full (uncapped) redacted review package covering every L4
+ * `teachingTaskCandidate`. The L5 review-only contract
+ * (`reviewOnly=true`, `dryRunOnly=true`, `dbWritten=false`,
+ * `applyAllowedInL5=false`) is preserved verbatim.
  */
 
 import { createHash } from 'node:crypto'
@@ -650,6 +657,101 @@ export const serializeCourseSettingReviewPackageLocalArtifact = (
     blockedCandidates: result.reviewSummary.blockedCandidates,
     manualReviewRequired: result.reviewSummary.manualReviewRequired,
     rejectedByRule: result.reviewSummary.rejectedByRule,
+    packageSha256: packageSha256 ?? null,
+    items: result.reviewItems,
+    buckets: result.buckets,
+  }
+  return JSON.stringify(obj, null, 2) + '\n'
+}
+
+// ---------------------------------------------------------------------------
+// L6-0 full-package helpers
+//
+// These wrap the helpers above so L6-0 can emit a full (uncapped) review
+// package covering every L4 `teachingTaskCandidate` (expected 1116) without
+// changing the L5 review-only contract. `buildCourseSettingReviewPackage`
+// already accepts `maxReviewRows: Number.POSITIVE_INFINITY` as the default;
+// the wrapper simply makes that intent explicit at the call site and pins the
+// other review-only invariants.
+// ---------------------------------------------------------------------------
+
+/**
+ * L6-0 stage constant — surfaces in the serialized artifact's `stage` field
+ * so the local review package is unambiguously identified as the L6-0
+ * target-semester + full-package artifact (not an L5 preview-capped one).
+ */
+export const L6_0_STAGE =
+  'L6-0-XLSX-COURSE-SETTING-TARGET-SEMESTER-AND-FULL-REVIEW-PACKAGE' as const
+
+/**
+ * Options for the L6-0 full review package. Deliberately omits
+ * `maxReviewRows`: the full variant is always uncapped. All other L5
+ * options remain tunable (e.g. `confidenceThreshold`, `packageVersion`,
+ * `targetSemesterConfirmed`).
+ */
+export type CourseSettingFullReviewPackageOptions = Omit<
+  CourseSettingReviewPackageOptions,
+  'maxReviewRows'
+>
+
+/**
+ * Build a full (uncapped) review package from an L4 dry-run result.
+ *
+ * Thin wrapper over `buildCourseSettingReviewPackage` that pins
+ * `maxReviewRows` to `Number.POSITIVE_INFINITY` so every entry in
+ * `dryRunResult.previewCandidates` is consumed. Same review-only
+ * invariants: `reviewOnly=true`, `dryRunOnly=true`, `dbWritten=false`,
+ * `applyAllowedInL5=false`, every `reviewDecision='pending'`.
+ *
+ * Pure, deterministic, no I/O, no Prisma.
+ */
+export const buildFullCourseSettingReviewPackage = (
+  dryRunResult: CourseSettingTeachingTaskDryRunResult,
+  options: CourseSettingFullReviewPackageOptions = {},
+): CourseSettingReviewPackageResult => {
+  return buildCourseSettingReviewPackage(dryRunResult, {
+    ...options,
+    maxReviewRows: Number.POSITIVE_INFINITY,
+  })
+}
+
+/**
+ * Serialize a full redacted local-artifact JSON string for the gitignored
+ * local L6-0 review package. Pure: no I/O. Caller writes the string to a
+ * file.
+ *
+ * The shape is intentionally distinct from the L5 preview artifact
+ * (`serializeCourseSettingReviewPackageLocalArtifact`):
+ *  - `stage` is pinned to `L6_0_STAGE` so the artifact cannot be confused
+ *    with an L5 preview-capped one.
+ *  - `packageType` declares `full-redacted-review-package`.
+ *  - `dryRunOnly`, `dbWritten`, `targetSemesterConfirmed` are surfaced as
+ *    top-level invariants so any consumer can assert them in one read.
+ *  - `reviewItemCount`, `allDecisionsPending`, `autoSafeCandidates`,
+ *    `blockedCandidates` mirror the same fields from the helper result
+ *    for at-a-glance inspection without parsing `items`.
+ *  - `items` and `buckets` use the exact same shape as the L5 helper
+ *    produces (no new fields introduced on `CourseSettingReviewItem` or
+ *    `CourseSettingReviewBucketSummary`).
+ */
+export const serializeFullReviewPackageLocalArtifact = (
+  result: CourseSettingReviewPackageResult,
+  generatedAt: string,
+  packageSha256?: string,
+): string => {
+  const obj = {
+    stage: L6_0_STAGE,
+    packageType: 'full-redacted-review-package' as const,
+    generatedAt,
+    rawContentIncluded: false,
+    reviewOnly: true,
+    dryRunOnly: true,
+    dbWritten: false,
+    targetSemesterConfirmed: false,
+    reviewItemCount: result.reviewItems.length,
+    allDecisionsPending: true,
+    autoSafeCandidates: result.reviewSummary.autoSafeCandidates,
+    blockedCandidates: result.reviewSummary.blockedCandidates,
     packageSha256: packageSha256 ?? null,
     items: result.reviewItems,
     buckets: result.buckets,
