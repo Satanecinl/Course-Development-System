@@ -41,6 +41,8 @@
 > **L6-B Excel 课程设置目标学期 preview 集成 code complete**（[L6-B](l6-b-xlsx-course-setting-target-semester-preview-integration.md)）。`/admin/import` Excel preview 支持选择已有目标学期；preview API 接收 `targetSemesterId` 并按目标学期加载 dry-run existingData；UI 显示"该选择只影响本次导入，不会切换系统当前学期"；不写 DB、不创建 ImportBatch、不切换 active semester、不实现新建学期。Verify 69/69 PASS。**浏览器人工验收 PENDING**。
 > **L6-B1 Excel 课程设置 raw preview display code complete**（[L6-B1](l6-b1-xlsx-course-setting-raw-preview-display.md)）。授权管理员在 `/admin/import` preview 表格可看到课程名/教师/班级/备注/合班备注/sheet/行号等 Excel 原文用于人工核对；仍 preview-only，不写 DB、不创建 ImportBatch、不切换 active semester；committed docs/json 仍脱敏。Verify 82/82 PASS。**浏览器人工验收 PENDING**。
 >
+> **L6-C Excel 课程设置导入流程新建学期已完成**（[L6-C](l6-c-xlsx-course-setting-create-new-semester-from-import-flow.md)）。`/admin/import` 支持在 preview 区创建新 Semester 并自动选为 targetSemesterId；仅允许 Semester 写入，不创建 ImportBatch/TeachingTask/TeachingTaskClass，不切换 active semester，验证中通过 backup/restore 保持最终 DB 状态。Verify 86/86 PASS。**浏览器人工验收 PENDING**。
+>
 > 详细阶段 closeout 文档位于 `docs/`，按 `k<stage>-*.md` / `k<stage>-*.json` 命名。
 > 本文件只汇总 readiness、baseline、known artifacts、下一步建议。
 

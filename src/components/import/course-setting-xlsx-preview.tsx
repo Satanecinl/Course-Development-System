@@ -1,11 +1,15 @@
 'use client'
 
 /**
- * L3/L6-B UI Component - Course Setting XLSX Preview
+ * L3/L6-B/L6-B1/L6-C UI Component - Course Setting XLSX Preview
  *
  * Preview-only component for Excel course setting file parsing. No confirm/apply
  * buttons. Shows hashed preview rows + field summaries + manual review flags.
  * L6-B: adds target semester selector + dry-run/match summary display.
+ * L6-B1: shows authorized admin raw preview fields for manual verification.
+ * L6-C: adds createNew semester mode — create a new Semester from the
+ *        import flow and auto-select it as targetSemesterId. The new semester
+ *        is NEVER auto-activated; active semester is decoupled.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -18,6 +22,8 @@ import {
   AlertTriangle,
   Info,
   Database,
+  Plus,
+  CheckCircle2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -26,10 +32,33 @@ import { Label } from '@/components/ui/label'
 import {
   previewCourseSettingXlsx,
   fetchSemestersForImport,
+  createSemesterForCourseSettingImport,
   type CourseSettingXlsxPreviewResponse,
   type CourseSettingXlsxPreviewRow,
   type SemesterListItem,
 } from '@/lib/import/course-setting-xlsx-client'
+
+// L6-C: targetSemester mode (existing vs createNew)
+type TargetSemesterMode = 'existing' | 'createNew'
+
+// L6-C: form state for new semester
+type CreateSemesterFormState = {
+  name: string
+  code: string
+  academicYear: string
+  term: string
+  startsAt: string
+  endsAt: string
+}
+
+const EMPTY_CREATE_FORM: CreateSemesterFormState = {
+  name: '',
+  code: '',
+  academicYear: '',
+  term: '',
+  startsAt: '',
+  endsAt: '',
+}
 
 // -- Component ---------------------------------------------------------------
 
@@ -47,23 +76,82 @@ export default function CourseSettingXlsxPreview() {
   const [semestersLoaded, setSemestersLoaded] = useState(false)
   const [semestersLoading, setSemestersLoading] = useState(false)
 
+  // L6-C: targetSemester mode + createNew form state
+  const [targetSemesterMode, setTargetSemesterMode] = useState<TargetSemesterMode>('existing')
+  const [createForm, setCreateForm] = useState<CreateSemesterFormState>(EMPTY_CREATE_FORM)
+  const [createError, setCreateError] = useState<string | null>(null)
+  const [creatingSemester, setCreatingSemester] = useState(false)
+
+  const refreshSemesters = useCallback(async () => {
+    setSemestersLoading(true)
+    try {
+      const data = await fetchSemestersForImport()
+      setSemesters(data.semesters)
+      setSemestersLoaded(true)
+    } catch {
+      setSemestersLoaded(true)
+    } finally {
+      setSemestersLoading(false)
+    }
+  }, [])
+
   // Load semesters on mount
   useEffect(() => {
     if (semestersLoaded || semestersLoading) return
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSemestersLoading(true)
-    fetchSemestersForImport()
-      .then((data) => {
-        setSemesters(data.semesters)
-        setSemestersLoaded(true)
+    void refreshSemesters()
+  }, [semestersLoaded, semestersLoading, refreshSemesters])
+
+  const handleCreateSemester = useCallback(async () => {
+    const name = createForm.name.trim()
+    const code = createForm.code.trim()
+    if (!name) {
+      setCreateError('学期名称 (name) 不能为空')
+      return
+    }
+    if (!code) {
+      setCreateError('学期代码 (code) 不能为空')
+      return
+    }
+    if (createForm.startsAt && createForm.endsAt && createForm.endsAt < createForm.startsAt) {
+      setCreateError('结束日期不能早于开始日期')
+      return
+    }
+    setCreatingSemester(true)
+    setCreateError(null)
+    try {
+      const created = await createSemesterForCourseSettingImport({
+        name,
+        code,
+        academicYear: createForm.academicYear.trim() || null,
+        term: createForm.term.trim() || null,
+        startsAt: createForm.startsAt || null,
+        endsAt: createForm.endsAt || null,
       })
-      .catch(() => {
-        setSemestersLoaded(true)
+      // Refresh semester list and auto-select new semester
+      await refreshSemesters()
+      setSelectedSemesterId(created.id)
+      setCreateForm(EMPTY_CREATE_FORM)
+      setTargetSemesterMode('existing')
+      toast.success('学期创建成功', {
+        description: `已创建并选为目标学期：${created.name}（ID ${created.id}）`,
       })
-      .finally(() => {
-        setSemestersLoading(false)
-      })
-  }, [semestersLoaded, semestersLoading])
+    } catch (e: unknown) {
+      const err = e as { code?: string; message?: string }
+      const code = err.code ?? ''
+      let msg = err.message ?? '创建失败'
+      if (code === 'SEMESTER_CODE_EXISTS') msg = `学期代码 "${code}" 已存在`
+      else if (code === 'VALIDATION_ERROR' || code === 'INVALID_DATE' || code === 'INVALID_DATE_RANGE') {
+        // server-supplied message is already descriptive
+      } else if (code === 'HTTP_403') {
+        msg = '无权限新建学期，请选择已有学期或联系管理员'
+      }
+      setCreateError(msg)
+      toast.error('创建学期失败', { description: msg })
+    } finally {
+      setCreatingSemester(false)
+    }
+  }, [createForm, refreshSemesters])
 
   const handleUpload = useCallback(async () => {
     if (!file) {
@@ -109,7 +197,7 @@ export default function CourseSettingXlsxPreview() {
     if (fileInputRef.current) fileInputRef.current.value = ''
   }, [])
 
-  const canPreview = !!file && !!selectedSemesterId && !parsing
+  const canPreview = !!file && !!selectedSemesterId && !parsing && targetSemesterMode === 'existing'
 
   return (
     <div className="bg-white rounded-lg shadow">
@@ -128,27 +216,179 @@ export default function CourseSettingXlsxPreview() {
 
       {/* Upload area */}
       <div className="px-4 py-3 space-y-3">
-        {/* L6-B: Target semester selector */}
-        <div className="space-y-1">
-          <Label className="text-xs">导入目标学期</Label>
-          <select
-            value={selectedSemesterId ?? ''}
-            onChange={(e) => setSelectedSemesterId(e.target.value ? Number(e.target.value) : null)}
-            className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm bg-white disabled:opacity-50"
-            disabled={semestersLoading}
-          >
-            <option value="">
-              {semestersLoading ? '加载学期中...' : '请选择目标学期'}
-            </option>
-            {semesters.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name} {s.isActive ? '(当前学期)' : ''}
-              </option>
-            ))}
-          </select>
-          <p className="text-[11px] text-gray-400">
-            该选择只决定本次 Excel 课程设置导入的目标学期，不会自动切换系统当前学期。
-          </p>
+        {/* L6-B + L6-C: Target semester mode + selector / create form */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-4 flex-wrap">
+            <Label className="text-xs">导入目标学期</Label>
+            <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+              <input
+                type="radio"
+                name="l6c-target-semester-mode"
+                value="existing"
+                checked={targetSemesterMode === 'existing'}
+                onChange={() => {
+                  setTargetSemesterMode('existing')
+                  setCreateError(null)
+                }}
+                className="cursor-pointer"
+              />
+              <span>选择已有学期</span>
+            </label>
+            <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+              <input
+                type="radio"
+                name="l6c-target-semester-mode"
+                value="createNew"
+                checked={targetSemesterMode === 'createNew'}
+                onChange={() => {
+                  setTargetSemesterMode('createNew')
+                  setCreateError(null)
+                }}
+                className="cursor-pointer"
+              />
+              <span>新建学期</span>
+            </label>
+          </div>
+
+          {targetSemesterMode === 'existing' ? (
+            <>
+              <select
+                value={selectedSemesterId ?? ''}
+                onChange={(e) => setSelectedSemesterId(e.target.value ? Number(e.target.value) : null)}
+                className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm bg-white disabled:opacity-50"
+                disabled={semestersLoading}
+              >
+                <option value="">
+                  {semestersLoading ? '加载学期中...' : '请选择目标学期'}
+                </option>
+                {semesters.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name} {s.isActive ? '(当前学期)' : ''}
+                  </option>
+                ))}
+              </select>
+              <p className="text-[11px] text-gray-400">
+                该选择只决定本次 Excel 课程设置导入的目标学期，不会自动切换系统当前学期。
+              </p>
+            </>
+          ) : (
+            <div className="border border-blue-200 bg-blue-50/40 rounded-md p-3 space-y-2">
+              <p className="text-[11px] text-blue-700">
+                新建学期只会作为本次 Excel 课程设置导入的目标学期，不会自动切换系统当前学期。
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label className="text-[11px]">学期名称 (name) <span className="text-red-500">*</span></Label>
+                  <Input
+                    type="text"
+                    value={createForm.name}
+                    onChange={(e) => setCreateForm((s) => ({ ...s, name: e.target.value }))}
+                    placeholder="例如：2026-2027学年春季学期"
+                    className="text-xs h-8"
+                    disabled={creatingSemester}
+                    data-l6c-field="name"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px]">学期代码 (code) <span className="text-red-500">*</span></Label>
+                  <Input
+                    type="text"
+                    value={createForm.code}
+                    onChange={(e) => setCreateForm((s) => ({ ...s, code: e.target.value }))}
+                    placeholder="例如：2027SPRING"
+                    className="text-xs h-8"
+                    disabled={creatingSemester}
+                    data-l6c-field="code"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px]">学年 (academicYear, 可选)</Label>
+                  <Input
+                    type="text"
+                    value={createForm.academicYear}
+                    onChange={(e) => setCreateForm((s) => ({ ...s, academicYear: e.target.value }))}
+                    placeholder="例如：2026-2027"
+                    className="text-xs h-8"
+                    disabled={creatingSemester}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px]">学期类型 (term, 可选)</Label>
+                  <Input
+                    type="text"
+                    value={createForm.term}
+                    onChange={(e) => setCreateForm((s) => ({ ...s, term: e.target.value }))}
+                    placeholder="例如：春季 / 秋季 / 夏季"
+                    className="text-xs h-8"
+                    disabled={creatingSemester}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px]">开始日期 (startsAt, 可选)</Label>
+                  <Input
+                    type="date"
+                    value={createForm.startsAt}
+                    onChange={(e) => setCreateForm((s) => ({ ...s, startsAt: e.target.value }))}
+                    className="text-xs h-8"
+                    disabled={creatingSemester}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[11px]">结束日期 (endsAt, 可选)</Label>
+                  <Input
+                    type="date"
+                    value={createForm.endsAt}
+                    onChange={(e) => setCreateForm((s) => ({ ...s, endsAt: e.target.value }))}
+                    className="text-xs h-8"
+                    disabled={creatingSemester}
+                  />
+                </div>
+              </div>
+              {createError && (
+                <p className="text-[11px] text-red-600 flex items-center gap-1" data-l6c-error>
+                  <AlertCircle className="w-3 h-3" />
+                  {createError}
+                </p>
+              )}
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => void handleCreateSemester()}
+                  disabled={creatingSemester || !createForm.name.trim() || !createForm.code.trim()}
+                  data-l6c-action="create-semester"
+                >
+                  {creatingSemester ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                      创建中...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-3.5 h-3.5 mr-1" />
+                      创建学期
+                    </>
+                  )}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setCreateForm(EMPTY_CREATE_FORM)
+                    setCreateError(null)
+                  }}
+                  disabled={creatingSemester}
+                >
+                  清空表单
+                </Button>
+                {selectedSemesterId && (
+                  <span className="text-[11px] text-blue-700 flex items-center gap-1" data-l6c-success>
+                    <CheckCircle2 className="w-3 h-3" />
+                    当前已选 targetSemesterId = {selectedSemesterId}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex items-end gap-3 flex-wrap">

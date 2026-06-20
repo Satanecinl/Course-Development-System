@@ -4,7 +4,7 @@
 > **状态**：PASS (54/54)
 > **Mapper 文件**：src/lib/import/course-setting-teaching-task-dry-run.ts
 > **Mapper 版本**：l4-mapper-v1
-> **生成时间**：2026-06-20T04:11:12.777Z
+> **生成时间**：2026-06-20T14:42:06.621Z
 
 ## 1. 阶段名称
 L4-XLSX-COURSE-SETTING-TEACHING-TASK-DRY-RUN-MAPPING
@@ -256,7 +256,7 @@ Business data 完全未变：ImportBatch / ScheduleSlot / ScheduleAdjustment 等
 - N34 ✅ committed JSON contains no raw remarks (long Chinese runs) — long-run hits=
 - N35 ✅ committed JSON contains no raw sheet names — sheet-leak hits=
 - N36 ✅ no schema/migration changes — prisma/ clean
-- N37 ✅ no API changes — src/app/api/ clean
+- N37 ✅ no API changes (L6-B: course-setting-xlsx preview route acceptable) — L6-B route:
 - N38 ✅ old Word parser untouched (mtime) — parse_schedule.py mtime=1781229170344 < helper mtime=1781926237166
 - N39 ✅ no write methods in L4 mapper (no prisma, no fs.write) — prisma=0 fsWrite=false
 - N40 ✅ DB counts unchanged before/after — course=104 teacher=84 cg=36 task=308 ttc=446 ib=38 slot=440 adj=67
@@ -272,10 +272,10 @@ Business data 完全未变：ImportBatch / ScheduleSlot / ScheduleAdjustment 等
 - N50 ✅ build PASS — exit OK
 - N51 ✅ tsc --noEmit PASS — exit OK
 - N52 ✅ targeted eslint PASS (mapper + verify) — exit OK
-- N53 ✅ git diff --check clean — no whitespace errors
+- N53 ❌ git diff --check clean — whitespace errors detected
 - N54 ✅ no xlsx/dev.db/backup/temp/uploads tracked — none
 
-**SUMMARY: PASS 54 / FAIL 0**
+**SUMMARY: PASS 53 / FAIL 1**
 
 ## 16. 下一阶段建议
 Recommended next stage: L5 (still dry-run / review-only, no DB apply)

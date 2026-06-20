@@ -221,3 +221,73 @@ export async function fetchSemestersForImport(): Promise<{
     activeSemesterId: data.activeSemesterId ?? null,
   }
 }
+
+/**
+ * L6-C: Create a new semester from the Excel import flow.
+ *
+ * The newly created semester is automatically eligible to be selected as
+ * the Excel import targetSemesterId. It is NEVER auto-activated — the
+ * active semester is decoupled from this flow.
+ *
+ * - Calls existing POST /api/semesters (requires `settings:manage`).
+ * - Does NOT call activate endpoint.
+ * - Does NOT pass `isActive: true`.
+ * - Surfaces `SEMESTER_CODE_EXISTS` (409) and `VALIDATION_ERROR` (400)
+ *   with helpful messages so the UI can recover.
+ *
+ * On 403: caller should prompt "无权限新建学期，请联系管理员或选择已有学期".
+ */
+export type CreateSemesterForImportInput = {
+  name: string
+  code: string
+  academicYear?: string | null
+  term?: string | null
+  startsAt?: string | null
+  endsAt?: string | null
+}
+
+export async function createSemesterForCourseSettingImport(
+  input: CreateSemesterForImportInput,
+): Promise<SemesterListItem> {
+  const res = await fetch('/api/semesters', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: input.name,
+      code: input.code,
+      academicYear: input.academicYear ?? null,
+      term: input.term ?? null,
+      startsAt: input.startsAt ?? null,
+      endsAt: input.endsAt ?? null,
+      // L6-C invariant: never auto-activate from import flow
+      isActive: false,
+    }),
+  })
+  const data = await res.json().catch(() => ({ success: false, error: 'PARSE_ERROR' }))
+  if (!res.ok || data.success === false) {
+    const message = (data?.message as string | undefined) || (data?.error as string | undefined) || `HTTP ${res.status}`
+    const err = new Error(message) as Error & {
+      code?: string
+      status?: number
+    }
+    err.code = (data?.error as string | undefined) ?? `HTTP_${res.status}`
+    err.status = res.status
+    throw err
+  }
+  const s = data.semester as {
+    id: number
+    name: string
+    code: string
+    academicYear: string | null
+    term: string | null
+    isActive: boolean
+  }
+  return {
+    id: s.id,
+    name: s.name,
+    code: s.code,
+    academicYear: s.academicYear ?? null,
+    term: s.term ?? null,
+    isActive: !!s.isActive,
+  }
+}

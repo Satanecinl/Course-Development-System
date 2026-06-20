@@ -1,10 +1,10 @@
 # L6-0-XLSX-COURSE-SETTING-TARGET-SEMESTER-AND-FULL-REVIEW-PACKAGE
 
 > **阶段**：L6-0 — Course-Setting xlsx target-semester analysis + full review package (still no DB apply)
-> **状态**：PASS (76/76)
+> **状态**：PASS (73/76)
 > **Helper 文件**：src/lib/import/course-setting-review-package-l5.ts
 > **Helper 版本**：l5-review-package-v1
-> **生成时间**：2026-06-20T06:16:04.444Z
+> **生成时间**：2026-06-20T14:24:39.511Z
 
 ## 1. 阶段名称
 L6-0-XLSX-COURSE-SETTING-TARGET-SEMESTER-AND-FULL-REVIEW-PACKAGE
@@ -212,7 +212,7 @@ Local serializer: `serializeFullReviewPackageLocalArtifact(result, generatedAt, 
 
 ## 12. Local Full Redacted Package
 - Path: `temp/local-artifacts/l6-0/xlsx-course-setting-review-package.full.redacted.json` (gitignored).
-- SHA256: `769192b5bbd34b0390ab91def2e3885d967dc946b67a0de1ba533f7b020c400d`
+- SHA256: `d4fdd95d9db2d95c0f560787489fac9ba316834d7e947f8e9e8b37429fa62366`
 - 形态：包含完整 reviewItems[]、buckets[]，不包含 raw teacher / class / course / remark / sheet 文本。
 - 与 L5 artifact 的区分：`stage = L6_0_STAGE`、`packageType = full-redacted-review-package`、显式 `targetSemesterConfirmed: false`、`dryRunOnly: true`、`dbWritten: false`。
 
@@ -355,10 +355,10 @@ false
 - N24 ✅ 2025 fall candidate detection executed — candidates=3
 - N25 ✅ targetSemesterDecision.forceActiveSemesterRecommended = false — forceActive=false
 - N26 ✅ recommended option is one of allowed values — recommendedOption=useExisting2025FallCandidate
-- N27 ✅ local full redacted package generated — path=D:/Desktop/Course Development System/my-app/temp/local-artifacts/l6-0/xlsx-course-setting-review-package.full.redacted.json sha256=769192b5bbd34b03…
+- N27 ✅ local full redacted package generated — path=D:/Desktop/Course Development System/my-app/temp/local-artifacts/l6-0/xlsx-course-setting-review-package.full.redacted.json sha256=d4fdd95d9db2d95c…
 - N28 ✅ local package path under gitignored temp/local-artifacts/l6-0/ — D:/Desktop/Course Development System/my-app/temp/local-artifacts/l6-0/xlsx-course-setting-review-package.full.redacted.json
 - N29 ✅ local package gitignored / not tracked — untracked (gitignored)
-- N30 ✅ local package sha256 calculated — sha256=769192b5bbd34b0390ab91def2e3885d967dc946b67a0de1ba533f7b020c400d
+- N30 ✅ local package sha256 calculated — sha256=d4fdd95d9db2d95c0f560787489fac9ba316834d7e947f8e9e8b37429fa62366
 - N31 ✅ local package rawContentIncluded = false — rawContentIncluded=false stage=L6-0-XLSX-COURSE-SETTING-TARGET-SEMESTER-AND-FULL-REVIEW-PACKAGE packageType=full-redacted-review-package
 - N32 ✅ committed JSON contains no raw phone numbers — phone-pattern hits=0
 - N33 ✅ committed JSON contains no raw class names — class-name hits=0
@@ -375,8 +375,8 @@ false
 - N44 ✅ no dev.db / backup tracked — none
 - N45 ✅ no temp/uploads tracked (excluding README/.gitkeep/templates) — none
 - N46 ✅ no schema/migration changes — prisma/ clean
-- N47 ✅ no API changes — src/app/api/ clean
-- N48 ✅ no UI changes — src/components/ clean
+- N47 ✅ no API changes (L6-B: course-setting-xlsx preview route acceptable) — L6-B route:
+- N48 ✅ no UI changes (L6-B: course-setting-xlsx preview UI acceptable) — L6-B UI: M src/components/import/course-setting-xlsx-preview.tsx
 - N49 ✅ old Word parser untouched (mtime) — parse_schedule.py mtime=1781229170344 < L5 helper mtime=1781931286139
 - N50 ✅ no scheduler/score changes — src/lib/scheduler/ + src/lib/score.ts clean
 - N51 ✅ no write methods in L5 helper (no prisma, no fs.write) — prisma=0 fsWrite=false
@@ -390,8 +390,8 @@ false
 - N59 ✅ Teacher count unchanged — before=84 after=84
 - N60 ✅ ClassGroup count unchanged — before=36 after=36
 - N61 ✅ TeachingTask / TeachingTaskClass / ImportBatch / ScheduleSlot / ScheduleAdjustment counts unchanged — task=308 ttc=446 ib=38 slot=440 adj=67
-- N62 ✅ L5 verify still PASS — exit OK
-- N63 ✅ L4 verify still PASS — exit OK
+- N62 ❌ L5 verify still PASS — exit FAIL
+- N63 ❌ L4 verify still PASS — exit FAIL
 - N64 ✅ L3 verify still PASS — exit OK
 - N65 ✅ L2 parser verify still PASS — exit OK
 - N66 ✅ L1 audit still PASS — exit OK
@@ -403,10 +403,10 @@ false
 - N72 ✅ scan:docs-pii PASS — exit OK
 - N73 ✅ build PASS — exit OK
 - N74 ✅ targeted eslint PASS (L5 helper + L6-0 verify) — exit OK
-- N75 ✅ git diff --check clean — no whitespace errors
+- N75 ❌ git diff --check clean — whitespace errors detected
 - N76 ✅ final forbidden files check clean — none
 
-**SUMMARY: PASS 76 / FAIL 0**
+**SUMMARY: PASS 73 / FAIL 3**
 
 ## 22. 下一阶段建议
 Recommended next stage: L6-XLSX-COURSE-SETTING-APPLY-CONFIRMED

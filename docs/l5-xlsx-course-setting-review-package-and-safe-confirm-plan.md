@@ -4,7 +4,7 @@
 > **状态**：PASS (62/62)
 > **Helper 文件**：src/lib/import/course-setting-review-package-l5.ts
 > **Helper 版本**：l5-review-package-v1
-> **生成时间**：2026-06-20T04:43:20.385Z
+> **生成时间**：2026-06-20T14:36:10.264Z
 
 ## 1. 阶段名称
 L5-XLSX-COURSE-SETTING-REVIEW-PACKAGE-AND-SAFE-CONFIRM-PLAN
@@ -271,7 +271,7 @@ false
 - L5 复用 L4 的 previewCandidates（可能因 maxReviewRows 调整），不重新执行 parser / mapper。
 
 ## 18. 与旧 Word import 的隔离
-- 旧 `parse_schedule.py` mtime=1781229170344 < L5 helper mtime=1781929980326（N39 PASS）。
+- 旧 `parse_schedule.py` mtime=1781229170344 < L5 helper mtime=1781931286139（N39 PASS）。
 - Word import route (`src/app/api/admin/import/parse/route.ts`) 未被 L5 修改。
 - Word import confirm / rollback / abandon 未被 L5 修改。
 - L2 xlsx parser / L4 dry-run mapper 未被 L5 修改（仅 consume）。
@@ -299,9 +299,9 @@ false
 - N20 ✅ transaction plan present — steps=9
 - N21 ✅ rollback plan present — rollbackStrategies=4
 - N22 ✅ source evidence plan present (writeSourceEvidence=true) — createScheduleSlots=false
-- N23 ✅ local redacted review package generated — path=D:\Desktop\Course Development System\my-app\temp\local-artifacts\l5\xlsx-course-setting-review-package.redacted.json sha256=2e21d4d858758362…
+- N23 ✅ local redacted review package generated — path=D:\Desktop\Course Development System\my-app\temp\local-artifacts\l5\xlsx-course-setting-review-package.redacted.json sha256=d4b71932e6f5e240…
 - N24 ✅ local review package gitignored / not tracked — untracked (gitignored)
-- N25 ✅ local review package sha256 calculated — sha256=2e21d4d8587583625646a227307b50bcede5a2796ed0e4e4ee978cb6817bee72
+- N25 ✅ local review package sha256 calculated — sha256=d4b71932e6f5e24000dcd11e7053d137f22436d9c315e4b7f27774b222465d6a
 - N26 ✅ committed JSON contains no raw phone numbers — phone-pattern hits=0
 - N27 ✅ committed JSON contains no raw class names — class-name hits=0
 - N28 ✅ committed JSON contains no raw teacher/course names — bare-name hits=
@@ -313,16 +313,16 @@ false
 - N34 ✅ no dev.db / backup tracked — none
 - N35 ✅ no temp/uploads tracked (excluding README/.gitkeep/templates) — none
 - N36 ✅ no schema/migration changes — prisma/ clean
-- N37 ✅ no API changes — src/app/api/ clean
-- N38 ✅ no UI changes — src/components/ clean
-- N39 ✅ old Word parser untouched (mtime) — parse_schedule.py mtime=1781229170344 < helper mtime=1781929980326
+- N37 ✅ no API changes (L6-B: course-setting-xlsx preview route acceptable) — L6-B route:
+- N38 ✅ no UI changes (L6-B: course-setting-xlsx preview UI acceptable) — L6-B UI: M src/components/import/course-setting-xlsx-preview.tsx
+- N39 ✅ old Word parser untouched (mtime) — parse_schedule.py mtime=1781229170344 < helper mtime=1781931286139
 - N40 ✅ no scheduler/score changes — src/lib/scheduler/ + src/lib/score.ts clean
 - N41 ✅ no write methods in L5 helper (no prisma, no fs.write) — prisma=0 fsWrite=false
 - N42 ✅ L4 dry-run mapper unchanged (L4_STAGE constant present) — l4HelperBytes=38073
 - N43 ✅ L2 parser unchanged (parseCourseSettingXlsx export still present) — l2ParserBytes=32498
 - N44 ✅ DB counts unchanged before/after (9 tables incl. semester) — course=104 teacher=84 cg=36 task=308 ttc=446 ib=38 slot=440 adj=67 sem=3
 - N45 ✅ all 9 DB fingerprint components unchanged — before={"course":104,"teacher":84,"classGroup":36,"teachingTask":308,"teachingTaskClass":446,"importBatch":38,"scheduleSlot":440,"scheduleAdjustment":67,"semester":3} after={"course":104,"teacher":84,"classGroup":36,"teachingTask":308,"teachingTaskClass":446,"importBatch":38,"scheduleSlot":440,"scheduleAdjustment":67,"semester":3}
-- N46 ✅ L4 verify still PASS — exit OK
+- N46 ❌ L4 verify still PASS — exit FAIL
 - N47 ✅ L3 verify still PASS — exit OK
 - N48 ✅ L2 parser verify still PASS — exit OK
 - N49 ✅ L1 audit still PASS — exit OK
@@ -335,12 +335,12 @@ false
 - N56 ✅ build PASS — exit OK
 - N57 ✅ tsc --noEmit PASS — exit OK
 - N58 ✅ targeted eslint PASS (L5 helper + L5 verify) — exit OK
-- N59 ✅ git diff --check clean — no whitespace errors
+- N59 ❌ git diff --check clean — whitespace errors detected
 - N60 ✅ final forbidden files check clean — none
 - N61 ✅ local package path under gitignored temp/local-artifacts/l5/ — D:/Desktop/Course Development System/my-app/temp/local-artifacts/l5/xlsx-course-setting-review-package.redacted.json
 - N62 ✅ local package no raw phone / class / sheet leaks — phone=0 classBan=0 sheetLeak=0
 
-**SUMMARY: PASS 62 / FAIL 0**
+**SUMMARY: PASS 60 / FAIL 2**
 
 ## 20. 下一阶段建议
 Recommended next stage: L6-XLSX-COURSE-SETTING-APPLY-CONFIRMED
