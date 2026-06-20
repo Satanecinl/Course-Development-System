@@ -1,0 +1,321 @@
+{
+  "stage": "L6-A-XLSX-COURSE-SETTING-TARGET-SEMESTER-SELECTION-AND-CREATION-DESIGN",
+  "stageVersion": "1.0.0",
+  "status": "PASS",
+  "designOnly": true,
+  "dbWritten": false,
+  "semesterWritten": false,
+  "importDataWritten": false,
+  "generatedAt": "2026-06-20T00:00:00.000Z",
+  "requirement": {
+    "allowSelectExistingSemester": true,
+    "allowCreateNewSemester": true,
+    "autoSwitchActiveSemester": false,
+    "description": "Excel course setting import must support explicit targetSemesterId selection or new semester creation; must not auto-switch system global active semester"
+  },
+  "semesterSchemaAudit": {
+    "modelName": "Semester",
+    "fields": [
+      "id: Int @id @default(autoincrement())",
+      "name: String",
+      "code: String @unique",
+      "academicYear: String?",
+      "term: String?",
+      "startsAt: DateTime?",
+      "endsAt: DateTime?",
+      "isActive: Boolean @default(false)",
+      "createdAt: DateTime @default(now())",
+      "updatedAt: DateTime @updatedAt"
+    ],
+    "uniqueConstraints": ["code @unique"],
+    "compositeUnique": [],
+    "indexes": [],
+    "activeSemantics": "application-level invariant only; no DB constraint prevents multiple active semesters",
+    "dateFields": ["startsAt?", "endsAt?"],
+    "needsSchemaChange": false,
+    "reason": "Existing fields sufficient for target semester selection; no new fields needed"
+  },
+  "existingApiAudit": {
+    "listApi": {
+      "path": "GET /api/semesters",
+      "permission": "none (basic) / settings:manage (includeCounts)",
+      "returns": "semesters[], activeSemesterId",
+      "reusable": true
+    },
+    "createApi": {
+      "path": "POST /api/semesters",
+      "permission": "settings:manage",
+      "body": "name, code, academicYear?, term?, startsAt?, endsAt?, isActive?",
+      "reusable": true,
+      "note": "Can create semester without setting isActive; defaults to false"
+    },
+    "updateApi": {
+      "path": "PUT /api/semesters/[id]",
+      "permission": "settings:manage",
+      "reusable": true
+    },
+    "deleteApi": {
+      "path": "DELETE /api/semesters/[id]",
+      "permission": "settings:manage",
+      "reusable": true
+    },
+    "activateApi": {
+      "path": "POST /api/semesters/[id]/activate",
+      "permission": "settings:manage",
+      "reusable": true,
+      "note": "Import flow should NOT call this; import target != system active"
+    },
+    "dependenciesApi": {
+      "path": "GET /api/semesters/[id]/dependencies",
+      "permission": "settings:manage",
+      "reusable": true
+    },
+    "semesterService": {
+      "path": "src/lib/semesters/semester-service.ts",
+      "exports": ["createSemester", "updateSemester", "activateSemester", "getSemesterDependencies", "getSemesterDeleteStatus", "formatSemesterSummary"],
+      "reusable": true
+    },
+    "semesterResolver": {
+      "path": "src/lib/semester.ts",
+      "function": "resolveSchedulerSemester({ semesterId? })",
+      "reusable": true,
+      "note": "Already supports explicit semesterId; falls back to active semester"
+    }
+  },
+  "importFlowAudit": {
+    "importRuleConfig": {
+      "field": "requireExplicitSemesterForImport",
+      "default": false,
+      "hasUI": true,
+      "isWiredToImportFlow": false,
+      "gap": "Config toggle exists in Settings but no import code reads or enforces it"
+    },
+    "l3PreviewRoute": {
+      "path": "POST /api/admin/import/course-setting-xlsx/preview",
+      "acceptsSemesterId": false,
+      "gap": "No semester parameter; purely structural parse with no DB interaction",
+      "neededChange": "Accept targetSemesterId; optionally load semester-scoped existing data for match stats"
+    },
+    "l4Mapper": {
+      "path": "src/lib/import/course-setting-teaching-task-dry-run.ts",
+      "semesterAware": false,
+      "byDesign": true,
+      "gap": "Pure function; caller must load semester-scoped existingData",
+      "neededChange": "No mapper change needed; caller must scope existingData by semesterId"
+    },
+    "l5ReviewPackage": {
+      "path": "src/lib/import/course-setting-review-package-l5.ts",
+      "recordsTargetSemesterId": false,
+      "gatesOnTargetSemesterConfirmed": true,
+      "gap": "Gates on boolean flag but does not store actual semester ID in output",
+      "neededChange": "Add targetSemesterId to output; pass through from caller"
+    },
+    "l60FullPackage": {
+      "recordsTargetSemesterId": false,
+      "gap": "Same as L5; full package has no semester reference"
+    },
+    "importBatch": {
+      "hasSemesterId": true,
+      "semesterIdNotNull": true,
+      "note": "ImportBatch already requires semesterId; L6 apply must provide it"
+    },
+    "existingDocxImport": {
+      "usesResolveSemester": true,
+      "note": "Docx import parse route already calls resolveSchedulerSemester(); can serve as reference pattern"
+    }
+  },
+  "scopingAudit": {
+    "globalModels": {
+      "Course": { "semesterScoped": false, "uniqueKey": "name", "importBehavior": "shared across semesters; upsert by name" },
+      "Teacher": { "semesterScoped": false, "uniqueKey": "name", "importBehavior": "shared across semesters; upsert by name" },
+      "Room": { "semesterScoped": false, "uniqueKey": "name", "importBehavior": "shared across semesters; upsert by name (if imported)" }
+    },
+    "semesterScopedModels": {
+      "ClassGroup": { "semesterScoped": true, "compoundUnique": ["semesterId", "name"], "importBehavior": "create per target semester; match by (semesterId, nameHash)" },
+      "TeachingTask": { "semesterScoped": true, "compoundUnique": null, "importBehavior": "create per target semester; link to Course + Teacher (global) + semester" },
+      "TeachingTaskClass": { "semesterScoped": "transitive", "compoundUnique": ["teachingTaskId", "classGroupId"], "importBehavior": "create join records linking semester-scoped TeachingTask + ClassGroup" },
+      "ImportBatch": { "semesterScoped": true, "compoundUnique": null, "importBehavior": "create one batch per import, scoped to target semester" },
+      "ScheduleSlot": { "semesterScoped": true, "compoundUnique": null, "importBehavior": "NOT created by course setting import (xlsx has no schedule)" },
+      "ScheduleAdjustment": { "semesterScoped": true, "compoundUnique": null, "importBehavior": "NOT created by course setting import" },
+      "SchedulingConfig": { "semesterScoped": true, "compoundUnique": null, "importBehavior": "NOT created by import" },
+      "SchedulingRun": { "semesterScoped": true, "compoundUnique": null, "importBehavior": "NOT created by import" },
+      "WorkTimeConfig": { "semesterScoped": true, "compoundUnique": ["semesterId", "name"], "importBehavior": "NOT created by import" }
+    },
+    "entitiesToScopeByTargetSemester": ["ClassGroup", "TeachingTask", "TeachingTaskClass", "ImportBatch"],
+    "entitiesSharedAcrossSemesters": ["Course", "Teacher", "Room"]
+  },
+  "targetSemesterContract": {
+    "existingMode": {
+      "mode": "existing",
+      "targetSemesterId": "number (required)",
+      "setAsActive": false,
+      "description": "User selects an existing semester from the list"
+    },
+    "createNewMode": {
+      "mode": "createNew",
+      "newSemester": {
+        "name": "string (required)",
+        "code": "string (required, must be unique)",
+        "academicYear": "string (optional)",
+        "term": "string (optional)",
+        "startDate": "string (optional, ISO date)",
+        "endDate": "string (optional, ISO date)"
+      },
+      "setAsActive": false,
+      "description": "User fills in new semester details; created before import dry-run"
+    },
+    "setAsActiveDefault": false,
+    "validationResult": {
+      "valid": "boolean",
+      "mode": "existing | createNew",
+      "targetSemesterId": "number? (resolved after createNew)",
+      "newSemesterDraftHash": "string? (for createNew audit trail)",
+      "warnings": "string[]",
+      "blockers": "string[]"
+    },
+    "blockers": ["semester code already exists (for createNew)", "semester not found (for existing)", "semester has no valid date range (warning)"],
+    "warnings": ["target semester differs from active semester", "semester has existing teaching tasks", "semester is active (may cause confusion)"]
+  },
+  "createNewSemesterContract": {
+    "preCondition": "User selects createNew mode in import UI",
+    "flow": [
+      "1. User fills name/code/dates in import dialog",
+      "2. Frontend calls POST /api/semesters (existing API) to create",
+      "3. New semester created with isActive=false by default",
+      "4. Frontend receives new semester ID",
+      "5. Import flow proceeds with the new ID as targetSemesterId",
+      "6. No active semester switch occurs"
+    ],
+    "rollback": "If import is abandoned, user can manually delete the empty semester via Settings",
+    "noTransactionRequired": "Semester creation is a single-row insert; no complex transaction needed"
+  },
+  "uiDesign": {
+    "location": "Excel import dialog (L3 preview area)",
+    "components": [
+      {
+        "name": "TargetSemesterSelector",
+        "description": "Dropdown showing all semesters from GET /api/semesters, with recommended target highlighted",
+        "position": "Above the upload/preview area, before file selection"
+      },
+      {
+        "name": "CreateNewSemesterForm",
+        "description": "Inline form with name/code/startDate/endDate fields, toggled by 'Create new semester' link",
+        "position": "Below the dropdown, collapsible"
+      },
+      {
+        "name": "SetAsActiveCheckbox",
+        "description": "Checkbox to set newly created semester as active (future phase, not L6-B)",
+        "position": "Inside CreateNewSemesterForm, disabled with tooltip",
+        "defaultChecked": false,
+        "implemented": false
+      },
+      {
+        "name": "DecoupleNotice",
+        "description": "Text notice: 'This selection only determines the target semester for this Excel import. It will not automatically switch the system current semester.'",
+        "position": "Below the selector"
+      }
+    ],
+    "flow": [
+      "1. User opens Excel import dialog",
+      "2. TargetSemesterSelector loads semester list",
+      "3. User selects existing semester OR clicks 'Create new'",
+      "4. If create new: form appears, user fills details",
+      "5. User uploads xlsx file",
+      "6. Preview request includes targetSemesterSelection",
+      "7. L4 dry-run loads existing data scoped to target semester",
+      "8. Review package records targetSemesterId"
+    ]
+  },
+  "nextStages": [
+    {
+      "stage": "L6-B",
+      "name": "L6-B-XLSX-COURSE-SETTING-TARGET-SEMESTER-PREVIEW-INTEGRATION",
+      "description": "Add targetSemesterId to L3 preview UI/API; re-run L4 dry-run with semester-scoped existingData; generate review package with targetSemesterId",
+      "writesDB": false,
+      "createsSemester": false,
+      "createsTeachingTask": false,
+      "createsImportBatch": false
+    },
+    {
+      "stage": "L6-C",
+      "name": "L6-C-XLSX-COURSE-SETTING-CREATE-NEW-SEMESTER",
+      "description": "Support creating new semester from import flow; only creates Semester row; no teaching task import",
+      "writesDB": true,
+      "writesScope": "Semester only",
+      "createsSemester": true,
+      "createsTeachingTask": false,
+      "createsImportBatch": false,
+      "requiresBackup": true,
+      "requiresApproval": true
+    },
+    {
+      "stage": "L6-D",
+      "name": "L6-D-XLSX-COURSE-SETTING-APPROVAL-PACKAGE-WITH-TARGET-SEMESTER",
+      "description": "Generate full review package with resolved targetSemesterId; all decisions pending; no apply",
+      "writesDB": false,
+      "createsSemester": false,
+      "createsTeachingTask": false,
+      "createsImportBatch": false
+    },
+    {
+      "stage": "L6-E",
+      "name": "L6-E-XLSX-COURSE-SETTING-CONTROLLED-APPLY-PLAN",
+      "description": "Design apply plan with backup/rollback/transaction/approval gate; no execution",
+      "writesDB": false,
+      "createsSemester": false,
+      "createsTeachingTask": false,
+      "createsImportBatch": false
+    },
+    {
+      "stage": "L6-F",
+      "name": "L6-F-XLSX-COURSE-SETTING-CONTROLLED-APPLY-EXECUTION",
+      "description": "Execute apply only after explicit user approval; backup, atomic transaction, post-apply audit, rollback plan",
+      "writesDB": true,
+      "writesScope": "ImportBatch + Course + Teacher + ClassGroup + TeachingTask + TeachingTaskClass",
+      "createsSemester": false,
+      "createsTeachingTask": true,
+      "createsImportBatch": true,
+      "requiresBackup": true,
+      "requiresApproval": true,
+      "requiresDryRunReplay": true
+    }
+  ],
+  "dbProof": {
+    "countsUnchanged": true,
+    "semesterCount": 3,
+    "courseCount": 104,
+    "teacherCount": 84,
+    "classGroupCount": 36,
+    "teachingTaskCount": 308,
+    "teachingTaskClassCount": 446,
+    "importBatchCount": 38,
+    "scheduleSlotCount": 440,
+    "scheduleAdjustmentCount": 67
+  },
+  "privacy": {
+    "rawTeacherNamesCommitted": false,
+    "rawClassNamesCommitted": false,
+    "rawCourseNamesCommitted": false,
+    "rawRemarksCommitted": false,
+    "rawRowsCommitted": false,
+    "rawSheetNamesCommitted": false,
+    "phoneNumbersCommitted": false
+  },
+  "safety": {
+    "schemaChanged": false,
+    "migrationAdded": false,
+    "apiChanged": false,
+    "uiChanged": false,
+    "wordParserChanged": false,
+    "schedulerScoreChanged": false,
+    "importParserChanged": false,
+    "l4MapperChanged": false,
+    "l5HelperChanged": false
+  },
+  "validation": {
+    "auditScript": "scripts/audit-xlsx-course-setting-target-semester-selection-l6-a.ts",
+    "checksTotal": 50,
+    "checksPass": 50,
+    "checksFail": 0
+  }
+}
