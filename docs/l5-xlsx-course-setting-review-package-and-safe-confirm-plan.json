@@ -1,0 +1,434 @@
+{
+  "stage": "L5-XLSX-COURSE-SETTING-REVIEW-PACKAGE-AND-SAFE-CONFIRM-PLAN",
+  "status": "PASS",
+  "generatedAt": "2026-06-20T04:43:20.385Z",
+  "reviewOnly": true,
+  "dryRunOnly": true,
+  "dbWritten": false,
+  "packageVersion": "l5-review-package-v1",
+  "input": {
+    "samplePathHash": "34ae69f10ac7",
+    "samplePathExists": true,
+    "sampleGitTracked": true,
+    "sampleFileNameHash": "d5c590e19e3f",
+    "sampleFileSize": 131200
+  },
+  "l4DryRunSummary": {
+    "totalCourseRows": 1116,
+    "teachingTaskCandidates": 1116,
+    "teachingTaskClassCandidates": 1742,
+    "rowsNeedingManualReview": 1099
+  },
+  "reviewPackageSummary": {
+    "reviewItems": 200,
+    "autoSafeCandidates": 0,
+    "blockedCandidates": 200,
+    "manualReviewRequired": 0,
+    "rejectedByRule": 0,
+    "allDecisionsPending": true,
+    "localPackagePath": "D:\\Desktop\\Course Development System\\my-app\\temp\\local-artifacts\\l5\\xlsx-course-setting-review-package.redacted.json",
+    "localPackageSha256": "2e21d4d8587583625646a227307b50bcede5a2796ed0e4e4ee978cb6817bee72"
+  },
+  "bucketSummary": [
+    {
+      "bucket": "AUTO_SAFE_CANDIDATE",
+      "count": 0,
+      "description": "all entities exact, no risky diagnostics, confidence >= threshold; still requires human review in L5"
+    },
+    {
+      "bucket": "TARGET_SEMESTER_REQUIRED",
+      "count": 200,
+      "description": "gate-level bucket: target semester not confirmed yet; all rows route here when targetSemesterConfirmed=false"
+    },
+    {
+      "bucket": "MISSING_COURSE",
+      "count": 0,
+      "description": "course not found in existing courses"
+    },
+    {
+      "bucket": "MISSING_TEACHER",
+      "count": 0,
+      "description": "teacher not found in existing teachers"
+    },
+    {
+      "bucket": "MISSING_CLASS_GROUP",
+      "count": 0,
+      "description": "constructed class group name not found in existing class groups"
+    },
+    {
+      "bucket": "COUNT_ONLY_CLASS_GROUP",
+      "count": 0,
+      "description": "class count has only a student count, no class label resolvable"
+    },
+    {
+      "bucket": "UNRESOLVED_CLASS_GROUP",
+      "count": 0,
+      "description": "class count did not match any known pattern (other)"
+    },
+    {
+      "bucket": "TEACHER_BLANK",
+      "count": 0,
+      "description": "teacher assignment is blank (business-empty)"
+    },
+    {
+      "bucket": "TEACHER_SCOPE_SPLIT_REQUIRED",
+      "count": 0,
+      "description": "bankSplit or numbered teacher scope requires task split review"
+    },
+    {
+      "bucket": "INVALID_WEEKLY_HOURS",
+      "count": 0,
+      "description": "weekly hours not numeric"
+    },
+    {
+      "bucket": "INVALID_EXAM_TYPE",
+      "count": 0,
+      "description": "exam type not 试 or 查"
+    },
+    {
+      "bucket": "MERGE_REMARK_AMBIGUOUS",
+      "count": 0,
+      "description": "merge remark is non-empty with no class marker"
+    },
+    {
+      "bucket": "LOW_CONFIDENCE",
+      "count": 0,
+      "description": "parsed row confidence below threshold"
+    },
+    {
+      "bucket": "POSSIBLE_EXISTING_TASK",
+      "count": 0,
+      "description": "course exact AND an existing teaching task has the same courseId (potential duplicate)"
+    },
+    {
+      "bucket": "BLOCKED",
+      "count": 0,
+      "description": "catch-all blocked bucket for items that did not match a more specific bucket"
+    }
+  ],
+  "diagnosticsSummary": {
+    "total": 391,
+    "byCode": {
+      "TEACHER_BLANK": 26,
+      "COURSE_MISSING": 166,
+      "TASK_SPLIT_REQUIRED": 13,
+      "TEACHER_MISSING": 150,
+      "TEACHER_ASSIGNMENT_OTHER_REQUIRES_REVIEW": 16,
+      "MERGE_REMARK_AMBIGUOUS": 8,
+      "EXAM_TYPE_OTHER": 10,
+      "TEACHER_BANK_SPLIT_REQUIRES_REVIEW": 2
+    }
+  },
+  "reviewItemsSample": [
+    {
+      "reviewItemId": "review:1:3",
+      "source": {
+        "sheetIndex": 1,
+        "sourceRowIndex": 3,
+        "sourceSheetNameHash": "ca70c984dad0"
+      },
+      "candidateRefs": {
+        "teachingTaskCandidateKey": "task:1:3",
+        "teacherCandidateKeys": [],
+        "classGroupCandidateKeys": [],
+        "teachingTaskClassCandidateKeys": []
+      },
+      "classifications": {
+        "courseMatchStatus": "exact",
+        "teacherMatchStatusSummary": {},
+        "classGroupMatchStatusSummary": {
+          "missing": 6
+        },
+        "splitPlan": "singleTask",
+        "taskMatchStatus": "needsManualReview"
+      },
+      "reviewDecision": "pending",
+      "suggestedAction": "blockedUntilTargetSemesterConfirmed",
+      "blockingReasons": [
+        "target_semester_not_confirmed"
+      ],
+      "diagnosticCodes": [
+        "TEACHER_BLANK"
+      ],
+      "confidence": 1
+    },
+    {
+      "reviewItemId": "review:1:4",
+      "source": {
+        "sheetIndex": 1,
+        "sourceRowIndex": 4,
+        "sourceSheetNameHash": "ca70c984dad0"
+      },
+      "candidateRefs": {
+        "teachingTaskCandidateKey": "task:1:4",
+        "teacherCandidateKeys": [],
+        "classGroupCandidateKeys": [],
+        "teachingTaskClassCandidateKeys": []
+      },
+      "classifications": {
+        "courseMatchStatus": "missing",
+        "teacherMatchStatusSummary": {
+          "exact": 3
+        },
+        "classGroupMatchStatusSummary": {
+          "missing": 6
+        },
+        "splitPlan": "splitByTeacherScope",
+        "taskMatchStatus": "needsManualReview"
+      },
+      "reviewDecision": "pending",
+      "suggestedAction": "blockedUntilTargetSemesterConfirmed",
+      "blockingReasons": [
+        "target_semester_not_confirmed"
+      ],
+      "diagnosticCodes": [
+        "COURSE_MISSING",
+        "TASK_SPLIT_REQUIRED"
+      ],
+      "confidence": 0.981
+    },
+    {
+      "reviewItemId": "review:1:5",
+      "source": {
+        "sheetIndex": 1,
+        "sourceRowIndex": 5,
+        "sourceSheetNameHash": "ca70c984dad0"
+      },
+      "candidateRefs": {
+        "teachingTaskCandidateKey": "task:1:5",
+        "teacherCandidateKeys": [],
+        "classGroupCandidateKeys": [],
+        "teachingTaskClassCandidateKeys": []
+      },
+      "classifications": {
+        "courseMatchStatus": "exact",
+        "teacherMatchStatusSummary": {
+          "missing": 1
+        },
+        "classGroupMatchStatusSummary": {
+          "missing": 6
+        },
+        "splitPlan": "splitByTeacherScope",
+        "taskMatchStatus": "needsManualReview"
+      },
+      "reviewDecision": "pending",
+      "suggestedAction": "blockedUntilTargetSemesterConfirmed",
+      "blockingReasons": [
+        "target_semester_not_confirmed"
+      ],
+      "diagnosticCodes": [
+        "TEACHER_MISSING",
+        "TASK_SPLIT_REQUIRED"
+      ],
+      "confidence": 0.938
+    },
+    {
+      "reviewItemId": "review:1:6",
+      "source": {
+        "sheetIndex": 1,
+        "sourceRowIndex": 6,
+        "sourceSheetNameHash": "ca70c984dad0"
+      },
+      "candidateRefs": {
+        "teachingTaskCandidateKey": "task:1:6",
+        "teacherCandidateKeys": [],
+        "classGroupCandidateKeys": [],
+        "teachingTaskClassCandidateKeys": []
+      },
+      "classifications": {
+        "courseMatchStatus": "missing",
+        "teacherMatchStatusSummary": {
+          "missing": 1
+        },
+        "classGroupMatchStatusSummary": {
+          "missing": 6
+        },
+        "splitPlan": "splitByTeacherScope",
+        "taskMatchStatus": "needsManualReview"
+      },
+      "reviewDecision": "pending",
+      "suggestedAction": "blockedUntilTargetSemesterConfirmed",
+      "blockingReasons": [
+        "target_semester_not_confirmed"
+      ],
+      "diagnosticCodes": [
+        "COURSE_MISSING",
+        "TEACHER_MISSING",
+        "TASK_SPLIT_REQUIRED"
+      ],
+      "confidence": 0.938
+    },
+    {
+      "reviewItemId": "review:1:7",
+      "source": {
+        "sheetIndex": 1,
+        "sourceRowIndex": 7,
+        "sourceSheetNameHash": "ca70c984dad0"
+      },
+      "candidateRefs": {
+        "teachingTaskCandidateKey": "task:1:7",
+        "teacherCandidateKeys": [],
+        "classGroupCandidateKeys": [],
+        "teachingTaskClassCandidateKeys": []
+      },
+      "classifications": {
+        "courseMatchStatus": "missing",
+        "teacherMatchStatusSummary": {},
+        "classGroupMatchStatusSummary": {
+          "missing": 6
+        },
+        "splitPlan": "needsManualReview",
+        "taskMatchStatus": "needsManualReview"
+      },
+      "reviewDecision": "pending",
+      "suggestedAction": "blockedUntilTargetSemesterConfirmed",
+      "blockingReasons": [
+        "target_semester_not_confirmed"
+      ],
+      "diagnosticCodes": [
+        "COURSE_MISSING",
+        "TEACHER_ASSIGNMENT_OTHER_REQUIRES_REVIEW"
+      ],
+      "confidence": 0.913
+    }
+  ],
+  "targetSemesterStrategy": {
+    "recommended": "A-confirm-or-create-2025-fall-semester",
+    "forceActiveSemesterRecommended": false,
+    "options": [
+      {
+        "option": "A-confirm-or-create-2025-fall-semester",
+        "risk": "medium",
+        "recommended": true,
+        "descriptionHash": "1b1e56374955"
+      },
+      {
+        "option": "B-force-active-semester",
+        "risk": "high",
+        "recommended": false,
+        "descriptionHash": "5716d87ae78f"
+      },
+      {
+        "option": "C-keep-review-only",
+        "risk": "low",
+        "recommended": false,
+        "descriptionHash": "c35281bd17d0"
+      }
+    ]
+  },
+  "safeConfirmPlan": {
+    "applyAllowedInL5": false,
+    "requiredGates": {
+      "targetSemesterConfirmed": false,
+      "reviewPackageApproved": false,
+      "dbBackupCreated": false,
+      "dryRunReplayMatchesApprovedPackage": false,
+      "importBatchPlanGenerated": false,
+      "rollbackPlanGenerated": false,
+      "sourceEvidencePlanConfirmed": false
+    },
+    "transactionPlan": {
+      "steps": [
+        "BEGIN TRANSACTION",
+        "UPSERT Course (idempotent by nameHash)",
+        "UPSERT Teacher (idempotent by nameHash)",
+        "UPSERT ClassGroup scoped to targetSemesterId (idempotent by (semesterId, nameHash))",
+        "CREATE TeachingTask (idempotent by (semesterId, courseId, teacherId, remark))",
+        "CREATE TeachingTaskClass (idempotent by (teachingTaskId, classGroupId))",
+        "FORWARD-FILL source evidence on TeachingTaskClass (importBatchId, sourceArtifactFilename, sourceRowIndex, sourceSheetNameHash, sourceKeyword, sourceClassName, sourceRemark, matchStrategy, matchConfidence)",
+        "CREATE ImportBatch provenance record",
+        "COMMIT"
+      ],
+      "rollbackStrategy": [
+        "capture DB backup before BEGIN (prisma/dev.db.backup-before-l6-<timestamp>)",
+        "on any error during transaction: ROLLBACK",
+        "if transaction commits but post-apply audit fails: restore from pre-L6 backup",
+        "log dry-run plan + actual diff for audit trail"
+      ],
+      "idempotencyStrategy": [
+        "match Course by nameHash (sha256-prefix-12)",
+        "match Teacher by nameHash",
+        "match ClassGroup by (semesterId, nameHash)",
+        "match TeachingTask by (semesterId, courseId, teacherId, remark)",
+        "match TeachingTaskClass by (teachingTaskId, classGroupId)",
+        "use upsert with the above match keys so re-running the same approved package is a no-op"
+      ]
+    },
+    "applyPlanDraft": {
+      "createImportBatch": true,
+      "createMissingCourses": true,
+      "createMissingTeachers": true,
+      "createMissingClassGroups": true,
+      "createTeachingTasks": true,
+      "createTeachingTaskClasses": true,
+      "writeSourceEvidence": true,
+      "createScheduleSlots": false
+    },
+    "safetyChecksBeforeApply": [
+      "review package approved by ADMIN",
+      "target semester confirmed (Option A selected and Semester row exists)",
+      "DB backup created and SHA256 verified",
+      "dry-run replay produces identical result to approved package (re-execute L4 against same xlsx + existingData, compare JSON-strip-generatedAt)",
+      "no parallel writers (single-instance apply gate)",
+      "confirmText entered verbatim (\"CONFIRM_APPLY_L5\")"
+    ],
+    "safetyChecksAfterApply": [
+      "row count diff vs dry-run plan (TeachingTask / TeachingTaskClass / ClassGroup counts within tolerance)",
+      "TeachingTaskClass source evidence coverage (every link has importBatchId + sourceRowIndex + sourceArtifactFilename)",
+      "no orphan rows (every ClassGroup linked to a TeachingTask)",
+      "K22-C regression still PASS (73/0/0/0)",
+      "audit log emitted to docs/l6-audit.json with sha256 fingerprints"
+    ]
+  },
+  "privacy": {
+    "rawTeacherNamesCommitted": false,
+    "rawClassNamesCommitted": false,
+    "rawCourseNamesCommitted": false,
+    "rawRemarksCommitted": false,
+    "rawRowsCommitted": false,
+    "rawSheetNamesCommitted": false,
+    "phoneNumbersCommitted": false
+  },
+  "safety": {
+    "dbWritten": false,
+    "dbCountsUnchanged": true,
+    "dbCountsBefore": {
+      "course": 104,
+      "teacher": 84,
+      "classGroup": 36,
+      "teachingTask": 308,
+      "teachingTaskClass": 446,
+      "importBatch": 38,
+      "scheduleSlot": 440,
+      "scheduleAdjustment": 67,
+      "semester": 3
+    },
+    "importBatchCreated": false,
+    "schemaChanged": false,
+    "migrationAdded": false,
+    "apiChanged": false,
+    "uiChanged": false,
+    "wordParserChanged": false,
+    "l2ParserChanged": false,
+    "l4HelperChanged": false,
+    "schedulerChanged": false,
+    "scoreChanged": false,
+    "k22ExpectedChanged": false
+  },
+  "validation": {
+    "l5Verify": "PASS",
+    "l4Verify": "PASS",
+    "l3Verify": "PASS",
+    "l2ParserVerify": "PASS",
+    "l1Audit": "PASS",
+    "k39B1": "PASS",
+    "k39B1A": "PASS",
+    "k39C2": "PASS",
+    "k39C4": "PASS",
+    "k22C": "PASS",
+    "scanDocsPii": "PASS",
+    "build": "PASS",
+    "tsc": "PASS",
+    "eslint": "PASS"
+  }
+}
