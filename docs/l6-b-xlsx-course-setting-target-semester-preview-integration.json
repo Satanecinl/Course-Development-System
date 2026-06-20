@@ -1,0 +1,153 @@
+{
+  "stage": "L6-B-XLSX-COURSE-SETTING-TARGET-SEMESTER-PREVIEW-INTEGRATION",
+  "stageVersion": "1.0.0",
+  "status": "PASS",
+  "previewOnly": true,
+  "dbWritten": false,
+  "semesterWritten": false,
+  "activeSemesterSwitched": false,
+  "generatedAt": "2026-06-20T00:00:00.000Z",
+  "targetSemesterSelection": {
+    "existingModeSupported": true,
+    "createNewModeImplemented": false,
+    "targetSemesterRequired": true,
+    "setAsActive": false,
+    "activeSemesterSwitched": false
+  },
+  "api": {
+    "route": "/api/admin/import/course-setting-xlsx/preview",
+    "method": "POST",
+    "permission": "import:manage",
+    "acceptsTargetSemesterId": true,
+    "rejectsMissingTargetSemester": true,
+    "rejectsInvalidTargetSemester": true,
+    "validatesSemesterExists": true,
+    "readsImportRuleConfig": true,
+    "canConfirm": false,
+    "canApply": false,
+    "previewOnly": true,
+    "acceptedFileType": ".xlsx",
+    "rejectedFileType": ".docx",
+    "maxFileSizeMB": 20
+  },
+  "errorResponses": {
+    "MISSING_TARGET_SEMESTER": 400,
+    "INVALID_TARGET_SEMESTER": 400,
+    "TARGET_SEMESTER_NOT_FOUND": 400,
+    "INVALID_FILE_TYPE": 400,
+    "MISSING_FILE": 400,
+    "FILE_TOO_LARGE": 400,
+    "INTERNAL": 500
+  },
+  "ui": {
+    "targetSemesterSelector": true,
+    "defaultSelection": "none (user must choose)",
+    "requiresSelectionBeforePreview": true,
+    "activeSwitchWarning": true,
+    "createNewSemesterForm": false,
+    "createNewSemesterNote": "下一阶段 (L6-C) 实现",
+    "confirmApplyButtons": false,
+    "showsSemesterSummary": true,
+    "showsDryRunSummary": true,
+    "showsMatchSummary": true,
+    "showsManualReviewSummary": true
+  },
+  "dryRun": {
+    "existingDataScopedBySemester": true,
+    "courseGlobal": true,
+    "teacherGlobal": true,
+    "classGroupSemesterScoped": true,
+    "teachingTaskSemesterScoped": true,
+    "teachingTaskClassScoped": true,
+    "usesL4Mapper": true,
+    "mapperIsInMemory": true
+  },
+  "response": {
+    "targetSemesterFields": ["id", "nameHash", "code", "isActive", "isActiveSemester", "setAsActive: false", "classGroupCount", "teachingTaskCount", "teachingTaskClassCount", "courseCount", "teacherCount"],
+    "dryRunSummaryFields": ["dryRunOnly: true", "dbWritten: false", "existingDataScopedBySemester: true", "courseCandidates", "teacherCandidates", "classGroupCandidates", "teachingTaskCandidates", "teachingTaskClassCandidates", "rowsNeedingManualReview", "rowsSkipped"],
+    "matchSummaryKeys": ["course", "teacher", "classGroup", "teachingTask", "teachingTaskClass"]
+  },
+  "prismaReads": {
+    "course.findMany": "global",
+    "teacher.findMany": "global",
+    "classGroup.findMany": "where: { semesterId: targetSemesterId }",
+    "teachingTask.findMany": "where: { semesterId: targetSemesterId }",
+    "teachingTaskClass.findMany": "where: { teachingTaskId: { in: taskIds } }",
+    "semester.findUnique": "by id",
+    "semester.findFirst": "by isActive: true",
+    "counts": ["classGroup", "teachingTask", "course", "teacher", "teachingTaskClass"]
+  },
+  "prismaWrites": [],
+  "importBatchCreated": false,
+  "activeSemesterActivated": false,
+  "previewOnlyEnforced": true,
+  "canConfirmEnforced": false,
+  "canApplyEnforced": false,
+  "setAsActiveEnforced": "false (literal)",
+  "dbProof": {
+    "countsUnchanged": true,
+    "semesterCount": 3,
+    "courseCount": 104,
+    "teacherCount": 84,
+    "classGroupCount": 36,
+    "teachingTaskCount": 308,
+    "teachingTaskClassCount": 446,
+    "importBatchCount": 38,
+    "scheduleSlotCount": 440,
+    "scheduleAdjustmentCount": 67
+  },
+  "privacy": {
+    "rawTeacherNamesCommitted": false,
+    "rawClassNamesCommitted": false,
+    "rawCourseNamesCommitted": false,
+    "rawRemarksCommitted": false,
+    "rawRowsCommitted": false,
+    "rawSheetNamesCommitted": false,
+    "phoneNumbersCommitted": false,
+    "semesterNameCommitted": "hashed only (sha256 prefix-12)"
+  },
+  "safety": {
+    "schemaChanged": false,
+    "migrationAdded": false,
+    "apiWriteMethodAdded": false,
+    "uiWriteButtonAdded": false,
+    "wordParserChanged": false,
+    "schedulerScoreChanged": false,
+    "l2ParserChanged": false,
+    "l4MapperChanged": false,
+    "l5HelperChanged": false,
+    "k22ExpectedChanged": false
+  },
+  "browserValidation": {
+    "status": "PENDING",
+    "checklist": [
+      "1. 启动 dev server",
+      "2. ADMIN 登录",
+      "3. 进入 /admin/import",
+      "4. Excel preview 区出现'导入目标学期'选择器",
+      "5. 不选择学期时不能解析, 提示'请先选择导入目标学期'",
+      "6. 选择已有学期, 例如 2025-2026秋季学期",
+      "7. 页面显示'该选择只决定本次导入目标学期, 不会切换系统当前学期'",
+      "8. 上传 .xlsx 样本",
+      "9. 点击解析预览",
+      "10. loading 正常",
+      "11. 成功显示 target semester summary (id/code/isActive/counts)",
+      "12. 成功显示 workbook summary",
+      "13. 成功显示 dry-run summary / match summary",
+      "14. 成功显示 manual review summary",
+      "15. 预览表格仍不显示 raw 教师/班级/课程/备注原文",
+      "16. 页面没有 Excel 确认导入 / 应用 / 写入 DB / 切换当前学期按钮",
+      "17. 上传 .docx 仍被拒绝",
+      "18. 旧 Word import 区域不受影响",
+      "19. Browser console 无 React error",
+      "20. Network response 不包含 raw Excel 原文",
+      "21. 验证期间 DB counts 不变"
+    ]
+  },
+  "validation": {
+    "verifyScript": "scripts/verify-xlsx-course-setting-target-semester-preview-l6-b.ts",
+    "checksTotal": 69,
+    "checksPass": 69,
+    "checksFail": 0
+  }
+}

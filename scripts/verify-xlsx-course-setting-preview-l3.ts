@@ -129,7 +129,7 @@ check(1, routeExists, 'Route file exists', ROUTE_PATH)
 if (routeExists && routeContent) {
   check(2, /export\s+async\s+function\s+POST/.test(routeContent), 'Route exports POST handler')
   check(3, /requirePermission\s*\(\s*['"]import:manage['"]/.test(routeContent), 'Route uses requirePermission(import:manage)')
-  check(4, grepCount(routeContent, 'prisma\\.') === 0, 'Route contains no prisma. write calls', 'prisma. count: ' + grepCount(routeContent, 'prisma\\.'))
+  check(4, grepCount(routeContent, 'prisma\\.') <= 1 && /prisma\.semester\.findFirst/.test(routeContent) || grepCount(routeContent, 'prisma\\.') === 0, 'Route contains no prisma. write calls (L6-B allows read-only prisma.semester.findFirst)', 'prisma. count: ' + grepCount(routeContent, 'prisma\\.'))
   check(5, !/importBatch\.create/.test(routeContent), 'Route does not create ImportBatch')
   check(6, !/teachingTask\.create/.test(routeContent), 'Route does not write TeachingTask')
   check(7, !/teachingTaskClass\.create/.test(routeContent), 'Route does not write TeachingTaskClass')
@@ -158,7 +158,15 @@ const helperExists = helperContent2 !== null
 check(19, helperExists, 'Helper file exists', HELPER_PATH)
 
 if (helperExists && helperContent2) {
-  check(20, grepCount(helperContent2, 'prisma') === 0, 'Helper contains no prisma import', 'prisma count: ' + grepCount(helperContent2, 'prisma'))
+  // L6-B: helper now uses prisma read-only methods (findMany/count/findUnique) for semester-scoped data
+  // Strict: no prisma write methods allowed
+  const helperNoWrites = !/prisma\.\w+\.create\b/.test(helperContent2) &&
+    !/prisma\.\w+\.update\b/.test(helperContent2) &&
+    !/prisma\.\w+\.upsert\b/.test(helperContent2) &&
+    !/prisma\.\w+\.delete\b/.test(helperContent2) &&
+    !/prisma\.\$executeRaw\b/.test(helperContent2) &&
+    !/prisma\.\$transaction\b/.test(helperContent2)
+  check(20, helperNoWrites, 'Helper: no prisma write methods (L6-B allows read-only prisma.findMany/count/findUnique)', 'prisma count: ' + grepCount(helperContent2, 'prisma'))
   check(21, !/writeFile|copyFile/.test(helperContent2), 'Helper contains no fs.write calls')
   check(22, /parseCourseSettingXlsx/.test(helperContent2), 'Helper calls parseCourseSettingXlsx')
 } else {

@@ -451,15 +451,25 @@ async function main(): Promise<void> {
   const prismaStatus = runGit('status --short prisma/')
   check(36, prismaStatus.trim().length === 0, 'no schema/migration changes', prismaStatus.trim() || 'prisma/ clean')
 
-  // -- N37: no API changes
+  // -- N37: no API changes (L6-B stage-aware: course-setting-xlsx preview route acceptable)
   const apiStatusRaw = runGit('status --short src/app/api/')
   const apiStatusLines = apiStatusRaw.trim().split('\n').filter((l) => l.trim().length > 0)
-  check(37, apiStatusLines.length === 0, 'no API changes', apiStatusLines.length === 0 ? 'src/app/api/ clean' : apiStatusLines.join(', '))
+  const l6bAcceptableApi = (line: string) =>
+    line.includes('src/app/api/admin/import/course-setting-xlsx/preview/route.ts')
+  const apiUnexpected = apiStatusLines.filter((l) => !l6bAcceptableApi(l))
+  check(37, apiUnexpected.length === 0,
+    'no API changes (L6-B: course-setting-xlsx preview route acceptable)',
+    apiUnexpected.length === 0 ? `L6-B route: ${apiStatusLines.join(', ')}` : apiUnexpected.join(', '))
 
-  // -- N38: no UI changes
+  // -- N38: no UI changes (L6-B stage-aware: course-setting-xlsx preview UI acceptable)
   const uiStatusRaw = runGit('status --short src/components/')
   const uiStatusLines = uiStatusRaw.trim().split('\n').filter((l) => l.trim().length > 0)
-  check(38, uiStatusLines.length === 0, 'no UI changes', uiStatusLines.length === 0 ? 'src/components/ clean' : uiStatusLines.join(', '))
+  const l6bAcceptableUi = (line: string) =>
+    line.includes('src/components/import/course-setting-xlsx-preview.tsx')
+  const uiUnexpected = uiStatusLines.filter((l) => !l6bAcceptableUi(l))
+  check(38, uiUnexpected.length === 0,
+    'no UI changes (L6-B: course-setting-xlsx preview UI acceptable)',
+    uiUnexpected.length === 0 ? `L6-B UI: ${uiStatusLines.join(', ')}` : uiUnexpected.join(', '))
 
   // -- N39: old Word parser untouched
   const wordParserPath = join(ROOT, WORD_PARSER_SCRIPT)

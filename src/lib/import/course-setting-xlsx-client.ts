@@ -1,8 +1,10 @@
 /**
- * L3 Client Helper — Course Setting XLSX Preview
+ * L3/L6-B Client Helper — Course Setting XLSX Preview
  *
  * Thin fetch wrapper for the course-setting-xlsx preview API.
  * No server-side imports (prisma, fs, path). Pure client code.
+ *
+ * L6-B: previewCourseSettingXlsx accepts targetSemesterId.
  */
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -30,6 +32,33 @@ export type CourseSettingXlsxPreviewRow = {
   warningCodes: string[]
   needsManualReview: boolean
   manualReviewReasons: string[]
+}
+
+export type CourseSettingXlsxSemesterSummary = {
+  id: number
+  nameHash: string
+  code: string | null
+  isActive: boolean
+  isActiveSemester: boolean
+  setAsActive: false
+  classGroupCount: number
+  teachingTaskCount: number
+  teachingTaskClassCount: number
+  courseCount: number
+  teacherCount: number
+}
+
+export type CourseSettingXlsxDryRunSummary = {
+  dryRunOnly: true
+  dbWritten: false
+  existingDataScopedBySemester: true
+  courseCandidates: number
+  teacherCandidates: number
+  classGroupCandidates: number
+  teachingTaskCandidates: number
+  teachingTaskClassCandidates: number
+  rowsNeedingManualReview: number
+  rowsSkipped: number
 }
 
 export type CourseSettingXlsxPreviewResponse = {
@@ -70,6 +99,12 @@ export type CourseSettingXlsxPreviewResponse = {
     totalRowsNeedingReview: number
     reasons: Record<string, number>
   }
+  // L6-B: semester-scoped extensions
+  targetSemester?: CourseSettingXlsxSemesterSummary
+  dryRunSummary?: CourseSettingXlsxDryRunSummary
+  matchSummary?: Record<string, Record<string, number>>
+  requireExplicitSemesterForImport?: boolean
+  targetSemesterRequired?: true
 }
 
 export type CourseSettingXlsxPreviewErrorResponse = {
@@ -77,19 +112,28 @@ export type CourseSettingXlsxPreviewErrorResponse = {
   error: string
   message: string
   previewOnly: true
+  canConfirm?: boolean
+  canApply?: boolean
+  requireExplicitSemesterForImport?: boolean
+  targetSemesterRequired?: boolean
 }
 
 // ── API Helper ─────────────────────────────────────────────────────────────
 
 /**
  * Upload a .xlsx file and get a preview-only parse result.
+ * L6-B: requires targetSemesterId for semester-scoped dry-run.
  * No DB writes, no ImportBatch creation, no teaching task generation.
  */
 export async function previewCourseSettingXlsx(
   file: File,
+  targetSemesterId?: number,
 ): Promise<CourseSettingXlsxPreviewResponse> {
   const formData = new FormData()
   formData.append('file', file)
+  if (targetSemesterId != null) {
+    formData.append('targetSemesterId', String(targetSemesterId))
+  }
 
   const res = await fetch('/api/admin/import/course-setting-xlsx/preview', {
     method: 'POST',
@@ -107,4 +151,31 @@ export async function previewCourseSettingXlsx(
   }
 
   return data as CourseSettingXlsxPreviewResponse
+}
+
+/**
+ * Fetch available semesters for the target semester selector.
+ * Reuses existing GET /api/semesters.
+ */
+export type SemesterListItem = {
+  id: number
+  name: string
+  code: string
+  academicYear: string | null
+  term: string | null
+  isActive: boolean
+}
+
+export async function fetchSemestersForImport(): Promise<{
+  semesters: SemesterListItem[]
+  activeSemesterId: number | null
+}> {
+  const res = await fetch('/api/semesters')
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  const data = await res.json()
+  if (!data.success) throw new Error(data.error || 'Failed to load semesters')
+  return {
+    semesters: data.semesters ?? [],
+    activeSemesterId: data.activeSemesterId ?? null,
+  }
 }

@@ -1,13 +1,14 @@
 'use client'
 
 /**
- * L3 UI Component - Course Setting XLSX Preview
+ * L3/L6-B UI Component - Course Setting XLSX Preview
  *
  * Preview-only component for Excel course setting file parsing. No confirm/apply
  * buttons. Shows hashed preview rows + field summaries + manual review flags.
+ * L6-B: adds target semester selector + dry-run/match summary display.
  */
 
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import {
   Loader2,
@@ -16,6 +17,7 @@ import {
   Eye,
   AlertTriangle,
   Info,
+  Database,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -23,8 +25,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
   previewCourseSettingXlsx,
+  fetchSemestersForImport,
   type CourseSettingXlsxPreviewResponse,
   type CourseSettingXlsxPreviewRow,
+  type SemesterListItem,
 } from '@/lib/import/course-setting-xlsx-client'
 
 // -- Component ---------------------------------------------------------------
@@ -37,16 +41,44 @@ export default function CourseSettingXlsxPreview() {
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set())
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // L6-B: semester selector state
+  const [semesters, setSemesters] = useState<SemesterListItem[]>([])
+  const [selectedSemesterId, setSelectedSemesterId] = useState<number | null>(null)
+  const [semestersLoaded, setSemestersLoaded] = useState(false)
+  const [semestersLoading, setSemestersLoading] = useState(false)
+
+  // Load semesters on mount
+  useEffect(() => {
+    if (semestersLoaded || semestersLoading) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSemestersLoading(true)
+    fetchSemestersForImport()
+      .then((data) => {
+        setSemesters(data.semesters)
+        setSemestersLoaded(true)
+      })
+      .catch(() => {
+        setSemestersLoaded(true)
+      })
+      .finally(() => {
+        setSemestersLoading(false)
+      })
+  }, [semestersLoaded, semestersLoading])
+
   const handleUpload = useCallback(async () => {
     if (!file) {
       toast.error('请选择 .xlsx 课程设置文件')
+      return
+    }
+    if (!selectedSemesterId) {
+      toast.error('请先选择导入目标学期')
       return
     }
     setParsing(true)
     setError(null)
     setResult(null)
     try {
-      const data = await previewCourseSettingXlsx(file)
+      const data = await previewCourseSettingXlsx(file, selectedSemesterId)
       setResult(data)
       toast.success('解析完成', {
         description: '识别 ' + data.workbookSummary.totalCourseRows + ' 条课程行，' + data.manualReviewSummary.totalRowsNeedingReview + ' 条需人工审核',
@@ -58,7 +90,7 @@ export default function CourseSettingXlsxPreview() {
     } finally {
       setParsing(false)
     }
-  }, [file])
+  }, [file, selectedSemesterId])
 
   const toggleRow = useCallback((idx: number) => {
     setExpandedRows((prev) => {
@@ -77,6 +109,8 @@ export default function CourseSettingXlsxPreview() {
     if (fileInputRef.current) fileInputRef.current.value = ''
   }, [])
 
+  const canPreview = !!file && !!selectedSemesterId && !parsing
+
   return (
     <div className="bg-white rounded-lg shadow">
       <div className="px-4 py-3 border-b">
@@ -94,6 +128,29 @@ export default function CourseSettingXlsxPreview() {
 
       {/* Upload area */}
       <div className="px-4 py-3 space-y-3">
+        {/* L6-B: Target semester selector */}
+        <div className="space-y-1">
+          <Label className="text-xs">导入目标学期</Label>
+          <select
+            value={selectedSemesterId ?? ''}
+            onChange={(e) => setSelectedSemesterId(e.target.value ? Number(e.target.value) : null)}
+            className="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm bg-white disabled:opacity-50"
+            disabled={semestersLoading}
+          >
+            <option value="">
+              {semestersLoading ? '加载学期中...' : '请选择目标学期'}
+            </option>
+            {semesters.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name} {s.isActive ? '(当前学期)' : ''}
+              </option>
+            ))}
+          </select>
+          <p className="text-[11px] text-gray-400">
+            该选择只决定本次 Excel 课程设置导入的目标学期，不会自动切换系统当前学期。
+          </p>
+        </div>
+
         <div className="flex items-end gap-3 flex-wrap">
           <div className="flex-1 min-w-[200px] space-y-1">
             <Label className="text-xs">选择 .xlsx 文件</Label>
@@ -109,7 +166,7 @@ export default function CourseSettingXlsxPreview() {
             <Button
               size="sm"
               onClick={() => void handleUpload()}
-              disabled={!file || parsing}
+              disabled={!canPreview}
             >
               {parsing ? (
                 <>
@@ -166,6 +223,28 @@ export default function CourseSettingXlsxPreview() {
             </div>
           </div>
 
+          {/* L6-B: Target semester summary */}
+          {result.targetSemester && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
+              <div className="flex items-center gap-2 mb-2 text-blue-800">
+                <Database className="w-4 h-4" />
+                <span className="font-medium">目标学期</span>
+                {result.targetSemester.isActive && (
+                  <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700">
+                    当前学期
+                  </Badge>
+                )}
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs text-blue-700">
+                <div><span className="opacity-70">ID:</span> {result.targetSemester.id}</div>
+                <div><span className="opacity-70">Code:</span> {result.targetSemester.code ?? '-'}</div>
+                <div><span className="opacity-70">班级:</span> {result.targetSemester.classGroupCount}</div>
+                <div><span className="opacity-70">教学任务:</span> {result.targetSemester.teachingTaskCount}</div>
+                <div><span className="opacity-70">Course/Teacher:</span> {result.targetSemester.courseCount}/{result.targetSemester.teacherCount}</div>
+              </div>
+            </div>
+          )}
+
           {/* Workbook summary cards */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
             <SummaryCard label="Sheet 数" value={result.workbookSummary.sheetCount} />
@@ -178,6 +257,36 @@ export default function CourseSettingXlsxPreview() {
               warn={result.workbookSummary.totalWarnings > 0}
             />
           </div>
+
+          {/* L6-B: Dry-run summary cards */}
+          {result.dryRunSummary && (
+            <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3">
+              <h4 className="text-xs font-semibold text-indigo-800 mb-2">Dry-Run 匹配摘要（目标学期上下文）</h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                <div className="text-indigo-700"><span className="opacity-70">课程候选:</span> {result.dryRunSummary.courseCandidates}</div>
+                <div className="text-indigo-700"><span className="opacity-70">教师候选:</span> {result.dryRunSummary.teacherCandidates}</div>
+                <div className="text-indigo-700"><span className="opacity-70">班级候选:</span> {result.dryRunSummary.classGroupCandidates}</div>
+                <div className="text-indigo-700"><span className="opacity-70">教学任务候选:</span> {result.dryRunSummary.teachingTaskCandidates}</div>
+                <div className="text-indigo-700"><span className="opacity-70">任务班级关联:</span> {result.dryRunSummary.teachingTaskClassCandidates}</div>
+                <div className="text-indigo-700"><span className="opacity-70">需人工审核:</span> {result.dryRunSummary.rowsNeedingManualReview}</div>
+                <div className="text-indigo-700"><span className="opacity-70">跳过行:</span> {result.dryRunSummary.rowsSkipped}</div>
+                <div className="text-indigo-700"><span className="opacity-70">existingData 范围:</span> 按目标学期</div>
+              </div>
+              {result.matchSummary && (
+                <div className="mt-2 pt-2 border-t border-indigo-200">
+                  <span className="text-[11px] font-semibold text-indigo-700">Match Summary:</span>
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-1 mt-1 text-[11px] text-indigo-700">
+                    {Object.entries(result.matchSummary).map(([key, buckets]) => (
+                      <div key={key}>
+                        <span className="font-medium">{key}:</span>{' '}
+                        {Object.entries(buckets).map(([b, c]) => `${b}=${c}`).join(', ')}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Source evidence */}
           <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-600">

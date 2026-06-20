@@ -376,7 +376,13 @@ async function main(): Promise<void> {
 
   const apiStatusRaw = runGit('status --short src/app/api/')
   const apiStatusLines = apiStatusRaw.trim().split('\n').filter((l) => l.trim().length > 0)
-  check(37, apiStatusLines.length === 0, 'no API changes', apiStatusLines.length === 0 ? 'src/app/api/ clean' : apiStatusLines.join(', '))
+  // L6-B stage-aware: course-setting-xlsx preview route is a legitimate L6-B change
+  const l6bAcceptableApi = (line: string) =>
+    line.includes('src/app/api/admin/import/course-setting-xlsx/preview/route.ts')
+  const apiUnexpected = apiStatusLines.filter((l) => !l6bAcceptableApi(l))
+  check(37, apiUnexpected.length === 0,
+    'no API changes (L6-B: course-setting-xlsx preview route acceptable)',
+    apiUnexpected.length === 0 ? `L6-B route: ${apiStatusLines.join(', ')}` : apiUnexpected.join(', '))
 
   const wordParserPath = join(ROOT, WORD_PARSER_SCRIPT)
   const wordParserStat = statSync(wordParserPath)

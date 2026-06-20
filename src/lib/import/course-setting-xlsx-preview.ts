@@ -1,16 +1,20 @@
 /**
- * L3 Server Helper — Course Setting XLSX Preview
+ * L3/L6-B Server Helper — Course Setting XLSX Preview
  *
- * Thin adapter between the L2 parser and the API route.
+ * Thin adapter between the L2 parser, L4 mapper, and the API route.
  * Hard constraints:
- *  - No Prisma, no DB writes, no filesystem write operations.
- *  - No ImportBatch creation.
- *  - Pure over the input Buffer.
- *  - Returns a preview-only response shape.
+ *  - L3 mode: Pure Buffer parse, no DB, no dry-run.
+ *  - L6-B mode: Read-only Prisma (findMany/count) for semester-scoped
+ *    existingData + L4 dry-run mapping. No DB writes, no ImportBatch.
  */
 
 import { parseCourseSettingXlsx } from './course-setting-xlsx-parser'
 import type { CourseSettingXlsxParseResult } from './course-setting-xlsx-parser'
+import {
+  buildCourseSettingTeachingTaskDryRun,
+  normalizeForMatch,
+  type CourseSettingExistingImportData,
+} from './course-setting-teaching-task-dry-run'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -75,6 +79,33 @@ export type CourseSettingXlsxPreviewResult = {
     totalRowsNeedingReview: number
     reasons: Record<string, number>
   }
+}
+
+export type CourseSettingXlsxSemesterSummary = {
+  id: number
+  nameHash: string
+  code: string | null
+  isActive: boolean
+  isActiveSemester: boolean
+  setAsActive: false
+  classGroupCount: number
+  teachingTaskCount: number
+  teachingTaskClassCount: number
+  courseCount: number
+  teacherCount: number
+}
+
+export type CourseSettingXlsxDryRunSummary = {
+  dryRunOnly: true
+  dbWritten: false
+  existingDataScopedBySemester: true
+  courseCandidates: number
+  teacherCandidates: number
+  classGroupCandidates: number
+  teachingTaskCandidates: number
+  teachingTaskClassCandidates: number
+  rowsNeedingManualReview: number
+  rowsSkipped: number
 }
 
 // ── Main function ──────────────────────────────────────────────────────────
@@ -290,4 +321,234 @@ function buildManualReviewSummary(
   }
 
   return { totalRowsNeedingReview, reasons }
+}
+
+// ── L6-B: Semester-scoped existingData loading ─────────────────────────────
+
+/**
+ * Load existing data scoped to the target semester.
+ * Course/Teacher are global (loaded fully); ClassGroup/TeachingTask/TeachingTaskClass
+ * are filtered by targetSemesterId.
+ * Prisma read-only (findMany/count). No writes.
+ */
+export async function loadCourseSettingExistingDataForSemester(
+  targetSemesterId: number,
+): Promise<CourseSettingExistingImportData> {
+  const { createHash } = await import('node:crypto')
+  const { prisma } = await import('@/lib/prisma')
+
+  const nameHash = (s: string) =>
+    createHash('sha256').update(s.trim(), 'utf8').digest('hex').slice(0, 12)
+  const normalizedHash = (s: string) =>
+    createHash('sha256').update(normalizeForMatch(s), 'utf8').digest('hex').slice(0, 12)
+
+  // Course + Teacher: global (no semesterId)
+  const [courses, teachers] = await Promise.all([
+    prisma.course.findMany({ select: { id: true, name: true } }),
+    prisma.teacher.findMany({ select: { id: true, name: true } }),
+  ])
+
+  // ClassGroup, TeachingTask: semester-scoped
+  const [classGroups, teachingTasks] = await Promise.all([
+    prisma.classGroup.findMany({
+      where: { semesterId: targetSemesterId },
+      select: { id: true, name: true, studentCount: true },
+    }),
+    prisma.teachingTask.findMany({
+      where: { semesterId: targetSemesterId },
+      select: { id: true, courseId: true, teacherId: true },
+    }),
+  ])
+
+  // TeachingTaskClass: scoped via teachingTask ids
+  const taskIds = teachingTasks.map((t) => t.id)
+  const teachingTaskClasses =
+    taskIds.length > 0
+      ? await prisma.teachingTaskClass.findMany({
+          where: { teachingTaskId: { in: taskIds } },
+          select: { id: true, teachingTaskId: true, classGroupId: true },
+        })
+      : []
+
+  return {
+    courses: courses.map((c) => ({
+      id: c.id,
+      nameHash: nameHash(c.name),
+      normalizedNameHash: normalizedHash(c.name),
+    })),
+    teachers: teachers.map((t) => ({
+      id: t.id,
+      nameHash: nameHash(t.name),
+      normalizedNameHash: normalizedHash(t.name),
+    })),
+    classGroups: classGroups.map((cg) => ({
+      id: cg.id,
+      nameHash: nameHash(cg.name),
+      normalizedNameHash: normalizedHash(cg.name),
+      studentCount: cg.studentCount,
+    })),
+    teachingTasks: teachingTasks.map((tt) => ({
+      id: tt.id,
+      courseId: tt.courseId,
+      teacherId: tt.teacherId,
+    })),
+    teachingTaskClasses: teachingTaskClasses.map((ttc) => ({
+      id: ttc.id,
+      teachingTaskId: ttc.teachingTaskId,
+      classGroupId: ttc.classGroupId,
+    })),
+  }
+}
+
+/**
+ * Load semester summary info for the response.
+ * Prisma read-only (findUnique/count). No writes.
+ */
+export async function loadSemesterSummary(
+  targetSemesterId: number,
+  activeSemesterId: number | null,
+): Promise<CourseSettingXlsxSemesterSummary> {
+  const { createHash } = await import('node:crypto')
+  const { prisma } = await import('@/lib/prisma')
+
+  const semester = await prisma.semester.findUnique({ where: { id: targetSemesterId } })
+  if (!semester) {
+    throw new Error('TARGET_SEMESTER_NOT_FOUND')
+  }
+
+  const [classGroupCount, teachingTaskCount, courseCount, teacherCount] = await Promise.all([
+    prisma.classGroup.count({ where: { semesterId: targetSemesterId } }),
+    prisma.teachingTask.count({ where: { semesterId: targetSemesterId } }),
+    prisma.course.count(),
+    prisma.teacher.count(),
+  ])
+
+  const taskIds = (
+    await prisma.teachingTask.findMany({
+      where: { semesterId: targetSemesterId },
+      select: { id: true },
+    })
+  ).map((t) => t.id)
+
+  const teachingTaskClassCount =
+    taskIds.length > 0
+      ? await prisma.teachingTaskClass.count({ where: { teachingTaskId: { in: taskIds } } })
+      : 0
+
+  const nameHash = createHash('sha256').update(semester.name, 'utf8').digest('hex').slice(0, 12)
+
+  return {
+    id: semester.id,
+    nameHash,
+    code: semester.code,
+    isActive: semester.isActive,
+    isActiveSemester: targetSemesterId === activeSemesterId,
+    setAsActive: false as const,
+    classGroupCount,
+    teachingTaskCount,
+    teachingTaskClassCount,
+    courseCount,
+    teacherCount,
+  }
+}
+
+// ── L6-B: Semester-aware preview ───────────────────────────────────────────
+
+export type CourseSettingXlsxPreviewWithSemesterResult = CourseSettingXlsxPreviewResult & {
+  targetSemester: CourseSettingXlsxSemesterSummary
+  dryRunSummary: CourseSettingXlsxDryRunSummary
+  matchSummary: Record<string, Record<string, number>>
+  requireExplicitSemesterForImport: boolean
+  targetSemesterRequired: true
+}
+
+/**
+ * L6-B: Build preview with target-semester-scoped dry-run.
+ * Calls L2 parser (in-memory) + L4 mapper (in-memory with pre-loaded existingData).
+ * Prisma read-only: loads existingData + semester counts.
+ * No DB writes. No ImportBatch. previewOnly=true.
+ */
+export async function buildCourseSettingXlsxPreviewWithSemester(
+  buffer: Buffer,
+  filename: string,
+  targetSemesterId: number,
+  activeSemesterId: number | null,
+  requireExplicitSemesterForImport: boolean,
+): Promise<CourseSettingXlsxPreviewWithSemesterResult> {
+  const t0 = Date.now()
+
+  // 1. Load semester-scoped existingData (read-only Prisma)
+  const existingData = await loadCourseSettingExistingDataForSemester(targetSemesterId)
+
+  // 2. Run L2 parser + L4 mapper (both in-memory, no DB)
+  const dryRunResult = await buildCourseSettingTeachingTaskDryRun({
+    xlsxBuffer: buffer,
+    artifactFilename: filename,
+    existingData,
+    options: { parserVersion: 'l2-parser-v1', includeRawValues: true },
+  })
+
+  // 3. Build L3 structural summaries from parse result
+  // Re-parse with includeRawValues=false for preview row redaction
+  const parseResult = await parseCourseSettingXlsx(buffer, {
+    artifactFilename: filename,
+    parserVersion: 'l2-parser-v1',
+    includeRawValues: false,
+  })
+
+  const durationMs = Date.now() - t0
+  const fieldSummary = buildFieldSummary(parseResult)
+  const sourceEvidenceSummary = buildSourceEvidenceSummary(parseResult)
+  const diagnosticsSummary = buildDiagnosticsSummary(parseResult)
+  const previewRows = buildPreviewRows(parseResult)
+  const manualReviewSummary = buildManualReviewSummary(previewRows)
+
+  // 4. Load semester summary
+  const targetSemester = await loadSemesterSummary(targetSemesterId, activeSemesterId)
+
+  return {
+    success: true,
+    parserType: 'courseSettingXlsx',
+    previewOnly: true,
+    canConfirm: false,
+    canApply: false,
+    artifact: {
+      filename: parseResult.artifact.filename ?? filename,
+      sha256: parseResult.artifact.sha256,
+      sizeBytes: buffer.length,
+    },
+    parser: {
+      parserVersion: parseResult.parserVersion,
+      durationMs,
+    },
+    workbookSummary: {
+      sheetCount: parseResult.workbook.sheetCount,
+      parsedSheetCount: parseResult.workbook.parsedSheetCount,
+      totalRows: parseResult.workbook.totalRows,
+      totalCourseRows: parseResult.workbook.totalCourseRows,
+      totalWarnings: parseResult.workbook.totalWarnings,
+    },
+    fieldSummary,
+    sourceEvidenceSummary,
+    diagnosticsSummary,
+    previewRows,
+    manualReviewSummary,
+    // L6-B: semester-scoped extensions
+    targetSemester,
+    dryRunSummary: {
+      dryRunOnly: true as const,
+      dbWritten: false as const,
+      existingDataScopedBySemester: true as const,
+      courseCandidates: dryRunResult.candidateSummary.courseCandidates,
+      teacherCandidates: dryRunResult.candidateSummary.teacherCandidates,
+      classGroupCandidates: dryRunResult.candidateSummary.classGroupCandidates,
+      teachingTaskCandidates: dryRunResult.candidateSummary.teachingTaskCandidates,
+      teachingTaskClassCandidates: dryRunResult.candidateSummary.teachingTaskClassCandidates,
+      rowsNeedingManualReview: dryRunResult.candidateSummary.rowsNeedingManualReview,
+      rowsSkipped: dryRunResult.candidateSummary.rowsSkipped,
+    },
+    matchSummary: dryRunResult.matchSummary as Record<string, Record<string, number>>,
+    requireExplicitSemesterForImport,
+    targetSemesterRequired: true as const,
+  }
 }
