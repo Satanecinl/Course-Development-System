@@ -10,6 +10,7 @@
 
 import { parseCourseSettingXlsx } from './course-setting-xlsx-parser'
 import type { CourseSettingXlsxParseResult } from './course-setting-xlsx-parser'
+import ExcelJS from 'exceljs'
 import {
   buildCourseSettingTeachingTaskDryRun,
   normalizeForMatch,
@@ -51,34 +52,79 @@ export type CourseSettingXlsxPreviewResult = {
     bySeverity: Record<string, number>
     byCode: Record<string, number>
   }
-  previewRows: Array<{
-    sheetIndex: number
-    sheetNameHash: string
-    sourceRowIndex: number
-    rowKind: string
-    displayIndex: number
-    courseNameHash?: string
-    gradeMajorHash?: string
-    classCountRawHash?: string
-    teacherRawHash?: string
-    remarkHash?: string
-    mergeRemarkHash?: string
-    classCountClassification?: string
-    classGroupCandidateCount?: number
-    teacherAssignmentClassification?: string
-    teacherAssignmentCandidateCount?: number
-    examTypeClassification?: string
-    weeklyHoursClassification?: string
-    weeklyHoursValue?: number
-    confidence: number
-    warningCodes: string[]
-    needsManualReview: boolean
-    manualReviewReasons: string[]
-  }>
+  previewRows: CourseSettingXlsxPreviewRow[]
   manualReviewSummary: {
     totalRowsNeedingReview: number
     reasons: Record<string, number>
   }
+  rawPreview?: CourseSettingXlsxRawPreviewMetadata
+}
+
+export type CourseSettingXlsxPreviewRowRaw = {
+  courseName: string | null
+  teacherText: string | null
+  classText: string | null
+  remark: string | null
+  mergeRemark: string | null
+  majorName: string | null
+  weeklyHoursText: string | null
+  examTypeText: string | null
+}
+
+export type CourseSettingXlsxPreviewRowParsed = {
+  courseNameHash?: string
+  teacherRawHash?: string
+  classCountRawHash?: string
+  remarkHash?: string
+  mergeRemarkHash?: string
+  weeklyHours?: number | null
+  weeklyHoursClassification?: string | null
+  examType?: string | null
+  examTypeClassification?: string | null
+  diagnostics: string[]
+  classifications: Record<string, string | number | boolean | null>
+}
+
+export type CourseSettingXlsxPreviewRow = {
+  sheetIndex: number
+  sheetName?: string
+  sheetNameHash: string
+  sourceRowIndex: number
+  rowKind: string
+  displayIndex: number
+  raw?: CourseSettingXlsxPreviewRowRaw
+  parsed: CourseSettingXlsxPreviewRowParsed
+  match?: {
+    courseMatchStatus?: string
+    teacherMatchStatusSummary?: Record<string, number>
+    classGroupMatchStatusSummary?: Record<string, number>
+    taskMatchStatus?: string
+  }
+  courseNameHash?: string
+  gradeMajorHash?: string
+  classCountRawHash?: string
+  teacherRawHash?: string
+  remarkHash?: string
+  mergeRemarkHash?: string
+  classCountClassification?: string
+  classGroupCandidateCount?: number
+  teacherAssignmentClassification?: string
+  teacherAssignmentCandidateCount?: number
+  examTypeClassification?: string
+  weeklyHoursClassification?: string
+  weeklyHoursValue?: number | null
+  confidence: number
+  warningCodes: string[]
+  needsManualReview: boolean
+  manualReviewReasons: string[]
+}
+
+export type CourseSettingXlsxRawPreviewMetadata = {
+  enabled: true
+  scope: 'authorized-admin-preview-only'
+  returnedRows: number
+  maxPreviewRows: number
+  committedArtifactsContainRaw: false
 }
 
 export type CourseSettingXlsxSemesterSummary = {
@@ -247,7 +293,10 @@ function buildDiagnosticsSummary(parseResult: CourseSettingXlsxParseResult) {
   return { total, bySeverity, byCode }
 }
 
-function buildPreviewRows(parseResult: CourseSettingXlsxParseResult) {
+function buildPreviewRows(
+  parseResult: CourseSettingXlsxParseResult,
+  sheetNames: Record<number, string> = {},
+) {
   const rows: CourseSettingXlsxPreviewResult['previewRows'] = []
   let displayIndex = 0
 
@@ -275,12 +324,60 @@ function buildPreviewRows(parseResult: CourseSettingXlsxParseResult) {
         manualReviewReasons.push('lowConfidence')
       }
 
+      // L6-B1: build raw and parsed objects from includeRawValues=true parser output.
+      // `raw` carries original text for authorized admin UI; `parsed` carries
+      // hash-based identifiers. Both are computed in-memory and never written
+      // to committed artifacts.
+      const teacherText =
+        row.teacherAssignment?.assignments
+          ?.map((a) => (a.scopeLabel ? `${a.teacherName}(${a.scopeLabel})` : a.teacherName))
+          .filter(Boolean)
+          .join('、') ?? null
+      const classText =
+        row.classCount?.parsedClassGroups
+          ?.map((cg) => cg.classLabel)
+          .filter(Boolean)
+          .join('、') ?? null
+
+      const raw: CourseSettingXlsxPreviewRowRaw = {
+        courseName: row.courseName?.normalized ?? null,
+        teacherText,
+        classText,
+        remark: row.remark?.normalized ?? null,
+        mergeRemark: row.mergeRemark?.normalized ?? null,
+        majorName: row.gradeMajor?.normalized ?? null,
+        weeklyHoursText: row.weeklyHours ? String(row.weeklyHours.value ?? '') : null,
+        examTypeText: row.examType?.normalized ?? null,
+      }
+
+      const parsed: CourseSettingXlsxPreviewRowParsed = {
+        courseNameHash: row.courseName?.rawHash,
+        teacherRawHash: row.teacherAssignment?.rawHash,
+        classCountRawHash: row.classCount?.rawHash,
+        remarkHash: row.remark?.rawHash,
+        mergeRemarkHash: row.mergeRemark?.rawHash,
+        weeklyHours: row.weeklyHours?.value ?? null,
+        weeklyHoursClassification: row.weeklyHours?.classification ?? null,
+        examType: row.examType?.normalized ?? null,
+        examTypeClassification: row.examType?.classification ?? null,
+        diagnostics: warningCodes,
+        classifications: {
+          classCount: row.classCount?.primaryClassification ?? null,
+          teacherAssignment: row.teacherAssignment?.primaryClassification ?? null,
+          examType: row.examType?.classification ?? null,
+          weeklyHours: row.weeklyHours?.classification ?? null,
+        },
+      }
+
       rows.push({
         sheetIndex: row.sheetIndex,
+        sheetName: sheetNames[row.sheetIndex],
         sheetNameHash: row.sheetNameHash,
         sourceRowIndex: row.sourceRowIndex,
         rowKind: row.rowKind,
         displayIndex,
+        raw,
+        parsed,
         courseNameHash: row.courseName?.rawHash,
         gradeMajorHash: row.gradeMajor?.rawHash,
         classCountRawHash: row.classCount?.rawHash,
@@ -293,7 +390,7 @@ function buildPreviewRows(parseResult: CourseSettingXlsxParseResult) {
         teacherAssignmentCandidateCount: row.teacherAssignment?.assignments?.length,
         examTypeClassification: row.examType?.classification,
         weeklyHoursClassification: row.weeklyHours?.classification,
-        weeklyHoursValue: row.weeklyHours?.value,
+        weeklyHoursValue: row.weeklyHours?.value ?? null,
         confidence: row.confidence,
         warningCodes,
         needsManualReview: manualReviewReasons.length > 0,
@@ -303,6 +400,26 @@ function buildPreviewRows(parseResult: CourseSettingXlsxParseResult) {
   }
 
   return rows
+}
+
+/**
+ * L6-B1: Read sheet names from xlsx without parsing full content.
+ * Used to populate `sheetName` field in preview rows for runtime UI display.
+ * Sheet names are returned in memory and only sent to authorized admins.
+ */
+async function readXlsxSheetNames(buffer: Buffer): Promise<Record<number, string>> {
+  try {
+    const workbook = new ExcelJS.Workbook()
+    // ExcelJS expects Node Buffer; cast to satisfy type checker
+    await workbook.xlsx.load(buffer as unknown as ArrayBuffer)
+    const out: Record<number, string> = {}
+    workbook.worksheets.forEach((ws, idx) => {
+      out[idx] = ws.name
+    })
+    return out
+  } catch {
+    return {}
+  }
 }
 
 function buildManualReviewSummary(
@@ -474,13 +591,17 @@ export async function buildCourseSettingXlsxPreviewWithSemester(
   targetSemesterId: number,
   activeSemesterId: number | null,
   requireExplicitSemesterForImport: boolean,
+  options?: { maxPreviewRows?: number },
 ): Promise<CourseSettingXlsxPreviewWithSemesterResult> {
   const t0 = Date.now()
+  const maxPreviewRows = options?.maxPreviewRows ?? 50
 
   // 1. Load semester-scoped existingData (read-only Prisma)
   const existingData = await loadCourseSettingExistingDataForSemester(targetSemesterId)
 
   // 2. Run L2 parser + L4 mapper (both in-memory, no DB)
+  // includeRawValues=true: raw text is in-memory ONLY and used for the
+  // authorized preview response. The L4 mapper's output is sanitized.
   const dryRunResult = await buildCourseSettingTeachingTaskDryRun({
     xlsxBuffer: buffer,
     artifactFilename: filename,
@@ -488,22 +609,27 @@ export async function buildCourseSettingXlsxPreviewWithSemester(
     options: { parserVersion: 'l2-parser-v1', includeRawValues: true },
   })
 
-  // 3. Build L3 structural summaries from parse result
-  // Re-parse with includeRawValues=false for preview row redaction
+  // 3. L6-B1: Parse again with includeRawValues=true to get raw text for UI.
+  // The raw values are used IN-MEMORY ONLY to populate `raw` fields in the
+  // authorized preview response. They are NEVER written to disk or logs.
   const parseResult = await parseCourseSettingXlsx(buffer, {
     artifactFilename: filename,
     parserVersion: 'l2-parser-v1',
-    includeRawValues: false,
+    includeRawValues: true,
   })
+
+  // 4. L6-B1: Read sheet names from xlsx (in-memory) for runtime UI display.
+  const sheetNames = await readXlsxSheetNames(buffer)
 
   const durationMs = Date.now() - t0
   const fieldSummary = buildFieldSummary(parseResult)
   const sourceEvidenceSummary = buildSourceEvidenceSummary(parseResult)
   const diagnosticsSummary = buildDiagnosticsSummary(parseResult)
-  const previewRows = buildPreviewRows(parseResult)
-  const manualReviewSummary = buildManualReviewSummary(previewRows)
+  const allPreviewRows = buildPreviewRows(parseResult, sheetNames)
+  const previewRows = allPreviewRows.slice(0, maxPreviewRows)
+  const manualReviewSummary = buildManualReviewSummary(allPreviewRows)
 
-  // 4. Load semester summary
+  // 5. Load semester summary
   const targetSemester = await loadSemesterSummary(targetSemesterId, activeSemesterId)
 
   return {
@@ -533,6 +659,14 @@ export async function buildCourseSettingXlsxPreviewWithSemester(
     diagnosticsSummary,
     previewRows,
     manualReviewSummary,
+    // L6-B1: raw preview metadata
+    rawPreview: {
+      enabled: true as const,
+      scope: 'authorized-admin-preview-only' as const,
+      returnedRows: previewRows.length,
+      maxPreviewRows,
+      committedArtifactsContainRaw: false as const,
+    },
     // L6-B: semester-scoped extensions
     targetSemester,
     dryRunSummary: {

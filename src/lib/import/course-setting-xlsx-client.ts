@@ -9,12 +9,46 @@
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
+export type CourseSettingXlsxPreviewRowRaw = {
+  courseName: string | null
+  teacherText: string | null
+  classText: string | null
+  remark: string | null
+  mergeRemark: string | null
+  majorName: string | null
+  weeklyHoursText: string | null
+  examTypeText: string | null
+}
+
+export type CourseSettingXlsxPreviewRowParsed = {
+  courseNameHash?: string
+  teacherRawHash?: string
+  classCountRawHash?: string
+  remarkHash?: string
+  mergeRemarkHash?: string
+  weeklyHours?: number | null
+  weeklyHoursClassification?: string | null
+  examType?: string | null
+  examTypeClassification?: string | null
+  diagnostics: string[]
+  classifications: Record<string, string | number | boolean | null>
+}
+
 export type CourseSettingXlsxPreviewRow = {
   sheetIndex: number
+  sheetName?: string
   sheetNameHash: string
   sourceRowIndex: number
   rowKind: string
   displayIndex: number
+  raw?: CourseSettingXlsxPreviewRowRaw
+  parsed: CourseSettingXlsxPreviewRowParsed
+  match?: {
+    courseMatchStatus?: string
+    teacherMatchStatusSummary?: Record<string, number>
+    classGroupMatchStatusSummary?: Record<string, number>
+    taskMatchStatus?: string
+  }
   courseNameHash?: string
   gradeMajorHash?: string
   classCountRawHash?: string
@@ -27,7 +61,7 @@ export type CourseSettingXlsxPreviewRow = {
   teacherAssignmentCandidateCount?: number
   examTypeClassification?: string
   weeklyHoursClassification?: string
-  weeklyHoursValue?: number
+  weeklyHoursValue?: number | null
   confidence: number
   warningCodes: string[]
   needsManualReview: boolean
@@ -98,6 +132,14 @@ export type CourseSettingXlsxPreviewResponse = {
   manualReviewSummary: {
     totalRowsNeedingReview: number
     reasons: Record<string, number>
+  }
+  // L6-B1: raw preview metadata
+  rawPreview?: {
+    enabled: true
+    scope: 'authorized-admin-preview-only'
+    returnedRows: number
+    maxPreviewRows: number
+    committedArtifactsContainRaw: false
   }
   // L6-B: semester-scoped extensions
   targetSemester?: CourseSettingXlsxSemesterSummary

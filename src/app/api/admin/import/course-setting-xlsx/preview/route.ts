@@ -131,6 +131,16 @@ export async function POST(request: NextRequest) {
       // ignore — will set isActiveSemester=false
     }
 
+    // ── L6-B1: optional maxPreviewRows from form ────────────────────────
+    const maxPreviewRowsRaw = formData.get('maxPreviewRows')
+    let maxPreviewRows = 50
+    if (maxPreviewRowsRaw != null && maxPreviewRowsRaw !== '') {
+      const parsed = Number(maxPreviewRowsRaw)
+      if (Number.isInteger(parsed) && parsed > 0 && parsed <= 200) {
+        maxPreviewRows = parsed
+      }
+    }
+
     // ── L6-B: Semester-aware preview with dry-run ──────────────────────
     const result = await buildCourseSettingXlsxPreviewWithSemester(
       buffer,
@@ -138,6 +148,7 @@ export async function POST(request: NextRequest) {
       targetSemesterId,
       activeSemesterId,
       requireExplicit,
+      { maxPreviewRows },
     )
 
     return NextResponse.json(result)

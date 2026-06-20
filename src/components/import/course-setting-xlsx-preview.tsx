@@ -215,9 +215,10 @@ export default function CourseSettingXlsxPreview() {
               <div>
                 <p className="font-medium">Preview Only - 此结果为只读预览</p>
                 <p className="text-xs text-amber-700 mt-1">
-                  不会修改数据库。解析耗时 {(result.parser.durationMs / 1000).toFixed(1)}s，
+                  当前仅为预览和人工核对，不会写入数据库。解析耗时 {(result.parser.durationMs / 1000).toFixed(1)}s，
                   识别 {result.workbookSummary.totalCourseRows} 条课程行，
                   {result.manualReviewSummary.totalRowsNeedingReview} 条需手动审核。
+                  {result.rawPreview && `本预览显示 ${result.rawPreview.returnedRows}/${result.rawPreview.maxPreviewRows} 条原文记录。`}
                 </p>
               </div>
             </div>
@@ -334,24 +335,32 @@ export default function CourseSettingXlsxPreview() {
           {/* Preview rows */}
           <div>
             <h4 className="text-xs font-semibold text-gray-700 mb-2">
-              课程行预览 (前 {Math.min(result.previewRows.length, 50)} 条)
+              课程行预览 (前 {result.rawPreview?.returnedRows ?? result.previewRows.length} 条)
             </h4>
+            {/* L6-B1: Admin-only notice */}
+            <p className="text-[10px] text-gray-500 mb-2">
+              下方表格显示 Excel 原文，仅供有权限的管理员进行导入核对；这些内容不会写入审计文档或提交到代码仓库。
+            </p>
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead className="bg-gray-50 text-gray-600">
                   <tr>
                     <th className="px-2 py-1.5 text-left">#</th>
                     <th className="px-2 py-1.5 text-left">Sheet</th>
-                    <th className="px-2 py-1.5 text-left">Row</th>
-                    <th className="px-2 py-1.5 text-left">课程名 Hash</th>
-                    <th className="px-2 py-1.5 text-left">班级分类</th>
-                    <th className="px-2 py-1.5 text-left">教师分类</th>
-                    <th className="px-2 py-1.5 text-right">Confidence</th>
+                    <th className="px-2 py-1.5 text-left">行号</th>
+                    <th className="px-2 py-1.5 text-left">课程名</th>
+                    <th className="px-2 py-1.5 text-left">教师</th>
+                    <th className="px-2 py-1.5 text-left">班级</th>
+                    <th className="px-2 py-1.5 text-left">周课时</th>
+                    <th className="px-2 py-1.5 text-left">考试类型</th>
+                    <th className="px-2 py-1.5 text-left">备注</th>
+                    <th className="px-2 py-1.5 text-left">合班备注</th>
+                    <th className="px-2 py-1.5 text-right">Conf</th>
                     <th className="px-2 py-1.5 text-left">审核</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {result.previewRows.slice(0, 50).map((row, idx) => (
+                  {(result.rawPreview?.returnedRows ? result.previewRows : result.previewRows.slice(0, 50)).map((row, idx) => (
                     <PreviewRow
                       key={idx}
                       row={row}
@@ -424,18 +433,28 @@ function PreviewRow({
         onClick={onToggle}
       >
         <td className="px-2 py-1.5 tabular-nums">{row.displayIndex}</td>
-        <td className="px-2 py-1.5 font-mono text-[10px]">{row.sheetNameHash}</td>
-        <td className="px-2 py-1.5 tabular-nums">{row.sourceRowIndex}</td>
-        <td className="px-2 py-1.5 font-mono text-[10px]">{row.courseNameHash ?? '-'}</td>
-        <td className="px-2 py-1.5">
-          <Badge variant={row.classCountClassification === 'other' ? 'destructive' : 'secondary'} className="text-[10px]">
-            {row.classCountClassification ?? '-'}
-          </Badge>
+        <td className="px-2 py-1.5 text-[10px] max-w-[80px] truncate" title={row.sheetName ?? row.sheetNameHash}>
+          {row.sheetName ?? row.sheetNameHash.slice(0, 8)}
         </td>
-        <td className="px-2 py-1.5">
-          <Badge variant={row.teacherAssignmentClassification === 'other' ? 'destructive' : 'secondary'} className="text-[10px]">
-            {row.teacherAssignmentClassification ?? '-'}
-          </Badge>
+        <td className="px-2 py-1.5 tabular-nums">{row.sourceRowIndex}</td>
+        <td className="px-2 py-1.5 text-[11px] max-w-[120px] truncate" title={row.raw?.courseName ?? ''}>
+          {row.raw?.courseName ?? '-'}
+        </td>
+        <td className="px-2 py-1.5 text-[11px] max-w-[140px] truncate" title={row.raw?.teacherText ?? ''}>
+          {row.raw?.teacherText ?? '-'}
+        </td>
+        <td className="px-2 py-1.5 text-[11px] max-w-[140px] truncate" title={row.raw?.classText ?? ''}>
+          {row.raw?.classText ?? '-'}
+        </td>
+        <td className="px-2 py-1.5 tabular-nums">{row.raw?.weeklyHoursText ?? row.weeklyHoursValue ?? '-'}</td>
+        <td className="px-2 py-1.5 text-[11px] max-w-[80px] truncate" title={row.raw?.examTypeText ?? ''}>
+          {row.raw?.examTypeText ?? '-'}
+        </td>
+        <td className="px-2 py-1.5 text-[11px] max-w-[120px] truncate" title={row.raw?.remark ?? ''}>
+          {row.raw?.remark ?? '-'}
+        </td>
+        <td className="px-2 py-1.5 text-[11px] max-w-[120px] truncate" title={row.raw?.mergeRemark ?? ''}>
+          {row.raw?.mergeRemark ?? '-'}
         </td>
         <td className="px-2 py-1.5 text-right tabular-nums">
           <span className={row.confidence < 0.8 ? 'text-amber-600 font-semibold' : ''}>
@@ -452,23 +471,35 @@ function PreviewRow({
       </tr>
       {expanded && (
         <tr className="bg-gray-50">
-          <td colSpan={8} className="px-4 py-2 text-[10px] text-gray-600">
+          <td colSpan={12} className="px-4 py-2 text-[10px] text-gray-600">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               <div>
-                <span className="font-medium">年级专业 Hash: </span>
-                <span className="font-mono">{row.gradeMajorHash ?? '-'}</span>
+                <span className="font-medium">年级专业 (raw): </span>
+                <span className="text-[11px]">{row.raw?.majorName ?? '-'}</span>
               </div>
               <div>
-                <span className="font-medium">班级人数 Hash: </span>
-                <span className="font-mono">{row.classCountRawHash ?? '-'}</span>
+                <span className="font-medium">课程名 Hash: </span>
+                <span className="font-mono">{row.courseNameHash ?? '-'}</span>
               </div>
               <div>
                 <span className="font-medium">教师 Hash: </span>
                 <span className="font-mono">{row.teacherRawHash ?? '-'}</span>
               </div>
               <div>
+                <span className="font-medium">班级 Hash: </span>
+                <span className="font-mono">{row.classCountRawHash ?? '-'}</span>
+              </div>
+              <div>
                 <span className="font-medium">备注 Hash: </span>
                 <span className="font-mono">{row.remarkHash ?? '-'}</span>
+              </div>
+              <div>
+                <span className="font-medium">合班备注 Hash: </span>
+                <span className="font-mono">{row.mergeRemarkHash ?? '-'}</span>
+              </div>
+              <div>
+                <span className="font-medium">Sheet Hash: </span>
+                <span className="font-mono">{row.sheetNameHash}</span>
               </div>
               {row.warningCodes.length > 0 && (
                 <div className="col-span-2 md:col-span-4">

@@ -1,0 +1,193 @@
+{
+  "stage": "L6-B1-XLSX-COURSE-SETTING-RAW-PREVIEW-DISPLAY",
+  "stageVersion": "1.0.0",
+  "status": "PASS",
+  "previewOnly": true,
+  "dbWritten": false,
+  "semesterWritten": false,
+  "activeSemesterSwitched": false,
+  "importBatchCreated": false,
+  "generatedAt": "2026-06-20T00:00:00.000Z",
+  "requirementChange": {
+    "originalL6B": "preview tables are fully redacted; no raw teacher/class/course/remark text",
+    "userChangeL6B1": "Excel preview should show raw teacher/class/course/remark text for manual review",
+    "scopeDecision": "Runtime authorized admin API/UI may include raw preview fields; committed docs/json/verify/logs/local artifacts/git remain sanitized"
+  },
+  "rawPreviewDisplay": {
+    "runtimeApiAllowed": true,
+    "browserUiAllowed": true,
+    "committedDocsAllowed": false,
+    "committedJsonAllowed": false,
+    "verifyOutputAllowed": false,
+    "localArtifactsAllowed": false,
+    "gitTrackedAllowed": false,
+    "consoleLogsAllowed": false,
+    "scope": "authorized-admin-preview-only",
+    "inMemoryOnly": true,
+    "maxPreviewRows": 50
+  },
+  "api": {
+    "route": "/api/admin/import/course-setting-xlsx/preview",
+    "method": "POST",
+    "permission": "import:manage",
+    "targetSemesterIdRequired": true,
+    "acceptsMaxPreviewRows": true,
+    "maxPreviewRowsCap": 200,
+    "previewOnly": true,
+    "canConfirm": false,
+    "canApply": false,
+    "setAsActive": false,
+    "targetSemesterRequired": true,
+    "rawFieldsReturned": [
+      "courseName",
+      "teacherText",
+      "classText",
+      "remark",
+      "mergeRemark",
+      "majorName",
+      "weeklyHoursText",
+      "examTypeText",
+      "sheetName"
+    ],
+    "parsedFieldsRetained": [
+      "courseNameHash",
+      "teacherRawHash",
+      "classCountRawHash",
+      "remarkHash",
+      "mergeRemarkHash",
+      "weeklyHours",
+      "examType",
+      "diagnostics",
+      "classifications"
+    ],
+    "metadata": {
+      "rawPreview": {
+        "enabled": true,
+        "scope": "authorized-admin-preview-only",
+        "returnedRows": "≤ maxPreviewRows",
+        "maxPreviewRows": "≤ 200",
+        "committedArtifactsContainRaw": false
+      }
+    },
+    "fullWorkbookNotReturned": true,
+    "previewRowsLimited": true
+  },
+  "ui": {
+    "rawCourseColumn": true,
+    "rawTeacherColumn": true,
+    "rawClassColumn": true,
+    "rawRemarkColumn": true,
+    "rawMergeRemarkColumn": true,
+    "rawSheetNameColumn": true,
+    "rawWeeklyHoursColumn": true,
+    "rawExamTypeColumn": true,
+    "rawRowIndexColumn": true,
+    "targetSemesterSelectorRetained": true,
+    "noActiveSwitchWarningRetained": true,
+    "adminOnlyRawPreviewNotice": true,
+    "createNewSemesterStillPending": true,
+    "confirmApplyButtons": false,
+    "switchActiveSemesterButton": false,
+    "previewOnlyLabelRetained": true
+  },
+  "safety": {
+    "schemaChanged": false,
+    "migrationAdded": false,
+    "dbCountsUnchanged": true,
+    "activeSemesterSwitched": false,
+    "importBatchCreated": false,
+    "teachingTaskCreated": false,
+    "teachingTaskClassCreated": false,
+    "courseCreated": false,
+    "teacherCreated": false,
+    "classGroupCreated": false
+  },
+  "privacy": {
+    "committedRawTeacherNames": false,
+    "committedRawClassNames": false,
+    "committedRawCourseNames": false,
+    "committedRawRemarks": false,
+    "committedRawSheetNames": false,
+    "consoleRawLogging": false,
+    "localArtifactsRaw": false,
+    "xlsxCommitted": false,
+    "devDbCommitted": false,
+    "backupCommitted": false,
+    "tempOrUploadsCommitted": false
+  },
+  "dbProof": {
+    "countsUnchanged": true,
+    "semesterCount": 3,
+    "courseCount": 104,
+    "teacherCount": 84,
+    "classGroupCount": 36,
+    "teachingTaskCount": 308,
+    "teachingTaskClassCount": 446,
+    "importBatchCount": 38,
+    "scheduleSlotCount": 440,
+    "scheduleAdjustmentCount": 67
+  },
+  "isolation": {
+    "oldWordParserChanged": false,
+    "oldWordImportRouteChanged": false,
+    "importConfirmChanged": false,
+    "importRollbackChanged": false,
+    "schemaChanged": false,
+    "schedulerScoreChanged": false,
+    "k22ExpectedChanged": false,
+    "l2ParserChanged": false,
+    "l4MapperChanged": false,
+    "l5HelperChanged": false
+  },
+  "stageAwareUpdates": {
+    "modifiedFiles": [
+      "scripts/verify-xlsx-course-setting-preview-l3.ts (N20 now allows includeRawValues=true; no other checks weakened)",
+      "scripts/verify-xlsx-course-setting-target-semester-and-full-review-l6-0.ts (N32 still checks no raw in committed artifacts; no change required)"
+    ],
+    "reason": "L6-B1 allows runtime authorized API/UI to expose raw fields, while committed artifacts remain sanitized",
+    "noBlanketPass": true,
+    "committedDocsJsonRawProhibitionPreserved": true,
+    "noDbWriteChecksPreserved": true,
+    "noSchemaMigrationChecksPreserved": true,
+    "forbiddenFilesChecksPreserved": true,
+    "oldWordImportIsolationPreserved": true
+  },
+  "browserValidation": {
+    "status": "PENDING",
+    "checklist": [
+      "1. 启动 dev server",
+      "2. ADMIN 登录",
+      "3. 打开 /admin/import",
+      "4. Excel preview 区仍有"导入目标学期"选择器",
+      "5. 不选择学期时不能解析",
+      "6. 选择已有学期",
+      "7. 解耦提示仍显示: 不会自动切换系统当前学期",
+      "8. 上传 .xlsx 样本",
+      "9. 点击解析预览",
+      "10. 成功显示 target semester summary",
+      "11. 成功显示 workbook / dry-run / match / manual review summary",
+      "12. 预览表格显示真实课程名",
+      "13. 预览表格显示真实教师原文",
+      "14. 预览表格显示真实班级 / 班级数量原文",
+      "15. 预览表格显示真实备注",
+      "16. 预览表格显示真实合班备注",
+      "17. 预览表格显示 sheet / 行号",
+      "18. 预览表格仍显示 diagnostics / match status",
+      "19. 页面显示"原文仅供管理员核对，不会写入审计文档或提交仓库"提示",
+      "20. 页面没有 Excel 确认导入 / 应用 / 写入 DB / 创建教学任务 / 创建 ImportBatch 按钮",
+      "21. 页面没有切换当前学期按钮",
+      "22. .docx 仍被拒绝",
+      "23. 旧 Word import 区域不受影响",
+      "24. Browser console 无 React error",
+      "25. Network response 可以包含 raw preview fields (本阶段允许行为)",
+      "26. Network response 不包含完整 raw workbook beyond previewRows limit",
+      "27. 验证期间 DB counts 不变"
+    ]
+  },
+  "validation": {
+    "verifyScript": "scripts/verify-xlsx-course-setting-raw-preview-display-l6-b1.ts",
+    "checksTotal": 82,
+    "checksPass": 82,
+    "checksFail": 0
+  }
+}

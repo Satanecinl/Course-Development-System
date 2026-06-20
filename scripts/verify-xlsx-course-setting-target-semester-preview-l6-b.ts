@@ -180,7 +180,9 @@ async function main() {
   chk(40, uiContent.includes('dryRunSummary') || uiContent.includes('Dry-Run'), 'UI shows dry-run summary section')
   chk(41, uiContent.includes('matchSummary'), 'UI mentions match summary')
   chk(42, uiContent.includes('targetSemester') && uiContent.includes('isActive'), 'UI displays target semester info with isActive badge')
-  chk(43, !uiContent.includes('确认导入') && !uiContent.includes('应用导入') && !uiContent.includes('写入数据库'), 'UI does not show confirm/apply/write DB button')
+  // L6-B1 stage-aware: '不会写入数据库' (negative preview-only statement) is allowed
+  const strippedWriteL6b = uiContent.replace(/不会写入数据库|不写入数据库|未写入数据库|不要写入数据库/g, 'NEG')
+  chk(43, !uiContent.includes('确认导入') && !uiContent.includes('应用导入') && !/写入数据库/.test(strippedWriteL6b), 'UI does not show confirm/apply/write DB button (negative preview-only allowed)')
   chk(44, !uiContent.includes('切换当前学期') || !uiContent.includes('激活学期'), 'UI does not show active semester switch button')
   chk(45, uiContent.includes('Preview Only') || uiContent.includes('previewOnly'), 'UI maintains preview-only label')
 

@@ -182,13 +182,17 @@ check(23, uiExists, 'UI component exists', UI_PATH)
 if (uiExists && uiContent) {
   check(24, /['"]use client['"]/.test(uiContent), "UI component is 'use client'")
   check(25, /Excel\s*课程设置识别预览/.test(uiContent), 'UI contains Excel 课程设置识别预览 text')
-  check(26, /Preview Only|不写入数据库/.test(uiContent), 'UI contains preview-only warning')
+  check(26, /Preview Only|不写入数据库|不会写入/.test(uiContent), 'UI contains preview-only warning')
   // N27: must NOT contain 确认导入 / 应用 / 写入数据库 as button text
+  // L6-B1 stage-aware: '不会写入数据库' / '不写入数据库' (negative preview-only statement) is allowed.
+  // Only positive button text 写入数据库 (without leading 不/未/不会/不要) is forbidden.
   const hasConfirmButton = /确认导入/.test(uiContent)
   const hasApplyButton = /应用(?!课程|系统|设置|规则)/.test(uiContent)
-  const hasWriteButton = /写入数据库/.test(uiContent)
+  // Strip negation patterns before checking
+  const strippedForWrite = uiContent.replace(/不会写入数据库|不写入数据库|未写入数据库|不要写入数据库/g, 'NEG')
+  const hasWriteButton = /写入数据库/.test(strippedForWrite)
   check(27, !hasConfirmButton && !hasApplyButton && !hasWriteButton,
-    'UI does not expose confirm/apply/write buttons',
+    'UI does not expose confirm/apply/write buttons (L6-B1 negative preview-only statement allowed)',
     'confirm=' + hasConfirmButton + ' apply=' + hasApplyButton + ' write=' + hasWriteButton)
   check(28, /手动审核|manualReview/.test(uiContent), 'UI displays manual review summary')
   check(29, /warning|badge|amber|Warning/.test(uiContent), 'UI displays warning indicators')
