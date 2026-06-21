@@ -150,3 +150,5 @@ The list reflects local history at the time of K36-A3 and does not assert remote
 - L6-E1 Excel 课程设置人工处理 UI 已完成：审核视图支持页面内处理缺课程/教师/班级/周课时/考试类型/歧义项，支持忽略行和导出 redacted resolution draft；仍不写 DB、不创建 ImportBatch/TeachingTask/TeachingTaskClass，不生成 apply list。
 
 - L6-E1A 教职工参考库只读审计完成：对课程设置 Excel 教师原文、当前 Teacher 表和用户提供的教职工参考库做只读匹配统计，输出脱敏 aggregate 报告；未写 DB，未创建 Teacher/ImportBatch/TeachingTask。
+
+- L6-E1B Teacher 受控同步计划已完成：基于课程设置 Excel、当前 Teacher 表和教职工 Staff DB 生成 dry-run 同步候选统计与本地未脱敏 raw 明细；未写 DB、未创建 Teacher/ImportBatch/TeachingTask，committed docs/json 仅含 aggregate。

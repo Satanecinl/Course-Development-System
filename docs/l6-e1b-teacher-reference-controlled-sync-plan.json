@@ -1,0 +1,94 @@
+{
+  "stage": "L6-E1B-TEACHER-REFERENCE-CONTROLLED-SYNC-PLAN",
+  "dryRunOnly": true,
+  "dbWritten": false,
+  "teacherCreated": false,
+  "source": {
+    "courseXlsxExists": true,
+    "staffDbExists": true,
+    "staffTableName": "职员",
+    "staffRecordCount": 436,
+    "teacherTableCount": 84,
+    "excelTeacherRawEntries": 1160,
+    "excelUniqueNormalizedTeachers": 357
+  },
+  "plan": {
+    "uniqueSyncCandidates": 357,
+    "uniqueSafeCreateCandidates": 103,
+    "uniqueNeedsManualReviewCandidates": 35,
+    "uniqueSkipCandidates": 147,
+    "alreadyExistsCandidates": 71,
+    "duplicateStaffNameGroups": 10,
+    "invalidTokens": 1
+  },
+  "schema": {
+    "teacherFields": [
+      "id",
+      "name"
+    ],
+    "minimumCreateFieldsSupported": true,
+    "proposedWriteFields": [
+      "name"
+    ],
+    "unsupportedStaffFields": [
+      "employeeNo",
+      "department",
+      "position",
+      "rank",
+      "phone",
+      "officePhone"
+    ],
+    "schemaChangeRequired": false
+  },
+  "localRawArtifact": {
+    "generated": true,
+    "path": "temp/local-artifacts/l6-e1b/teacher-reference-controlled-sync-plan.raw.local.json",
+    "sha256": "eff6f6913ec00cef3c72b43d4ae62710bb67810136158e12ff3ace0b4e14beac",
+    "gitTracked": false,
+    "containsRawPersonalData": true
+  },
+  "risk": {
+    "high": [
+      "103 unique safe candidates — bulk creation needed"
+    ],
+    "medium": [
+      "35 candidates need manual review"
+    ],
+    "low": [
+      "10 duplicate name groups in staff DB"
+    ]
+  },
+  "dbCounts": {
+    "before": {
+      "teacher": 84,
+      "course": 104,
+      "classGroup": 36,
+      "teachingTask": 308,
+      "teachingTaskClass": 446,
+      "importBatch": 38,
+      "scheduleSlot": 440,
+      "scheduleAdjustment": 67,
+      "semester": 3,
+      "activeSemesterId": 1
+    },
+    "after": {
+      "teacher": 84,
+      "course": 104,
+      "classGroup": 36,
+      "teachingTask": 308,
+      "teachingTaskClass": 446,
+      "importBatch": 38,
+      "scheduleSlot": 440,
+      "scheduleAdjustment": 67,
+      "semester": 3,
+      "activeSemesterId": 1
+    },
+    "unchanged": true
+  },
+  "privacy": {
+    "committedRawTeacherNames": false,
+    "committedRawPhoneNumbers": false,
+    "committedRawEmployeeNumbers": false,
+    "committedRawDepartments": false
+  }
+}
