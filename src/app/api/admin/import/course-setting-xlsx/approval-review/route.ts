@@ -357,6 +357,7 @@ export async function POST(request: NextRequest) {
         mergeRemark: parsedRow.mergeRemark?.normalized ?? null,
         weeklyHoursText,
         examTypeText,
+        majorName: parsedRow.gradeMajor?.normalized ?? null,
       })
     }
 

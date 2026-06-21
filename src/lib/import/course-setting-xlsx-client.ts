@@ -740,6 +740,8 @@ export type CourseSettingPartialImportPlanRow = {
   resolvedClassGroupIds: number[]
   plannedClassGroupAction: 'useExisting' | 'createCandidate' | 'unresolved'
   plannedClassGroupCandidateNames: string[]
+  majorNameRaw: string | null
+  majorNameHash: string | null
   weeklyHours: number | null
   examType: '考试' | '考查' | '' | null
   ambiguousMappingConfirmed: boolean

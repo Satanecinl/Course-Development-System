@@ -87,6 +87,10 @@ export type CourseSettingPartialImportPlanRow = {
   resolvedClassGroupIds: number[]
   plannedClassGroupAction: 'useExisting' | 'createCandidate' | 'unresolved'
   plannedClassGroupCandidateNames: string[]
+  /** MajorName (专业) from the Excel row, if available. Runtime raw display
+   *  only — the hash is what gets into the exported redacted plan. */
+  majorNameRaw: string | null
+  majorNameHash: string | null
   weeklyHours: number | null
   examType: '考试' | '考查' | '' | null
   ambiguousMappingConfirmed: boolean
@@ -672,6 +676,9 @@ export const buildCourseSettingPartialImportPlan = (
     }
 
     // ── Importable row ────────────────────────────────────────────────
+    const majorNameRaw = reviewRow.raw.majorName ?? null
+    const majorNameHash = majorNameRaw ? shortHash(majorNameRaw, 12) : null
+
     const planRow: CourseSettingPartialImportPlanRow = {
       approvalItemId,
       sheetIndex: reviewRow.source.sheetIndex,
@@ -686,6 +693,8 @@ export const buildCourseSettingPartialImportPlan = (
       resolvedClassGroupIds,
       plannedClassGroupAction,
       plannedClassGroupCandidateNames,
+      majorNameRaw,
+      majorNameHash,
       weeklyHours,
       examType,
       ambiguousMappingConfirmed,

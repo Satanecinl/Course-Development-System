@@ -504,6 +504,33 @@ export default function CourseSettingXlsxPreview() {
     return Array.from(set).sort()
   }, [reviewResult])
 
+  // L6-E2B: build raw context map from reviewResult.rows for expanded resolution context
+  type ReviewRawContext = { courseName: string | null; teacherText: string | null; classText: string | null; remark: string | null; mergeRemark: string | null; weeklyHoursText: string | null; examTypeText: string | null; majorName: string | null; sheetIndex: number; sheetName: string | null; sourceRowIndex: number; suggestedAction: string; diagnosticCodes: string[]; confidence: number }
+  const reviewRawMap = useMemo(() => {
+    const map = new Map<string, ReviewRawContext | null>()
+    if (reviewResult) {
+      for (const row of reviewResult.rows) {
+        map.set(row.approvalItemId, {
+          courseName: row.raw.courseName ?? null,
+          teacherText: row.raw.teacherText ?? null,
+          classText: row.raw.classText ?? null,
+          remark: row.raw.remark ?? null,
+          mergeRemark: row.raw.mergeRemark ?? null,
+          weeklyHoursText: row.raw.weeklyHoursText ?? null,
+          examTypeText: row.raw.examTypeText ?? null,
+          majorName: (row.raw as Record<string, unknown>)['majorName'] as string | null ?? null,
+          sheetIndex: row.source.sheetIndex,
+          sheetName: row.source.sheetName,
+          sourceRowIndex: row.source.sourceRowIndex,
+          suggestedAction: row.match.suggestedAction,
+          diagnosticCodes: row.match.diagnosticCodes,
+          confidence: row.match.confidence,
+        })
+      }
+    }
+    return map
+  }, [reviewResult])
+
   // L6-D2: filtered rows (sliced for display, full set held in state)
   const filteredRows = useMemo(() => {
     if (!reviewResult) return [] as CourseSettingApprovalReviewUiRow[]
@@ -861,6 +888,7 @@ export default function CourseSettingXlsxPreview() {
           toggleResolutionRow={toggleResolutionRow}
           filteredResolutionItems={filteredResolutionItems}
           onExportDraft={handleExportResolutionDraft}
+          reviewRawMap={reviewRawMap}
           partialPlanLoading={partialPlanLoading}
           partialPlanError={partialPlanError}
           onGeneratePartialPlan={() => void handleGeneratePartialPlan()}
@@ -1746,6 +1774,7 @@ function PartialPlanImportableTable({ rows }: { rows: CourseSettingPartialImport
             <th className="px-2 py-1.5 text-left">审核项ID</th>
             <th className="px-2 py-1.5 text-right">Sheet</th>
             <th className="px-2 py-1.5 text-right">行号</th>
+            <th className="px-2 py-1.5 text-left">专业</th>
             <th className="px-2 py-1.5 text-left">课程</th>
             <th className="px-2 py-1.5 text-left">教师</th>
             <th className="px-2 py-1.5 text-left">班级</th>
@@ -1760,6 +1789,7 @@ function PartialPlanImportableTable({ rows }: { rows: CourseSettingPartialImport
               <td className="px-2 py-1.5 font-mono text-[10px]">{r.approvalItemId.slice(0, 14)}…</td>
               <td className="px-2 py-1.5 text-right tabular-nums">{r.sheetIndex}</td>
               <td className="px-2 py-1.5 text-right tabular-nums">{r.sourceRowIndex}</td>
+              <td className="px-2 py-1.5 text-[10px]">{r.majorNameRaw ?? '—'}</td>
               <td className="px-2 py-1.5">
                 {r.plannedCourseAction === 'useExisting' && r.resolvedCourseId != null
                   ? <span className="text-green-700">已有 (ID:{r.resolvedCourseId})</span>
@@ -2013,6 +2043,8 @@ type ResolutionSectionProps = {
   toggleResolutionRow: (id: string) => void
   filteredResolutionItems: CourseSettingManualResolutionItem[]
   onExportDraft: () => void
+  // L6-E2B: row raw context map for expanded resolution context
+  reviewRawMap: Map<string, { courseName: string | null; teacherText: string | null; classText: string | null; remark: string | null; mergeRemark: string | null; weeklyHoursText: string | null; examTypeText: string | null; majorName: string | null; sheetIndex: number; sheetName: string | null; sourceRowIndex: number; suggestedAction: string; diagnosticCodes: string[]; confidence: number } | null>
   // L6-E2: plan trigger
   partialPlanLoading: boolean
   partialPlanError: string | null
@@ -2030,6 +2062,7 @@ function ResolutionSection({
   toggleResolutionRow,
   filteredResolutionItems,
   onExportDraft,
+  reviewRawMap,
   partialPlanLoading,
   partialPlanError,
   onGeneratePartialPlan,
@@ -2154,6 +2187,7 @@ function ResolutionSection({
                     key={item.approvalItemId}
                     item={item}
                     resolutionOptions={resolutionOptions}
+                    reviewRawMap={reviewRawMap}
                     isExpanded={isExpanded}
                     onToggle={() => toggleResolutionRow(item.approvalItemId)}
                     onUpdate={(patch) => updateItem(item.approvalItemId, patch)}
@@ -2171,20 +2205,23 @@ function ResolutionSection({
 function ResolutionItemRow({
   item,
   resolutionOptions,
+  reviewRawMap,
   isExpanded,
   onToggle,
   onUpdate,
 }: {
   item: CourseSettingManualResolutionItem
   resolutionOptions: CourseSettingResolutionOptionsResponse | null
+  reviewRawMap: Map<string, { courseName: string | null; teacherText: string | null; classText: string | null; remark: string | null; mergeRemark: string | null; weeklyHoursText: string | null; examTypeText: string | null; majorName: string | null; sheetIndex: number; sheetName: string | null; sourceRowIndex: number; suggestedAction: string; diagnosticCodes: string[]; confidence: number } | null>
   isExpanded: boolean
   onToggle: () => void
   onUpdate: (patch: Record<string, unknown>) => void
 }) {
   const truncatedId = item.approvalItemId.length > 16 ? item.approvalItemId.slice(0, 16) + '…' : item.approvalItemId
-  const hasCourseMissing = item.baseDiagnosticCodes.includes('COURSE_MISSING')
+  const ctx = reviewRawMap.get(item.approvalItemId)
+  const hasCourseMissing = item.baseDiagnosticCodes.includes('COURSE_MISSING') || item.baseDiagnosticCodes.includes('COURSE_AMBIGUOUS')
   const hasTeacherMissing = item.baseDiagnosticCodes.includes('TEACHER_MISSING') || item.baseDiagnosticCodes.includes('TEACHER_BLANK')
-  const hasClassMissing = item.baseDiagnosticCodes.includes('CLASS_GROUP_MISSING')
+  const hasClassMissing = item.baseDiagnosticCodes.includes('CLASS_GROUP_MISSING') || item.baseDiagnosticCodes.includes('CLASS_GROUP_AMBIGUOUS')
   const hasHoursInvalid = item.baseDiagnosticCodes.includes('WEEKLY_HOURS_NON_NUMERIC')
   const hasExamInvalid = item.baseDiagnosticCodes.includes('EXAM_TYPE_OTHER')
   const hasAmbiguous = item.baseDiagnosticCodes.includes('MERGE_REMARK_AMBIGUOUS')
@@ -2229,7 +2266,7 @@ function ResolutionItemRow({
             {item.baseDiagnosticCodes.length === 0 ? (
               <span className="text-gray-400">-</span>
             ) : (
-              item.baseDiagnosticCodes.slice(0, 3).map((code) => (
+              item.baseDiagnosticCodes.map((code) => (
                 <Badge key={code} variant="outline" className="text-[9px] bg-red-50 text-red-600 border-red-200">
                   {formatDiagnosticCodeLabel(code)}
                 </Badge>
@@ -2256,6 +2293,42 @@ function ResolutionItemRow({
         <tr>
           <td colSpan={7} className="px-4 py-3 bg-indigo-50/50 border-t border-indigo-100">
             <div className="space-y-3 text-[11px]">
+              {/* Row context header — full row info for multi-diagnostic rows */}
+              {ctx && (
+                <div className="bg-indigo-100/50 rounded-md p-2.5 space-y-1 text-[10px]" data-l6e1-row-context={item.approvalItemId}>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-x-3 gap-y-0.5">
+                    <div><span className="opacity-70">审核项ID: </span><span className="font-mono text-[9px]">{item.approvalItemId}</span></div>
+                    <div><span className="opacity-70">工作表: </span>{ctx.sheetName ?? `Sheet ${ctx.sheetIndex}`}</div>
+                    <div><span className="opacity-70">Excel 行号: </span>{ctx.sourceRowIndex}</div>
+                    <div><span className="opacity-70">置信度: </span>{ctx.confidence.toFixed(2)}</div>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-x-3 gap-y-0.5">
+                    <div><span className="opacity-70">专业: </span>{ctx.majorName ?? '—'}</div>
+                    <div className="truncate max-w-[220px]" title={ctx.courseName ?? ''}><span className="opacity-70">课程: </span>{ctx.courseName ?? '—'}</div>
+                    <div className="truncate max-w-[220px]" title={ctx.teacherText ?? ''}><span className="opacity-70">教师: </span>{ctx.teacherText ?? '—'}</div>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-x-3 gap-y-0.5">
+                    <div className="truncate max-w-[220px]" title={ctx.classText ?? ''}><span className="opacity-70">班级: </span>{ctx.classText ?? '—'}</div>
+                    <div><span className="opacity-70">周课时: </span>{ctx.weeklyHoursText ?? '—'}</div>
+                    <div><span className="opacity-70">考试类型: </span>{ctx.examTypeText ?? '—'}</div>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-2 gap-x-3 gap-y-0.5">
+                    <div className="truncate max-w-[300px]" title={ctx.remark ?? ''}><span className="opacity-70">备注: </span>{ctx.remark ?? '—'}</div>
+                    <div className="truncate max-w-[300px]" title={ctx.mergeRemark ?? ''}><span className="opacity-70">合班备注: </span>{ctx.mergeRemark ?? '—'}</div>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-2 gap-x-3 gap-y-0.5">
+                    <div className="truncate max-w-[300px]"><span className="opacity-70">建议处理: </span>{ctx.suggestedAction}</div>
+                    <div className="flex flex-wrap gap-1">
+                      <span className="opacity-70">诊断: </span>
+                      {item.baseDiagnosticCodes.map((code) => (
+                        <Badge key={code} variant="outline" className="text-[9px] bg-red-50 text-red-600 border-red-200">
+                          {formatDiagnosticCodeLabel(code)}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
               {/* Course resolution */}
               {hasCourseMissing && (
                 <div className="space-y-1" data-l6e1-course-controls={item.approvalItemId}>

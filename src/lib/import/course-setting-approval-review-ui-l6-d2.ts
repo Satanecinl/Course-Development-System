@@ -107,6 +107,7 @@ export type CourseSettingApprovalReviewUiRaw = {
   mergeRemark: string | null
   weeklyHoursText?: string | null
   examTypeText?: string | null
+  majorName?: string | null
 }
 
 /**
@@ -283,6 +284,7 @@ const emptyRaw = (): CourseSettingApprovalReviewUiRaw => ({
   mergeRemark: null,
   weeklyHoursText: null,
   examTypeText: null,
+  majorName: null,
 })
 
 /**
@@ -308,6 +310,7 @@ const mergeRaw = (
       override.examTypeText !== undefined
         ? override.examTypeText
         : base.examTypeText,
+    majorName: override.majorName !== undefined ? override.majorName : base.majorName,
   }
 }
 
