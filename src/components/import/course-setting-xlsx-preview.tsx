@@ -50,6 +50,17 @@ import {
   type CourseSettingApprovalReviewUiRow,
   type CourseSettingApprovalReviewUiDecisionValue,
 } from '@/lib/import/course-setting-xlsx-client'
+import {
+  APPROVAL_REVIEW_DECISION_OPTIONS,
+  APPROVAL_REVIEW_BLOCKED_OPTIONS,
+  APPROVAL_REVIEW_FILTER_LABELS,
+  APPROVAL_REVIEW_SUGGESTED_ACTION_LABELS,
+  APPROVAL_REVIEW_DIAGNOSTIC_LABELS,
+  formatSuggestedActionLabel,
+  formatDiagnosticCodeLabel,
+  formatMatchStatusLabel,
+  formatConfidence,
+} from '@/lib/import/course-setting-approval-review-localization'
 
 // L6-C: targetSemester mode (existing vs createNew)
 type TargetSemesterMode = 'existing' | 'createNew'
@@ -1100,16 +1111,16 @@ function ReviewSection(props: {
 
       {/* Summary cards (6) + autoSafe badge */}
       <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
-        <ReviewSummaryCard label="total" value={s.totalItems} tone="default" />
-        <ReviewSummaryCard label="pending" value={s.pendingItems} tone="muted" />
-        <ReviewSummaryCard label="approved" value={s.approvedItems} tone="success" />
-        <ReviewSummaryCard label="rejected" value={s.rejectedItems} tone="danger" />
-        <ReviewSummaryCard label="needsReview" value={s.needsReviewItems} tone="warn" />
-        <ReviewSummaryCard label="blocked" value={s.blockedItems} tone="danger" />
+        <ReviewSummaryCard label="总计" value={s.totalItems} tone="default" />
+        <ReviewSummaryCard label="待审核" value={s.pendingItems} tone="muted" />
+        <ReviewSummaryCard label="通过" value={s.approvedItems} tone="success" />
+        <ReviewSummaryCard label="拒绝" value={s.rejectedItems} tone="danger" />
+        <ReviewSummaryCard label="需复核" value={s.needsReviewItems} tone="warn" />
+        <ReviewSummaryCard label="阻塞" value={s.blockedItems} tone="danger" />
       </div>
       <div className="text-[11px] text-gray-500">
-        autoSafeCandidates: <Badge variant="outline" className="text-[10px]">{s.autoSafeCandidates}</Badge>
-        <span className="ml-2 opacity-70">(informational only, 不参与本次导出统计)</span>
+        自动安全候选：{' '}<Badge variant="outline" className="text-[10px]">{s.autoSafeCandidates}</Badge>
+        <span className="ml-2 opacity-70">(仅供参考，不会自动通过)</span>
       </div>
 
       {/* Live counters + export */}
@@ -1117,10 +1128,10 @@ function ReviewSection(props: {
         <div className="flex items-center justify-between flex-wrap gap-2 bg-white border border-gray-200 rounded-md p-2">
           <div className="text-xs text-gray-700" data-l6d2-counters>
             共 <span className="font-semibold tabular-nums">{liveCounters.total}</span> 条 /
-            pending <span className="font-semibold tabular-nums">{liveCounters.pending}</span> /
-            approved <span className="font-semibold tabular-nums">{liveCounters.approved}</span> /
-            rejected <span className="font-semibold tabular-nums">{liveCounters.rejected}</span> /
-            needsReview <span className="font-semibold tabular-nums">{liveCounters.needsReview}</span>
+            待审核 <span className="font-semibold tabular-nums">{liveCounters.pending}</span> /
+            通过 <span className="font-semibold tabular-nums">{liveCounters.approved}</span> /
+            拒绝 <span className="font-semibold tabular-nums">{liveCounters.rejected}</span> /
+            需复核 <span className="font-semibold tabular-nums">{liveCounters.needsReview}</span>
             <span className="ml-2 text-gray-400">
               (显示 {filteredRows.length} / {liveCounters.total} 条)
             </span>
@@ -1135,7 +1146,7 @@ function ReviewSection(props: {
       {/* Sticky filter row */}
       <div className="sticky top-0 z-10 bg-white border border-gray-200 rounded-md p-2 flex flex-wrap items-center gap-2">
         <div className="flex items-center gap-1">
-          <Label className="text-[11px] text-gray-600">decision</Label>
+          <Label className="text-[11px] text-gray-600">{APPROVAL_REVIEW_FILTER_LABELS.decision}</Label>
           <select
             value={filterDecision}
             onChange={(e) =>
@@ -1144,54 +1155,58 @@ function ReviewSection(props: {
             className="border border-gray-300 rounded px-2 py-0.5 text-xs bg-white"
             data-l6d2-filter="decision"
           >
-            <option value="all">全部</option>
-            <option value="pending">pending</option>
-            <option value="approved">approved</option>
-            <option value="rejected">rejected</option>
-            <option value="needsReview">needsReview</option>
+            <option value="all">{APPROVAL_REVIEW_FILTER_LABELS.all}</option>
+            {APPROVAL_REVIEW_DECISION_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
           </select>
         </div>
         <div className="flex items-center gap-1">
-          <Label className="text-[11px] text-gray-600">blocked</Label>
+          <Label className="text-[11px] text-gray-600">{APPROVAL_REVIEW_FILTER_LABELS.blocked}</Label>
           <select
             value={filterBlocked}
             onChange={(e) => setFilterBlocked(e.target.value as 'all' | 'blocked' | 'notBlocked')}
             className="border border-gray-300 rounded px-2 py-0.5 text-xs bg-white"
             data-l6d2-filter="blocked"
           >
-            <option value="all">全部</option>
-            <option value="blocked">blocked only</option>
-            <option value="notBlocked">not blocked only</option>
+            <option value="all">{APPROVAL_REVIEW_FILTER_LABELS.all}</option>
+            {APPROVAL_REVIEW_BLOCKED_OPTIONS.filter((o) => o.value !== 'all').map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
           </select>
         </div>
         <div className="flex items-center gap-1">
-          <Label className="text-[11px] text-gray-600">suggestedAction</Label>
+          <Label className="text-[11px] text-gray-600">{APPROVAL_REVIEW_FILTER_LABELS.suggestedAction}</Label>
           <select
             value={filterSuggestedAction}
             onChange={(e) => setFilterSuggestedAction(e.target.value)}
             className="border border-gray-300 rounded px-2 py-0.5 text-xs bg-white"
             data-l6d2-filter="suggestedAction"
           >
-            <option value="all">全部</option>
+            <option value="all">{APPROVAL_REVIEW_FILTER_LABELS.all}</option>
             {suggestedActionOptions.map((a) => (
               <option key={a} value={a}>
-                {a}
+                {APPROVAL_REVIEW_SUGGESTED_ACTION_LABELS[a] ?? a}
               </option>
             ))}
           </select>
         </div>
         <div className="flex items-center gap-1">
-          <Label className="text-[11px] text-gray-600">diagnostic</Label>
+          <Label className="text-[11px] text-gray-600">{APPROVAL_REVIEW_FILTER_LABELS.diagnostic}</Label>
           <select
             value={filterDiagnosticCode}
             onChange={(e) => setFilterDiagnosticCode(e.target.value)}
             className="border border-gray-300 rounded px-2 py-0.5 text-xs bg-white"
             data-l6d2-filter="diagnostic"
           >
-            <option value="all">全部</option>
+            <option value="all">{APPROVAL_REVIEW_FILTER_LABELS.all}</option>
             {diagnosticCodeOptions.map((c) => (
               <option key={c} value={c}>
-                {c}
+                {APPROVAL_REVIEW_DIAGNOSTIC_LABELS[c] ?? c}
               </option>
             ))}
           </select>
@@ -1202,7 +1217,7 @@ function ReviewSection(props: {
             type="text"
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            placeholder="搜索 courseName / teacherText / classText / remark / mergeRemark"
+            placeholder={APPROVAL_REVIEW_FILTER_LABELS.searchPlaceholder}
             className="text-xs h-7"
             data-l6d2-filter="search"
           />
@@ -1214,9 +1229,9 @@ function ReviewSection(props: {
         <table className="w-full text-xs">
           <thead className="bg-gray-50 text-gray-600">
             <tr>
-              <th className="px-2 py-1.5 text-left">approvalItemId</th>
-              <th className="px-2 py-1.5 text-left">sheet</th>
-              <th className="px-2 py-1.5 text-left">row</th>
+              <th className="px-2 py-1.5 text-left">审核项ID</th>
+              <th className="px-2 py-1.5 text-left">工作表</th>
+              <th className="px-2 py-1.5 text-left">行号</th>
               <th className="px-2 py-1.5 text-left">课程名</th>
               <th className="px-2 py-1.5 text-left">教师</th>
               <th className="px-2 py-1.5 text-left">班级</th>
@@ -1224,11 +1239,11 @@ function ReviewSection(props: {
               <th className="px-2 py-1.5 text-left">考试类型</th>
               <th className="px-2 py-1.5 text-left">备注</th>
               <th className="px-2 py-1.5 text-left">合班备注</th>
-              <th className="px-2 py-1.5 text-left">diagnostics</th>
-              <th className="px-2 py-1.5 text-left">suggestedAction</th>
-              <th className="px-2 py-1.5 text-left">match</th>
-              <th className="px-2 py-1.5 text-right">Conf</th>
-              <th className="px-2 py-1.5 text-left">decision</th>
+              <th className="px-2 py-1.5 text-left">诊断</th>
+              <th className="px-2 py-1.5 text-left">建议处理</th>
+              <th className="px-2 py-1.5 text-left">匹配状态</th>
+              <th className="px-2 py-1.5 text-right">置信度</th>
+              <th className="px-2 py-1.5 text-left">审核决定</th>
             </tr>
           </thead>
           <tbody>
@@ -1301,10 +1316,11 @@ function ReviewRow({
 }) {
   const truncatedId =
     row.approvalItemId.length > 14 ? row.approvalItemId.slice(0, 14) + '…' : row.approvalItemId
-  const matchStatus =
+  const matchStatus = formatMatchStatusLabel(
     [row.match.taskMatchStatus, row.match.courseMatchStatus]
       .filter((v): v is string => !!v)
       .join(' / ') || '-'
+  )
   return (
     <tr className={'border-t hover:bg-gray-50 ' + (row.flags.blocked ? 'bg-red-50/40' : '')}>
       <td className="px-2 py-1.5 font-mono text-[10px]" title={row.approvalItemId}>
@@ -1344,13 +1360,15 @@ function ReviewRow({
                 variant="outline"
                 className="text-[10px] bg-red-50 text-red-600 border-red-200"
               >
-                {code}
+                {formatDiagnosticCodeLabel(code)}
               </Badge>
             ))
           )}
         </div>
       </td>
-      <td className="px-2 py-1.5 font-mono text-[10px]">{row.match.suggestedAction}</td>
+      <td className="px-2 py-1.5 text-[10px]" title={row.match.suggestedAction}>
+        {formatSuggestedActionLabel(row.match.suggestedAction)}
+      </td>
       <td className="px-2 py-1.5">
         <Badge variant="outline" className="text-[10px] bg-gray-50 text-gray-700 border-gray-300">
           {matchStatus}
@@ -1358,7 +1376,7 @@ function ReviewRow({
       </td>
       <td className="px-2 py-1.5 text-right tabular-nums">
         <span className={row.match.confidence < 0.8 ? 'text-amber-600 font-semibold' : ''}>
-          {row.match.confidence.toFixed(2)}
+          {formatConfidence(row.match.confidence)}
         </span>
       </td>
       <td className="px-2 py-1.5">
@@ -1370,10 +1388,11 @@ function ReviewRow({
           className="border border-gray-300 rounded px-1.5 py-0.5 text-[11px] bg-white"
           data-l6d2-decision={row.approvalItemId}
         >
-          <option value="pending">pending</option>
-          <option value="approved">approved</option>
-          <option value="rejected">rejected</option>
-          <option value="needsReview">needsReview</option>
+          {APPROVAL_REVIEW_DECISION_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
         </select>
       </td>
     </tr>

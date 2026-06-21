@@ -1,0 +1,70 @@
+{
+  "stage": "L6-D2A-XLSX-COURSE-SETTING-APPROVAL-REVIEW-UI-LOCALIZATION",
+  "status": "PASS",
+  "scope": "UI display layer only",
+  "dbWritten": false,
+  "applyAllowed": false,
+  "applyListGenerated": false,
+  "reviewOnly": true,
+  "targetSemester": {
+    "id": 3,
+    "idHash": "4e07408562be"
+  },
+  "chineseConstants": {
+    "tableHeaders": 14,
+    "decisionOptions": 4,
+    "blockedOptions": 3,
+    "suggestedActionLabels": 10,
+    "diagnosticLabels": 18,
+    "matchStatusLabels": 11
+  },
+  "input": {
+    "samplePathHash": "34ae69f10ac7",
+    "sampleFileNameHash": "d5c590e19e3f",
+    "sampleFileSize": 131200
+  },
+  "machineValuePreservation": {
+    "decisionOptionValues": [
+      "pending",
+      "approved",
+      "rejected",
+      "needsReview"
+    ],
+    "blockedOptionValues": [
+      "all",
+      "blocked",
+      "notBlocked"
+    ],
+    "exportedDecisionJson": {
+      "rawIncluded": false,
+      "fieldNames": [
+        "approvalItemId",
+        "decision",
+        "targetSemesterId",
+        "packageRef",
+        "decisions",
+        "rawIncluded"
+      ]
+    }
+  },
+  "privacy": {
+    "committedRawTeacherNames": false,
+    "committedRawClassNames": false,
+    "committedRawCourseNames": false,
+    "committedRawRemarks": false,
+    "committedRawSheetNames": false,
+    "committedRawPhoneNumbers": false,
+    "runtimeUiChineseLocalized": true,
+    "exportedDecisionFileMachineEnglish": true,
+    "helperSourceForeignImports": 0
+  },
+  "notes": [
+    "L6-D2A is a UI-DISPLAY-LAYER-ONLY localization polish.",
+    "Adds pure Chinese display labels via src/lib/import/course-setting-approval-review-localization.ts.",
+    "Component src/components/import/course-setting-xlsx-preview.tsx uses helper for filter labels, table headers, dropdown labels, badges.",
+    "Machine values (option value=..., filter state, exported JSON field names + values) are UNCHANGED.",
+    "No DB writes, no fs writes outside docs/l6-d2a-* artifacts and the local status append.",
+    "Exported decision JSON (buildCourseSettingDecisionFile) still emits rawIncluded=false and English machine fields.",
+    "Privacy detector confirms zero PII leaks in helper source + committed JSON."
+  ]
+}
