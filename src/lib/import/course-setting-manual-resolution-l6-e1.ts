@@ -68,6 +68,8 @@ export type CourseSettingResolutionAction =
   | 'confirmAmbiguousMapping'
   | 'markNeedsReview'
   | 'ignoreRow'
+  | 'confirmDetectedSplit'
+  | 'rejectSplit'
 
 // ---------------------------------------------------------------------------
 // Per-item types
@@ -107,6 +109,12 @@ export type CourseSettingManualResolutionAmbiguousMapping = {
   note?: string
 }
 
+export type CourseSettingManualResolutionTaskSplit = {
+  action: 'none' | 'confirmDetectedSplit' | 'markNeedsReview' | 'rejectSplit'
+  selectedCandidateId?: string
+  note?: string
+}
+
 export type CourseSettingManualResolution = {
   ignored: boolean
   ignoreReason?: string
@@ -116,6 +124,7 @@ export type CourseSettingManualResolution = {
   weeklyHours?: CourseSettingManualResolutionWeeklyHours
   examType?: CourseSettingManualResolutionExamType
   ambiguousMapping?: CourseSettingManualResolutionAmbiguousMapping
+  taskSplit?: CourseSettingManualResolutionTaskSplit
 }
 
 export type CourseSettingManualResolutionValidation = {
@@ -264,6 +273,16 @@ export const evaluateManualResolutionItem = (
         // resolved
       } else {
         blockers.push('ambiguousMapping')
+      }
+    }
+
+    // Task split blocker (only if TASK_SPLIT_REQUIRED diagnostic present)
+    if (baseDiagnosticCodes.includes('TASK_SPLIT_REQUIRED')) {
+      const splitAction = resolution.taskSplit?.action ?? 'none'
+      if (splitAction === 'confirmDetectedSplit') {
+        // resolved — confirmed split clears blocker
+      } else {
+        blockers.push('taskSplitRequired')
       }
     }
 
@@ -543,6 +562,7 @@ const isManuallyResolved = (item: CourseSettingManualResolutionItem): boolean =>
   if (resolution.weeklyHours && resolution.weeklyHours.action !== 'none') return true
   if (resolution.examType && resolution.examType.action !== 'none') return true
   if (resolution.ambiguousMapping && resolution.ambiguousMapping.action !== 'none') return true
+  if (resolution.taskSplit && resolution.taskSplit.action !== 'none') return true
 
   return false
 }

@@ -865,6 +865,20 @@ export type CourseSettingPartialImportPlanResponse = {
       sourceRowIndex: number
       reason: string
     }>
+    taskSplitCandidates: Array<{
+      approvalItemId: string
+      candidateId: string
+      kind: string
+      confidence: number
+      requiresManualConfirmation: boolean
+      assignments: Array<{
+        teacherRaw: string
+        teacherHash: string
+        classRaw: string
+        classNameHashes: string[]
+      }>
+      confirmedByUser: boolean
+    }>
   }
   rawDisplayPolicy: {
     runtimeUiRawAllowed: true

@@ -160,3 +160,5 @@ The list reflects local history at the time of K36-A3 and does not assert remote
 - L6-E2A 修复 Excel 课程设置人工处理交互：忽略行、允许暂缺、选择已有课程/教师/班级等控件现在会更新 manual resolution state，并用于生成部分导入计划；不写 DB、不创建 ImportBatch/TeachingTask。
 
 - L6-E2B 修复 Excel 课程设置人工处理上下文与多问题行：同一行多个 diagnostics 会同时显示对应处理控件，处理区补齐工作表/行号/专业/课程/教师/班级/备注等上下文，partial import plan 也携带专业上下文；不写 DB、不执行 apply。
+
+- L6-E2C 修复 Excel 课程设置审核主表上下文并新增任务拆分识别：审核主表不展开即可看到专业/课程/教师/班级/备注摘要，系统可识别同课多班多教师授课模式并生成拆分候选，确认后进入 partial import plan；不写 DB、不执行 apply。

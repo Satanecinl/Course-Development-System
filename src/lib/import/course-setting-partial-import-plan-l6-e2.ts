@@ -39,6 +39,7 @@ import { createHash } from 'node:crypto'
 import type { CourseSettingApprovalReviewUiRow } from './course-setting-approval-review-ui-l6-d2'
 import type { CourseSettingManualResolutionItem } from './course-setting-manual-resolution-l6-e1'
 import type { CourseSettingExistingImportData } from './course-setting-teaching-task-dry-run'
+import { detectTaskSplitCandidates } from './course-setting-task-split-detection-l6-e2c'
 
 // ---------------------------------------------------------------------------
 // Stage constants
@@ -234,6 +235,20 @@ export type CourseSettingPartialImportPlanResult = {
     teachingTasks: TeachingTaskCandidatePlan[]
     teachingTaskClasses: TeachingTaskClassCandidatePlan[]
     duplicateRisks: CourseSettingPartialImportDuplicateRisk[]
+    taskSplitCandidates: Array<{
+      approvalItemId: string
+      candidateId: string
+      kind: string
+      confidence: number
+      requiresManualConfirmation: boolean
+      assignments: Array<{
+        teacherRaw: string
+        teacherHash: string
+        classRaw: string
+        classNameHashes: string[]
+      }>
+      confirmedByUser: boolean
+    }>
     blockers: CourseSettingPartialImportPlanBlocker[]
   }
   rawDisplayPolicy: CourseSettingPartialImportPlanRawDisplayPolicy
@@ -366,6 +381,7 @@ export const buildCourseSettingPartialImportPlan = (
   const teachingTasks: TeachingTaskCandidatePlan[] = []
   const teachingTaskClasses: TeachingTaskClassCandidatePlan[] = []
   const duplicateRisks: CourseSettingPartialImportDuplicateRisk[] = []
+  const taskSplitCandidates: CourseSettingPartialImportPlanResult['plan']['taskSplitCandidates'] = []
   const blockers: CourseSettingPartialImportPlanBlocker[] = []
 
   // Create candidate accumulators (keyed by normalized name).
@@ -704,6 +720,44 @@ export const buildCourseSettingPartialImportPlan = (
     }
     importableRows.push(planRow)
 
+    // ── Task split detection (always run for informational candidates) ──
+    if (resolution && resolution.baseDiagnosticCodes.includes('TASK_SPLIT_REQUIRED')) {
+      const splitResult = detectTaskSplitCandidates({
+        approvalItemId,
+        sheetName: reviewRow.source.sheetName ?? null,
+        sheetIndex: reviewRow.source.sheetIndex,
+        sourceRowIndex: reviewRow.source.sourceRowIndex,
+        majorName: reviewRow.raw.majorName ?? null,
+        majorNameHash: planRow.majorNameHash,
+        courseName: reviewRow.raw.courseName ?? null,
+        teacherText: reviewRow.raw.teacherText ?? null,
+        classText: reviewRow.raw.classText ?? null,
+        remark: reviewRow.raw.remark ?? null,
+        mergeRemark: reviewRow.raw.mergeRemark ?? null,
+        diagnosticCodes: reviewRow.match.diagnosticCodes,
+        suggestedAction: reviewRow.match.suggestedAction,
+      })
+      if (splitResult.hasSplitDetection) {
+        const confirmedCandidateId = resolution.resolution.taskSplit?.selectedCandidateId ?? null
+        for (const candidate of splitResult.candidates) {
+          taskSplitCandidates.push({
+            approvalItemId,
+            candidateId: candidate.candidateId,
+            kind: candidate.kind,
+            confidence: candidate.confidence,
+            requiresManualConfirmation: candidate.requiresManualConfirmation,
+            assignments: candidate.assignments.map((a) => ({
+              teacherRaw: a.teacherRaw,
+              teacherHash: a.teacherHash,
+              classRaw: a.classRaw,
+              classNameHashes: a.classNameHashes,
+            })),
+            confirmedByUser: confirmedCandidateId === candidate.candidateId,
+          })
+        }
+      }
+    }
+
     // ── Create candidates (dedup by normalized name) ──────────────────
     if (plannedCourseAction === 'createCandidate' && plannedCourseCandidateName) {
       const key = normalizeName(plannedCourseCandidateName)
@@ -746,48 +800,98 @@ export const buildCourseSettingPartialImportPlan = (
         ? { kind: 'useExisting', courseId: resolvedCourseId }
         : { kind: 'createCandidate', candidateKey: courseCreateByNorm.get(normalizeName(plannedCourseCandidateName ?? ''))?.candidateKey ?? `course:${shortHash('orphan:' + approvalItemId, 10)}` }
 
-    const teacherRef: TeachingTaskCandidatePlan['teacherRef'] =
-      plannedTeacherAction === 'useExisting' && resolvedTeacherId != null
-        ? { kind: 'useExisting', teacherId: resolvedTeacherId }
-        : plannedTeacherAction === 'allowBlank'
-          ? { kind: 'useExisting', teacherId: null }
-          : { kind: 'noTeacher' }
+    // Check if a task split was confirmed for this row
+    const confirmedSplit = taskSplitCandidates.find(
+      (sc) => sc.approvalItemId === approvalItemId && sc.confirmedByUser,
+    )
 
-    const classGroupRefs: TeachingTaskCandidatePlan['classGroupRefs'] = []
-    for (const id of resolvedClassGroupIds) {
-      classGroupRefs.push({ kind: 'useExisting', classGroupId: id })
-    }
-    for (const name of plannedClassGroupCandidateNames) {
-      const key = normalizeName(name)
-      const c = classGroupCreateByNorm.get(key)
-      classGroupRefs.push({
-        kind: 'createCandidate',
-        candidateKey:
-          c?.candidateKey ?? `classGroup:${shortHash('orphan:' + name, 10)}`,
-      })
-    }
+    if (confirmedSplit && confirmedSplit.assignments.length >= 2) {
+      // Multi-task: each assignment becomes its own TeachingTask
+      for (let ai = 0; ai < confirmedSplit.assignments.length; ai++) {
+        const assignment = confirmedSplit.assignments[ai]!
+        const splitTaskKey = `task:${shortHash(approvalItemId + ':split:' + ai, 10)}`
 
-    const taskCandidateKey = `task:${shortHash(approvalItemId, 10)}`
-    teachingTasks.push({
-      candidateKey: taskCandidateKey,
-      approvalItemId,
-      courseRef,
-      teacherRef,
-      classGroupRefs,
-      weeklyHours,
-      examType,
-      duplicateRisk,
-      duplicateExistingTaskId,
-      blockerReasons: [],
-    })
+        // Teacher ref from the assignment's teacher (hash only; resolved via teacherHash)
+        const splitTeacherRef: TeachingTaskCandidatePlan['teacherRef'] =
+          assignment.teacherHash
+            ? { kind: 'useExisting', teacherId: null } // L6-E1C handles teacher; plan just records hash context
+            : { kind: 'noTeacher' }
 
-    for (const cg of classGroupRefs) {
-      teachingTaskClasses.push({
-        candidateKey: `ttc:${shortHash(taskCandidateKey + ':' + (cg.kind === 'useExisting' ? `id:${cg.classGroupId}` : `cand:${cg.candidateKey}`), 10)}`,
+        // Class groups from the assignment's classes
+        const splitClassGroupRefs: TeachingTaskCandidatePlan['classGroupRefs'] = []
+        for (const cn of assignment.classNameHashes) {
+          // We don't have exact class group IDs from the detection; the
+          // assignee will need to resolve in L6-F or accept as candidate.
+          splitClassGroupRefs.push({ kind: 'createCandidate', candidateKey: `classGroup:${cn}` })
+        }
+
+        teachingTasks.push({
+          candidateKey: splitTaskKey,
+          approvalItemId,
+          courseRef,
+          teacherRef: splitTeacherRef,
+          classGroupRefs: splitClassGroupRefs,
+          weeklyHours,
+          examType,
+          duplicateRisk: 'needsReview',
+          duplicateExistingTaskId: null,
+          blockerReasons: [],
+        })
+
+        for (const cg of splitClassGroupRefs) {
+          teachingTaskClasses.push({
+            candidateKey: `ttc:${shortHash(splitTaskKey + ':' + (cg.kind === 'useExisting' ? `id:${cg.classGroupId}` : `cand:${cg.candidateKey}`), 10)}`,
+            approvalItemId,
+            teachingTaskCandidateKey: splitTaskKey,
+            classGroupRef: cg,
+          })
+        }
+      }
+    } else {
+      // Single task (no split confirmed)
+      const teacherRef: TeachingTaskCandidatePlan['teacherRef'] =
+        plannedTeacherAction === 'useExisting' && resolvedTeacherId != null
+          ? { kind: 'useExisting', teacherId: resolvedTeacherId }
+          : plannedTeacherAction === 'allowBlank'
+            ? { kind: 'useExisting', teacherId: null }
+            : { kind: 'noTeacher' }
+
+      const classGroupRefs: TeachingTaskCandidatePlan['classGroupRefs'] = []
+      for (const id of resolvedClassGroupIds) {
+        classGroupRefs.push({ kind: 'useExisting', classGroupId: id })
+      }
+      for (const name of plannedClassGroupCandidateNames) {
+        const key = normalizeName(name)
+        const c = classGroupCreateByNorm.get(key)
+        classGroupRefs.push({
+          kind: 'createCandidate',
+          candidateKey:
+            c?.candidateKey ?? `classGroup:${shortHash('orphan:' + name, 10)}`,
+        })
+      }
+
+      const taskCandidateKey = `task:${shortHash(approvalItemId, 10)}`
+      teachingTasks.push({
+        candidateKey: taskCandidateKey,
         approvalItemId,
-        teachingTaskCandidateKey: taskCandidateKey,
-        classGroupRef: cg,
+        courseRef,
+        teacherRef,
+        classGroupRefs,
+        weeklyHours,
+        examType,
+        duplicateRisk,
+        duplicateExistingTaskId,
+        blockerReasons: [],
       })
+
+      for (const cg of classGroupRefs) {
+        teachingTaskClasses.push({
+          candidateKey: `ttc:${shortHash(taskCandidateKey + ':' + (cg.kind === 'useExisting' ? `id:${cg.classGroupId}` : `cand:${cg.candidateKey}`), 10)}`,
+          approvalItemId,
+          teachingTaskCandidateKey: taskCandidateKey,
+          classGroupRef: cg,
+        })
+      }
     }
   }
 
@@ -853,6 +957,7 @@ export const buildCourseSettingPartialImportPlan = (
       teachingTasks,
       teachingTaskClasses,
       duplicateRisks,
+      taskSplitCandidates,
       blockers,
     },
     rawDisplayPolicy: {
@@ -1002,6 +1107,8 @@ export const serializePartialImportPlanCommittedJson = (
       teachingTaskCount: plan.plan.teachingTasks.length,
       teachingTaskClassCount: plan.plan.teachingTaskClasses.length,
       duplicateRiskCount: plan.plan.duplicateRisks.length,
+      taskSplitCandidateCount: plan.plan.taskSplitCandidates.length,
+      confirmedSplitCount: plan.plan.taskSplitCandidates.filter((sc) => sc.confirmedByUser).length,
       blockerCount: plan.plan.blockers.length,
     },
     rawDisplayPolicy: plan.rawDisplayPolicy,
@@ -1200,6 +1307,7 @@ export const serializePartialImportPlanExport = (
     teachingTaskCount: plan.plan.teachingTasks.length,
     teachingTaskClassCount: plan.plan.teachingTaskClasses.length,
     duplicateRiskCount: plan.plan.duplicateRisks.length,
+    taskSplitCandidateCount: plan.plan.taskSplitCandidates.length,
     blockerCount: plan.plan.blockers.length,
     rawIncluded: false as const,
     privacy: {

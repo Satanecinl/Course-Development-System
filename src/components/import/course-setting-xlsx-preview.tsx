@@ -1449,6 +1449,7 @@ function ReviewSection(props: {
               <th className="px-2 py-1.5 text-left">审核项ID</th>
               <th className="px-2 py-1.5 text-left">工作表</th>
               <th className="px-2 py-1.5 text-left">行号</th>
+              <th className="px-2 py-1.5 text-left">专业</th>
               <th className="px-2 py-1.5 text-left">课程名</th>
               <th className="px-2 py-1.5 text-left">教师</th>
               <th className="px-2 py-1.5 text-left">班级</th>
@@ -1466,7 +1467,7 @@ function ReviewSection(props: {
           <tbody>
             {filteredRows.length === 0 ? (
               <tr>
-                <td colSpan={15} className="px-4 py-6 text-center text-gray-400">
+                <td colSpan={16} className="px-4 py-6 text-center text-gray-400">
                   当前筛选下没有审核项
                 </td>
               </tr>
@@ -1547,6 +1548,9 @@ function ReviewRow({
         {row.source.sheetName ?? row.source.sheetNameHash.slice(0, 8)}
       </td>
       <td className="px-2 py-1.5 tabular-nums">{row.source.sourceRowIndex}</td>
+      <td className="px-2 py-1.5 text-[10px] max-w-[100px] truncate" title={(row.raw as Record<string, unknown>)['majorName'] as string ?? ''}>
+        {(row.raw as Record<string, unknown>)['majorName'] as string ?? '—'}
+      </td>
       <td className="px-2 py-1.5 text-[11px] max-w-[120px] truncate" title={row.raw.courseName ?? ''}>
         {row.raw.courseName ?? '-'}
       </td>
@@ -2480,6 +2484,56 @@ function ResolutionItemRow({
                     <input type="radio" name={`lc-${item.approvalItemId}`} checked={item.resolution.ambiguousMapping?.action === 'markNeedsReview'} onChange={() => onUpdate({ ambiguousMapping: { action: 'markNeedsReview' } })} />
                     需复核
                   </label>
+                </div>
+              )}
+
+              {/* Task split detection — shown when TASK_SPLIT_REQUIRED is among diagnostics */}
+              {item.baseDiagnosticCodes.includes('TASK_SPLIT_REQUIRED') && (
+                <div className="space-y-1 bg-amber-50/60 rounded-md p-2 border border-amber-100" data-l6e1-task-split-controls={item.approvalItemId}>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-amber-700">教学任务拆分</span>
+                    <span className="text-[10px] text-amber-600">（系统检测到可能需要拆分为多个教学任务）</span>
+                  </div>
+                  <p className="text-[10px] text-amber-700/80">
+                    当前行的教师字段包含多个教师或编号，系统建议将此行拆分为多个独立的教学任务。请确认是否采用拆分，或标记需复核。
+                  </p>
+                  <div className="flex gap-2 items-center flex-wrap">
+                    <label className="flex items-center gap-1 text-[11px]">
+                      <input
+                        type="radio"
+                        name={`ts-${item.approvalItemId}`}
+                        checked={item.resolution.taskSplit?.action === 'confirmDetectedSplit'}
+                        onChange={() => onUpdate({ taskSplit: { action: 'confirmDetectedSplit', selectedCandidateId: 'detected-split' } })}
+                      />
+                      确认拆分
+                    </label>
+                    <label className="flex items-center gap-1 text-[11px]">
+                      <input
+                        type="radio"
+                        name={`ts-${item.approvalItemId}`}
+                        checked={item.resolution.taskSplit?.action === 'markNeedsReview'}
+                        onChange={() => onUpdate({ taskSplit: { action: 'markNeedsReview' } })}
+                      />
+                      标记需复核
+                    </label>
+                    <label className="flex items-center gap-1 text-[11px]">
+                      <input
+                        type="radio"
+                        name={`ts-${item.approvalItemId}`}
+                        checked={item.resolution.taskSplit?.action === 'rejectSplit'}
+                        onChange={() => onUpdate({ taskSplit: { action: 'rejectSplit' } })}
+                      />
+                      不拆分（单任务）
+                    </label>
+                    {item.resolution.taskSplit?.action === 'confirmDetectedSplit' && (
+                      <Input
+                        placeholder="拆分备注（可选）"
+                        className="text-[11px] h-6 max-w-[200px]"
+                        value={item.resolution.taskSplit?.note ?? ''}
+                        onChange={(e) => onUpdate({ taskSplit: { action: 'confirmDetectedSplit', selectedCandidateId: 'detected-split', note: e.target.value } })}
+                      />
+                    )}
+                  </div>
                 </div>
               )}
 
