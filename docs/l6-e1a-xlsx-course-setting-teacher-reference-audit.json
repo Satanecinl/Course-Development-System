@@ -1,0 +1,107 @@
+{
+  "stage": "L6-E1A-XLSX-COURSE-SETTING-TEACHER-REFERENCE-AUDIT",
+  "generatedAt": "2026-06-21T11:41:02.656Z",
+  "staffRef": {
+    "path": "D:\\Desktop\\伊春职业学院职员数据库(2026.4).db",
+    "filename": "伊春职业学院职员数据库(2026.4).db",
+    "filenameHash": "6bccbd173598",
+    "fileSizeBytes": 49152,
+    "tableCount": 1,
+    "recordCount": 436,
+    "uniqueNormalizedNames": 424,
+    "duplicateGroups": 10,
+    "blankNames": 0,
+    "departmentCount": 28,
+    "fieldsDetected": [
+      "id",
+      "部门",
+      "姓名",
+      "职务",
+      "职级",
+      "办公电话",
+      "手机",
+      "工号"
+    ],
+    "phoneFieldPresent": true,
+    "mobileFieldPresent": true,
+    "employeeNoFieldPresent": true
+  },
+  "teacherTable": {
+    "count": 84,
+    "uniqueNames": 84,
+    "uniqueNormalized": 84,
+    "duplicateNormalizedGroups": 0
+  },
+  "excelTeachers": {
+    "rawTotal": 1160,
+    "rawUnique": 357,
+    "blankCount": 86,
+    "splitCount": 71,
+    "uniqueNormalized": 357
+  },
+  "matching": {
+    "excelToTeacherExact": 326,
+    "excelToTeacherNormalizedExact": 0,
+    "excelToTeacherAmbiguous": 0,
+    "excelToTeacherMissing": 748,
+    "excelToTeacherBlank": 86,
+    "excelToStaffExact": 881,
+    "excelToStaffNormalizedExact": 0,
+    "excelToStaffAmbiguous": 0,
+    "excelToStaffMissing": 193,
+    "excelToStaffBlank": 86,
+    "teacherTableToStaffExact": 79,
+    "teacherTableToStaffNormalizedExact": 0,
+    "teacherTableToStaffMissing": 5,
+    "teacherTableToStaffAmbiguous": 0,
+    "missingInTeacherButFoundInStaff": 559,
+    "missingInTeacherAndMissingInStaff": 189,
+    "foundInTeacherButDuplicateInStaff": 28,
+    "needsManualReview": 71
+  },
+  "risks": [
+    {
+      "severity": "HIGH",
+      "description": "大量Excel教师不在Teacher表但在教职工库中，建议受控同步",
+      "count": 559
+    },
+    {
+      "severity": "HIGH",
+      "description": "大量Excel教师既不在Teacher表也不在教职工库，需人工核实",
+      "count": 189
+    },
+    {
+      "severity": "MEDIUM",
+      "description": "教职工库存在同名重复，人工审核时需注意工号辅助",
+      "count": 10
+    },
+    {
+      "severity": "MEDIUM",
+      "description": "Excel教师原文直接匹配率偏低，可能需要做跨学期规范化",
+      "count": 326
+    },
+    {
+      "severity": "LOW",
+      "description": "多教师单元格需要拆分处理",
+      "count": 71
+    }
+  ],
+  "privacy": {
+    "rawTeacherNamesInCommitted": false,
+    "rawPhoneNumbersInCommitted": false,
+    "rawEmployeeNumbersInCommitted": false,
+    "rawDepartmentsInCommitted": false,
+    "sampleFileNotTracked": true,
+    "staffFileNotTracked": true
+  },
+  "dbReadOnly": {
+    "prismaMethodsUsed": [
+      "findMany",
+      "count"
+    ],
+    "writeMethodsFound": 0,
+    "teacherCountBefore": 84,
+    "teacherCountAfter": 84,
+    "countsUnchanged": true
+  }
+}
