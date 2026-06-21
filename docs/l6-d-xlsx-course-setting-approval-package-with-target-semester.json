@@ -1,0 +1,130 @@
+{
+  "stage": "L6-D-XLSX-COURSE-SETTING-APPROVAL-PACKAGE-WITH-TARGET-SEMESTER",
+  "status": "PASS",
+  "generatedAt": "2026-06-21T06:45:41.799Z",
+  "approvalOnly": true,
+  "dryRunOnly": true,
+  "dbWritten": false,
+  "applyAllowed": false,
+  "input": {
+    "samplePathHash": "34ae69f10ac7",
+    "samplePathExists": true,
+    "sampleGitTracked": true,
+    "sampleFileNameHash": "d5c590e19e3f",
+    "sampleFileSize": 131200
+  },
+  "targetSemester": {
+    "id": 3,
+    "idHash": "4e07408562be",
+    "nameHash": "84d9662d836b",
+    "codeHash": "00906e7bc88f",
+    "isActive": false,
+    "classGroupCount": 0,
+    "teachingTaskCount": 0,
+    "resolutionReason": "CLI --target-semester-id=3",
+    "resolutionWarning": null
+  },
+  "dryRunFingerprint": {
+    "totalCourseRows": 1116,
+    "teachingTaskCandidates": 1116,
+    "teachingTaskClassCandidates": 1742,
+    "rowsNeedingManualReview": 1116,
+    "sourceEvidenceCoverage": 100,
+    "hash": "165ff4c6b0836da3627928902492ae516318f7839fa800977a8cd6127e62f2c9"
+  },
+  "approvalPackage": {
+    "packageVersion": "l6-d-approval-package-v1",
+    "localPackagePath": "temp/local-artifacts/l6-d/xlsx-course-setting-approval-package.target-3.redacted.json",
+    "localPackageSha256": "b5c96f83058443f40f8e89a71b97ca29b78c3966f055f5c74f613a4e9efbb193",
+    "localPackageTracked": false,
+    "itemCount": 1116,
+    "approvedItems": 0,
+    "rejectedItems": 0,
+    "blockedItems": 1069,
+    "needsReviewItems": 5,
+    "autoSafeCandidates": 42,
+    "allDecisionsPending": true,
+    "applyListGenerated": false,
+    "rawIncluded": false
+  },
+  "gates": {
+    "targetSemesterBound": true,
+    "reviewPackageApproved": false,
+    "dbBackupCreated": false,
+    "dryRunReplayMatchesApprovedPackage": false,
+    "importBatchPlanGenerated": false,
+    "rollbackPlanGenerated": false,
+    "sourceEvidencePlanConfirmed": false
+  },
+  "rawDisplayPolicy": {
+    "runtimeUiRawAllowed": true,
+    "approvalPackageRawIncluded": false,
+    "committedDocsRawAllowed": false,
+    "localArtifactRawIncluded": false,
+    "scope": "authorized-admin-preview-only"
+  },
+  "safety": {
+    "dbWritten": false,
+    "dbCountsUnchanged": true,
+    "dbCountsBefore": {
+      "course": 104,
+      "teacher": 84,
+      "classGroup": 36,
+      "teachingTask": 308,
+      "teachingTaskClass": 446,
+      "importBatch": 38,
+      "scheduleSlot": 440,
+      "scheduleAdjustment": 67,
+      "semester": 3,
+      "activeSemesterId": 1
+    },
+    "importBatchCreated": false,
+    "teachingTaskCreated": false,
+    "teachingTaskClassCreated": false,
+    "classGroupCreated": false,
+    "teacherCreated": false,
+    "courseCreated": false,
+    "scheduleSlotCreated": false,
+    "scheduleAdjustmentCreated": false,
+    "activeSemesterSwitched": false,
+    "schemaChanged": false,
+    "migrationAdded": false,
+    "apiChanged": false,
+    "uiChanged": false,
+    "wordParserChanged": false,
+    "l2ParserChanged": false,
+    "l4HelperChanged": false,
+    "l5HelperChanged": false,
+    "schedulerChanged": false,
+    "scoreChanged": false,
+    "k22ExpectedChanged": false,
+    "helperBytes": 20768
+  },
+  "privacy": {
+    "committedRawTeacherNames": false,
+    "committedRawClassNames": false,
+    "committedRawCourseNames": false,
+    "committedRawRemarks": false,
+    "committedRawSheetNames": false,
+    "committedRawPhoneNumbers": false,
+    "localArtifactRawIncluded": false,
+    "runtimeUiRawAllowed": true
+  },
+  "validation": {
+    "l6dVerify": "PASS",
+    "l6cVerify": "PASS",
+    "l6b1Verify": "PASS",
+    "l6bVerify": "PASS",
+    "l6aAudit": "PASS",
+    "k22c": "PASS",
+    "scanDocsPii": "PASS",
+    "build": "PASS",
+    "tsc": "PASS",
+    "eslint": "PASS"
+  },
+  "notes": [
+    "L6-D is REVIEW / APPROVAL only — it does NOT write DB.",
+    "All review decisions remain `pending`; apply stage (L6-E) MUST be a separate stage.",
+    "Runtime raw preview fields are emitted by L6-B1 runtime API/UI for authorized admins; L6-D does NOT include them anywhere."
+  ]
+}

@@ -43,6 +43,8 @@
 >
 > **L6-C Excel 课程设置导入流程新建学期已完成**（[L6-C](l6-c-xlsx-course-setting-create-new-semester-from-import-flow.md)）。`/admin/import` 支持在 preview 区创建新 Semester 并自动选为 targetSemesterId；仅允许 Semester 写入，不创建 ImportBatch/TeachingTask/TeachingTaskClass，不切换 active semester，验证中通过 backup/restore 保持最终 DB 状态。Verify 86/86 PASS。**浏览器人工验收 PENDING**。
 >
+> **L6-D Excel 课程设置 target semester approval package 已完成**（[L6-D](l6-d-xlsx-course-setting-approval-package-with-target-semester.md)）：基于明确 targetSemesterId 生成 full redacted approval package（1116 items, 全部 decision=pending, auto-safe=42/blocked=1069/needs-review=5，approvalOnly/dryRunOnly/dbWritten/applyAllowed 全 false），targetSemesterBound=true；不写 DB、不创建 ImportBatch/TeachingTask/TeachingTaskClass，不切换 active semester；本地 artifact 写入 `temp/local-artifacts/l6-d/`（gitignored）；committed docs/json 脱敏，仅含 idHash/nameHash/codeHash 和 counts。
+>
 > 详细阶段 closeout 文档位于 `docs/`，按 `k<stage>-*.md` / `k<stage>-*.json` 命名。
 > 本文件只汇总 readiness、baseline、known artifacts、下一步建议。
 
