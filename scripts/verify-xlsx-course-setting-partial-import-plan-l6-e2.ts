@@ -54,6 +54,9 @@ async function main(): Promise<void> {
   const route = readIfExists(ROUTE_PATH) ?? ''
   const client = readIfExists(CLIENT_PATH) ?? ''
   const ui = readIfExists(UI_PATH) ?? ''
+  // L6-E2F: plan UI elements are now in extracted course-setting/ component
+  const planSectionSrc = readIfExists(join(ROOT, 'src/components/import/course-setting/course-setting-partial-import-plan-section.tsx')) ?? ''
+  const allUiSrc = ui + '\n' + planSectionSrc
   const schema = readIfExists(SCHEMA_PATH) ?? ''
   const committedJson = readIfExists(COMMITTED_JSON_PATH) ?? ''
   const committedMd = readIfExists(COMMITTED_MD_PATH) ?? ''
@@ -149,30 +152,30 @@ async function main(): Promise<void> {
 
   // ── 5. UI text + button + tables (N61-N80) ──
   console.log('\n[5/11] ui text + button + tables')
-  record('UI has 生成部分导入计划 button', /生成部分导入计划/.test(ui))
-  record('UI warning text no DB write', /当前仅生成导入计划，不会写入数据库/.test(ui))
-  record('UI has 计划导入 summary card', /计划导入/.test(ui))
-  record('UI has 跳过 summary card', /跳过/.test(ui))
-  record('UI has 仍需处理 summary card', /仍需处理/.test(ui))
-  record('UI has 已忽略 summary card', /已忽略/.test(ui))
-  record('UI has 课程候选 summary card', /课程候选/.test(ui))
-  record('UI has 班级候选 summary card', /班级候选/.test(ui))
-  record('UI has 教学任务候选 summary card', /教学任务候选/.test(ui))
-  record('UI has 重复风险 card', /重复风险/.test(ui))
-  record('UI has 阻塞项 card', /阻塞项/.test(ui))
-  record('UI has 可导入行 table', /可导入行/.test(ui))
-  record('UI has 跳过行 table', /跳过行/.test(ui))
-  record('UI has 仍需处理 table', /仍需处理/.test(ui))
-  record('UI has 课程/班级候选 table', /课程\/班级候选/.test(ui))
-  record('UI has 重复风险 table', /重复风险/.test(ui))
-  record('UI has 阻塞项 table', /阻塞项/.test(ui))
-  record('UI export plan JSON button', /导出部分导入计划 JSON/.test(ui))
-  record('UI has no 执行导入 button', !/执行导入/.test(ui))
-  record('UI has no 正式导入 button', !/正式导入/.test(ui))
-  record('UI has no 应用导入 button', !/应用导入/.test(ui))
-  record('UI has no 写入数据库 button', !/button[^>]*>\s*写入数据库/.test(ui))
-  record('UI has no 创建教学任务 button', !/创建教学任务(?!或导入批次)/.test(ui)) // allow warning text
-  record('UI has no 创建 ImportBatch button', !/创建\s*ImportBatch/.test(ui))
+  record('UI has 生成部分导入计划 button', /生成部分导入计划/.test(allUiSrc))
+  record('UI warning text no DB write', /当前仅生成导入计划，不会写入数据库/.test(allUiSrc))
+  record('UI has 计划导入 summary card', /计划导入/.test(allUiSrc))
+  record('UI has 跳过 summary card', /跳过/.test(allUiSrc))
+  record('UI has 仍需处理 summary card', /仍需处理/.test(allUiSrc))
+  record('UI has 已忽略 summary card', /已忽略/.test(allUiSrc))
+  record('UI has 课程候选 summary card', /课程候选/.test(allUiSrc))
+  record('UI has 班级候选 summary card', /班级候选/.test(allUiSrc))
+  record('UI has 教学任务候选 summary card', /教学任务候选/.test(allUiSrc))
+  record('UI has 重复风险 card', /重复风险/.test(allUiSrc))
+  record('UI has 阻塞项 card', /阻塞项/.test(allUiSrc))
+  record('UI has 可导入行 table', /可导入行/.test(allUiSrc))
+  record('UI has 跳过行 table', /跳过行/.test(allUiSrc))
+  record('UI has 仍需处理 table', /仍需处理/.test(allUiSrc))
+  record('UI has 课程/班级候选 table', /课程\/班级候选/.test(allUiSrc))
+  record('UI has 重复风险 table', /重复风险/.test(allUiSrc))
+  record('UI has 阻塞项 table', /阻塞项/.test(allUiSrc))
+  record('UI export plan JSON button', /导出部分导入计划 JSON/.test(allUiSrc))
+  record('UI has no 执行导入 button', !/执行导入/.test(allUiSrc))
+  record('UI has no 正式导入 button', !/正式导入/.test(allUiSrc))
+  record('UI has no 应用导入 button', !/应用导入/.test(allUiSrc))
+  record('UI has no 写入数据库 button', !/button[^>]*>\s*写入数据库/.test(allUiSrc))
+  record('UI has no 创建教学任务 button', !/创建教学任务(?!或导入批次)/.test(allUiSrc)) // allow warning text
+  record('UI has no 创建 ImportBatch button', !/创建\s*ImportBatch/.test(allUiSrc))
 
   // ── 6. Client helper + export (N81-N90) ──
   console.log('\n[6/11] client helper + export')

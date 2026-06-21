@@ -166,3 +166,5 @@ The list reflects local history at the time of K36-A3 and does not assert remote
 - L6-E2D 修复 Excel 课程设置拆分候选明细与折叠上下文：手动处理区不展开即可看到专业/工作表/行号/课程/教师/班级/课时/考试/备注摘要，教学任务拆分区展示具体 candidate 与教师-班级 assignment，确认拆分绑定 candidateId；不写 DB、不执行 apply。
 
 - L6-E2E 修复 Excel 课程设置真实教学任务拆分解析：支持教师字段中“姓名(班级编号)”模式并映射到真实班级，不再生成教师A/班级1占位候选；确认拆分后 partial import plan 可按真实 assignment 生成多个 TeachingTask candidates；不写 DB、不执行 apply。
+
+- L6-E2F 拆分 Excel 课程设置预览巨型组件：将 course-setting-xlsx-preview.tsx 中的审核表、人工处理、任务拆分候选、部分导入计划等 UI 拆成子组件，保持 L6-E2E 行为不变；不写 DB、不执行 apply。

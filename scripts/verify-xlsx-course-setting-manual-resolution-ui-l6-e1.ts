@@ -260,24 +260,33 @@ async function main(): Promise<void> {
   chk(48, /CourseSettingResolutionDraftExport/.test(clientSrc), 'CourseSettingResolutionDraftExport type defined')
 
   // ── F: UI component resolution markers (N49-N65) ──
+  // L6-E2F: resolution controls are now in extracted files; read all of them.
   const compSrc = readRel(COMPONENT_PATH) ?? ''
-  chk(49, compSrc.length > 0, 'UI component exists')
-  chk(50, /ResolutionSection/.test(compSrc), 'ResolutionSection sub-component exists')
-  chk(51, /可导入|needsResolution/.test(compSrc), 'resolution summary cards reference')
-  chk(52, /课程缺失/.test(compSrc), 'course missing controls exist')
-  chk(53, /教师缺失/.test(compSrc), 'teacher missing controls exist')
-  chk(54, /班级缺失/.test(compSrc), 'class missing controls exist')
-  chk(55, /周课时异常/.test(compSrc), 'weeklyHours override controls exist')
-  chk(56, /考试类型异常/.test(compSrc), 'examType override controls exist')
-  chk(57, /忽略本行/.test(compSrc), 'ignore row control exists')
-  chk(58, /resolutionFilter|处理状态/.test(compSrc), 'resolution status filter exists')
-  chk(59, /导出处理结果/.test(compSrc), 'export resolution draft button exists')
-  chk(60, !/<button[^>]*>\s*导入\s*</.test(compSrc) && !/<button[^>]*>\s*应用\s*</.test(compSrc) && !/<button[^>]*>\s*写入数据库\s*</.test(compSrc), 'no apply/import/write as button inner text')
+  const extractedResolutionDir = join(ROOT, 'src/components/import/course-setting')
+  const extractedSrc = [
+    'course-setting-manual-resolution-section.tsx',
+    'course-setting-manual-resolution-row.tsx',
+    'course-setting-task-split-candidate-panel.tsx',
+  ].map((f) => readFileSync(join(extractedResolutionDir, f), 'utf-8')).join('\n\n')
+  // Combine main + extracted for the purpose of these checks
+  const allSrc = compSrc + '\n' + extractedSrc
+  chk(49, allSrc.length > 0, 'UI component exists')
+  chk(50, /ManualResolutionSection|ResolutionSection/.test(allSrc), 'ResolutionSection sub-component exists')
+  chk(51, /可导入|needsResolution/.test(allSrc), 'resolution summary cards reference')
+  chk(52, /课程缺失/.test(allSrc), 'course missing controls exist')
+  chk(53, /教师缺失/.test(allSrc), 'teacher missing controls exist')
+  chk(54, /班级缺失/.test(allSrc), 'class missing controls exist')
+  chk(55, /周课时异常/.test(allSrc), 'weeklyHours override controls exist')
+  chk(56, /考试类型异常/.test(allSrc), 'examType override controls exist')
+  chk(57, /忽略本行/.test(allSrc), 'ignore row control exists')
+  chk(58, /resolutionFilter|处理状态/.test(allSrc), 'resolution status filter exists')
+  chk(59, /导出处理结果/.test(allSrc), 'export resolution draft button exists')
+  chk(60, !/<button[^>]*>\s*导入\s*</.test(allSrc) && !/<button[^>]*>\s*应用\s*</.test(allSrc) && !/<button[^>]*>\s*写入数据库\s*</.test(allSrc), 'no apply/import/write as button inner text')
   chk(61, /buildInitialManualResolutionState/.test(compSrc), 'component uses buildInitialManualResolutionState')
-  chk(62, /applyManualResolutionUpdate/.test(compSrc), 'component uses applyManualResolutionUpdate')
+  chk(62, /applyManualResolutionUpdate/.test(allSrc), 'component uses applyManualResolutionUpdate')
   chk(63, /summarizeManualResolutionState/.test(compSrc), 'component uses summarizeManualResolutionState')
   chk(64, /fetchResolutionOptions/.test(compSrc), 'component uses fetchResolutionOptions')
-  chk(65, /data-l6e1/.test(compSrc), 'L6-E1 data attributes present')
+  chk(65, /data-l6e1/.test(allSrc), 'L6-E1 data attributes present')
 
   // ── G: Committed docs/json sanitized + privacy (N66-N72) ──
   const dbBefore = await readDbCounts()
@@ -356,11 +365,11 @@ async function main(): Promise<void> {
   chk(86, tscOk, 'tsc PASS')
 
   let eslintOk = false
-  try { execSync(`npx eslint --no-warn-ignored ${HELPER_PATH} ${OPTIONS_HELPER_PATH} ${OPTIONS_ROUTE_PATH} ${COMPONENT_PATH} ${VERIFY_PATH}`, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 120_000 }); eslintOk = true } catch { eslintOk = false }
+  try { execSync(`npx eslint --no-warn-ignored ${HELPER_PATH} ${OPTIONS_HELPER_PATH} ${OPTIONS_ROUTE_PATH} ${COMPONENT_PATH} src/components/import/course-setting/course-setting-manual-resolution-section.tsx src/components/import/course-setting/course-setting-manual-resolution-row.tsx src/components/import/course-setting/course-setting-task-split-candidate-panel.tsx ${VERIFY_PATH}`, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 120_000 }); eslintOk = true } catch { eslintOk = false }
   chk(87, eslintOk, 'targeted eslint PASS')
 
   let diffOk = true
-  for (const f of [HELPER_PATH, OPTIONS_HELPER_PATH, OPTIONS_ROUTE_PATH, CLIENT_PATH, COMPONENT_PATH, VERIFY_PATH, OUTPUT_JSON, OUTPUT_MD, STATUS_PATH]) {
+  for (const f of [HELPER_PATH, OPTIONS_HELPER_PATH, OPTIONS_ROUTE_PATH, CLIENT_PATH, COMPONENT_PATH, 'src/components/import/course-setting/course-setting-manual-resolution-section.tsx', 'src/components/import/course-setting/course-setting-manual-resolution-row.tsx', 'src/components/import/course-setting/course-setting-task-split-candidate-panel.tsx', VERIFY_PATH, OUTPUT_JSON, OUTPUT_MD, STATUS_PATH]) {
     try { execSync(`git diff --check -- ${JSON.stringify(f)}`, { cwd: ROOT, stdio: 'ignore', timeout: 30_000 }) } catch { diffOk = false }
   }
   chk(88, diffOk, 'git diff --check clean on L6-E1-owned files')
