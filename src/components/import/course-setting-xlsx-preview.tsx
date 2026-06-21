@@ -2035,7 +2035,16 @@ function ResolutionSection({
   onGeneratePartialPlan,
 }: ResolutionSectionProps) {
   const updateItem = (approvalItemId: string, patch: Record<string, unknown>) => {
-    const updated = applyManualResolutionUpdate(resolutionItems, approvalItemId, patch as Parameters<typeof applyManualResolutionUpdate>[2])
+    // The flat patch shape is the canonical UI form: each control sends
+    // `{ course: {...} }` or `{ ignored: true }` directly. The helper
+    // (applyManualResolutionUpdate) accepts both this flat shape and
+    // the `{ resolution: {...} }` wrapper, but we always pass the flat
+    // form here so behaviour is uniform and unambiguous.
+    const updated = applyManualResolutionUpdate(
+      resolutionItems,
+      approvalItemId,
+      patch as Parameters<typeof applyManualResolutionUpdate>[2],
+    )
     setResolutionItems(updated)
   }
 

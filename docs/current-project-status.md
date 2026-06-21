@@ -156,3 +156,5 @@ The list reflects local history at the time of K36-A3 and does not assert remote
 - L6-E1C Teacher 受控同步执行完成：扩展 Teacher schema 增加工号、部门、职务、职级、手机、办公电话字段；基于教职工 Staff DB 受控创建 safe Teacher 候选并补写已存在 Teacher 的 Staff 字段；未创建 ImportBatch/TeachingTask/TeachingTaskClass，raw apply 明细仅保存在 gitignored local artifact。
 
 - L6-E2 Excel 课程设置部分导入计划已完成：基于页面内 manual resolution state 生成 dry-run partial import plan，展示可导入/跳过/仍需处理/候选/重复风险/阻塞项；不写 DB、不创建 ImportBatch/TeachingTask/TeachingTaskClass，不执行 apply。
+
+- L6-E2A 修复 Excel 课程设置人工处理交互：忽略行、允许暂缺、选择已有课程/教师/班级等控件现在会更新 manual resolution state，并用于生成部分导入计划；不写 DB、不创建 ImportBatch/TeachingTask。

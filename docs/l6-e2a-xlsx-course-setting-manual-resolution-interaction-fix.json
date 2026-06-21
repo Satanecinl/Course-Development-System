@@ -1,0 +1,82 @@
+{
+  "stage": "L6-E2A-XLSX-COURSE-SETTING-MANUAL-RESOLUTION-INTERACTION-FIX",
+  "status": "PASS",
+  "fixType": "interaction-state-merge",
+  "predecessorStage": "L6-E2-XLSX-COURSE-SETTING-PARTIAL-IMPORT-PLAN-IN-PAGE",
+  "predecessorCommit": "d72e10a",
+  "bugDescription": "Manual resolution row controls inert: ignore, allowBlankTeacher, useExisting*, create*Candidate, weeklyHours, examType, ambiguousMapping did not update state or counters",
+  "rootCause": [
+    "applyManualResolutionUpdate expected { resolution: {...} } wrapper but UI sent flat { course: {...} } patches, causing silent no-op",
+    "Shallow merge of nested resolution objects would have wiped siblings on subsequent patches (defense in depth fix)"
+  ],
+  "filesChanged": [
+    "src/lib/import/course-setting-manual-resolution-l6-e1.ts",
+    "src/components/import/course-setting-xlsx-preview.tsx",
+    "scripts/verify-xlsx-course-setting-manual-resolution-interaction-l6-e2a.ts",
+    "docs/l6-e2a-xlsx-course-setting-manual-resolution-interaction-fix.md",
+    "docs/l6-e2a-xlsx-course-setting-manual-resolution-interaction-fix.json",
+    "docs/current-project-status.md"
+  ],
+  "fixSummary": {
+    "singleSourceOfTruth": "manualResolutionState (resolutionItems) — unchanged",
+    "deepMerge": "deepMergeResolution helper introduced in L6-E1",
+    "patchShapeSupport": "applyManualResolutionUpdate accepts both flat { course: {...} } and canonical { resolution: {...} } shapes",
+    "igniteRow": "ignored: true → validation re-evaluates with blockers: ['rowIgnored']; resolutionStatus becomes 'ignored'",
+    "allowBlankTeacher": "teacher.action = 'allowBlankTeacher' → teacherMissing blocker cleared if it was the only one",
+    "useExistingCourse": "course.existingCourseId = Number(value); courseMissing blocker cleared",
+    "useExistingTeacher": "teacher.existingTeacherId = Number(value); teacherMissing blocker cleared",
+    "useExistingClassGroup": "classGroups.existingClassGroupIds = number[]; classGroupMissing blocker cleared",
+    "createCourseCandidate": "course.candidateName captured; createCandidate planning branch in L6-E2",
+    "weeklyHoursOverride": "weeklyHours.value = Number(value); weeklyHoursInvalid blocker cleared",
+    "examTypeOverride": "examType.value = '考试' | '考查' | ''; examTypeInvalid blocker cleared",
+    "ambiguousConfirm": "ambiguousMapping.action = 'confirmAmbiguousMapping'; ambiguousMapping blocker cleared",
+    "planPayload": "handleGeneratePartialPlan reads live resolutionItems and passes them to planCourseSettingPartialImport"
+  },
+  "verification": {
+    "l6e2a": "83/83 PASS",
+    "l6e1Regression": "87/87 PASS",
+    "l6e2Regression": "144/144 PASS",
+    "prismaValidate": "PASS",
+    "migrateStatus": "14 migrations, schema up to date",
+    "k22c": "73/0/0/0 PASS",
+    "scanDocsPii": "no blocking hits",
+    "build": "PASS",
+    "tsc": "PASS",
+    "targetedEslint": "0 errors, 0 warnings",
+    "gitDiffCheck": "clean",
+    "forbiddenFiles": "clean (templates + migration SQL + temp/README.md legitimately tracked)"
+  },
+  "privacy": {
+    "rawTeacherNamesIncluded": false,
+    "rawClassNamesIncluded": false,
+    "rawCourseNamesIncluded": false,
+    "rawRemarksIncluded": false,
+    "rawSheetNamesIncluded": false,
+    "phoneNumbersIncluded": false,
+    "employeeNoIncluded": false,
+    "rawIncluded": false
+  },
+  "isolation": {
+    "dbWritten": false,
+    "importBatchCreated": false,
+    "teachingTaskCreated": false,
+    "teachingTaskClassCreated": false,
+    "courseCreated": false,
+    "teacherCreated": false,
+    "classGroupCreated": false,
+    "scheduleSlotCreated": false,
+    "scheduleAdjustmentCreated": false,
+    "semesterActiveChanged": false,
+    "excelPartialImportApplied": false,
+    "schemaChanged": false,
+    "migrationChanged": false,
+    "schedulerChanged": false,
+    "scoreChanged": false,
+    "wordParserChanged": false,
+    "packageJsonChanged": false,
+    "packageLockChanged": false,
+    "apiApplyRouteAdded": false
+  },
+  "browserValidationPending": true,
+  "nextStage": "L6-F-XLSX-COURSE-SETTING-PARTIAL-IMPORT-EXECUTION"
+}

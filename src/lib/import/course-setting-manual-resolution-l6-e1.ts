@@ -349,28 +349,86 @@ export type ManualResolutionPatch = {
 }
 
 /**
+ * Deep-merge a resolution patch into an existing resolution object.
+ *
+ * Top-level scalar fields (`ignored`, `ignoreReason`) replace the existing
+ * value. Nested objects (`course`, `teacher`, `classGroups`, `weeklyHours`,
+ * `examType`, `ambiguousMapping`) are themselves shallow-merged so that
+ * updating one nested field does not wipe siblings (e.g. setting `course`
+ * must not clobber `teacher`).
+ */
+const deepMergeResolution = (
+  old: CourseSettingManualResolution,
+  patch: Partial<CourseSettingManualResolution>,
+): CourseSettingManualResolution => {
+  const merged: CourseSettingManualResolution = { ...old }
+  for (const k of Object.keys(patch) as Array<keyof CourseSettingManualResolution>) {
+    const newVal = patch[k]
+    if (newVal === undefined) continue
+    if (
+      k === 'course' ||
+      k === 'teacher' ||
+      k === 'classGroups' ||
+      k === 'weeklyHours' ||
+      k === 'examType' ||
+      k === 'ambiguousMapping'
+    ) {
+      // Nested object — shallow-merge with the old sibling (or replace
+      // entirely if the old sibling is undefined / patch sends a fresh
+      // shape). The shallow merge keeps scalar siblings within that
+      // nested object intact (e.g. updating `action` does not wipe
+      // `existingCourseId` if a fresh patch only sets `action`).
+      const oldNested = (old as Record<string, unknown>)[k] as
+        | Record<string, unknown>
+        | undefined
+      const base = oldNested ?? {}
+      merged[k] = { ...base, ...(newVal as Record<string, unknown>) } as never
+    } else {
+      // Scalar (ignored, ignoreReason): replace
+      merged[k] = newVal as never
+    }
+  }
+  return merged
+}
+
+/**
  * Apply a partial resolution patch to the item identified by `approvalItemId`.
  * Returns a NEW array with the patched item; the input arrays and objects
  * are never mutated.
  *
- * After patching, the item is re-evaluated via `evaluateManualResolutionItem`
- * and its `resolutionStatus` is updated accordingly.
+ * Accepts both the canonical `{ resolution: { ... } }` shape and a flat
+ * `{ course: {...}, teacher: {...}, ... }` shape for UI ergonomics — the
+ * flat shape is the form every L6-E1 UI control uses, so we accept it
+ * directly here. Re-evaluation + status recompute happen on every patch.
  */
 export const applyManualResolutionUpdate = (
   state: CourseSettingManualResolutionItem[],
   approvalItemId: string,
-  patch: ManualResolutionPatch,
+  patch: ManualResolutionPatch | Partial<CourseSettingManualResolution>,
 ): CourseSettingManualResolutionItem[] => {
   return state.map((item) => {
     if (item.approvalItemId !== approvalItemId) {
       return item
     }
 
-    // Shallow-merge resolution
-    const mergedResolution: CourseSettingManualResolution = {
-      ...item.resolution,
-      ...(patch.resolution ?? {}),
-    }
+    // Accept both `{ resolution: {...} }` and the flat `{...}` shape.
+    // Detection: the canonical shape has a `resolution` key whose value
+    // is an object; the flat shape has resolution-shaped keys at top
+    // level (course / teacher / classGroups / weeklyHours / examType /
+    // ambiguousMapping / ignored / ignoreReason).
+    const isCanonicalShape =
+      'resolution' in (patch as Record<string, unknown>) &&
+      typeof (patch as Record<string, unknown>)['resolution'] === 'object' &&
+      (patch as { resolution?: unknown }).resolution !== null &&
+      !Array.isArray((patch as { resolution?: unknown }).resolution) &&
+      Object.keys(patch as Record<string, unknown>).length === 1
+
+    const resolutionPatch: Partial<CourseSettingManualResolution> = isCanonicalShape
+      ? ((patch as ManualResolutionPatch).resolution ?? {})
+      : (patch as Partial<CourseSettingManualResolution>)
+
+    // Deep-merge so nested fields coexist (course/teacher/classGroups etc.)
+    const mergedResolution = deepMergeResolution(item.resolution, resolutionPatch)
 
     const updatedItem: CourseSettingManualResolutionItem = {
       ...item,
