@@ -291,3 +291,261 @@ export async function createSemesterForCourseSettingImport(
     isActive: !!s.isActive,
   }
 }
+
+// ── L6-D2 Approval Review UI types ─────────────────────────────────────────
+
+export type CourseSettingApprovalReviewUiRowSource = {
+  sheetIndex: number
+  sheetName: string | null // runtime only
+  sheetNameHash: string
+  sourceRowIndex: number
+}
+
+export type CourseSettingApprovalReviewUiRowRaw = {
+  courseName: string | null
+  teacherText: string | null
+  classText: string | null
+  remark: string | null
+  mergeRemark: string | null
+  weeklyHoursText?: string | null
+  examTypeText?: string | null
+}
+
+export type CourseSettingApprovalReviewUiRowParsed = {
+  courseNameHash?: string
+  teacherRawHash?: string
+  classCountRawHash?: string
+  remarkHash?: string
+  mergeRemarkHash?: string
+  weeklyHours?: number | null
+  examType?: string | null
+}
+
+export type CourseSettingApprovalReviewUiRowDecision = {
+  value: 'pending'
+  source: 'systemDefaultPending'
+  reasonCode: 'INITIAL_PENDING'
+}
+
+export type CourseSettingApprovalReviewUiRowMatch = {
+  suggestedAction: string
+  blockingReasons: string[]
+  diagnosticCodes: string[]
+  confidence: number
+  courseMatchStatus?: string
+  teacherMatchStatusSummary?: Record<string, number>
+  classGroupMatchStatusSummary?: Record<string, number>
+  taskMatchStatus?: string
+}
+
+export type CourseSettingApprovalReviewUiRowFlags = {
+  blocked: boolean
+  autoSafeCandidate: boolean
+  needsHumanReview: boolean
+}
+
+export type CourseSettingApprovalReviewUiRow = {
+  approvalItemId: string
+  source: CourseSettingApprovalReviewUiRowSource
+  raw: CourseSettingApprovalReviewUiRowRaw
+  parsed: CourseSettingApprovalReviewUiRowParsed
+  decision: CourseSettingApprovalReviewUiRowDecision
+  match: CourseSettingApprovalReviewUiRowMatch
+  flags: CourseSettingApprovalReviewUiRowFlags
+}
+
+export type CourseSettingApprovalReviewUiTargetSemester = {
+  id: number
+  name: string
+  code?: string | null
+  isActive: boolean
+  setAsActive: false
+}
+
+export type CourseSettingApprovalReviewUiSourceArtifact = {
+  filename: string
+  sha256: string
+  sizeBytes: number
+}
+
+export type CourseSettingApprovalReviewUiPackageRef = {
+  targetSemesterId: number
+  dryRunFingerprintHash: string
+  itemCount: number
+}
+
+export type CourseSettingApprovalReviewUiSummary = {
+  totalItems: number
+  pendingItems: number
+  approvedItems: 0
+  rejectedItems: 0
+  needsReviewItems: 0
+  blockedItems: number
+  autoSafeCandidates: number
+  applyReady: false
+}
+
+export type CourseSettingApprovalReviewUiRawDisplayPolicy = {
+  runtimeUiRawAllowed: true
+  exportedDecisionFileRawIncluded: false
+  committedDocsRawAllowed: false
+  scope: 'authorized-admin-review-only'
+}
+
+export type CourseSettingApprovalReviewUiResponse = {
+  success: true
+  stage: 'L6-D2-XLSX-COURSE-SETTING-APPROVAL-REVIEW-UI'
+  reviewOnly: true
+  dryRunOnly: true
+  dbWritten: false
+  applyAllowed: false
+  applyListGenerated: false
+  targetSemester: CourseSettingApprovalReviewUiTargetSemester
+  sourceArtifact: CourseSettingApprovalReviewUiSourceArtifact
+  packageRef: CourseSettingApprovalReviewUiPackageRef
+  summary: CourseSettingApprovalReviewUiSummary
+  rawDisplayPolicy: CourseSettingApprovalReviewUiRawDisplayPolicy
+  rows: CourseSettingApprovalReviewUiRow[]
+  truncatedRows: number
+}
+
+export type CourseSettingApprovalReviewUiErrorResponse = {
+  success: false
+  error: string
+  message: string
+  reviewOnly: true
+  applyAllowed: false
+}
+
+// ── L6-D2 Decision File types ──────────────────────────────────────────────
+
+export type CourseSettingApprovalReviewUiDecisionValue =
+  | 'pending'
+  | 'approved'
+  | 'rejected'
+  | 'needsReview'
+
+export type CourseSettingApprovalDecisionFileDecision = {
+  approvalItemId: string
+  decision: CourseSettingApprovalReviewUiDecisionValue
+  reason?: string
+}
+
+export type CourseSettingDecisionFile = {
+  stage: 'L6-D2-XLSX-COURSE-SETTING-APPROVAL-REVIEW-UI'
+  fileType: 'course-setting-decision-file'
+  version: 'l6-d2-decision-file-v1'
+  exportedAt: string
+  targetSemesterId: number
+  packageRef: {
+    dryRunFingerprintHash: string
+    itemCount: number
+  }
+  decisions: CourseSettingApprovalDecisionFileDecision[]
+  rawIncluded: false
+}
+
+// ── L6-D2 Approval Review API Helper ───────────────────────────────────────
+
+/**
+ * L6-D2: Post a .xlsx file to the approval-review endpoint and receive a
+ * review-only, dry-run response. No DB writes, no apply list.
+ *
+ * On non-OK or `success === false`, throws an Error with the server's
+ * `message` (falling back to `error` or HTTP status) — same convention as
+ * `previewCourseSettingXlsx`.
+ */
+export async function reviewCourseSettingApproval(
+  file: File,
+  targetSemesterId: number,
+  maxRows?: number,
+): Promise<CourseSettingApprovalReviewUiResponse> {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('targetSemesterId', String(targetSemesterId))
+  if (maxRows != null) {
+    formData.append('maxRows', String(maxRows))
+  }
+
+  const res = await fetch(
+    '/api/admin/import/course-setting-xlsx/approval-review',
+    {
+      method: 'POST',
+      body: formData,
+    },
+  )
+
+  const data = await res.json()
+
+  if (!res.ok || !data.success) {
+    const message =
+      (data as CourseSettingApprovalReviewUiErrorResponse).message ||
+      (data as CourseSettingApprovalReviewUiErrorResponse).error ||
+      `Approval review failed (HTTP ${res.status})`
+    throw new Error(message)
+  }
+
+  return data as CourseSettingApprovalReviewUiResponse
+}
+
+// ── L6-D2 Decision File builders ───────────────────────────────────────────
+
+/**
+ * Build a redacted decision-file object. Pure mapper — never includes raw
+ * teacher/class/course/remark fields. If `exportedAt` is omitted, the
+ * current ISO timestamp is used.
+ */
+export function buildCourseSettingDecisionFile(input: {
+  targetSemesterId: number
+  dryRunFingerprintHash: string
+  itemCount: number
+  decisions: CourseSettingApprovalDecisionFileDecision[]
+  exportedAt?: string
+}): CourseSettingDecisionFile {
+  return {
+    stage: 'L6-D2-XLSX-COURSE-SETTING-APPROVAL-REVIEW-UI',
+    fileType: 'course-setting-decision-file',
+    version: 'l6-d2-decision-file-v1',
+    exportedAt: input.exportedAt ?? new Date().toISOString(),
+    targetSemesterId: input.targetSemesterId,
+    packageRef: {
+      dryRunFingerprintHash: input.dryRunFingerprintHash,
+      itemCount: input.itemCount,
+    },
+    decisions: input.decisions,
+    rawIncluded: false,
+  }
+}
+
+/**
+ * Serialize a decision file to a JSON string. Always appends a trailing
+ * newline so the artifact is line-oriented.
+ */
+export function serializeCourseSettingDecisionFile(
+  file: CourseSettingDecisionFile,
+): string {
+  return JSON.stringify(file, null, 2) + '\n'
+}
+
+/**
+ * Browser-side helper: trigger a download of the decision file as JSON.
+ * Uses a hidden `<a download>` element and a temporary object URL. The URL
+ * is revoked after 100ms. This never writes to disk server-side.
+ */
+export function downloadCourseSettingDecisionFile(
+  file: CourseSettingDecisionFile,
+): void {
+  const json = serializeCourseSettingDecisionFile(file)
+  const blob = new Blob([json], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `course-setting-decision.target-${file.targetSemesterId}.redacted.json`
+  a.style.display = 'none'
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  setTimeout(() => {
+    URL.revokeObjectURL(url)
+  }, 100)
+}

@@ -1,0 +1,140 @@
+{
+  "stage": "L6-D2-XLSX-COURSE-SETTING-APPROVAL-REVIEW-UI",
+  "status": "PASS",
+  "reviewOnly": true,
+  "dryRunOnly": true,
+  "dbWritten": false,
+  "applyAllowed": false,
+  "applyListGenerated": false,
+  "targetSemester": {
+    "id": 3,
+    "idHash": "4e07408562be",
+    "nameHash": "4e07408562be",
+    "isActive": false
+  },
+  "packageRef": {
+    "targetSemesterId": 3,
+    "itemCount": 1116,
+    "dryRunFingerprintHash": "165ff4c6b0836da3627928902492ae516318f7839fa800977a8cd6127e62f2c9"
+  },
+  "summary": {
+    "totalItems": 1116,
+    "pendingItems": 1116,
+    "approvedItems": 0,
+    "rejectedItems": 0,
+    "needsReviewItems": 0,
+    "blockedItems": 1069,
+    "autoSafeCandidates": 42,
+    "applyReady": false
+  },
+  "rowSample": [
+    {
+      "approvalItemId": "approval:1:3",
+      "decision": {
+        "value": "pending",
+        "source": "systemDefaultPending",
+        "reasonCode": "INITIAL_PENDING"
+      },
+      "flags": {
+        "blocked": true,
+        "autoSafeCandidate": false,
+        "needsHumanReview": false
+      }
+    },
+    {
+      "approvalItemId": "approval:1:4",
+      "decision": {
+        "value": "pending",
+        "source": "systemDefaultPending",
+        "reasonCode": "INITIAL_PENDING"
+      },
+      "flags": {
+        "blocked": true,
+        "autoSafeCandidate": false,
+        "needsHumanReview": false
+      }
+    }
+  ],
+  "input": {
+    "samplePathHash": "34ae69f10ac7",
+    "sampleFileNameHash": "d5c590e19e3f",
+    "sampleFileSize": 131200
+  },
+  "safety": {
+    "dbWritten": false,
+    "dbCountsUnchanged": true,
+    "dbCountsBefore": {
+      "course": 104,
+      "teacher": 84,
+      "classGroup": 36,
+      "teachingTask": 308,
+      "teachingTaskClass": 446,
+      "importBatch": 38,
+      "scheduleSlot": 440,
+      "scheduleAdjustment": 67,
+      "semester": 3,
+      "activeSemesterId": 1
+    },
+    "importBatchCreated": false,
+    "teachingTaskCreated": false,
+    "teachingTaskClassCreated": false,
+    "classGroupCreated": false,
+    "teacherCreated": false,
+    "courseCreated": false,
+    "scheduleSlotCreated": false,
+    "scheduleAdjustmentCreated": false,
+    "activeSemesterSwitched": false,
+    "schemaChanged": false,
+    "migrationAdded": false,
+    "apiChanged": "new_approval_review_route_only",
+    "uiChanged": "course_setting_xlsx_preview_review_section_only",
+    "l6dHelperChanged": false,
+    "l6d1HelperChanged": false,
+    "l4HelperChanged": false,
+    "l2ParserChanged": false,
+    "schedulerChanged": false,
+    "scoreChanged": false,
+    "k22ExpectedChanged": false,
+    "wordParserChanged": false,
+    "autoSafeCandidatesAutoApproved": false
+  },
+  "privacy": {
+    "committedRawTeacherNames": false,
+    "committedRawClassNames": false,
+    "committedRawCourseNames": false,
+    "committedRawRemarks": false,
+    "committedRawSheetNames": false,
+    "committedRawPhoneNumbers": false,
+    "committedDocsRawAllowed": false,
+    "localArtifactRawIncluded": false,
+    "exportedDecisionFileRawIncluded": false,
+    "runtimeUiRawAllowed": true
+  },
+  "gates": {
+    "reviewOnly": true,
+    "dryRunOnly": true,
+    "dbWritten": false,
+    "applyAllowed": false,
+    "applyListGenerated": false,
+    "l4DryRunUnchanged": true,
+    "l6dApprovalPackageUnchanged": true,
+    "l6d1DecisionPackageUnchanged": true,
+    "apiWriteRouteAbsent": true,
+    "applyRouteAbsent": true,
+    "activateSemesterRouteAbsent": true
+  },
+  "validation": {
+    "ok": true,
+    "violationCount": 0,
+    "checkedItems": 1116,
+    "privacyChecks": 5,
+    "forbiddenLabelChecks": 4
+  },
+  "notes": [
+    "L6-D2 is REVIEW UI ONLY — it never writes DB, never creates ImportBatch/TeachingTask/TeachingTaskClass, never switches the active semester.",
+    "Runtime raw preview fields (course/teacher/class/remark/sheet text) are emitted ONLY by the runtime API/UI for authorized admins.",
+    "Exported decision file (browser download) is redacted — no raw teacher/class/course/remark/sheet text.",
+    "Committed docs/json/local artifacts are redacted (privacy manifest all false).",
+    "Browser manual validation still pending."
+  ]
+}

@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * L3/L6-B/L6-B1/L6-C UI Component - Course Setting XLSX Preview
+ * L3/L6-B/L6-B1/L6-C/L6-D2 UI Component - Course Setting XLSX Preview
  *
  * Preview-only component for Excel course setting file parsing. No confirm/apply
  * buttons. Shows hashed preview rows + field summaries + manual review flags.
@@ -10,9 +10,13 @@
  * L6-C: adds createNew semester mode — create a new Semester from the
  *        import flow and auto-select it as targetSemesterId. The new semester
  *        is NEVER auto-activated; active semester is decoupled.
+ * L6-D2: adds "审核模式" (review mode) section. Calls approval-review API
+ *        and renders a review-only decision table. NEVER writes the DB,
+ *        never creates an ImportBatch, never applies anything. Decisions
+ *        stay in client state and can be exported as a redacted JSON.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import {
   Loader2,
@@ -24,6 +28,9 @@ import {
   Database,
   Plus,
   CheckCircle2,
+  ListChecks,
+  Download,
+  Search,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -33,9 +40,15 @@ import {
   previewCourseSettingXlsx,
   fetchSemestersForImport,
   createSemesterForCourseSettingImport,
+  reviewCourseSettingApproval,
+  buildCourseSettingDecisionFile,
+  downloadCourseSettingDecisionFile,
   type CourseSettingXlsxPreviewResponse,
   type CourseSettingXlsxPreviewRow,
   type SemesterListItem,
+  type CourseSettingApprovalReviewUiResponse,
+  type CourseSettingApprovalReviewUiRow,
+  type CourseSettingApprovalReviewUiDecisionValue,
 } from '@/lib/import/course-setting-xlsx-client'
 
 // L6-C: targetSemester mode (existing vs createNew)
@@ -81,6 +94,23 @@ export default function CourseSettingXlsxPreview() {
   const [createForm, setCreateForm] = useState<CreateSemesterFormState>(EMPTY_CREATE_FORM)
   const [createError, setCreateError] = useState<string | null>(null)
   const [creatingSemester, setCreatingSemester] = useState(false)
+
+  // L6-D2: 审核模式 (review mode) state
+  const [reviewing, setReviewing] = useState(false)
+  const [reviewResult, setReviewResult] = useState<CourseSettingApprovalReviewUiResponse | null>(null)
+  const [reviewError, setReviewError] = useState<string | null>(null)
+  const [clientDecisions, setClientDecisions] = useState<
+    Record<string, CourseSettingApprovalReviewUiDecisionValue>
+  >({})
+
+  // L6-D2: filter state (live)
+  const [filterDecision, setFilterDecision] = useState<'all' | CourseSettingApprovalReviewUiDecisionValue>(
+    'all',
+  )
+  const [filterBlocked, setFilterBlocked] = useState<'all' | 'blocked' | 'notBlocked'>('all')
+  const [filterSuggestedAction, setFilterSuggestedAction] = useState<string>('all')
+  const [filterDiagnosticCode, setFilterDiagnosticCode] = useState<string>('all')
+  const [searchText, setSearchText] = useState<string>('')
 
   const refreshSemesters = useCallback(async () => {
     setSemestersLoading(true)
@@ -194,10 +224,158 @@ export default function CourseSettingXlsxPreview() {
     setResult(null)
     setError(null)
     setExpandedRows(new Set())
+    // L6-D2: also clear review state
+    setReviewResult(null)
+    setReviewError(null)
+    setClientDecisions({})
+    setFilterDecision('all')
+    setFilterBlocked('all')
+    setFilterSuggestedAction('all')
+    setFilterDiagnosticCode('all')
+    setSearchText('')
     if (fileInputRef.current) fileInputRef.current.value = ''
   }, [])
 
+  // L6-D2: review handler
+  const handleReview = useCallback(async () => {
+    if (!file) {
+      toast.error('请选择 .xlsx 课程设置文件')
+      return
+    }
+    if (!selectedSemesterId) {
+      toast.error('请先选择导入目标学期')
+      return
+    }
+    setReviewing(true)
+    setReviewError(null)
+    setReviewResult(null)
+    setClientDecisions({})
+    try {
+      const data = await reviewCourseSettingApproval(file, selectedSemesterId)
+      setReviewResult(data)
+      // Initialize client decisions from server (all 'pending' initially)
+      const init: Record<string, CourseSettingApprovalReviewUiDecisionValue> = {}
+      for (const row of data.rows) {
+        init[row.approvalItemId] = row.decision.value
+      }
+      setClientDecisions(init)
+      toast.success('审核视图已生成', {
+        description: `共 ${data.summary.totalItems} 条，不会写入数据库`,
+      })
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e)
+      setReviewError(msg)
+      toast.error('审核视图生成失败', { description: msg })
+    } finally {
+      setReviewing(false)
+    }
+  }, [file, selectedSemesterId])
+
+  // L6-D2: export decision file from current client state (ALL rows, regardless of filter)
+  const handleExportDecision = useCallback(() => {
+    if (!reviewResult) return
+    const rows = reviewResult.rows
+    const decisions = rows.map((r) => ({
+      approvalItemId: r.approvalItemId,
+      decision: clientDecisions[r.approvalItemId] ?? r.decision.value,
+    }))
+    const file = buildCourseSettingDecisionFile({
+      targetSemesterId: reviewResult.targetSemester.id,
+      dryRunFingerprintHash: reviewResult.packageRef.dryRunFingerprintHash,
+      itemCount: reviewResult.packageRef.itemCount,
+      decisions,
+    })
+    downloadCourseSettingDecisionFile(file)
+    toast.success('审核决策已导出', {
+      description: '已生成脱敏 JSON 文件，文件名按 targetSemesterId 标识',
+    })
+  }, [reviewResult, clientDecisions])
+
+  // L6-D2: compute live counters from clientDecisions (not server state)
+  const liveCounters = useMemo(() => {
+    if (!reviewResult) return null
+    const counts: Record<CourseSettingApprovalReviewUiDecisionValue, number> = {
+      pending: 0,
+      approved: 0,
+      rejected: 0,
+      needsReview: 0,
+    }
+    for (const row of reviewResult.rows) {
+      const d = clientDecisions[row.approvalItemId] ?? row.decision.value
+      counts[d] += 1
+    }
+    return {
+      total: reviewResult.rows.length,
+      pending: counts.pending,
+      approved: counts.approved,
+      rejected: counts.rejected,
+      needsReview: counts.needsReview,
+    }
+  }, [reviewResult, clientDecisions])
+
+  // L6-D2: unique suggestedAction values
+  const suggestedActionOptions = useMemo(() => {
+    if (!reviewResult) return [] as string[]
+    const set = new Set<string>()
+    for (const r of reviewResult.rows) {
+      if (r.match.suggestedAction) set.add(r.match.suggestedAction)
+    }
+    return Array.from(set).sort()
+  }, [reviewResult])
+
+  // L6-D2: unique diagnostic codes
+  const diagnosticCodeOptions = useMemo(() => {
+    if (!reviewResult) return [] as string[]
+    const set = new Set<string>()
+    for (const r of reviewResult.rows) {
+      for (const c of r.match.diagnosticCodes) set.add(c)
+    }
+    return Array.from(set).sort()
+  }, [reviewResult])
+
+  // L6-D2: filtered rows (sliced for display, full set held in state)
+  const filteredRows = useMemo(() => {
+    if (!reviewResult) return [] as CourseSettingApprovalReviewUiRow[]
+    const lowerSearch = searchText.trim().toLowerCase()
+    return reviewResult.rows.filter((row) => {
+      const d = clientDecisions[row.approvalItemId] ?? row.decision.value
+      if (filterDecision !== 'all' && d !== filterDecision) return false
+      if (filterBlocked === 'blocked' && !row.flags.blocked) return false
+      if (filterBlocked === 'notBlocked' && row.flags.blocked) return false
+      if (filterSuggestedAction !== 'all' && row.match.suggestedAction !== filterSuggestedAction) {
+        return false
+      }
+      if (filterDiagnosticCode !== 'all' && !row.match.diagnosticCodes.includes(filterDiagnosticCode)) {
+        return false
+      }
+      if (lowerSearch) {
+        const raw = row.raw
+        const haystack = [
+          raw.courseName,
+          raw.teacherText,
+          raw.classText,
+          raw.remark,
+          raw.mergeRemark,
+        ]
+          .filter((v): v is string => !!v)
+          .join(' ')
+          .toLowerCase()
+        if (!haystack.includes(lowerSearch)) return false
+      }
+      return true
+    })
+  }, [
+    reviewResult,
+    clientDecisions,
+    filterDecision,
+    filterBlocked,
+    filterSuggestedAction,
+    filterDiagnosticCode,
+    searchText,
+  ])
+
   const canPreview = !!file && !!selectedSemesterId && !parsing && targetSemesterMode === 'existing'
+  const canReview = !!file && !!selectedSemesterId && !reviewing
 
   return (
     <div className="bg-white rounded-lg shadow">
@@ -420,6 +598,26 @@ export default function CourseSettingXlsxPreview() {
                 </>
               )}
             </Button>
+            {/* L6-D2: 审核模式 trigger (review-only, no DB writes) */}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => void handleReview()}
+              disabled={!canReview}
+              data-l6d2-action="review"
+            >
+              {reviewing ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                  生成中...
+                </>
+              ) : (
+                <>
+                  <ListChecks className="w-3.5 h-3.5 mr-1" />
+                  生成审核视图
+                </>
+              )}
+            </Button>
             {(file || result) && (
               <Button size="sm" variant="outline" onClick={handleReset}>
                 重置
@@ -443,6 +641,40 @@ export default function CourseSettingXlsxPreview() {
             <span>{error}</span>
           </div>
         </div>
+      )}
+
+      {/* L6-D2: Review error */}
+      {reviewError && (
+        <div className="px-4 py-3 border-t">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700 flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+            <span>{reviewError}</span>
+          </div>
+        </div>
+      )}
+
+      {/* L6-D2: 审核模式 (review mode) — review-only, never writes DB */}
+      {reviewResult && (
+        <ReviewSection
+          reviewResult={reviewResult}
+          clientDecisions={clientDecisions}
+          setClientDecisions={setClientDecisions}
+          liveCounters={liveCounters}
+          suggestedActionOptions={suggestedActionOptions}
+          diagnosticCodeOptions={diagnosticCodeOptions}
+          filterDecision={filterDecision}
+          setFilterDecision={setFilterDecision}
+          filterBlocked={filterBlocked}
+          setFilterBlocked={setFilterBlocked}
+          filterSuggestedAction={filterSuggestedAction}
+          setFilterSuggestedAction={setFilterSuggestedAction}
+          filterDiagnosticCode={filterDiagnosticCode}
+          setFilterDiagnosticCode={setFilterDiagnosticCode}
+          searchText={searchText}
+          setSearchText={setSearchText}
+          filteredRows={filteredRows}
+          onExport={handleExportDecision}
+        />
       )}
 
       {/* Results */}
@@ -766,5 +998,384 @@ function PreviewRow({
         </tr>
       )}
     </>
+  )
+}
+
+// ── L6-D2: 审核模式 sub-components ──────────────────────────────────────────
+
+type ReviewCounters = {
+  total: number
+  pending: number
+  approved: number
+  rejected: number
+  needsReview: number
+}
+
+function ReviewSection(props: {
+  reviewResult: CourseSettingApprovalReviewUiResponse
+  clientDecisions: Record<string, CourseSettingApprovalReviewUiDecisionValue>
+  setClientDecisions: React.Dispatch<
+    React.SetStateAction<Record<string, CourseSettingApprovalReviewUiDecisionValue>>
+  >
+  liveCounters: ReviewCounters | null
+  suggestedActionOptions: string[]
+  diagnosticCodeOptions: string[]
+  filterDecision: 'all' | CourseSettingApprovalReviewUiDecisionValue
+  setFilterDecision: (v: 'all' | CourseSettingApprovalReviewUiDecisionValue) => void
+  filterBlocked: 'all' | 'blocked' | 'notBlocked'
+  setFilterBlocked: (v: 'all' | 'blocked' | 'notBlocked') => void
+  filterSuggestedAction: string
+  setFilterSuggestedAction: (v: string) => void
+  filterDiagnosticCode: string
+  setFilterDiagnosticCode: (v: string) => void
+  searchText: string
+  setSearchText: (v: string) => void
+  filteredRows: CourseSettingApprovalReviewUiRow[]
+  onExport: () => void
+}) {
+  const {
+    reviewResult,
+    clientDecisions,
+    setClientDecisions,
+    liveCounters,
+    suggestedActionOptions,
+    diagnosticCodeOptions,
+    filterDecision,
+    setFilterDecision,
+    filterBlocked,
+    setFilterBlocked,
+    filterSuggestedAction,
+    setFilterSuggestedAction,
+    filterDiagnosticCode,
+    setFilterDiagnosticCode,
+    searchText,
+    setSearchText,
+    filteredRows,
+    onExport,
+  } = props
+
+  const s = reviewResult.summary
+  const ts = reviewResult.targetSemester
+
+  return (
+    <div className="px-4 py-3 border-t space-y-3" data-l6d2-section="review">
+      {/* Section header */}
+      <div className="flex items-center gap-2">
+        <ListChecks className="w-4 h-4 text-indigo-700" />
+        <h4 className="text-sm font-semibold text-gray-800">审核模式 (Review Mode)</h4>
+        <Badge variant="outline" className="text-[10px] font-normal bg-indigo-50 text-indigo-700 border-indigo-200">
+          review-only · dryRunOnly · applyAllowed=false
+        </Badge>
+      </div>
+
+      {/* Warning banner — explicit no-write reassurance */}
+      <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 text-sm text-indigo-800 flex items-start gap-2">
+        <Info className="w-4 h-4 mt-0.5 shrink-0" />
+        <span>当前仅用于人工审核，不会写入数据库，不会创建教学任务或导入批次。</span>
+      </div>
+
+      {/* Target semester + package ref summary */}
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-xs text-gray-700">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <div>
+            <span className="opacity-70">目标学期:</span> {ts.name}{' '}
+            {ts.isActive && (
+              <Badge variant="secondary" className="text-[10px] ml-1">
+                当前学期
+              </Badge>
+            )}
+          </div>
+          <div>
+            <span className="opacity-70">学期ID:</span> {ts.id}
+          </div>
+          <div>
+            <span className="opacity-70">包指纹:</span>{' '}
+            <span className="font-mono">{reviewResult.packageRef.dryRunFingerprintHash.slice(0, 16)}…</span>
+          </div>
+          <div>
+            <span className="opacity-70">源文件:</span> {reviewResult.sourceArtifact.filename}
+          </div>
+        </div>
+      </div>
+
+      {/* Summary cards (6) + autoSafe badge */}
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
+        <ReviewSummaryCard label="total" value={s.totalItems} tone="default" />
+        <ReviewSummaryCard label="pending" value={s.pendingItems} tone="muted" />
+        <ReviewSummaryCard label="approved" value={s.approvedItems} tone="success" />
+        <ReviewSummaryCard label="rejected" value={s.rejectedItems} tone="danger" />
+        <ReviewSummaryCard label="needsReview" value={s.needsReviewItems} tone="warn" />
+        <ReviewSummaryCard label="blocked" value={s.blockedItems} tone="danger" />
+      </div>
+      <div className="text-[11px] text-gray-500">
+        autoSafeCandidates: <Badge variant="outline" className="text-[10px]">{s.autoSafeCandidates}</Badge>
+        <span className="ml-2 opacity-70">(informational only, 不参与本次导出统计)</span>
+      </div>
+
+      {/* Live counters + export */}
+      {liveCounters && (
+        <div className="flex items-center justify-between flex-wrap gap-2 bg-white border border-gray-200 rounded-md p-2">
+          <div className="text-xs text-gray-700" data-l6d2-counters>
+            共 <span className="font-semibold tabular-nums">{liveCounters.total}</span> 条 /
+            pending <span className="font-semibold tabular-nums">{liveCounters.pending}</span> /
+            approved <span className="font-semibold tabular-nums">{liveCounters.approved}</span> /
+            rejected <span className="font-semibold tabular-nums">{liveCounters.rejected}</span> /
+            needsReview <span className="font-semibold tabular-nums">{liveCounters.needsReview}</span>
+            <span className="ml-2 text-gray-400">
+              (显示 {filteredRows.length} / {liveCounters.total} 条)
+            </span>
+          </div>
+          <Button size="sm" variant="outline" onClick={onExport} data-l6d2-action="export">
+            <Download className="w-3.5 h-3.5 mr-1" />
+            导出审核决策 JSON
+          </Button>
+        </div>
+      )}
+
+      {/* Sticky filter row */}
+      <div className="sticky top-0 z-10 bg-white border border-gray-200 rounded-md p-2 flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-1">
+          <Label className="text-[11px] text-gray-600">decision</Label>
+          <select
+            value={filterDecision}
+            onChange={(e) =>
+              setFilterDecision(e.target.value as 'all' | CourseSettingApprovalReviewUiDecisionValue)
+            }
+            className="border border-gray-300 rounded px-2 py-0.5 text-xs bg-white"
+            data-l6d2-filter="decision"
+          >
+            <option value="all">全部</option>
+            <option value="pending">pending</option>
+            <option value="approved">approved</option>
+            <option value="rejected">rejected</option>
+            <option value="needsReview">needsReview</option>
+          </select>
+        </div>
+        <div className="flex items-center gap-1">
+          <Label className="text-[11px] text-gray-600">blocked</Label>
+          <select
+            value={filterBlocked}
+            onChange={(e) => setFilterBlocked(e.target.value as 'all' | 'blocked' | 'notBlocked')}
+            className="border border-gray-300 rounded px-2 py-0.5 text-xs bg-white"
+            data-l6d2-filter="blocked"
+          >
+            <option value="all">全部</option>
+            <option value="blocked">blocked only</option>
+            <option value="notBlocked">not blocked only</option>
+          </select>
+        </div>
+        <div className="flex items-center gap-1">
+          <Label className="text-[11px] text-gray-600">suggestedAction</Label>
+          <select
+            value={filterSuggestedAction}
+            onChange={(e) => setFilterSuggestedAction(e.target.value)}
+            className="border border-gray-300 rounded px-2 py-0.5 text-xs bg-white"
+            data-l6d2-filter="suggestedAction"
+          >
+            <option value="all">全部</option>
+            {suggestedActionOptions.map((a) => (
+              <option key={a} value={a}>
+                {a}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="flex items-center gap-1">
+          <Label className="text-[11px] text-gray-600">diagnostic</Label>
+          <select
+            value={filterDiagnosticCode}
+            onChange={(e) => setFilterDiagnosticCode(e.target.value)}
+            className="border border-gray-300 rounded px-2 py-0.5 text-xs bg-white"
+            data-l6d2-filter="diagnostic"
+          >
+            <option value="all">全部</option>
+            {diagnosticCodeOptions.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="flex items-center gap-1 flex-1 min-w-[180px]">
+          <Search className="w-3.5 h-3.5 text-gray-400" />
+          <Input
+            type="text"
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            placeholder="搜索 courseName / teacherText / classText / remark / mergeRemark"
+            className="text-xs h-7"
+            data-l6d2-filter="search"
+          />
+        </div>
+      </div>
+
+      {/* Review table */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead className="bg-gray-50 text-gray-600">
+            <tr>
+              <th className="px-2 py-1.5 text-left">approvalItemId</th>
+              <th className="px-2 py-1.5 text-left">sheet</th>
+              <th className="px-2 py-1.5 text-left">row</th>
+              <th className="px-2 py-1.5 text-left">课程名</th>
+              <th className="px-2 py-1.5 text-left">教师</th>
+              <th className="px-2 py-1.5 text-left">班级</th>
+              <th className="px-2 py-1.5 text-left">周课时</th>
+              <th className="px-2 py-1.5 text-left">考试类型</th>
+              <th className="px-2 py-1.5 text-left">备注</th>
+              <th className="px-2 py-1.5 text-left">合班备注</th>
+              <th className="px-2 py-1.5 text-left">diagnostics</th>
+              <th className="px-2 py-1.5 text-left">suggestedAction</th>
+              <th className="px-2 py-1.5 text-left">match</th>
+              <th className="px-2 py-1.5 text-right">Conf</th>
+              <th className="px-2 py-1.5 text-left">decision</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredRows.length === 0 ? (
+              <tr>
+                <td colSpan={15} className="px-4 py-6 text-center text-gray-400">
+                  当前筛选下没有审核项
+                </td>
+              </tr>
+            ) : (
+              filteredRows.map((row) => (
+                <ReviewRow
+                  key={row.approvalItemId}
+                  row={row}
+                  decisionValue={clientDecisions[row.approvalItemId] ?? row.decision.value}
+                  onDecisionChange={(v) =>
+                    setClientDecisions((prev) => ({ ...prev, [row.approvalItemId]: v }))
+                  }
+                />
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {reviewResult.truncatedRows > 0 && (
+        <p className="text-[11px] text-gray-500">
+          服务端已截断 {reviewResult.truncatedRows} 条记录，导出 JSON 包含全部 {reviewResult.summary.totalItems} 条。
+        </p>
+      )}
+    </div>
+  )
+}
+
+function ReviewSummaryCard({
+  label,
+  value,
+  tone,
+}: {
+  label: string
+  value: number
+  tone: 'default' | 'muted' | 'success' | 'danger' | 'warn'
+}) {
+  const toneClass =
+    tone === 'success'
+      ? 'border-green-200 bg-green-50 text-green-700'
+      : tone === 'danger'
+        ? 'border-red-200 bg-red-50 text-red-700'
+        : tone === 'warn'
+          ? 'border-amber-200 bg-amber-50 text-amber-700'
+          : tone === 'muted'
+            ? 'border-gray-200 bg-gray-50 text-gray-700'
+            : 'border-indigo-200 bg-indigo-50 text-indigo-700'
+  return (
+    <div className={'rounded-lg border p-2 ' + toneClass}>
+      <div className="text-[10px] opacity-80">{label}</div>
+      <div className="text-base font-semibold tabular-nums">{value}</div>
+    </div>
+  )
+}
+
+function ReviewRow({
+  row,
+  decisionValue,
+  onDecisionChange,
+}: {
+  row: CourseSettingApprovalReviewUiRow
+  decisionValue: CourseSettingApprovalReviewUiDecisionValue
+  onDecisionChange: (v: CourseSettingApprovalReviewUiDecisionValue) => void
+}) {
+  const truncatedId =
+    row.approvalItemId.length > 14 ? row.approvalItemId.slice(0, 14) + '…' : row.approvalItemId
+  const matchStatus =
+    [row.match.taskMatchStatus, row.match.courseMatchStatus]
+      .filter((v): v is string => !!v)
+      .join(' / ') || '-'
+  return (
+    <tr className={'border-t hover:bg-gray-50 ' + (row.flags.blocked ? 'bg-red-50/40' : '')}>
+      <td className="px-2 py-1.5 font-mono text-[10px]" title={row.approvalItemId}>
+        {truncatedId}
+      </td>
+      <td className="px-2 py-1.5 text-[10px] max-w-[80px] truncate" title={row.source.sheetName ?? row.source.sheetNameHash}>
+        {row.source.sheetName ?? row.source.sheetNameHash.slice(0, 8)}
+      </td>
+      <td className="px-2 py-1.5 tabular-nums">{row.source.sourceRowIndex}</td>
+      <td className="px-2 py-1.5 text-[11px] max-w-[120px] truncate" title={row.raw.courseName ?? ''}>
+        {row.raw.courseName ?? '-'}
+      </td>
+      <td className="px-2 py-1.5 text-[11px] max-w-[140px] truncate" title={row.raw.teacherText ?? ''}>
+        {row.raw.teacherText ?? '-'}
+      </td>
+      <td className="px-2 py-1.5 text-[11px] max-w-[140px] truncate" title={row.raw.classText ?? ''}>
+        {row.raw.classText ?? '-'}
+      </td>
+      <td className="px-2 py-1.5 tabular-nums">{row.raw.weeklyHoursText ?? '-'}</td>
+      <td className="px-2 py-1.5 text-[11px] max-w-[80px] truncate" title={row.raw.examTypeText ?? ''}>
+        {row.raw.examTypeText ?? '-'}
+      </td>
+      <td className="px-2 py-1.5 text-[11px] max-w-[120px] truncate" title={row.raw.remark ?? ''}>
+        {row.raw.remark ?? '-'}
+      </td>
+      <td className="px-2 py-1.5 text-[11px] max-w-[120px] truncate" title={row.raw.mergeRemark ?? ''}>
+        {row.raw.mergeRemark ?? '-'}
+      </td>
+      <td className="px-2 py-1.5">
+        <div className="flex flex-wrap gap-1 max-w-[160px]">
+          {row.match.diagnosticCodes.length === 0 ? (
+            <span className="text-gray-400">-</span>
+          ) : (
+            row.match.diagnosticCodes.map((code) => (
+              <Badge
+                key={code}
+                variant="outline"
+                className="text-[10px] bg-red-50 text-red-600 border-red-200"
+              >
+                {code}
+              </Badge>
+            ))
+          )}
+        </div>
+      </td>
+      <td className="px-2 py-1.5 font-mono text-[10px]">{row.match.suggestedAction}</td>
+      <td className="px-2 py-1.5">
+        <Badge variant="outline" className="text-[10px] bg-gray-50 text-gray-700 border-gray-300">
+          {matchStatus}
+        </Badge>
+      </td>
+      <td className="px-2 py-1.5 text-right tabular-nums">
+        <span className={row.match.confidence < 0.8 ? 'text-amber-600 font-semibold' : ''}>
+          {row.match.confidence.toFixed(2)}
+        </span>
+      </td>
+      <td className="px-2 py-1.5">
+        <select
+          value={decisionValue}
+          onChange={(e) =>
+            onDecisionChange(e.target.value as CourseSettingApprovalReviewUiDecisionValue)
+          }
+          className="border border-gray-300 rounded px-1.5 py-0.5 text-[11px] bg-white"
+          data-l6d2-decision={row.approvalItemId}
+        >
+          <option value="pending">pending</option>
+          <option value="approved">approved</option>
+          <option value="rejected">rejected</option>
+          <option value="needsReview">needsReview</option>
+        </select>
+      </td>
+    </tr>
   )
 }
