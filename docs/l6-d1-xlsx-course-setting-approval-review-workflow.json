@@ -1,0 +1,146 @@
+{
+  "stage": "L6-D1-XLSX-COURSE-SETTING-APPROVAL-REVIEW-WORKFLOW",
+  "status": "PASS",
+  "decisionOnly": true,
+  "dryRunOnly": true,
+  "dbWritten": false,
+  "applyAllowed": false,
+  "applyListGenerated": false,
+  "targetSemester": {
+    "id": 3,
+    "idHash": "4e07408562be",
+    "nameHash": "84d9662d836b",
+    "codeHash": "00906e7bc88f",
+    "isActive": false
+  },
+  "approvalPackageRef": {
+    "stage": "L6-D-XLSX-COURSE-SETTING-APPROVAL-PACKAGE-WITH-TARGET-SEMESTER",
+    "packageVersion": "l6-d-approval-package-v1",
+    "targetSemesterId": 3,
+    "itemCount": 1116,
+    "localPackageSha256": "2abc072de2a5cb3dece740796c22a858f5aa3e2b441c3d34d044304aca69a302",
+    "dryRunFingerprintHash": "165ff4c6b0836da3627928902492ae516318f7839fa800977a8cd6127e62f2c9"
+  },
+  "decisionPackage": {
+    "localPackagePath": "temp/local-artifacts/l6-d1/xlsx-course-setting-decision-package.target-3.redacted.json",
+    "localPackageSha256": "51d24de46343b3591dff73185b1f7bccf5ed500f7286ba6ed93c18ff351475fa",
+    "localPackageTracked": false,
+    "itemCount": 1116,
+    "allDecisionsPending": true,
+    "pendingItems": 1116,
+    "approvedItems": 0,
+    "rejectedItems": 0,
+    "needsReviewItems": 0,
+    "blockedItems": 1069,
+    "autoSafeCandidates": 42,
+    "applyReady": false,
+    "rawIncluded": false
+  },
+  "buckets": [
+    {
+      "bucket": "needsManualReview",
+      "count": 1074,
+      "pending": 1074,
+      "approved": 0,
+      "rejected": 0,
+      "needsReview": 0
+    },
+    {
+      "bucket": "approveCandidate",
+      "count": 42,
+      "pending": 42,
+      "approved": 0,
+      "rejected": 0,
+      "needsReview": 0
+    }
+  ],
+  "diagnostics": {
+    "TEACHER_BLANK": 86,
+    "COURSE_MISSING": 866,
+    "TASK_SPLIT_REQUIRED": 92,
+    "TEACHER_MISSING": 686,
+    "TEACHER_ASSIGNMENT_OTHER_REQUIRES_REVIEW": 62,
+    "MERGE_REMARK_AMBIGUOUS": 62,
+    "EXAM_TYPE_OTHER": 142,
+    "TEACHER_BANK_SPLIT_REQUIRES_REVIEW": 21,
+    "WEEKLY_HOURS_NON_NUMERIC": 19,
+    "LOW_CONFIDENCE_ROW": 40,
+    "CLASS_COUNT_OTHER_REQUIRES_REVIEW": 134,
+    "CLASS_COUNT_ONLY_REQUIRES_REVIEW": 125
+  },
+  "gates": {
+    "approvalPackageLoaded": true,
+    "decisionsComplete": false,
+    "hasApprovedItems": false,
+    "hasRejectedItems": false,
+    "hasNeedsReviewItems": false,
+    "applyReady": false,
+    "dbBackupCreated": false,
+    "dryRunReplayMatchesApprovedPackage": false,
+    "importBatchPlanGenerated": false,
+    "rollbackPlanGenerated": false
+  },
+  "input": {
+    "samplePathHash": "34ae69f10ac7",
+    "samplePathExists": true,
+    "sampleGitTracked": true,
+    "sampleFileNameHash": "d5c590e19e3f",
+    "sampleFileSize": 131200
+  },
+  "safety": {
+    "dbWritten": false,
+    "dbCountsUnchanged": true,
+    "dbCountsBefore": {
+      "course": 104,
+      "teacher": 84,
+      "classGroup": 36,
+      "teachingTask": 308,
+      "teachingTaskClass": 446,
+      "importBatch": 38,
+      "scheduleSlot": 440,
+      "scheduleAdjustment": 67,
+      "semester": 3,
+      "activeSemesterId": 1
+    },
+    "importBatchCreated": false,
+    "teachingTaskCreated": false,
+    "teachingTaskClassCreated": false,
+    "classGroupCreated": false,
+    "teacherCreated": false,
+    "courseCreated": false,
+    "scheduleSlotCreated": false,
+    "scheduleAdjustmentCreated": false,
+    "activeSemesterSwitched": false,
+    "schemaChanged": false,
+    "migrationAdded": false,
+    "apiChanged": false,
+    "uiChanged": false,
+    "l6dHelperChanged": false,
+    "l4HelperChanged": false,
+    "schedulerChanged": false,
+    "scoreChanged": false,
+    "k22ExpectedChanged": false,
+    "autoSafeCandidatesAutoApproved": false
+  },
+  "privacy": {
+    "committedRawTeacherNames": false,
+    "committedRawClassNames": false,
+    "committedRawCourseNames": false,
+    "committedRawRemarks": false,
+    "committedRawSheetNames": false,
+    "committedRawPhoneNumbers": false,
+    "localArtifactRawIncluded": false,
+    "runtimeUiRawAllowed": true
+  },
+  "validation": {
+    "validationOk": true,
+    "violationCount": 0,
+    "checkedItems": 1116
+  },
+  "notes": [
+    "L6-D1 is REVIEW WORKFLOW ONLY — it does NOT write DB.",
+    "All decision values remain `pending`; L6-D1 never auto-approves, even when the upstream L6-D package reports `autoSafeCandidates > 0`.",
+    "The future L6-D2 (human review UI) or `importedDecisionFile` will populate the manual / ruleAssisted decisions.",
+    "Runtime raw preview fields are emitted by L6-B1 runtime API/UI for authorized admins; L6-D1 does NOT include them anywhere."
+  ]
+}

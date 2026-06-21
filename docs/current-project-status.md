@@ -140,3 +140,5 @@ The list reflects local history at the time of K36-A3 and does not assert remote
 - K28 / K29 全部 CLOSED
 
 每个 stage 的 closeout 文档仍位于 `docs/`，命名 `k<stage>-*.md` / `k<stage>-*.json`，按 stage 顺序排列。
+
+> **L6-D1 Excel 课程设置 approval review workflow 已完成**：基于 L6-D target-semester-bound approval package 生成初始 decision package，1116 items 全部 pending；不写 DB、不创建 ImportBatch/TeachingTask/TeachingTaskClass，不生成 apply list。
