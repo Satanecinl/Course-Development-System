@@ -881,9 +881,11 @@ export type CourseSettingPartialImportPlanResponse = {
         assignmentId: string
         teacherRaw: string
         teacherNameHash: string
+        teacherId: number | null
         teacherMatchStatus: string
         classRaw: string
         classNameHashes: string[]
+        classGroupIds: number[]
         classMatchStatus: string
         warningCodes: string[]
       }>

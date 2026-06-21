@@ -164,3 +164,5 @@ The list reflects local history at the time of K36-A3 and does not assert remote
 - L6-E2C 修复 Excel 课程设置审核主表上下文并新增任务拆分识别：审核主表不展开即可看到专业/课程/教师/班级/备注摘要，系统可识别同课多班多教师授课模式并生成拆分候选，确认后进入 partial import plan；不写 DB、不执行 apply。
 
 - L6-E2D 修复 Excel 课程设置拆分候选明细与折叠上下文：手动处理区不展开即可看到专业/工作表/行号/课程/教师/班级/课时/考试/备注摘要，教学任务拆分区展示具体 candidate 与教师-班级 assignment，确认拆分绑定 candidateId；不写 DB、不执行 apply。
+
+- L6-E2E 修复 Excel 课程设置真实教学任务拆分解析：支持教师字段中“姓名(班级编号)”模式并映射到真实班级，不再生成教师A/班级1占位候选；确认拆分后 partial import plan 可按真实 assignment 生成多个 TeachingTask candidates；不写 DB、不执行 apply。

@@ -251,9 +251,11 @@ export type CourseSettingPartialImportPlanResult = {
         assignmentId: string
         teacherRaw: string
         teacherNameHash: string
+        teacherId: number | null
         teacherMatchStatus: string
         classRaw: string
         classNameHashes: string[]
+        classGroupIds: number[]
         classMatchStatus: string
         warningCodes: string[]
       }>
@@ -351,9 +353,9 @@ const findResolution = (
  *  - `needsReview`: same courseId with `matchStatus === 'ambiguousExisting'`
  *    or a manually-flagged ambiguous mapping that was NOT confirmed.
  */
-export const buildCourseSettingPartialImportPlan = (
+export const buildCourseSettingPartialImportPlan = async (
   input: BuildPartialImportPlanInput,
-): CourseSettingPartialImportPlanResult => {
+): Promise<CourseSettingPartialImportPlanResult> => {
   const {
     reviewRows,
     manualResolutions,
@@ -362,6 +364,19 @@ export const buildCourseSettingPartialImportPlan = (
     sourceArtifact,
     reviewPackageFingerprintHash,
   } = input
+
+  // L6-E2E: load real teacher + class group names for task split match
+  // Pure read-only Prisma. No writes.
+  const prismaTeachers = (await import('@/lib/prisma')).prisma
+  const dbTeachers = await prismaTeachers.teacher.findMany({
+    select: { id: true, name: true },
+  })
+  const dbClassGroups = await prismaTeachers.classGroup.findMany({
+    where: { semesterId: targetSemesterId },
+    select: { id: true, name: true, semesterId: true },
+  })
+  const existingTeacherNames = dbTeachers.map((t) => ({ id: t.id, name: t.name }))
+  const existingClassGroupNames = dbClassGroups.map((cg) => ({ id: cg.id, name: cg.name, semesterId: cg.semesterId }))
 
   // Index existing data for fast lookup.
   const existingCourseById = new Map<number, { id: number; normalizedNameHash: string }>()
@@ -750,6 +765,8 @@ export const buildCourseSettingPartialImportPlan = (
         examTypeText: reviewRow.raw.examTypeText ?? null,
         diagnosticCodes: reviewRow.match.diagnosticCodes,
         suggestedAction: reviewRow.match.suggestedAction,
+        existingTeachers: existingTeacherNames,
+        existingClassGroups: existingClassGroupNames,
       })
       if (splitResult.hasSplitDetection) {
         const confirmedCandidateId = resolution.resolution.taskSplit?.selectedCandidateId ?? null
@@ -765,9 +782,11 @@ export const buildCourseSettingPartialImportPlan = (
               assignmentId: a.assignmentId,
               teacherRaw: a.teacherRaw,
               teacherNameHash: a.teacherNameHash,
+              teacherId: a.teacherId,
               teacherMatchStatus: a.teacherMatchStatus,
               classRaw: a.classRaw,
               classNameHashes: a.classNameHashes,
+              classGroupIds: a.classGroupIds,
               classMatchStatus: a.classMatchStatus,
               warningCodes: a.warningCodes,
             })),
@@ -828,20 +847,27 @@ export const buildCourseSettingPartialImportPlan = (
       // Multi-task: each assignment becomes its own TeachingTask
       for (let ai = 0; ai < confirmedSplit.assignments.length; ai++) {
         const assignment = confirmedSplit.assignments[ai]!
-        const splitTaskKey = `task:${shortHash(approvalItemId + ':split:' + ai, 10)}`
+        const splitTaskKey = `task:${shortHash(approvalItemId + ':split:' + confirmedSplit.candidateId + ':' + ai, 10)}`
 
-        // Teacher ref from the assignment's teacher (hash only; resolved via teacherHash)
+        // Teacher ref: use real teacherId from matched assignment if available
         const splitTeacherRef: TeachingTaskCandidatePlan['teacherRef'] =
-          assignment.teacherNameHash
-            ? { kind: 'useExisting', teacherId: null } // L6-E1C handles teacher; plan just records hash context
-            : { kind: 'noTeacher' }
+          assignment.teacherId != null
+            ? { kind: 'useExisting', teacherId: assignment.teacherId }
+            : assignment.teacherNameHash
+              ? { kind: 'useExisting', teacherId: null } // teacher hash but no ID — keep slot for L6-F to resolve
+              : { kind: 'noTeacher' }
 
-        // Class groups from the assignment's classes
+        // Class groups: use real classGroupIds from matched assignment if available
         const splitClassGroupRefs: TeachingTaskCandidatePlan['classGroupRefs'] = []
-        for (const cn of assignment.classNameHashes) {
-          // We don't have exact class group IDs from the detection; the
-          // assignee will need to resolve in L6-F or accept as candidate.
-          splitClassGroupRefs.push({ kind: 'createCandidate', candidateKey: `classGroup:${cn}` })
+        if (assignment.classGroupIds.length > 0) {
+          for (const id of assignment.classGroupIds) {
+            splitClassGroupRefs.push({ kind: 'useExisting', classGroupId: id })
+          }
+        } else {
+          // No resolved class group IDs — record create candidates by hash
+          for (const cn of assignment.classNameHashes) {
+            splitClassGroupRefs.push({ kind: 'createCandidate', candidateKey: `classGroup:${cn}` })
+          }
         }
 
         teachingTasks.push({

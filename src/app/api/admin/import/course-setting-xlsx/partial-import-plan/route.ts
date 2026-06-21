@@ -251,7 +251,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     })
 
     // ── Step 3: Build the L6-E2 plan from the review rows + manual resolutions
-    const plan = buildCourseSettingPartialImportPlan({
+    const plan = await buildCourseSettingPartialImportPlan({
       reviewRows: reviewUi.rows,
       manualResolutions,
       existingData,
