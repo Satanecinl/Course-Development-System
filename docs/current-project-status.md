@@ -146,3 +146,5 @@ The list reflects local history at the time of K36-A3 and does not assert remote
 - L6-D2 Excel 课程设置 approval review UI 已完成：管理员可在 /admin/import 生成审核视图，查看 raw 原文并在前端标记 pending/approved/rejected/needsReview，可导出 redacted decision JSON；不写 DB、不创建 ImportBatch/TeachingTask/TeachingTaskClass，不生成 apply list。
 
 - L6-D2A Excel 课程设置 approval review UI 本地化已完成：新增纯函数 helper (course-setting-approval-review-localization.ts) 提供 Chinese display labels；UI 组件 (course-setting-xlsx-preview.tsx) 接入 helper。Machine values (option value / state / exported JSON) 保持 English，不写 DB、不修改 API/UI 契约。
+
+- L6-E1 Excel 课程设置人工处理 UI 已完成：审核视图支持页面内处理缺课程/教师/班级/周课时/考试类型/歧义项，支持忽略行和导出 redacted resolution draft；仍不写 DB、不创建 ImportBatch/TeachingTask/TeachingTaskClass，不生成 apply list。

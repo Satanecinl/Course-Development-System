@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * L3/L6-B/L6-B1/L6-C/L6-D2 UI Component - Course Setting XLSX Preview
+ * L3/L6-B/L6-B1/L6-C/L6-D2/L6-E1 UI Component - Course Setting XLSX Preview
  *
  * Preview-only component for Excel course setting file parsing. No confirm/apply
  * buttons. Shows hashed preview rows + field summaries + manual review flags.
@@ -14,6 +14,10 @@
  *        and renders a review-only decision table. NEVER writes the DB,
  *        never creates an ImportBatch, never applies anything. Decisions
  *        stay in client state and can be exported as a redacted JSON.
+ * L6-E1: adds "手动处理" (manual resolution) section below the review table.
+ *        Allows the reviewer to resolve each blocked/pending row by selecting
+ *        existing entities or providing candidate names. NEVER writes the DB,
+ *        never creates an ImportBatch, never creates TeachingTasks.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -31,6 +35,8 @@ import {
   ListChecks,
   Download,
   Search,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -43,12 +49,16 @@ import {
   reviewCourseSettingApproval,
   buildCourseSettingDecisionFile,
   downloadCourseSettingDecisionFile,
+  fetchResolutionOptions,
+  buildResolutionDraftExport,
+  downloadManualResolutionDraftExport,
   type CourseSettingXlsxPreviewResponse,
   type CourseSettingXlsxPreviewRow,
   type SemesterListItem,
   type CourseSettingApprovalReviewUiResponse,
   type CourseSettingApprovalReviewUiRow,
   type CourseSettingApprovalReviewUiDecisionValue,
+  type CourseSettingResolutionOptionsResponse,
 } from '@/lib/import/course-setting-xlsx-client'
 import {
   APPROVAL_REVIEW_DECISION_OPTIONS,
@@ -61,6 +71,14 @@ import {
   formatMatchStatusLabel,
   formatConfidence,
 } from '@/lib/import/course-setting-approval-review-localization'
+import {
+  type CourseSettingManualResolutionItem,
+  type CourseSettingManualResolutionSummary,
+  type CourseSettingResolutionStatus,
+  buildInitialManualResolutionState,
+  applyManualResolutionUpdate,
+  summarizeManualResolutionState,
+} from '@/lib/import/course-setting-manual-resolution-l6-e1'
 
 // L6-C: targetSemester mode (existing vs createNew)
 type TargetSemesterMode = 'existing' | 'createNew'
@@ -122,6 +140,12 @@ export default function CourseSettingXlsxPreview() {
   const [filterSuggestedAction, setFilterSuggestedAction] = useState<string>('all')
   const [filterDiagnosticCode, setFilterDiagnosticCode] = useState<string>('all')
   const [searchText, setSearchText] = useState<string>('')
+
+  // L6-E1: manual resolution state
+  const [resolutionItems, setResolutionItems] = useState<CourseSettingManualResolutionItem[]>([])
+  const [resolutionOptions, setResolutionOptions] = useState<CourseSettingResolutionOptionsResponse | null>(null)
+  const [resolutionFilter, setResolutionFilter] = useState<'all' | CourseSettingResolutionStatus>('all')
+  const [expandedResolutionRows, setExpandedResolutionRows] = useState<Set<string>>(new Set())
 
   const refreshSemesters = useCallback(async () => {
     setSemestersLoading(true)
@@ -244,6 +268,11 @@ export default function CourseSettingXlsxPreview() {
     setFilterSuggestedAction('all')
     setFilterDiagnosticCode('all')
     setSearchText('')
+    // L6-E1: also clear resolution state
+    setResolutionItems([])
+    setResolutionOptions(null)
+    setResolutionFilter('all')
+    setExpandedResolutionRows(new Set())
     if (fileInputRef.current) fileInputRef.current.value = ''
   }, [])
 
@@ -301,6 +330,78 @@ export default function CourseSettingXlsxPreview() {
       description: '已生成脱敏 JSON 文件，文件名按 targetSemesterId 标识',
     })
   }, [reviewResult, clientDecisions])
+
+  // L6-E1: Initialize manual resolution state when reviewResult first loads
+  useEffect(() => {
+    if (!reviewResult || !selectedSemesterId) return
+    // Build initial resolution items from review rows
+    const items = buildInitialManualResolutionState(reviewResult.rows, selectedSemesterId)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setResolutionItems(items)
+    setExpandedResolutionRows(new Set())
+    // Load resolution options (courses, teachers, classGroups) from API
+    void (async () => {
+      try {
+        const opts = await fetchResolutionOptions(selectedSemesterId)
+        setResolutionOptions(opts)
+      } catch {
+        // Resolution options are non-critical; leave as null
+      }
+    })()
+  }, [reviewResult, selectedSemesterId])
+
+  // L6-E1: Summary for resolution items
+  const resolutionSummary = useMemo(() => {
+    if (resolutionItems.length === 0) return null
+    return summarizeManualResolutionState(resolutionItems)
+  }, [resolutionItems])
+
+  // L6-E1: Filtered resolution items
+  const filteredResolutionItems = useMemo(() => {
+    if (resolutionFilter === 'all') return resolutionItems
+    return resolutionItems.filter((item) => item.resolutionStatus === resolutionFilter)
+  }, [resolutionItems, resolutionFilter])
+
+  // L6-E1: Toggle expand/collapse for resolution rows
+  const toggleResolutionRow = useCallback((id: string) => {
+    setExpandedResolutionRows((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }, [])
+
+  // L6-E1: Export resolution draft
+  const handleExportResolutionDraft = useCallback(() => {
+    if (!reviewResult || resolutionItems.length === 0) return
+    const summary = summarizeManualResolutionState(resolutionItems)
+    const draftItems = resolutionItems.map((item) => ({
+      approvalItemId: item.approvalItemId,
+      resolutionStatus: item.resolutionStatus,
+      resolution: item.resolution as Record<string, unknown>,
+      validation: item.validation,
+    }))
+    const draft = buildResolutionDraftExport({
+      targetSemesterId: reviewResult.targetSemester.id,
+      dryRunFingerprintHash: reviewResult.packageRef.dryRunFingerprintHash,
+      itemCount: reviewResult.packageRef.itemCount,
+      summary: {
+        totalItems: summary.totalItems,
+        importableItems: summary.importableItems,
+        needsResolutionItems: summary.needsResolutionItems,
+        ignoredItems: summary.ignoredItems,
+        pendingItems: summary.pendingItems,
+        manuallyResolvedItems: summary.manuallyResolvedItems,
+        unresolvedBlockers: summary.unresolvedBlockers,
+      },
+      items: draftItems,
+    })
+    downloadManualResolutionDraftExport(draft)
+    toast.success('处理结果已导出', {
+      description: '已生成手动处理结果 JSON 文件',
+    })
+  }, [reviewResult, resolutionItems])
 
   // L6-D2: compute live counters from clientDecisions (not server state)
   const liveCounters = useMemo(() => {
@@ -685,6 +786,22 @@ export default function CourseSettingXlsxPreview() {
           setSearchText={setSearchText}
           filteredRows={filteredRows}
           onExport={handleExportDecision}
+        />
+      )}
+
+      {/* L6-E1: 手动处理 (manual resolution) section — read-only, never writes DB */}
+      {reviewResult && resolutionItems.length > 0 && (
+        <ResolutionSection
+          resolutionItems={resolutionItems}
+          setResolutionItems={setResolutionItems}
+          resolutionOptions={resolutionOptions}
+          resolutionSummary={resolutionSummary}
+          resolutionFilter={resolutionFilter}
+          setResolutionFilter={setResolutionFilter}
+          expandedResolutionRows={expandedResolutionRows}
+          toggleResolutionRow={toggleResolutionRow}
+          filteredResolutionItems={filteredResolutionItems}
+          onExportDraft={handleExportResolutionDraft}
         />
       )}
 
@@ -1396,5 +1513,394 @@ function ReviewRow({
         </select>
       </td>
     </tr>
+  )
+}
+
+// -- L6-E1: Manual Resolution Sub-component -----------------------------------
+
+type ResolutionSectionProps = {
+  resolutionItems: CourseSettingManualResolutionItem[]
+  setResolutionItems: (items: CourseSettingManualResolutionItem[]) => void
+  resolutionOptions: CourseSettingResolutionOptionsResponse | null
+  resolutionSummary: CourseSettingManualResolutionSummary | null
+  resolutionFilter: 'all' | CourseSettingResolutionStatus
+  setResolutionFilter: (v: 'all' | CourseSettingResolutionStatus) => void
+  expandedResolutionRows: Set<string>
+  toggleResolutionRow: (id: string) => void
+  filteredResolutionItems: CourseSettingManualResolutionItem[]
+  onExportDraft: () => void
+}
+
+function ResolutionSection({
+  resolutionItems,
+  setResolutionItems,
+  resolutionOptions,
+  resolutionSummary,
+  resolutionFilter,
+  setResolutionFilter,
+  expandedResolutionRows,
+  toggleResolutionRow,
+  filteredResolutionItems,
+  onExportDraft,
+}: ResolutionSectionProps) {
+  const updateItem = (approvalItemId: string, patch: Record<string, unknown>) => {
+    const updated = applyManualResolutionUpdate(resolutionItems, approvalItemId, patch as Parameters<typeof applyManualResolutionUpdate>[2])
+    setResolutionItems(updated)
+  }
+
+  return (
+    <div className="border-t-2 border-indigo-200 bg-indigo-50/30 px-4 py-3 space-y-3">
+      <h4 className="text-sm font-semibold text-indigo-800 flex items-center gap-2">
+        <ListChecks className="w-4 h-4" />
+        手动处理（Manual Resolution）
+        <Badge variant="outline" className="text-xs font-normal">Resolution Only — 不写数据库</Badge>
+      </h4>
+      <p className="text-[11px] text-indigo-700">
+        对于有阻塞问题的行，可选择已有实体或填写新候选名称。处理结果保存在前端状态中，不会写入数据库。
+      </p>
+
+      {/* Summary cards */}
+      {resolutionSummary && (
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+          <ReviewSummaryCard label="可导入" value={resolutionSummary.importableItems} tone="success" />
+          <ReviewSummaryCard label="需处理" value={resolutionSummary.needsResolutionItems} tone="warn" />
+          <ReviewSummaryCard label="已忽略" value={resolutionSummary.ignoredItems} tone="muted" />
+          <ReviewSummaryCard label="暂不处理" value={resolutionSummary.pendingItems} tone="default" />
+          <ReviewSummaryCard label="已手动处理" value={resolutionSummary.manuallyResolvedItems} tone="success" />
+        </div>
+      )}
+
+      {/* Filter + Export */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-1">
+          <Label className="text-[11px] text-gray-600">处理状态</Label>
+          <select
+            value={resolutionFilter}
+            onChange={(e) => setResolutionFilter(e.target.value as 'all' | CourseSettingResolutionStatus)}
+            className="border border-gray-300 rounded px-2 py-0.5 text-xs bg-white"
+            data-l6e1-filter="status"
+          >
+            <option value="all">全部</option>
+            <option value="importable">可导入</option>
+            <option value="needsResolution">需处理</option>
+            <option value="ignored">已忽略</option>
+            <option value="pending">暂不处理</option>
+          </select>
+        </div>
+        <Button size="sm" variant="outline" onClick={onExportDraft} data-l6e1-action="export-draft">
+          <Download className="w-3.5 h-3.5 mr-1" />
+          导出处理结果 JSON
+        </Button>
+      </div>
+
+      {/* Resolution items table */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs">
+          <thead className="bg-indigo-50 text-indigo-700">
+            <tr>
+              <th className="px-2 py-1.5 text-left">审核项ID</th>
+              <th className="px-2 py-1.5 text-left">课程名</th>
+              <th className="px-2 py-1.5 text-left">教师</th>
+              <th className="px-2 py-1.5 text-left">诊断</th>
+              <th className="px-2 py-1.5 text-left">建议处理</th>
+              <th className="px-2 py-1.5 text-left">状态</th>
+              <th className="px-2 py-1.5 text-left">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredResolutionItems.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-4 py-6 text-center text-gray-400">
+                  当前筛选下没有处理项
+                </td>
+              </tr>
+            ) : (
+              filteredResolutionItems.map((item) => {
+                const isExpanded = expandedResolutionRows.has(item.approvalItemId)
+                return (
+                  <ResolutionItemRow
+                    key={item.approvalItemId}
+                    item={item}
+                    resolutionOptions={resolutionOptions}
+                    isExpanded={isExpanded}
+                    onToggle={() => toggleResolutionRow(item.approvalItemId)}
+                    onUpdate={(patch) => updateItem(item.approvalItemId, patch)}
+                  />
+                )
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+function ResolutionItemRow({
+  item,
+  resolutionOptions,
+  isExpanded,
+  onToggle,
+  onUpdate,
+}: {
+  item: CourseSettingManualResolutionItem
+  resolutionOptions: CourseSettingResolutionOptionsResponse | null
+  isExpanded: boolean
+  onToggle: () => void
+  onUpdate: (patch: Record<string, unknown>) => void
+}) {
+  const truncatedId = item.approvalItemId.length > 16 ? item.approvalItemId.slice(0, 16) + '…' : item.approvalItemId
+  const hasCourseMissing = item.baseDiagnosticCodes.includes('COURSE_MISSING')
+  const hasTeacherMissing = item.baseDiagnosticCodes.includes('TEACHER_MISSING') || item.baseDiagnosticCodes.includes('TEACHER_BLANK')
+  const hasClassMissing = item.baseDiagnosticCodes.includes('CLASS_GROUP_MISSING')
+  const hasHoursInvalid = item.baseDiagnosticCodes.includes('WEEKLY_HOURS_NON_NUMERIC')
+  const hasExamInvalid = item.baseDiagnosticCodes.includes('EXAM_TYPE_OTHER')
+  const hasAmbiguous = item.baseDiagnosticCodes.includes('MERGE_REMARK_AMBIGUOUS')
+  const hasLowConf = item.baseDiagnosticCodes.includes('LOW_CONFIDENCE_ROW')
+
+  const statusBadge = (status: CourseSettingResolutionStatus) => {
+    const cls =
+      status === 'importable' ? 'bg-green-100 text-green-700 border-green-200'
+        : status === 'needsResolution' ? 'bg-amber-100 text-amber-700 border-amber-200'
+          : status === 'ignored' ? 'bg-gray-100 text-gray-500 border-gray-200'
+            : 'bg-blue-100 text-blue-700 border-blue-200'
+    const label =
+      status === 'importable' ? '可导入'
+        : status === 'needsResolution' ? '需处理'
+          : status === 'ignored' ? '已忽略'
+            : '暂不处理'
+    return <Badge variant="outline" className={`text-[10px] ${cls}`}>{label}</Badge>
+  }
+
+  return (
+    <>
+      <tr className="border-t hover:bg-indigo-50/30">
+        <td className="px-2 py-1.5 font-mono text-[10px]" title={item.approvalItemId}>{truncatedId}</td>
+        <td className="px-2 py-1.5 text-[10px] max-w-[120px] truncate" title={item.resolution.course?.candidateName ?? ''}>
+          {item.resolution.course?.action === 'useExistingCourse' && item.resolution.course.existingCourseId
+            ? <span className="text-green-700">已选择 (ID:{item.resolution.course.existingCourseId})</span>
+            : item.resolution.course?.action === 'createCourseCandidate' && item.resolution.course.candidateName
+              ? <span className="text-blue-700">新候选：{item.resolution.course.candidateName}</span>
+              : <span className="text-gray-400">—</span>}
+        </td>
+        <td className="px-2 py-1.5 text-[10px] max-w-[120px] truncate">
+          {item.resolution.teacher?.action === 'useExistingTeacher' && item.resolution.teacher.existingTeacherId
+            ? <span className="text-green-700">已选择 (ID:{item.resolution.teacher.existingTeacherId})</span>
+            : item.resolution.teacher?.action === 'createTeacherCandidate' && item.resolution.teacher.candidateName
+              ? <span className="text-blue-700">新候选：{item.resolution.teacher.candidateName}</span>
+              : item.resolution.teacher?.action === 'allowBlankTeacher'
+                ? <span className="text-gray-500">允许暂缺</span>
+                : <span className="text-gray-400">—</span>}
+        </td>
+        <td className="px-2 py-1.5">
+          <div className="flex flex-wrap gap-1 max-w-[120px]">
+            {item.baseDiagnosticCodes.length === 0 ? (
+              <span className="text-gray-400">-</span>
+            ) : (
+              item.baseDiagnosticCodes.slice(0, 3).map((code) => (
+                <Badge key={code} variant="outline" className="text-[9px] bg-red-50 text-red-600 border-red-200">
+                  {formatDiagnosticCodeLabel(code)}
+                </Badge>
+              ))
+            )}
+          </div>
+        </td>
+        <td className="px-2 py-1.5 text-[10px]">{formatSuggestedActionLabel(item.baseSuggestedAction)}</td>
+        <td className="px-2 py-1.5">{statusBadge(item.resolutionStatus)}</td>
+        <td className="px-2 py-1.5">
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-[10px] h-6 px-2"
+            onClick={onToggle}
+            data-l6e1-toggle={item.approvalItemId}
+          >
+            {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+            {isExpanded ? '收起' : '处理'}
+          </Button>
+        </td>
+      </tr>
+      {isExpanded && (
+        <tr>
+          <td colSpan={7} className="px-4 py-3 bg-indigo-50/50 border-t border-indigo-100">
+            <div className="space-y-3 text-[11px]">
+              {/* Course resolution */}
+              {hasCourseMissing && (
+                <div className="space-y-1" data-l6e1-course-controls={item.approvalItemId}>
+                  <span className="font-medium text-red-700">课程缺失</span>
+                  <div className="flex gap-2 items-center">
+                    <select
+                      className="border border-gray-300 rounded px-2 py-0.5 text-[11px] bg-white max-w-[200px]"
+                      value={item.resolution.course?.existingCourseId ?? ''}
+                      onChange={(e) => onUpdate({ course: { action: 'useExistingCourse', existingCourseId: e.target.value ? Number(e.target.value) : undefined } })}
+                    >
+                      <option value="">选择已有课程</option>
+                      {resolutionOptions?.courses.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                    <span className="text-gray-400">或</span>
+                    <Input
+                      placeholder="新课程候选名称"
+                      className="text-[11px] h-6 max-w-[160px]"
+                      value={item.resolution.course?.candidateName ?? ''}
+                      onChange={(e) => onUpdate({ course: { action: 'createCourseCandidate', candidateName: e.target.value || undefined } })}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Teacher resolution */}
+              {hasTeacherMissing && (
+                <div className="space-y-1" data-l6e1-teacher-controls={item.approvalItemId}>
+                  <span className="font-medium text-red-700">教师缺失</span>
+                  <div className="flex gap-2 items-center flex-wrap">
+                    <select
+                      className="border border-gray-300 rounded px-2 py-0.5 text-[11px] bg-white max-w-[200px]"
+                      value={item.resolution.teacher?.existingTeacherId ?? ''}
+                      onChange={(e) => onUpdate({ teacher: { action: 'useExistingTeacher', existingTeacherId: e.target.value ? Number(e.target.value) : undefined } })}
+                    >
+                      <option value="">选择已有教师</option>
+                      {resolutionOptions?.teachers.map((t) => (
+                        <option key={t.id} value={t.id}>{t.name}</option>
+                      ))}
+                    </select>
+                    <span className="text-gray-400">或</span>
+                    <Input
+                      placeholder="新教师候选名称"
+                      className="text-[11px] h-6 max-w-[160px]"
+                      value={item.resolution.teacher?.candidateName ?? ''}
+                      onChange={(e) => onUpdate({ teacher: { action: 'createTeacherCandidate', candidateName: e.target.value || undefined } })}
+                    />
+                    <label className="flex items-center gap-1 text-[11px]">
+                      <input
+                        type="checkbox"
+                        checked={item.resolution.teacher?.action === 'allowBlankTeacher'}
+                        onChange={(e) => onUpdate({ teacher: e.target.checked ? { action: 'allowBlankTeacher', allowBlankReason: '用户允许暂缺' } : { action: 'none' } })}
+                      />
+                      允许暂缺
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {/* ClassGroup resolution */}
+              {hasClassMissing && (
+                <div className="space-y-1" data-l6e1-class-controls={item.approvalItemId}>
+                  <span className="font-medium text-red-700">班级缺失</span>
+                  <div className="flex gap-2 items-center">
+                    <select
+                      className="border border-gray-300 rounded px-2 py-0.5 text-[11px] bg-white max-w-[200px]"
+                      value={item.resolution.classGroups?.existingClassGroupIds?.[0] ?? ''}
+                      onChange={(e) => onUpdate({ classGroups: e.target.value ? { action: 'useExistingClassGroup', existingClassGroupIds: [Number(e.target.value)] } : { action: 'none' } })}
+                    >
+                      <option value="">选择已有班级</option>
+                      {resolutionOptions?.classGroups.map((cg) => (
+                        <option key={cg.id} value={cg.id}>{cg.name}{cg.studentCount ? ` (${cg.studentCount}人)` : ''}</option>
+                      ))}
+                    </select>
+                    <span className="text-gray-400">或</span>
+                    <Input
+                      placeholder="新班级候选名称"
+                      className="text-[11px] h-6 max-w-[160px]"
+                      value={item.resolution.classGroups?.candidateNames?.[0] ?? ''}
+                      onChange={(e) => onUpdate({ classGroups: e.target.value ? { action: 'createClassGroupCandidate', candidateNames: [e.target.value] } : { action: 'none' } })}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Weekly hours override */}
+              {hasHoursInvalid && (
+                <div className="flex gap-2 items-center" data-l6e1-hours-controls={item.approvalItemId}>
+                  <span className="font-medium text-amber-700">周课时异常</span>
+                  <Input
+                    type="number"
+                    placeholder="修正周课时"
+                    className="text-[11px] h-6 w-24"
+                    min={1}
+                    max={20}
+                    value={item.resolution.weeklyHours?.value ?? ''}
+                    onChange={(e) => {
+                      const v = Number(e.target.value)
+                      onUpdate({ weeklyHours: e.target.value ? { action: 'overrideWeeklyHours', value: v } : { action: 'none' } })
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Exam type override */}
+              {hasExamInvalid && (
+                <div className="flex gap-2 items-center" data-l6e1-exam-controls={item.approvalItemId}>
+                  <span className="font-medium text-amber-700">考试类型异常</span>
+                  <select
+                    className="border border-gray-300 rounded px-2 py-0.5 text-[11px] bg-white"
+                    value={item.resolution.examType?.value ?? ''}
+                    onChange={(e) => onUpdate({ examType: e.target.value ? { action: 'overrideExamType', value: e.target.value } : { action: 'none' } })}
+                  >
+                    <option value="">空</option>
+                    <option value="考试">考试</option>
+                    <option value="考查">考查</option>
+                  </select>
+                </div>
+              )}
+
+              {/* Ambiguous mapping */}
+              {hasAmbiguous && (
+                <div className="space-y-1" data-l6e1-ambiguous-controls={item.approvalItemId}>
+                  <span className="font-medium text-amber-700">匹配歧义</span>
+                  <div className="flex gap-2 items-center">
+                    <label className="flex items-center gap-1 text-[11px]">
+                      <input type="radio" name={`amb-${item.approvalItemId}`} checked={item.resolution.ambiguousMapping?.action === 'confirmAmbiguousMapping'} onChange={() => onUpdate({ ambiguousMapping: { action: 'confirmAmbiguousMapping' } })} />
+                      确认当前匹配
+                    </label>
+                    <label className="flex items-center gap-1 text-[11px]">
+                      <input type="radio" name={`amb-${item.approvalItemId}`} checked={item.resolution.ambiguousMapping?.action === 'markNeedsReview'} onChange={() => onUpdate({ ambiguousMapping: { action: 'markNeedsReview' } })} />
+                      标记需复核
+                    </label>
+                    <Input placeholder="处理备注" className="text-[11px] h-6 max-w-[160px]" value={item.resolution.ambiguousMapping?.note ?? ''} onChange={(e) => onUpdate({ ambiguousMapping: { action: item.resolution.ambiguousMapping?.action ?? 'confirmAmbiguousMapping', note: e.target.value } })} />
+                  </div>
+                </div>
+              )}
+
+              {/* Low confidence */}
+              {hasLowConf && (
+                <div className="flex gap-2 items-center" data-l6e1-lowconf-controls={item.approvalItemId}>
+                  <span className="font-medium text-amber-700">低置信度</span>
+                  <label className="flex items-center gap-1 text-[11px]">
+                    <input type="radio" name={`lc-${item.approvalItemId}`} checked={item.resolution.ambiguousMapping?.action === 'confirmAmbiguousMapping'} onChange={() => onUpdate({ ambiguousMapping: { action: 'confirmAmbiguousMapping' } })} />
+                    手动确认
+                  </label>
+                  <label className="flex items-center gap-1 text-[11px]">
+                    <input type="radio" name={`lc-${item.approvalItemId}`} checked={item.resolution.ambiguousMapping?.action === 'markNeedsReview'} onChange={() => onUpdate({ ambiguousMapping: { action: 'markNeedsReview' } })} />
+                    需复核
+                  </label>
+                </div>
+              )}
+
+              {/* Ignore row — always available */}
+              <div className="pt-1 border-t border-indigo-100 flex gap-2 items-center" data-l6e1-ignore-controls={item.approvalItemId}>
+                <Button
+                  size="sm"
+                  variant={item.resolution.ignored ? 'default' : 'outline'}
+                  className="text-[10px] h-6"
+                  onClick={() => onUpdate({ ignored: !item.resolution.ignored, ignoreReason: item.resolution.ignored ? undefined : item.resolution.ignoreReason })}
+                >
+                  {item.resolution.ignored ? '取消忽略' : '忽略本行'}
+                </Button>
+                {item.resolution.ignored && (
+                  <Input
+                    placeholder="忽略原因"
+                    className="text-[11px] h-6 max-w-[200px]"
+                    value={item.resolution.ignoreReason ?? ''}
+                    onChange={(e) => onUpdate({ ignoreReason: e.target.value })}
+                  />
+                )}
+              </div>
+            </div>
+          </td>
+        </tr>
+      )}
+    </>
   )
 }

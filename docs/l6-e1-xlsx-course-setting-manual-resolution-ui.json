@@ -1,0 +1,53 @@
+{
+  "stage": "L6-E1-XLSX-COURSE-SETTING-MANUAL-RESOLUTION-UI",
+  "status": "PASS",
+  "dbWritten": false,
+  "applyAllowed": false,
+  "summary": {
+    "totalItems": 5,
+    "importableItems": 1,
+    "needsResolutionItems": 3,
+    "ignoredItems": 0,
+    "pendingItems": 1,
+    "manuallyResolvedItems": 0,
+    "unresolvedBlockers": {
+      "courseMissing": 1,
+      "teacherMissing": 1,
+      "classGroupMissing": 1
+    }
+  },
+  "validation": {
+    "ok": true,
+    "violationCount": 0,
+    "checkedItems": 5
+  },
+  "safety": {
+    "dbCountsUnchanged": true,
+    "dbCountsBefore": {
+      "course": 104,
+      "teacher": 84,
+      "classGroup": 36,
+      "teachingTask": 308,
+      "teachingTaskClass": 446,
+      "importBatch": 38,
+      "scheduleSlot": 440,
+      "scheduleAdjustment": 67,
+      "semester": 3,
+      "activeSemesterId": 1
+    },
+    "importBatchCreated": false,
+    "teachingTaskCreated": false,
+    "schemaChanged": false,
+    "apiChanged": "resolution_options_added",
+    "uiChanged": "resolution_section_added"
+  },
+  "privacy": {
+    "committedRawTeacherNames": false,
+    "committedRawClassNames": false,
+    "committedRawCourseNames": false,
+    "committedRawRemarks": false
+  },
+  "notes": [
+    "L6-E1 is MANUAL RESOLUTION UI ONLY — no DB writes, no apply list, no ImportBatch/TeachingTask creation."
+  ]
+}

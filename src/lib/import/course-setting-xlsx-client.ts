@@ -549,3 +549,162 @@ export function downloadCourseSettingDecisionFile(
     URL.revokeObjectURL(url)
   }, 100)
 }
+
+// ── L6-E1 Resolution Options types ─────────────────────────────────────────
+
+export type CourseSettingResolutionOptionCourse = {
+  id: number
+  name: string
+}
+
+export type CourseSettingResolutionOptionTeacher = {
+  id: number
+  name: string
+}
+
+export type CourseSettingResolutionOptionClassGroup = {
+  id: number
+  name: string
+  studentCount: number | null
+}
+
+export type CourseSettingResolutionOptionsResponse = {
+  success: true
+  readOnly: true
+  dbWritten: false
+  targetSemesterId: number
+  courses: CourseSettingResolutionOptionCourse[]
+  teachers: CourseSettingResolutionOptionTeacher[]
+  classGroups: CourseSettingResolutionOptionClassGroup[]
+}
+
+export type CourseSettingResolutionOptionsErrorResponse = {
+  success: false
+  error: string
+  message: string
+  readOnly: true
+}
+
+/**
+ * L6-E1: Fetch resolution options (courses, teachers, classGroups) for the
+ * given target semester. The API is read-only — no DB writes.
+ *
+ * On non-OK or `success === false`, throws an Error.
+ */
+export async function fetchResolutionOptions(
+  targetSemesterId: number,
+): Promise<CourseSettingResolutionOptionsResponse> {
+  const res = await fetch(
+    `/api/admin/import/course-setting-xlsx/resolution-options?targetSemesterId=${encodeURIComponent(String(targetSemesterId))}`,
+  )
+  const data = await res.json()
+
+  if (!res.ok || !data.success) {
+    const message =
+      (data as CourseSettingResolutionOptionsErrorResponse).message ||
+      (data as CourseSettingResolutionOptionsErrorResponse).error ||
+      `Resolution options fetch failed (HTTP ${res.status})`
+    throw new Error(message)
+  }
+
+  return data as CourseSettingResolutionOptionsResponse
+}
+
+// ── L6-E1 Resolution Draft Export types ─────────────────────────────────────
+
+export type CourseSettingResolutionDraftItemInput = {
+  approvalItemId: string
+  resolutionStatus: string
+  resolution: Record<string, unknown>
+  validation: { importable: boolean; blockers: string[]; warnings: string[] }
+}
+
+export type CourseSettingResolutionDraftExport = {
+  stage: string
+  fileType: 'course-setting-resolution-draft'
+  version: string
+  exportedAt: string
+  targetSemesterId: number
+  packageRef: { dryRunFingerprintHash: string; itemCount: number }
+  summary: {
+    totalItems: number
+    importableItems: number
+    needsResolutionItems: number
+    ignoredItems: number
+    pendingItems: number
+    manuallyResolvedItems: number
+    unresolvedBlockers: Record<string, number>
+  }
+  items: Array<{
+    approvalItemId: string
+    resolutionStatus: string
+    resolution: Record<string, unknown>
+    validation: { importable: boolean; blockers: string[]; warnings: string[] }
+    rawIncluded: false
+  }>
+  rawIncluded: false
+}
+
+/**
+ * L6-E1: Pure mapper — build a resolution draft export object.
+ * `exportedAt` defaults to the current ISO timestamp when omitted.
+ */
+export function buildResolutionDraftExport(input: {
+  targetSemesterId: number
+  dryRunFingerprintHash: string
+  itemCount: number
+  summary: CourseSettingResolutionDraftExport['summary']
+  items: CourseSettingResolutionDraftItemInput[]
+  exportedAt?: string
+}): CourseSettingResolutionDraftExport {
+  return {
+    stage: 'L6-E1-XLSX-COURSE-SETTING-RESOLUTION-DRAFT',
+    fileType: 'course-setting-resolution-draft',
+    version: 'l6-e1-resolution-draft-v1',
+    exportedAt: input.exportedAt ?? new Date().toISOString(),
+    targetSemesterId: input.targetSemesterId,
+    packageRef: {
+      dryRunFingerprintHash: input.dryRunFingerprintHash,
+      itemCount: input.itemCount,
+    },
+    summary: input.summary,
+    items: input.items.map((item) => ({
+      ...item,
+      rawIncluded: false as const,
+    })),
+    rawIncluded: false,
+  }
+}
+
+/**
+ * L6-E1: Serialize a resolution draft export to a pretty-printed JSON string
+ * with a trailing newline (line-oriented artifact).
+ */
+export function serializeManualResolutionDraftExport(
+  draft: CourseSettingResolutionDraftExport,
+): string {
+  return JSON.stringify(draft, null, 2) + '\n'
+}
+
+/**
+ * L6-E1: Browser-side helper — trigger a download of the resolution draft
+ * export as a JSON file. Uses a hidden `<a download>` element and a
+ * temporary object URL, same pattern as `downloadCourseSettingDecisionFile`.
+ */
+export function downloadManualResolutionDraftExport(
+  draft: CourseSettingResolutionDraftExport,
+): void {
+  const json = serializeManualResolutionDraftExport(draft)
+  const blob = new Blob([json], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `course-setting-resolution-draft.target-${draft.targetSemesterId}.json`
+  a.style.display = 'none'
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  setTimeout(() => {
+    URL.revokeObjectURL(url)
+  }, 100)
+}
