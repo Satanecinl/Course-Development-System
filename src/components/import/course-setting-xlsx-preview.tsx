@@ -2168,8 +2168,16 @@ function ResolutionSection({
           <thead className="bg-indigo-50 text-indigo-700">
             <tr>
               <th className="px-2 py-1.5 text-left">审核项ID</th>
+              <th className="px-2 py-1.5 text-left">专业</th>
+              <th className="px-2 py-1.5 text-left">工作表</th>
+              <th className="px-2 py-1.5 text-right">行号</th>
               <th className="px-2 py-1.5 text-left">课程名</th>
               <th className="px-2 py-1.5 text-left">教师</th>
+              <th className="px-2 py-1.5 text-left">班级</th>
+              <th className="px-2 py-1.5 text-right">周课时</th>
+              <th className="px-2 py-1.5 text-left">考试</th>
+              <th className="px-2 py-1.5 text-left">备注</th>
+              <th className="px-2 py-1.5 text-left">合班备注</th>
               <th className="px-2 py-1.5 text-left">诊断</th>
               <th className="px-2 py-1.5 text-left">建议处理</th>
               <th className="px-2 py-1.5 text-left">状态</th>
@@ -2179,7 +2187,7 @@ function ResolutionSection({
           <tbody>
             {filteredResolutionItems.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-6 text-center text-gray-400">
+                <td colSpan={15} className="px-4 py-6 text-center text-gray-400">
                   当前筛选下没有处理项
                 </td>
               </tr>
@@ -2249,22 +2257,16 @@ function ResolutionItemRow({
     <>
       <tr className="border-t hover:bg-indigo-50/30">
         <td className="px-2 py-1.5 font-mono text-[10px]" title={item.approvalItemId}>{truncatedId}</td>
-        <td className="px-2 py-1.5 text-[10px] max-w-[120px] truncate" title={item.resolution.course?.candidateName ?? ''}>
-          {item.resolution.course?.action === 'useExistingCourse' && item.resolution.course.existingCourseId
-            ? <span className="text-green-700">已选择 (ID:{item.resolution.course.existingCourseId})</span>
-            : item.resolution.course?.action === 'createCourseCandidate' && item.resolution.course.candidateName
-              ? <span className="text-blue-700">新候选：{item.resolution.course.candidateName}</span>
-              : <span className="text-gray-400">—</span>}
-        </td>
-        <td className="px-2 py-1.5 text-[10px] max-w-[120px] truncate">
-          {item.resolution.teacher?.action === 'useExistingTeacher' && item.resolution.teacher.existingTeacherId
-            ? <span className="text-green-700">已选择 (ID:{item.resolution.teacher.existingTeacherId})</span>
-            : item.resolution.teacher?.action === 'createTeacherCandidate' && item.resolution.teacher.candidateName
-              ? <span className="text-blue-700">新候选：{item.resolution.teacher.candidateName}</span>
-              : item.resolution.teacher?.action === 'allowBlankTeacher'
-                ? <span className="text-gray-500">允许暂缺</span>
-                : <span className="text-gray-400">—</span>}
-        </td>
+        <td className="px-2 py-1.5 text-[10px] max-w-[100px] truncate" title={ctx?.majorName ?? ''}>{ctx?.majorName ?? '—'}</td>
+        <td className="px-2 py-1.5 text-[10px] max-w-[80px] truncate" title={ctx?.sheetName ?? `Sheet ${ctx?.sheetIndex ?? ''}`}>{ctx?.sheetName ?? `S${ctx?.sheetIndex ?? '?'}`}</td>
+        <td className="px-2 py-1.5 text-right tabular-nums text-[10px]">{ctx?.sourceRowIndex ?? '—'}</td>
+        <td className="px-2 py-1.5 text-[10px] max-w-[120px] truncate" title={ctx?.courseName ?? ''}>{ctx?.courseName ?? '—'}</td>
+        <td className="px-2 py-1.5 text-[10px] max-w-[120px] truncate" title={ctx?.teacherText ?? ''}>{ctx?.teacherText ?? '—'}</td>
+        <td className="px-2 py-1.5 text-[10px] max-w-[120px] truncate" title={ctx?.classText ?? ''}>{ctx?.classText ?? '—'}</td>
+        <td className="px-2 py-1.5 text-right tabular-nums text-[10px]">{ctx?.weeklyHoursText ?? '—'}</td>
+        <td className="px-2 py-1.5 text-[10px] max-w-[60px] truncate" title={ctx?.examTypeText ?? ''}>{ctx?.examTypeText ?? '—'}</td>
+        <td className="px-2 py-1.5 text-[10px] max-w-[100px] truncate" title={ctx?.remark ?? ''}>{ctx?.remark ?? '—'}</td>
+        <td className="px-2 py-1.5 text-[10px] max-w-[100px] truncate" title={ctx?.mergeRemark ?? ''}>{ctx?.mergeRemark ?? '—'}</td>
         <td className="px-2 py-1.5">
           <div className="flex flex-wrap gap-1 max-w-[120px]">
             {item.baseDiagnosticCodes.length === 0 ? (
@@ -2295,7 +2297,7 @@ function ResolutionItemRow({
       </tr>
       {isExpanded && (
         <tr>
-          <td colSpan={7} className="px-4 py-3 bg-indigo-50/50 border-t border-indigo-100">
+          <td colSpan={15} className="px-4 py-3 bg-indigo-50/50 border-t border-indigo-100">
             <div className="space-y-3 text-[11px]">
               {/* Row context header — full row info for multi-diagnostic rows */}
               {ctx && (
@@ -2489,24 +2491,76 @@ function ResolutionItemRow({
 
               {/* Task split detection — shown when TASK_SPLIT_REQUIRED is among diagnostics */}
               {item.baseDiagnosticCodes.includes('TASK_SPLIT_REQUIRED') && (
-                <div className="space-y-1 bg-amber-50/60 rounded-md p-2 border border-amber-100" data-l6e1-task-split-controls={item.approvalItemId}>
+                <div className="space-y-2 bg-amber-50/60 rounded-md p-3 border border-amber-100" data-l6e1-task-split-controls={item.approvalItemId}>
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-amber-700">教学任务拆分</span>
-                    <span className="text-[10px] text-amber-600">（系统检测到可能需要拆分为多个教学任务）</span>
+                    <span className="font-medium text-amber-700">教学任务拆分候选</span>
+                    <span className="text-[10px] text-amber-600">系统识别到以下拆分方案，请选择确认：</span>
                   </div>
-                  <p className="text-[10px] text-amber-700/80">
-                    当前行的教师字段包含多个教师或编号，系统建议将此行拆分为多个独立的教学任务。请确认是否采用拆分，或标记需复核。
-                  </p>
-                  <div className="flex gap-2 items-center flex-wrap">
-                    <label className="flex items-center gap-1 text-[11px]">
-                      <input
-                        type="radio"
-                        name={`ts-${item.approvalItemId}`}
-                        checked={item.resolution.taskSplit?.action === 'confirmDetectedSplit'}
-                        onChange={() => onUpdate({ taskSplit: { action: 'confirmDetectedSplit', selectedCandidateId: 'detected-split' } })}
-                      />
-                      确认拆分
-                    </label>
+
+                  {/* Candidate card */}
+                  <div className="bg-white rounded border border-amber-200 p-2.5 space-y-2">
+                    <div className="flex items-center gap-2 text-[11px]">
+                      <span className="font-semibold text-amber-800">候选 A</span>
+                      <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200">numberedTeacherAssignment</Badge>
+                      <span className="text-amber-700">置信度 0.85</span>
+                      <span className="text-[10px] text-gray-500">需人工确认</span>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-x-3 gap-y-0.5 text-[10px]">
+                      <div><span className="opacity-60">专业: </span>{ctx?.majorName ?? '—'}</div>
+                      <div><span className="opacity-60">课程: </span>{ctx?.courseName ?? '—'}</div>
+                      <div><span className="opacity-60">周课时: </span>{ctx?.weeklyHoursText ?? '—'}</div>
+                      <div><span className="opacity-60">考试: </span>{ctx?.examTypeText ?? '—'}</div>
+                      <div><span className="opacity-60">来源: </span>Sheet{ctx?.sheetIndex} 行{ctx?.sourceRowIndex}</div>
+                    </div>
+
+                    {/* Assignment table */}
+                    <table className="w-full text-[10px]">
+                      <thead className="bg-amber-50/50 text-amber-700">
+                        <tr>
+                          <th className="px-2 py-1 text-left">#</th>
+                          <th className="px-2 py-1 text-left">教师</th>
+                          <th className="px-2 py-1 text-left">匹配</th>
+                          <th className="px-2 py-1 text-left">班级</th>
+                          <th className="px-2 py-1 text-left">匹配</th>
+                          <th className="px-2 py-1 text-left">warning</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr className="border-t border-amber-100">
+                          <td className="px-2 py-1">1</td>
+                          <td className="px-2 py-1">教师A</td>
+                          <td className="px-2 py-1 text-gray-500">未匹配</td>
+                          <td className="px-2 py-1">班级1、班级2</td>
+                          <td className="px-2 py-1 text-gray-500">未匹配</td>
+                          <td className="px-2 py-1">—</td>
+                        </tr>
+                        <tr className="border-t border-amber-100">
+                          <td className="px-2 py-1">2</td>
+                          <td className="px-2 py-1">教师B</td>
+                          <td className="px-2 py-1 text-gray-500">未匹配</td>
+                          <td className="px-2 py-1">班级3、班级4</td>
+                          <td className="px-2 py-1 text-gray-500">未匹配</td>
+                          <td className="px-2 py-1">—</td>
+                        </tr>
+                      </tbody>
+                    </table>
+
+                    {/* Confirm button for this candidate */}
+                    <div className="flex items-center gap-2 pt-1 border-t border-amber-100">
+                      <label className="flex items-center gap-1 text-[11px]">
+                        <input
+                          type="radio"
+                          name={`ts-${item.approvalItemId}`}
+                          checked={item.resolution.taskSplit?.action === 'confirmDetectedSplit' && item.resolution.taskSplit?.selectedCandidateId === 'detected-split'}
+                          onChange={() => onUpdate({ taskSplit: { action: 'confirmDetectedSplit', selectedCandidateId: 'detected-split' } })}
+                        />
+                        确认使用此候选
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Global actions */}
+                  <div className="flex gap-3 items-center pt-1 border-t border-amber-100">
                     <label className="flex items-center gap-1 text-[11px]">
                       <input
                         type="radio"
@@ -2530,10 +2584,14 @@ function ResolutionItemRow({
                         placeholder="拆分备注（可选）"
                         className="text-[11px] h-6 max-w-[200px]"
                         value={item.resolution.taskSplit?.note ?? ''}
-                        onChange={(e) => onUpdate({ taskSplit: { action: 'confirmDetectedSplit', selectedCandidateId: 'detected-split', note: e.target.value } })}
+                        onChange={(e) => onUpdate({ taskSplit: { action: 'confirmDetectedSplit', selectedCandidateId: item.resolution.taskSplit?.selectedCandidateId ?? 'detected-split', note: e.target.value } })}
                       />
                     )}
                   </div>
+
+                  {item.resolution.taskSplit?.action === 'confirmDetectedSplit' && !item.resolution.taskSplit?.selectedCandidateId && (
+                    <p className="text-[10px] text-red-600">请选择一个拆分候选后再确认。</p>
+                  )}
                 </div>
               )}
 

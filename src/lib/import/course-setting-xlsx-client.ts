@@ -871,11 +871,21 @@ export type CourseSettingPartialImportPlanResponse = {
       kind: string
       confidence: number
       requiresManualConfirmation: boolean
+      meta: {
+        weeklyHours: number | null
+        weeklyHoursText: string | null
+        examType: string | null
+        examTypeText: string | null
+      }
       assignments: Array<{
+        assignmentId: string
         teacherRaw: string
-        teacherHash: string
+        teacherNameHash: string
+        teacherMatchStatus: string
         classRaw: string
         classNameHashes: string[]
+        classMatchStatus: string
+        warningCodes: string[]
       }>
       confirmedByUser: boolean
     }>

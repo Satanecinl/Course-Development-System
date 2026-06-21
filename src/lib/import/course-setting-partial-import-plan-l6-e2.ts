@@ -241,11 +241,21 @@ export type CourseSettingPartialImportPlanResult = {
       kind: string
       confidence: number
       requiresManualConfirmation: boolean
+      meta: {
+        weeklyHours: number | null
+        weeklyHoursText: string | null
+        examType: string | null
+        examTypeText: string | null
+      }
       assignments: Array<{
+        assignmentId: string
         teacherRaw: string
-        teacherHash: string
+        teacherNameHash: string
+        teacherMatchStatus: string
         classRaw: string
         classNameHashes: string[]
+        classMatchStatus: string
+        warningCodes: string[]
       }>
       confirmedByUser: boolean
     }>
@@ -734,6 +744,10 @@ export const buildCourseSettingPartialImportPlan = (
         classText: reviewRow.raw.classText ?? null,
         remark: reviewRow.raw.remark ?? null,
         mergeRemark: reviewRow.raw.mergeRemark ?? null,
+        weeklyHours: weeklyHours,
+        weeklyHoursText: reviewRow.raw.weeklyHoursText ?? null,
+        examType: reviewRow.raw.examTypeText ?? null,
+        examTypeText: reviewRow.raw.examTypeText ?? null,
         diagnosticCodes: reviewRow.match.diagnosticCodes,
         suggestedAction: reviewRow.match.suggestedAction,
       })
@@ -746,11 +760,16 @@ export const buildCourseSettingPartialImportPlan = (
             kind: candidate.kind,
             confidence: candidate.confidence,
             requiresManualConfirmation: candidate.requiresManualConfirmation,
+            meta: candidate.meta,
             assignments: candidate.assignments.map((a) => ({
+              assignmentId: a.assignmentId,
               teacherRaw: a.teacherRaw,
-              teacherHash: a.teacherHash,
+              teacherNameHash: a.teacherNameHash,
+              teacherMatchStatus: a.teacherMatchStatus,
               classRaw: a.classRaw,
               classNameHashes: a.classNameHashes,
+              classMatchStatus: a.classMatchStatus,
+              warningCodes: a.warningCodes,
             })),
             confirmedByUser: confirmedCandidateId === candidate.candidateId,
           })
@@ -813,7 +832,7 @@ export const buildCourseSettingPartialImportPlan = (
 
         // Teacher ref from the assignment's teacher (hash only; resolved via teacherHash)
         const splitTeacherRef: TeachingTaskCandidatePlan['teacherRef'] =
-          assignment.teacherHash
+          assignment.teacherNameHash
             ? { kind: 'useExisting', teacherId: null } // L6-E1C handles teacher; plan just records hash context
             : { kind: 'noTeacher' }
 

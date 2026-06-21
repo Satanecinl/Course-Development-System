@@ -48,13 +48,22 @@ export type TeacherAssignmentSplitCandidate = {
     normalizedName: string | null
     courseId: number | null
   }
+  meta: {
+    weeklyHours: number | null
+    weeklyHoursText: string | null
+    examType: string | null
+    examTypeText: string | null
+  }
   assignments: Array<{
+    assignmentId: string
     teacherRaw: string
-    teacherHash: string
+    teacherNameHash: string
     teacherId: number | null
+    teacherMatchStatus: 'matched' | 'missing' | 'ambiguous' | 'unknown'
     classRaw: string
     classNameHashes: string[]
     classGroupIds: number[]
+    classMatchStatus: 'matched' | 'missing' | 'ambiguous' | 'unknown'
     warningCodes: string[]
   }>
   warningCodes: string[]
@@ -73,6 +82,10 @@ export type DetectTaskSplitInput = {
   classText: string | null
   remark: string | null
   mergeRemark: string | null
+  weeklyHours: number | null
+  weeklyHoursText: string | null
+  examType: string | null
+  examTypeText: string | null
   diagnosticCodes: string[]
   suggestedAction: string
 }
@@ -253,6 +266,10 @@ export const detectTaskSplitCandidates = (
     classText,
     remark,
     mergeRemark,
+    weeklyHours,
+    weeklyHoursText,
+    examType,
+    examTypeText,
     diagnosticCodes,
     suggestedAction,
   } = input
@@ -285,6 +302,13 @@ export const detectTaskSplitCandidates = (
     courseId: null,
   }
 
+  const baseMeta = {
+    weeklyHours,
+    weeklyHoursText,
+    examType: examType ?? null,
+    examTypeText,
+  }
+
   // ── Pattern 1: Numbered teacher assignments ──
   const numbered = detectNumberedAssignments(tText)
   if (numbered) {
@@ -300,12 +324,15 @@ export const detectTaskSplitCandidates = (
                 Math.floor(((idx + 1) * classParts.length) / numbered.length),
               )
       return {
+        assignmentId: `${sha12(approvalItemId + ':num:' + idx)}`,
         teacherRaw: teacher,
-        teacherHash: sha12(teacher),
+        teacherNameHash: sha12(teacher),
         teacherId: null,
+        teacherMatchStatus: 'missing' as const,
         classRaw: classes.join('、'),
         classNameHashes: classes.map((c) => sha12(c)),
         classGroupIds: [],
+        classMatchStatus: classes.length > 0 ? 'missing' as const : 'unknown' as const,
         warningCodes:
           classes.length === 0
             ? ['no_classes_mapped']
@@ -327,6 +354,7 @@ export const detectTaskSplitCandidates = (
       requiresManualConfirmation: true,
       source: baseSource,
       course: baseCourse,
+      meta: baseMeta,
       assignments,
       warningCodes:
         classParts.length < numbered.length
@@ -339,13 +367,16 @@ export const detectTaskSplitCandidates = (
   // ── Pattern 2: Parenthesized class assignments ──
   const parenthesized = detectParenthesizedAssignments(tText)
   if (parenthesized) {
-    const assignments = parenthesized.map((a) => ({
+    const assignments = parenthesized.map((a, idx) => ({
+      assignmentId: `${sha12(approvalItemId + ':par:' + idx)}`,
       teacherRaw: a.teacher,
-      teacherHash: sha12(a.teacher),
+      teacherNameHash: sha12(a.teacher),
       teacherId: null,
+      teacherMatchStatus: 'missing' as const,
       classRaw: a.classes.join('、'),
       classNameHashes: a.classes.map((c) => sha12(c)),
       classGroupIds: [],
+      classMatchStatus: a.classes.length > 0 ? 'missing' as const : 'unknown' as const,
       warningCodes:
         a.classes.length === 0 ? ['no_classes_mapped'] : [],
     }))
@@ -357,6 +388,7 @@ export const detectTaskSplitCandidates = (
       requiresManualConfirmation: true,
       source: baseSource,
       course: baseCourse,
+      meta: baseMeta,
       assignments,
       warningCodes: [],
       diagnosticCodes,
@@ -366,13 +398,16 @@ export const detectTaskSplitCandidates = (
   // ── Pattern 3: Parallel teacher/class lists ──
   const parallel = detectParallelAssignments(tText, trim(classText))
   if (parallel) {
-    const assignments = parallel.map((a) => ({
+    const assignments = parallel.map((a, idx) => ({
+      assignmentId: `${sha12(approvalItemId + ':parl:' + idx)}`,
       teacherRaw: a.teacher,
-      teacherHash: sha12(a.teacher),
+      teacherNameHash: sha12(a.teacher),
       teacherId: null,
+      teacherMatchStatus: 'missing' as const,
       classRaw: a.classes.join('、'),
       classNameHashes: a.classes.map((c) => sha12(c)),
       classGroupIds: [],
+      classMatchStatus: a.classes.length > 0 ? 'missing' as const : 'unknown' as const,
       warningCodes: [],
     }))
 
@@ -383,6 +418,7 @@ export const detectTaskSplitCandidates = (
       requiresManualConfirmation: true,
       source: baseSource,
       course: baseCourse,
+      meta: baseMeta,
       assignments,
       warningCodes: [],
       diagnosticCodes,
@@ -392,13 +428,16 @@ export const detectTaskSplitCandidates = (
   // ── Pattern 4: Merge remark assignment ──
   const mergeRemarkDetected = detectMergeRemarkAssignment(remark, mergeRemark)
   if (mergeRemarkDetected && !numbered && !parenthesized && !parallel) {
-    const assignments = mergeRemarkDetected.map((a) => ({
+    const assignments = mergeRemarkDetected.map((a, idx) => ({
+      assignmentId: `${sha12(approvalItemId + ':merge:' + idx)}`,
       teacherRaw: a.teacher,
-      teacherHash: sha12(a.teacher),
+      teacherNameHash: sha12(a.teacher),
       teacherId: null,
+      teacherMatchStatus: 'missing' as const,
       classRaw: a.classes.join('、'),
       classNameHashes: a.classes.map((c) => sha12(c)),
       classGroupIds: [],
+      classMatchStatus: a.classes.length > 0 ? 'missing' as const : 'unknown' as const,
       warningCodes:
         a.classes.length === 0 ? ['no_classes_mapped'] : [],
     }))
@@ -410,6 +449,7 @@ export const detectTaskSplitCandidates = (
       requiresManualConfirmation: true,
       source: baseSource,
       course: baseCourse,
+      meta: baseMeta,
       assignments,
       warningCodes: ['low_confidence_merge_remark_pattern'],
       diagnosticCodes,
@@ -430,12 +470,15 @@ export const detectTaskSplitCandidates = (
           ? [classParts[idx]!]
           : []
       return {
+        assignmentId: `${sha12(approvalItemId + ':amb:' + idx)}`,
         teacherRaw: teacher,
-        teacherHash: sha12(teacher),
+        teacherNameHash: sha12(teacher),
         teacherId: null,
+        teacherMatchStatus: 'missing' as const,
         classRaw: classes.join('、'),
         classNameHashes: classes.map((c) => sha12(c)),
         classGroupIds: [],
+        classMatchStatus: classes.length > 0 ? 'missing' as const : 'unknown' as const,
         warningCodes:
           classParts.length === 0
             ? ['no_classes_mapped']
@@ -452,6 +495,7 @@ export const detectTaskSplitCandidates = (
       requiresManualConfirmation: true,
       source: baseSource,
       course: baseCourse,
+      meta: baseMeta,
       assignments,
       warningCodes: [
         'ambiguous_teacher_class_mapping',
