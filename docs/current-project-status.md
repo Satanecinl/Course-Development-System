@@ -152,3 +152,5 @@ The list reflects local history at the time of K36-A3 and does not assert remote
 - L6-E1A 教职工参考库只读审计完成：对课程设置 Excel 教师原文、当前 Teacher 表和用户提供的教职工参考库做只读匹配统计，输出脱敏 aggregate 报告；未写 DB，未创建 Teacher/ImportBatch/TeachingTask。
 
 - L6-E1B Teacher 受控同步计划已完成：基于课程设置 Excel、当前 Teacher 表和教职工 Staff DB 生成 dry-run 同步候选统计与本地未脱敏 raw 明细；未写 DB、未创建 Teacher/ImportBatch/TeachingTask，committed docs/json 仅含 aggregate。
+
+- L6-E1C Teacher 受控同步执行完成：扩展 Teacher schema 增加工号、部门、职务、职级、手机、办公电话字段；基于教职工 Staff DB 受控创建 safe Teacher 候选并补写已存在 Teacher 的 Staff 字段；未创建 ImportBatch/TeachingTask/TeachingTaskClass，raw apply 明细仅保存在 gitignored local artifact。

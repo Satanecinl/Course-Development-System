@@ -1,0 +1,84 @@
+{
+  "stage": "L6-E1C-TEACHER-REFERENCE-SCHEMA-AND-CONTROLLED-SYNC-APPLY",
+  "dbWritten": true,
+  "teacherCreated": true,
+  "teacherUpdated": true,
+  "teacherDeleted": false,
+  "schema": {
+    "teacherFieldsAdded": [
+      "employeeNo",
+      "department",
+      "position",
+      "rank",
+      "phone",
+      "officePhone"
+    ],
+    "teacherFieldsBefore": [
+      "id",
+      "name"
+    ],
+    "migrationName": "20260621200000_add_teacher_staff_reference_fields_l6_e1c",
+    "onlyAdditive": true,
+    "noUniqueAdded": true,
+    "noIndexAdded": true,
+    "noRelationAdded": true
+  },
+  "source": {
+    "l6E1BRawHash": "eff6f6913ec00cef3c72b43d4ae62710bb67810136158e12ff3ace0b4e14beac",
+    "teacherCountBefore": 84,
+    "teacherCountAfter": 218,
+    "totalCandidates": 357
+  },
+  "result": {
+    "createCount": 134,
+    "updateCount": 68,
+    "skippedCount": 155,
+    "conflictCount": 0,
+    "needsManualReviewCount": 4,
+    "skipCandidateCount": 148,
+    "alreadyExistsCount": 3,
+    "duplicateStaffNameGroups": 3,
+    "invalidTokensCount": 1
+  },
+  "rawArtifact": {
+    "path": "temp/local-artifacts/l6-e1c/teacher-reference-controlled-sync-apply.raw.local.json",
+    "sha256": "8b35687f349846b89a7545dc282c126f14474e83adfd7489375c72e42172237e",
+    "containsRawPersonalData": true,
+    "gitTracked": false
+  },
+  "backup": {
+    "path": "prisma/dev.db.backup-before-l6-e1c-teacher-sync-20260621200605",
+    "notCommitted": true
+  },
+  "privacy": {
+    "rawTeacherNamesInCommitted": false,
+    "rawPhoneNumbersInCommitted": false,
+    "rawEmployeeNumbersInCommitted": false,
+    "rawDepartmentsInCommitted": false,
+    "rawExcelRowsInCommitted": false
+  },
+  "isolation": {
+    "importBatchCreated": false,
+    "teachingTaskCreated": false,
+    "teachingTaskClassCreated": false,
+    "courseCreated": false,
+    "classGroupCreated": false,
+    "scheduleSlotCreated": false,
+    "scheduleAdjustmentCreated": false,
+    "semesterActiveChanged": false,
+    "excelPartialImportApplied": false
+  },
+  "guards": {
+    "onlyStaffFieldsTouched": true,
+    "noNameOverwrite": true,
+    "noTeacherDelete": true,
+    "noImportBatchCreate": true,
+    "noTeachingTaskCreate": true,
+    "noTeachingTaskClassCreate": true,
+    "noCourseCreate": true,
+    "noClassGroupCreate": true,
+    "noScheduleSlotCreate": true,
+    "noScheduleAdjustmentCreate": true,
+    "noExcelPartialImportApply": true
+  }
+}
