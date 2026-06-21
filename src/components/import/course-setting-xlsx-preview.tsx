@@ -52,6 +52,8 @@ import {
   fetchResolutionOptions,
   buildResolutionDraftExport,
   downloadManualResolutionDraftExport,
+  planCourseSettingPartialImport,
+  downloadCourseSettingPartialImportPlanExport,
   type CourseSettingXlsxPreviewResponse,
   type CourseSettingXlsxPreviewRow,
   type SemesterListItem,
@@ -59,6 +61,7 @@ import {
   type CourseSettingApprovalReviewUiRow,
   type CourseSettingApprovalReviewUiDecisionValue,
   type CourseSettingResolutionOptionsResponse,
+  type CourseSettingPartialImportPlanResponse,
 } from '@/lib/import/course-setting-xlsx-client'
 import {
   APPROVAL_REVIEW_DECISION_OPTIONS,
@@ -146,6 +149,12 @@ export default function CourseSettingXlsxPreview() {
   const [resolutionOptions, setResolutionOptions] = useState<CourseSettingResolutionOptionsResponse | null>(null)
   const [resolutionFilter, setResolutionFilter] = useState<'all' | CourseSettingResolutionStatus>('all')
   const [expandedResolutionRows, setExpandedResolutionRows] = useState<Set<string>>(new Set())
+
+  // L6-E2: partial import plan state
+  const [partialPlan, setPartialPlan] = useState<CourseSettingPartialImportPlanResponse | null>(null)
+  const [partialPlanError, setPartialPlanError] = useState<string | null>(null)
+  const [partialPlanLoading, setPartialPlanLoading] = useState(false)
+  const [partialPlanFilter, setPartialPlanFilter] = useState<'importable' | 'skipped' | 'unresolved' | 'candidates' | 'duplicates' | 'blockers'>('importable')
 
   const refreshSemesters = useCallback(async () => {
     setSemestersLoading(true)
@@ -273,6 +282,11 @@ export default function CourseSettingXlsxPreview() {
     setResolutionOptions(null)
     setResolutionFilter('all')
     setExpandedResolutionRows(new Set())
+    // L6-E2: also clear plan state
+    setPartialPlan(null)
+    setPartialPlanError(null)
+    setPartialPlanLoading(false)
+    setPartialPlanFilter('importable')
     if (fileInputRef.current) fileInputRef.current.value = ''
   }, [])
 
@@ -402,6 +416,51 @@ export default function CourseSettingXlsxPreview() {
       description: '已生成手动处理结果 JSON 文件',
     })
   }, [reviewResult, resolutionItems])
+
+  // L6-E2: Generate partial import plan (dry-run, no DB writes)
+  const handleGeneratePartialPlan = useCallback(async () => {
+    if (!file) {
+      toast.error('请选择 .xlsx 课程设置文件')
+      return
+    }
+    if (!selectedSemesterId) {
+      toast.error('请先选择导入目标学期')
+      return
+    }
+    if (resolutionItems.length === 0) {
+      toast.error('请先生成审核视图')
+      return
+    }
+    setPartialPlanLoading(true)
+    setPartialPlanError(null)
+    setPartialPlan(null)
+    try {
+      const data = await planCourseSettingPartialImport(
+        file,
+        selectedSemesterId,
+        resolutionItems,
+      )
+      setPartialPlan(data)
+      toast.success('部分导入计划已生成', {
+        description: `可导入 ${data.summary.plannedImportRows} 条 / 跳过 ${data.summary.skippedRows} 条 / 仍需处理 ${data.summary.unresolvedRows} 条`,
+      })
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e)
+      setPartialPlanError(msg)
+      toast.error('生成部分导入计划失败', { description: msg })
+    } finally {
+      setPartialPlanLoading(false)
+    }
+  }, [file, selectedSemesterId, resolutionItems])
+
+  // L6-E2: Export the plan as redacted JSON
+  const handleExportPartialPlan = useCallback(() => {
+    if (!partialPlan) return
+    downloadCourseSettingPartialImportPlanExport(partialPlan)
+    toast.success('部分导入计划已导出', {
+      description: '已生成脱敏 JSON（rawIncluded: false）',
+    })
+  }, [partialPlan])
 
   // L6-D2: compute live counters from clientDecisions (not server state)
   const liveCounters = useMemo(() => {
@@ -802,6 +861,19 @@ export default function CourseSettingXlsxPreview() {
           toggleResolutionRow={toggleResolutionRow}
           filteredResolutionItems={filteredResolutionItems}
           onExportDraft={handleExportResolutionDraft}
+          partialPlanLoading={partialPlanLoading}
+          partialPlanError={partialPlanError}
+          onGeneratePartialPlan={() => void handleGeneratePartialPlan()}
+        />
+      )}
+
+      {/* L6-E2: Partial import plan section — read-only, no apply */}
+      {partialPlan && (
+        <PartialPlanSection
+          plan={partialPlan}
+          filter={partialPlanFilter}
+          setFilter={setPartialPlanFilter}
+          onExport={handleExportPartialPlan}
         />
       )}
 
@@ -1516,6 +1588,418 @@ function ReviewRow({
   )
 }
 
+// -- L6-E2: Partial Import Plan Sub-component ---------------------------------
+
+type PartialPlanSectionProps = {
+  plan: CourseSettingPartialImportPlanResponse
+  filter: 'importable' | 'skipped' | 'unresolved' | 'candidates' | 'duplicates' | 'blockers'
+  setFilter: (v: 'importable' | 'skipped' | 'unresolved' | 'candidates' | 'duplicates' | 'blockers') => void
+  onExport: () => void
+}
+
+function PartialPlanSection({ plan, filter, setFilter, onExport }: PartialPlanSectionProps) {
+  const s = plan.summary
+  return (
+    <div
+      className="border-t-2 border-emerald-200 bg-emerald-50/30 px-4 py-3 space-y-3"
+      data-l6e2-section="plan"
+    >
+      <div className="flex items-center gap-2 flex-wrap">
+        <FileSpreadsheet className="w-4 h-4 text-emerald-700" />
+        <h4 className="text-sm font-semibold text-emerald-800">
+          部分导入计划 (Partial Import Plan)
+        </h4>
+        <Badge
+          variant="outline"
+          className="text-[10px] font-normal bg-emerald-50 text-emerald-700 border-emerald-200"
+        >
+          planOnly · dryRunOnly · applyAllowed=false
+        </Badge>
+        <span className="text-[11px] text-gray-500 ml-auto">
+          {plan.targetSemester.name} (ID {plan.targetSemester.id})
+        </span>
+      </div>
+
+      <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-sm text-emerald-800 flex items-start gap-2">
+        <Info className="w-4 h-4 mt-0.5 shrink-0" />
+        <span>当前仅生成导入计划，不会写入数据库，不会创建教学任务或导入批次。</span>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+        <PartialPlanSummaryCard label="计划导入" value={s.plannedImportRows} tone="success" />
+        <PartialPlanSummaryCard label="跳过" value={s.skippedRows} tone="muted" />
+        <PartialPlanSummaryCard label="仍需处理" value={s.unresolvedRows} tone="warn" />
+        <PartialPlanSummaryCard label="已忽略" value={s.ignoredRows} tone="muted" />
+        <PartialPlanSummaryCard label="阻塞项" value={s.blockingRows} tone="danger" />
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+        <PartialPlanSummaryCard label="课程候选" value={s.courseCreateCandidates} tone="default" />
+        <PartialPlanSummaryCard
+          label="教师候选"
+          value={s.teacherCreateCandidates}
+          tone="muted"
+          extra="L6-E1C 处理"
+        />
+        <PartialPlanSummaryCard label="班级候选" value={s.classGroupCreateCandidates} tone="default" />
+        <PartialPlanSummaryCard label="教学任务候选" value={s.teachingTaskCandidates} tone="default" />
+        <PartialPlanSummaryCard label="任务-班级关联" value={s.teachingTaskClassCandidates} tone="default" />
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+        <PartialPlanSummaryCard
+          label="applyReadyForFutureStage"
+          value={s.applyReadyForFutureStage ? 1 : 0}
+          tone={s.applyReadyForFutureStage ? 'success' : 'muted'}
+        />
+        <PartialPlanSummaryCard
+          label="重复风险"
+          value={s.duplicateRiskRows}
+          tone={s.duplicateRiskRows > 0 ? 'warn' : 'muted'}
+        />
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onExport}
+            data-l6e2-action="export-plan"
+          >
+            <Download className="w-3.5 h-3.5 mr-1" />
+            导出部分导入计划 JSON
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 flex-wrap">
+        <Label className="text-[11px] text-gray-600">查看</Label>
+        <select
+          value={filter}
+          onChange={(e) => setFilter(e.target.value as PartialPlanSectionProps['filter'])}
+          className="border border-gray-300 rounded px-2 py-0.5 text-xs bg-white"
+          data-l6e2-filter="view"
+        >
+          <option value="importable">可导入行 ({plan.plan.importableRows.length})</option>
+          <option value="skipped">跳过行 ({plan.plan.skippedRows.length})</option>
+          <option value="unresolved">仍需处理 ({plan.plan.unresolvedRows.length})</option>
+          <option value="candidates">课程/班级候选 ({plan.plan.createCandidates.courses.length + plan.plan.createCandidates.classGroups.length})</option>
+          <option value="duplicates">重复风险 ({plan.plan.duplicateRisks.length})</option>
+          <option value="blockers">阻塞项 ({plan.plan.blockers.length})</option>
+        </select>
+      </div>
+
+      {filter === 'importable' && (
+        <PartialPlanImportableTable rows={plan.plan.importableRows} />
+      )}
+      {filter === 'skipped' && <PartialPlanSkippedTable rows={plan.plan.skippedRows} />}
+      {filter === 'unresolved' && (
+        <PartialPlanUnresolvedTable rows={plan.plan.unresolvedRows} />
+      )}
+      {filter === 'candidates' && (
+        <PartialPlanCandidatesView
+          courses={plan.plan.createCandidates.courses}
+          classGroups={plan.plan.createCandidates.classGroups}
+        />
+      )}
+      {filter === 'duplicates' && (
+        <PartialPlanDuplicateRisksTable rows={plan.plan.duplicateRisks} />
+      )}
+      {filter === 'blockers' && <PartialPlanBlockersTable rows={plan.plan.blockers} />}
+    </div>
+  )
+}
+
+function PartialPlanSummaryCard({
+  label,
+  value,
+  tone,
+  extra,
+}: {
+  label: string
+  value: number
+  tone: 'default' | 'muted' | 'success' | 'danger' | 'warn'
+  extra?: string
+}) {
+  const toneClass =
+    tone === 'success'
+      ? 'border-green-200 bg-green-50 text-green-700'
+      : tone === 'danger'
+        ? 'border-red-200 bg-red-50 text-red-700'
+        : tone === 'warn'
+          ? 'border-amber-200 bg-amber-50 text-amber-700'
+          : tone === 'muted'
+            ? 'border-gray-200 bg-gray-50 text-gray-700'
+            : 'border-emerald-200 bg-emerald-50 text-emerald-700'
+  return (
+    <div className={'rounded-lg border p-2 ' + toneClass}>
+      <div className="text-[10px] opacity-80">{label}</div>
+      <div className="text-base font-semibold tabular-nums">{value}</div>
+      {extra && <div className="text-[10px] opacity-60">{extra}</div>}
+    </div>
+  )
+}
+
+function PartialPlanImportableTable({ rows }: { rows: CourseSettingPartialImportPlanResponse['plan']['importableRows'] }) {
+  if (rows.length === 0) return <p className="text-[11px] text-gray-500">无可导入行</p>
+  return (
+    <div className="overflow-x-auto" data-l6e2-table="importable">
+      <table className="w-full text-xs">
+        <thead className="bg-emerald-50 text-emerald-700">
+          <tr>
+            <th className="px-2 py-1.5 text-left">审核项ID</th>
+            <th className="px-2 py-1.5 text-right">Sheet</th>
+            <th className="px-2 py-1.5 text-right">行号</th>
+            <th className="px-2 py-1.5 text-left">课程</th>
+            <th className="px-2 py-1.5 text-left">教师</th>
+            <th className="px-2 py-1.5 text-left">班级</th>
+            <th className="px-2 py-1.5 text-right">周课时</th>
+            <th className="px-2 py-1.5 text-left">考试类型</th>
+            <th className="px-2 py-1.5 text-left">重复风险</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.approvalItemId} className="border-t hover:bg-emerald-50/30">
+              <td className="px-2 py-1.5 font-mono text-[10px]">{r.approvalItemId.slice(0, 14)}…</td>
+              <td className="px-2 py-1.5 text-right tabular-nums">{r.sheetIndex}</td>
+              <td className="px-2 py-1.5 text-right tabular-nums">{r.sourceRowIndex}</td>
+              <td className="px-2 py-1.5">
+                {r.plannedCourseAction === 'useExisting' && r.resolvedCourseId != null
+                  ? <span className="text-green-700">已有 (ID:{r.resolvedCourseId})</span>
+                  : r.plannedCourseAction === 'createCandidate'
+                    ? <span className="text-blue-700">新候选</span>
+                    : <span className="text-gray-400">—</span>}
+              </td>
+              <td className="px-2 py-1.5">
+                {r.plannedTeacherAction === 'useExisting' && r.resolvedTeacherId != null
+                  ? <span className="text-green-700">已有 (ID:{r.resolvedTeacherId})</span>
+                  : r.plannedTeacherAction === 'allowBlank'
+                    ? <span className="text-gray-500">允许暂缺</span>
+                    : r.plannedTeacherAction === 'unresolved_no_create_in_l6_e2'
+                      ? <span className="text-amber-700">L6-E2 不创建</span>
+                      : <span className="text-gray-400">—</span>}
+              </td>
+              <td className="px-2 py-1.5">
+                {r.plannedClassGroupAction === 'useExisting'
+                  ? <span className="text-green-700">已有 ({r.resolvedClassGroupIds.length})</span>
+                  : r.plannedClassGroupAction === 'createCandidate'
+                    ? <span className="text-blue-700">新候选 ({r.plannedClassGroupCandidateNames.length})</span>
+                    : <span className="text-gray-400">—</span>}
+              </td>
+              <td className="px-2 py-1.5 text-right tabular-nums">{r.weeklyHours ?? '-'}</td>
+              <td className="px-2 py-1.5">{r.examType ?? '-'}</td>
+              <td className="px-2 py-1.5">
+                <Badge variant="outline" className="text-[10px]">{r.duplicateRisk}</Badge>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function PartialPlanSkippedTable({ rows }: { rows: CourseSettingPartialImportPlanResponse['plan']['skippedRows'] }) {
+  if (rows.length === 0) return <p className="text-[11px] text-gray-500">无跳过行</p>
+  return (
+    <div className="overflow-x-auto" data-l6e2-table="skipped">
+      <table className="w-full text-xs">
+        <thead className="bg-gray-50 text-gray-700">
+          <tr>
+            <th className="px-2 py-1.5 text-left">审核项ID</th>
+            <th className="px-2 py-1.5 text-right">Sheet</th>
+            <th className="px-2 py-1.5 text-right">行号</th>
+            <th className="px-2 py-1.5 text-left">原因</th>
+            <th className="px-2 py-1.5 text-left">备注</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.approvalItemId} className="border-t">
+              <td className="px-2 py-1.5 font-mono text-[10px]">{r.approvalItemId.slice(0, 14)}…</td>
+              <td className="px-2 py-1.5 text-right tabular-nums">{r.sheetIndex}</td>
+              <td className="px-2 py-1.5 text-right tabular-nums">{r.sourceRowIndex}</td>
+              <td className="px-2 py-1.5">{r.skipReason}</td>
+              <td className="px-2 py-1.5 text-gray-500">{r.note ?? '-'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function PartialPlanUnresolvedTable({ rows }: { rows: CourseSettingPartialImportPlanResponse['plan']['unresolvedRows'] }) {
+  if (rows.length === 0) return <p className="text-[11px] text-gray-500">无未处理行</p>
+  return (
+    <div className="overflow-x-auto" data-l6e2-table="unresolved">
+      <table className="w-full text-xs">
+        <thead className="bg-amber-50 text-amber-700">
+          <tr>
+            <th className="px-2 py-1.5 text-left">审核项ID</th>
+            <th className="px-2 py-1.5 text-right">Sheet</th>
+            <th className="px-2 py-1.5 text-right">行号</th>
+            <th className="px-2 py-1.5 text-left">未处理原因</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.approvalItemId} className="border-t">
+              <td className="px-2 py-1.5 font-mono text-[10px]">{r.approvalItemId.slice(0, 14)}…</td>
+              <td className="px-2 py-1.5 text-right tabular-nums">{r.sheetIndex}</td>
+              <td className="px-2 py-1.5 text-right tabular-nums">{r.sourceRowIndex}</td>
+              <td className="px-2 py-1.5">
+                <div className="flex flex-wrap gap-1">
+                  {r.unresolvedReasons.map((reason) => (
+                    <Badge key={reason} variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200">
+                      {reason}
+                    </Badge>
+                  ))}
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function PartialPlanCandidatesView({
+  courses,
+  classGroups,
+}: {
+  courses: CourseSettingPartialImportPlanResponse['plan']['createCandidates']['courses']
+  classGroups: CourseSettingPartialImportPlanResponse['plan']['createCandidates']['classGroups']
+}) {
+  if (courses.length === 0 && classGroups.length === 0) {
+    return <p className="text-[11px] text-gray-500">无创建候选</p>
+  }
+  return (
+    <div className="space-y-3" data-l6e2-table="candidates">
+      <div>
+        <h5 className="text-xs font-semibold text-emerald-800 mb-1">
+          课程候选 (Course) — {courses.length}
+        </h5>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead className="bg-emerald-50 text-emerald-700">
+              <tr>
+                <th className="px-2 py-1.5 text-left">candidateKey</th>
+                <th className="px-2 py-1.5 text-left">候选名称</th>
+                <th className="px-2 py-1.5 text-right">关联行数</th>
+                <th className="px-2 py-1.5 text-right">置信度</th>
+              </tr>
+            </thead>
+            <tbody>
+              {courses.map((c) => (
+                <tr key={c.candidateKey} className="border-t">
+                  <td className="px-2 py-1.5 font-mono text-[10px]">{c.candidateKey}</td>
+                  <td className="px-2 py-1.5">{c.candidateName}</td>
+                  <td className="px-2 py-1.5 text-right tabular-nums">{c.approvalItemIds.length}</td>
+                  <td className="px-2 py-1.5 text-right tabular-nums">{c.confidence.toFixed(2)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <h5 className="text-xs font-semibold text-emerald-800 mb-1">
+          班级候选 (ClassGroup) — {classGroups.length}
+        </h5>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead className="bg-emerald-50 text-emerald-700">
+              <tr>
+                <th className="px-2 py-1.5 text-left">candidateKey</th>
+                <th className="px-2 py-1.5 text-left">候选名称</th>
+                <th className="px-2 py-1.5 text-right">关联行数</th>
+                <th className="px-2 py-1.5 text-right">学生数</th>
+              </tr>
+            </thead>
+            <tbody>
+              {classGroups.map((c) => (
+                <tr key={c.candidateKey} className="border-t">
+                  <td className="px-2 py-1.5 font-mono text-[10px]">{c.candidateKey}</td>
+                  <td className="px-2 py-1.5">{c.candidateName}</td>
+                  <td className="px-2 py-1.5 text-right tabular-nums">{c.approvalItemIds.length}</td>
+                  <td className="px-2 py-1.5 text-right tabular-nums">{c.studentCount ?? '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function PartialPlanDuplicateRisksTable({ rows }: { rows: CourseSettingPartialImportPlanResponse['plan']['duplicateRisks'] }) {
+  if (rows.length === 0) return <p className="text-[11px] text-gray-500">无重复风险</p>
+  return (
+    <div className="overflow-x-auto" data-l6e2-table="duplicates">
+      <table className="w-full text-xs">
+        <thead className="bg-amber-50 text-amber-700">
+          <tr>
+            <th className="px-2 py-1.5 text-left">审核项ID</th>
+            <th className="px-2 py-1.5 text-right">Sheet</th>
+            <th className="px-2 py-1.5 text-right">行号</th>
+            <th className="px-2 py-1.5 text-left">风险类型</th>
+            <th className="px-2 py-1.5 text-left">已存在任务</th>
+            <th className="px-2 py-1.5 text-left">原因</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.approvalItemId} className="border-t">
+              <td className="px-2 py-1.5 font-mono text-[10px]">{r.approvalItemId.slice(0, 14)}…</td>
+              <td className="px-2 py-1.5 text-right tabular-nums">{r.sheetIndex}</td>
+              <td className="px-2 py-1.5 text-right tabular-nums">{r.sourceRowIndex}</td>
+              <td className="px-2 py-1.5">
+                <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200">
+                  {r.kind}
+                </Badge>
+              </td>
+              <td className="px-2 py-1.5 tabular-nums">{r.existingTeachingTaskId ?? '-'}</td>
+              <td className="px-2 py-1.5 text-gray-600">{r.reason}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function PartialPlanBlockersTable({ rows }: { rows: CourseSettingPartialImportPlanResponse['plan']['blockers'] }) {
+  if (rows.length === 0) return <p className="text-[11px] text-gray-500">无阻塞项</p>
+  return (
+    <div className="overflow-x-auto" data-l6e2-table="blockers">
+      <table className="w-full text-xs">
+        <thead className="bg-red-50 text-red-700">
+          <tr>
+            <th className="px-2 py-1.5 text-left">审核项ID</th>
+            <th className="px-2 py-1.5 text-right">Sheet</th>
+            <th className="px-2 py-1.5 text-right">行号</th>
+            <th className="px-2 py-1.5 text-left">原因</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.approvalItemId} className="border-t">
+              <td className="px-2 py-1.5 font-mono text-[10px]">{r.approvalItemId.slice(0, 14)}…</td>
+              <td className="px-2 py-1.5 text-right tabular-nums">{r.sheetIndex}</td>
+              <td className="px-2 py-1.5 text-right tabular-nums">{r.sourceRowIndex}</td>
+              <td className="px-2 py-1.5">
+                <Badge variant="outline" className="text-[10px] bg-red-50 text-red-700 border-red-200">
+                  {r.reason}
+                </Badge>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
 // -- L6-E1: Manual Resolution Sub-component -----------------------------------
 
 type ResolutionSectionProps = {
@@ -1529,6 +2013,10 @@ type ResolutionSectionProps = {
   toggleResolutionRow: (id: string) => void
   filteredResolutionItems: CourseSettingManualResolutionItem[]
   onExportDraft: () => void
+  // L6-E2: plan trigger
+  partialPlanLoading: boolean
+  partialPlanError: string | null
+  onGeneratePartialPlan: () => void
 }
 
 function ResolutionSection({
@@ -1542,6 +2030,9 @@ function ResolutionSection({
   toggleResolutionRow,
   filteredResolutionItems,
   onExportDraft,
+  partialPlanLoading,
+  partialPlanError,
+  onGeneratePartialPlan,
 }: ResolutionSectionProps) {
   const updateItem = (approvalItemId: string, patch: Record<string, unknown>) => {
     const updated = applyManualResolutionUpdate(resolutionItems, approvalItemId, patch as Parameters<typeof applyManualResolutionUpdate>[2])
@@ -1592,6 +2083,38 @@ function ResolutionSection({
           导出处理结果 JSON
         </Button>
       </div>
+
+      {/* L6-E2: Generate partial import plan (no DB write, no apply) */}
+      <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-emerald-100">
+        <Button
+          size="sm"
+          onClick={onGeneratePartialPlan}
+          disabled={partialPlanLoading}
+          className="bg-emerald-600 hover:bg-emerald-700"
+          data-l6e2-action="generate-plan"
+        >
+          {partialPlanLoading ? (
+            <>
+              <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+              生成中...
+            </>
+          ) : (
+            <>
+              <FileSpreadsheet className="w-3.5 h-3.5 mr-1" />
+              生成部分导入计划
+            </>
+          )}
+        </Button>
+        <span className="text-[11px] text-emerald-700">
+          当前仅生成导入计划，不会写入数据库，不会创建教学任务或导入批次。
+        </span>
+      </div>
+      {partialPlanError && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700 flex items-start gap-2">
+          <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+          <span>{partialPlanError}</span>
+        </div>
+      )}
 
       {/* Resolution items table */}
       <div className="overflow-x-auto">

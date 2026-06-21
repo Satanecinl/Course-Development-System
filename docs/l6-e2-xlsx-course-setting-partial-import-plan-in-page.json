@@ -1,0 +1,87 @@
+{
+  "stage": "L6-E2-XLSX-COURSE-SETTING-PARTIAL-IMPORT-PLAN-IN-PAGE",
+  "planVersion": "l6-e2-partial-import-plan-v1",
+  "generatedAt": "2026-06-21T13:01:20.355Z",
+  "dryRunOnly": true,
+  "planOnly": true,
+  "dbWritten": false,
+  "applyAllowed": false,
+  "applyRouteExists": false,
+  "importBatchCreated": false,
+  "teachingTaskCreated": false,
+  "teachingTaskClassCreated": false,
+  "courseCreated": false,
+  "classGroupCreated": false,
+  "teacherCreated": false,
+  "rawIncluded": false,
+  "targetSemester": {
+    "id": 3,
+    "idHash": "pending",
+    "nameHash": "pending",
+    "codeHash": null,
+    "isActive": true,
+    "setAsActive": false
+  },
+  "sourceArtifact": {
+    "filename": "2025年秋季学期课程设置(总）.xlsx",
+    "sha256": "computed-on-run",
+    "sizeBytes": 126097
+  },
+  "reviewPackageFingerprintHash": "computed-on-run",
+  "reviewPackageLocalSha256": "n/a",
+  "planLocalSha256": "n/a",
+  "summary": {
+    "totalRows": 1116,
+    "plannedImportRows": 0,
+    "skippedRows": 0,
+    "unresolvedRows": 1116,
+    "ignoredRows": 0,
+    "duplicateRiskRows": 0,
+    "blockingRows": 1116,
+    "courseCreateCandidates": 0,
+    "teacherCreateCandidates": 0,
+    "classGroupCreateCandidates": 0,
+    "teachingTaskCandidates": 0,
+    "teachingTaskClassCandidates": 0,
+    "applyReadyForFutureStage": false
+  },
+  "plan": {
+    "importableRowCount": 0,
+    "skippedRowCount": 0,
+    "unresolvedRowCount": 1116,
+    "courseCreateCount": 0,
+    "classGroupCreateCount": 0,
+    "teacherCreateCount": 0,
+    "teachingTaskCount": 0,
+    "teachingTaskClassCount": 0,
+    "duplicateRiskCount": 0,
+    "blockerCount": 1116
+  },
+  "rawDisplayPolicy": {
+    "runtimeUiRawAllowed": true,
+    "exportedPlanRawIncluded": false,
+    "committedDocsRawAllowed": false,
+    "scope": "authorized-admin-plan-only"
+  },
+  "privacy": {
+    "rawTeacherNamesIncluded": false,
+    "rawClassNamesIncluded": false,
+    "rawCourseNamesIncluded": false,
+    "rawRemarksIncluded": false,
+    "rawSheetNamesIncluded": false,
+    "phoneNumbersIncluded": false,
+    "employeeNoIncluded": false
+  },
+  "isolation": {
+    "importBatchCreated": false,
+    "teachingTaskCreated": false,
+    "teachingTaskClassCreated": false,
+    "courseCreated": false,
+    "classGroupCreated": false,
+    "teacherCreated": false,
+    "scheduleSlotCreated": false,
+    "scheduleAdjustmentCreated": false,
+    "semesterActiveChanged": false,
+    "excelPartialImportApplied": false
+  }
+}

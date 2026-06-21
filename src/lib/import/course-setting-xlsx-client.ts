@@ -708,3 +708,279 @@ export function downloadManualResolutionDraftExport(
     URL.revokeObjectURL(url)
   }, 100)
 }
+
+// ── L6-E2 Partial Import Plan types & fetchers ─────────────────────────────
+
+import type {
+  CourseSettingManualResolutionItem,
+} from './course-setting-manual-resolution-l6-e1'
+
+export type CourseSettingPartialImportDuplicateRiskKind =
+  | 'possibleExisting'
+  | 'ambiguousExisting'
+  | 'exactExisting'
+  | 'safeNew'
+  | 'needsReview'
+
+export type CourseSettingPartialImportPlanRow = {
+  approvalItemId: string
+  sheetIndex: number
+  sourceRowIndex: number
+  sourceEvidenceHash: string
+  resolvedCourseId: number | null
+  plannedCourseAction: 'useExisting' | 'createCandidate' | 'unresolved'
+  plannedCourseCandidateName: string | null
+  resolvedTeacherId: number | null
+  plannedTeacherAction:
+    | 'useExisting'
+    | 'allowBlank'
+    | 'unresolved'
+    | 'unresolved_no_create_in_l6_e2'
+  plannedTeacherCandidateName: string | null
+  resolvedClassGroupIds: number[]
+  plannedClassGroupAction: 'useExisting' | 'createCandidate' | 'unresolved'
+  plannedClassGroupCandidateNames: string[]
+  weeklyHours: number | null
+  examType: '考试' | '考查' | '' | null
+  ambiguousMappingConfirmed: boolean
+  duplicateRisk: CourseSettingPartialImportDuplicateRiskKind
+  duplicateExistingTaskId: number | null
+  blockerReasons: string[]
+}
+
+export type CourseSettingPartialImportSkippedRow = {
+  approvalItemId: string
+  sheetIndex: number
+  sourceRowIndex: number
+  skipReason: 'userIgnored' | 'rejected' | 'skipCandidate' | 'invalidOrPlaceholder'
+  note?: string | null
+}
+
+export type CourseSettingPartialImportUnresolvedRow = {
+  approvalItemId: string
+  sheetIndex: number
+  sourceRowIndex: number
+  unresolvedReasons: string[]
+}
+
+export type CourseSettingPartialImportSummary = {
+  totalRows: number
+  plannedImportRows: number
+  skippedRows: number
+  unresolvedRows: number
+  ignoredRows: number
+  duplicateRiskRows: number
+  blockingRows: number
+  courseCreateCandidates: number
+  teacherCreateCandidates: 0
+  classGroupCreateCandidates: number
+  teachingTaskCandidates: number
+  teachingTaskClassCandidates: number
+  applyReadyForFutureStage: boolean
+}
+
+export type CourseSettingPartialImportPlanResponse = {
+  success: true
+  stage: 'L6-E2-XLSX-COURSE-SETTING-PARTIAL-IMPORT-PLAN-IN-PAGE'
+  planVersion: string
+  planOnly: true
+  dryRunOnly: true
+  dbWritten: false
+  applyAllowed: false
+  applyRouteExists: false
+  importBatchCreated: false
+  teachingTaskCreated: false
+  teachingTaskClassCreated: false
+  courseCreated: false
+  classGroupCreated: false
+  teacherCreated: false
+  excelPartialImportApplied: false
+  targetSemester: {
+    id: number
+    name: string
+    code: string | null
+    isActive: boolean
+    setAsActive: false
+  }
+  sourceArtifact: { filename: string; sha256: string; sizeBytes: number }
+  reviewPackageFingerprintHash: string
+  reviewPackageDecisionAllPending: boolean
+  summary: CourseSettingPartialImportSummary
+  plan: {
+    importableRows: CourseSettingPartialImportPlanRow[]
+    skippedRows: CourseSettingPartialImportSkippedRow[]
+    unresolvedRows: CourseSettingPartialImportUnresolvedRow[]
+    createCandidates: {
+      courses: Array<{
+        candidateKey: string
+        approvalItemIds: string[]
+        candidateName: string
+        confidence: number
+        sourceEvidenceHashes: string[]
+      }>
+      classGroups: Array<{
+        candidateKey: string
+        approvalItemIds: string[]
+        candidateName: string
+        studentCount: number | null
+        sourceEvidenceHashes: string[]
+      }>
+      teachers: []
+    }
+    teachingTasks: Array<{
+      candidateKey: string
+      approvalItemId: string
+      courseRef: { kind: 'useExisting'; courseId: number } | { kind: 'createCandidate'; candidateKey: string }
+      teacherRef:
+        | { kind: 'useExisting'; teacherId: number | null }
+        | { kind: 'noTeacher' }
+      classGroupRefs: Array<
+        { kind: 'useExisting'; classGroupId: number } | { kind: 'createCandidate'; candidateKey: string }
+      >
+      weeklyHours: number | null
+      examType: '考试' | '考查' | '' | null
+      duplicateRisk: CourseSettingPartialImportDuplicateRiskKind
+      duplicateExistingTaskId: number | null
+      blockerReasons: string[]
+    }>
+    teachingTaskClasses: Array<{
+      candidateKey: string
+      approvalItemId: string
+      teachingTaskCandidateKey: string
+      classGroupRef: { kind: 'useExisting'; classGroupId: number } | { kind: 'createCandidate'; candidateKey: string }
+    }>
+    duplicateRisks: Array<{
+      approvalItemId: string
+      sheetIndex: number
+      sourceRowIndex: number
+      kind: CourseSettingPartialImportDuplicateRiskKind
+      existingTeachingTaskId: number | null
+      reason: string
+    }>
+    blockers: Array<{
+      approvalItemId: string
+      sheetIndex: number
+      sourceRowIndex: number
+      reason: string
+    }>
+  }
+  rawDisplayPolicy: {
+    runtimeUiRawAllowed: true
+    exportedPlanRawIncluded: false
+    committedDocsRawAllowed: false
+    scope: 'authorized-admin-plan-only'
+  }
+  warnings: string[]
+}
+
+export type CourseSettingPartialImportPlanErrorResponse = {
+  success: false
+  error: string
+  message: string
+  stage: string
+  planOnly: true
+  dryRunOnly: true
+  dbWritten: false
+  applyAllowed: false
+}
+
+/**
+ * L6-E2: post the current page's manualResolutions + the xlsx + targetSemesterId
+ * to the plan-only API. Backend re-parses the Excel, re-loads existing data,
+ * and returns the dry-run plan (no DB writes).
+ */
+export async function planCourseSettingPartialImport(
+  file: File,
+  targetSemesterId: number,
+  manualResolutions: CourseSettingManualResolutionItem[],
+): Promise<CourseSettingPartialImportPlanResponse> {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('targetSemesterId', String(targetSemesterId))
+  formData.append('manualResolutions', JSON.stringify(manualResolutions))
+
+  const res = await fetch('/api/admin/import/course-setting-xlsx/partial-import-plan', {
+    method: 'POST',
+    body: formData,
+  })
+
+  const data = await res.json()
+  if (!res.ok || !data.success) {
+    const err = data as CourseSettingPartialImportPlanErrorResponse
+    throw new Error(err.message ?? err.error ?? `Plan failed (HTTP ${res.status})`)
+  }
+  return data as CourseSettingPartialImportPlanResponse
+}
+
+/**
+ * L6-E2: build a redacted JSON string of the plan for download. Excludes all
+ * raw teacher / class / course / remark text per rawDisplayPolicy.
+ */
+export function buildCourseSettingPartialImportPlanExport(
+  plan: CourseSettingPartialImportPlanResponse,
+): string {
+  const planHashSeed = JSON.stringify(plan.summary) + plan.targetSemester.id
+  // Cheap deterministic hash for the export — never log or persist raw names.
+  let h = 5381
+  for (let i = 0; i < planHashSeed.length; i += 1) {
+    h = ((h << 5) + h + planHashSeed.charCodeAt(i)) | 0
+  }
+  const planHash = (h >>> 0).toString(16).padStart(8, '0')
+  const obj = {
+    stage: plan.stage,
+    fileType: 'course-setting-partial-import-plan',
+    version: plan.planVersion,
+    generatedAt: new Date().toISOString(),
+    targetSemesterId: plan.targetSemester.id,
+    sourceArtifact: {
+      filename: plan.sourceArtifact.filename,
+      sha256: plan.sourceArtifact.sha256,
+      sizeBytes: plan.sourceArtifact.sizeBytes,
+    },
+    reviewPackageFingerprintHash: plan.reviewPackageFingerprintHash,
+    summary: plan.summary,
+    importableRowCount: plan.plan.importableRows.length,
+    skippedRowCount: plan.plan.skippedRows.length,
+    unresolvedRowCount: plan.plan.unresolvedRows.length,
+    createCandidates: {
+      courses: plan.plan.createCandidates.courses.map((c) => ({
+        candidateKey: c.candidateKey,
+        approvalItemCount: c.approvalItemIds.length,
+      })),
+      classGroups: plan.plan.createCandidates.classGroups.map((c) => ({
+        candidateKey: c.candidateKey,
+        approvalItemCount: c.approvalItemIds.length,
+      })),
+      teachers: [],
+    },
+    teachingTaskCount: plan.plan.teachingTasks.length,
+    teachingTaskClassCount: plan.plan.teachingTaskClasses.length,
+    duplicateRiskCount: plan.plan.duplicateRisks.length,
+    blockerCount: plan.plan.blockers.length,
+    rawIncluded: false,
+    privacy: {
+      rawTeacherNamesIncluded: false,
+      rawClassNamesIncluded: false,
+      rawCourseNamesIncluded: false,
+      rawRemarksIncluded: false,
+    },
+    planHash,
+  }
+  return JSON.stringify(obj, null, 2) + '\n'
+}
+
+export function downloadCourseSettingPartialImportPlanExport(
+  plan: CourseSettingPartialImportPlanResponse,
+): void {
+  const json = buildCourseSettingPartialImportPlanExport(plan)
+  const blob = new Blob([json], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `course-setting-partial-import-plan.target-${plan.targetSemester.id}.redacted.json`
+  a.style.display = 'none'
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  setTimeout(() => URL.revokeObjectURL(url), 100)
+}
