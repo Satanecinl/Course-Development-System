@@ -1,0 +1,109 @@
+{
+  "stage": "L7-A1-XLSX-COURSE-SETTING-NEW-TEMPLATE-VALIDATION-CLOSEOUT",
+  "version": "l7-a1-v1",
+  "parentStage": "L7-A",
+  "parentCommit": "e51a565",
+  "closeoutType": "validation-evidence-补证",
+  "browserValidation": {
+    "status": "PASSED",
+    "confirmedByUser": true
+  },
+  "scanDocsPii": {
+    "result": "PASS",
+    "blockingHits": 0,
+    "warningHits": 3,
+    "warningNote": "pre-existing PHONE_NUMBER in l1/l2 audit JSON",
+    "parseFailed": 0
+  },
+  "l7aVerify": {
+    "result": "PASS",
+    "checks": 105,
+    "pass": 105,
+    "fail": 0
+  },
+  "l6e1Regression": {
+    "result": "PASS",
+    "checks": 87,
+    "pass": 87,
+    "fail": 0,
+    "clarification": "L7-A report showed 86/1 transient; rerun confirmed 87/87"
+  },
+  "l6e2g1Regression": {
+    "result": "PASS",
+    "checks": 54,
+    "pass": 54,
+    "fail": 0,
+    "clarification": "L7-A report wrote 117/117 — was a typo mixing up E2G (117) with E2G1 (54)"
+  },
+  "l6e2gRegression": {
+    "result": "PASS",
+    "checks": 117,
+    "pass": 117,
+    "fail": 0
+  },
+  "l6e2fRegression": {
+    "result": "PASS",
+    "checks": 45,
+    "pass": 45,
+    "fail": 0
+  },
+  "l6e2eRegression": {
+    "result": "PASS",
+    "checks": 82,
+    "pass": 82,
+    "fail": 0,
+    "note": "K column format handled by Pattern 0a; old parenthesized format still Pattern 0b"
+  },
+  "l6e2dRegression": {
+    "result": "PASS",
+    "checks": 90,
+    "pass": 90,
+    "fail": 0
+  },
+  "l6e2cRegression": {
+    "result": "PASS",
+    "checks": 86,
+    "pass": 86,
+    "fail": 0
+  },
+  "l6e2aRegression": {
+    "result": "PASS",
+    "checks": 85,
+    "pass": 85,
+    "fail": 0
+  },
+  "l6e2Regression": {
+    "result": "PASS",
+    "checks": 144,
+    "pass": 144,
+    "fail": 0
+  },
+  "coreChecks": {
+    "prismaValidate": "PASS",
+    "migrateStatus": "PASS",
+    "build": "PASS",
+    "tsc": "PASS",
+    "eslint": "PASS (0 errors, 0 warnings)",
+    "k22c": "PASS"
+  },
+  "noDbWriteProof": {
+    "dbWrites": 0,
+    "courseCreate": 0,
+    "teacherCreate": 0,
+    "classGroupCreate": 0,
+    "importBatchTeachingTask": 0,
+    "rawCommitted": false,
+    "applyButton": false
+  },
+  "gitState": {
+    "finalHead": "e51a565",
+    "remoteTracking": "origin/master",
+    "aheadBehind": "0/0",
+    "pushed": true,
+    "forcePush": false,
+    "finalWorktree": "clean"
+  },
+  "closeoutDecision": "L7-A officially CLOSED",
+  "nextStage": "L7-F-XLSX-COURSE-SETTING-NEW-TEMPLATE-PARTIAL-IMPORT-EXECUTION",
+  "rawIncluded": false
+}

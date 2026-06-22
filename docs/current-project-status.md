@@ -174,3 +174,5 @@ The list reflects local history at the time of K36-A3 and does not assert remote
 - L6-E2G1 修复 Excel 课程设置 task split 班级映射回归：教师括号中的 1.2/3.4/5.6 会先展开为独立 token 再映射为当前行 classText 中的真实班级名，DB 未匹配只显示 missing，不再误报 classTokenUnmatched；不写 DB、不执行 apply。
 
 - L7-A 替换 Excel 课程设置导入主规则为新版 A:M 固定列模板：每行独立解析，目标学期来自 UI 选择的 targetSemesterId，不再从 Excel 学年/学期列过滤；小计行跳过，K 列授课任务分配优先生成 task split，J 列任课教师为 fallback；不写 DB、不执行 apply，L6-F 继续暂缓。
+
+- L7-A 新版 A:M Excel 课程设置模板规则替换已通过浏览器验收与自动验证补证，可正式关闭；L7-F 写库仍需单独强 gate 阶段。
