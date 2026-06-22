@@ -142,8 +142,8 @@ async function main(): Promise<void> {
     /function\s+tokenizeClassText|const\s+tokenizeClassText\s*=/.test(trialSrc),
   )
   record(
-    'trial uses canonical key (majorName + classNo token)',
-    /majorTok|cg\.name\.includes\(majorTok\)/.test(trialSrc),
+    'trial uses canonical key (L7-F6D1 substring or L7-F6D2 canonical)',
+    /majorTok|cg\.name\.includes\(majorTok\)|buildClassGroupCanonicalKey/.test(trialSrc),
   )
   record(
     'trial loads existingClassGroups with semesterId',
@@ -485,7 +485,7 @@ async function main(): Promise<void> {
   record('trial loads K-column teacher via taskAssignmentText', /taskAssignmentText/.test(trialSrc))
   record('trial reads K-column teacher first then F-column fallback', /teacherFromK\s*\?\?\s*teacherFromF/.test(trialSrc))
   record('trial tokenizes classText on whitespace + comma + 顿号', /[、,,,，/／\s]+/.test(trialSrc))
-  record('trial requires majorName for classGroup match', /majorName\.trim\(\)\.length\s*>\s*0/.test(trialSrc))
+  record('trial requires majorName or cohort for classGroup match', /(majorName\.trim\(\)\.length\s*>\s*0|cohort\.length\s*>\s*0)/.test(trialSrc))
   record('trial uses Set for matched classGroup ids', /new Set<number>/.test(trialSrc))
   record('trial outputs dbWritten', /dbWritten:/.test(trialSrc))
   record('trial outputs applied', /applied:/.test(trialSrc))

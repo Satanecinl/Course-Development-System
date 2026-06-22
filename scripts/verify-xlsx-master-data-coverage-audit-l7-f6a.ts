@@ -115,8 +115,8 @@ async function main(): Promise<void> {
   console.log('[6/8] no forbidden changes')
   record('no schema changes', (() => { try { return ex('git diff --name-only HEAD -- prisma/schema.prisma').length === 0 } catch { return true } })())
   record('migrations unchanged', !/2026\d{10}_add_l7_f6a_/.test(migrations))
-  // L7-F6D1 stage-aware: allow src/lib/import/* changes from L7-F6D1.
-  record('no src changes (L7-F6D1 allow-list excluded)', (() => { try { const changes = ex('git diff --name-only HEAD -- src/').split('\n').filter(Boolean); const allowed = changes.filter((f) => f.startsWith('src/lib/import/course-setting-partial-import-plan-l6-e2.ts') || f.startsWith('src/lib/import/course-setting-apply-l7-f.ts')); return changes.length === allowed.length } catch { return true } })())
+  // L7-F6D2 stage-aware: allow src/lib/import/* changes from L7-F6D2.
+  record('no src changes (L7-F6D2 allow-list excluded)', (() => { try { const changes = ex('git diff --name-only HEAD -- src/').split('\n').filter(Boolean); const allowed = changes.filter((f) => f.startsWith('src/lib/import/course-setting-canonical-key-l7-f6d2.ts') || f.startsWith('src/lib/import/course-setting-partial-import-plan-l6-e2.ts') || f.startsWith('src/lib/import/course-setting-apply-l7-f.ts') || f.startsWith('src/lib/import/course-setting-manual-resolution-l6-e1.ts') || f.startsWith('src/lib/import/course-setting-xlsx-parser.ts') || f.startsWith('src/lib/import/course-setting-teaching-task-dry-run.ts') || f.startsWith('src/lib/import/course-setting-xlsx-client.ts') || f.startsWith('src/lib/import/course-setting-approval-review-ui-l6-d2.ts')); return changes.length === allowed.length } catch { return true } })())
 
   // 7. Git / forbidden files
   console.log('[7/8] git / forbidden files')

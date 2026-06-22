@@ -208,3 +208,5 @@ The list reflects local history at the time of K36-A3 and does not assert remote
 - L7-F6C 受控写入 Teacher/ClassGroup 主数据：基于 L7-F6B 计划，在 confirm token 与 DB backup 保护下只写入 16 个 high-confidence Teacher（Teacher 220→236）与 395 个 validated sem4 ClassGroup（sem4 36→431，23 duplicate names skipped），保留 36 个 legacy sem4 ClassGroup，跳过 32 个 external/unknown Teacher 与 22 个 manual-review ClassGroup；不执行 Excel apply、不创建 ImportBatch/TeachingTask/ScheduleSlot。
 
 - L7-F6D1 修复新版 Excel 课程设置导入 resolution wiring：移除 trial 脚本 teacher/classGroup substring auto-resolve，改为 teacher normalized exact match 与 ClassGroup targetSemesterId+年级+学制+专业+班号 canonical exact match；新增体育课教师豁免显式规则、plan builder final hard gate、apply preflight hard gate 与 dry-run semantic stats。本阶段不写 DB、不执行 apply。
+
+- L7-F6D2 对新版 Excel 课程设置导入 canonical key 做只读复核：统一 Excel row、K列分段授课、L7-F6C ClassGroup 写入结果与 resolver 的 targetSemesterId+年级+学制+专业+班号 key，复核 23 个 duplicate plannedName skip 与 22 个 manual-review ClassGroup，验证体育课教师豁免和 K列多教师通路；本阶段不写 DB、不执行 apply。

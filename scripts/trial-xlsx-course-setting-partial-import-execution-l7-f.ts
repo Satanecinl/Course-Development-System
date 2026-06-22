@@ -211,7 +211,7 @@ async function main(): Promise<void> {
     parserVersion: 'l2-parser-v1',
     includeRawValues: true,
   })
-  const rawByApprovalItemId = new Map<string, { courseName: string | null; teacherText: string | null; classText: string | null; remark: string | null; mergeRemark: string | null; weeklyHoursText: string | null; examTypeText: string | null; majorName: string | null }>()
+  const rawByApprovalItemId = new Map<string, { courseName: string | null; teacherText: string | null; classText: string | null; remark: string | null; mergeRemark: string | null; weeklyHoursText: string | null; examTypeText: string | null; majorName: string | null; cohort: string | null; duration: string | null }>()
   const extractStr = (v: unknown): string | null => {
     if (v == null) return null
     if (typeof v === 'string') return v
@@ -240,7 +240,14 @@ async function main(): Promise<void> {
         mergeRemark: extractStr(rr.mergeRemark),
         weeklyHoursText: extractStr(rr.weeklyHours),
         examTypeText: extractStr(rr.examType),
-        majorName: extractStr(rr.gradeMajor) ?? extractStr(rr.majorName),
+        // L7-F6D2: prefer the *clean* major from C column (rr.majorName)
+        // over the combined rr.gradeMajor which embeds cohort + '/'.
+        // The combined form causes canonical-key mismatch.
+        majorName: extractStr(rr.majorName) ?? extractStr(rr.gradeMajor),
+        // L7-F6D2: also expose cohort (A column) and duration (B column)
+        // so the canonical-key resolver can build cohort+duration+major+classNo.
+        cohort: extractStr(rr.grade),
+        duration: extractStr(rr.programLength),
       })
     }
   }
@@ -345,6 +352,44 @@ async function main(): Promise<void> {
     classGroupByExactName.set(k, arr)
   }
 
+  // Build a `cgByCanonicalKey` index from the sem4 ClassGroup table.
+  // The canonical key is `targetSemesterId|cohort|major|classNo`. The
+  // DB name is parsed back into canonical parts; if parse fails, the
+  // entry is recorded in `cgParseFailures` and excluded from the
+  // index. Each canonical key maps to one or more DB ids (legacy
+  // sem4 collisions + L7-F6C collisions).
+  type ClassGroupIndexEntry = { id: number; name: string; duration: string }
+  const cgByCanonicalKey = new Map<string, ClassGroupIndexEntry[]>()
+  const cgParseFailures: { id: number; name: string; reason: string }[] = []
+  // Inline import (no schema change) — we read the same canonical key
+  // helper as the L7-F6D2 reconciliation script.
+  const {
+    buildClassGroupCanonicalKey,
+    parseDbClassGroupName,
+    tokenizeExcelClassText: tokenizeExcelClassTextCanonical,
+    normalizeCohortField,
+  } = await import('@/lib/import/course-setting-canonical-key-l7-f6d2')
+  void tokenizeExcelClassTextCanonical // alias to satisfy linter
+  for (const cg of existingClassGroups) {
+    const parsed = parseDbClassGroupName(cg.name)
+    if ('failure' in parsed) {
+      cgParseFailures.push({ id: cg.id, name: cg.name, reason: parsed.failure.reason })
+      continue
+    }
+    const parts = {
+      targetSemesterId: args.targetSemesterId,
+      cohort: parsed.parts.cohort,
+      duration: parsed.parts.duration,
+      major: parsed.parts.major,
+      classNo: parsed.parts.classNo,
+    }
+    const key = buildClassGroupCanonicalKey(parts)
+    const arr = cgByCanonicalKey.get(key) ?? []
+    arr.push({ id: cg.id, name: cg.name, duration: parts.duration })
+    cgByCanonicalKey.set(key, arr)
+  }
+  console.log(`  ClassGroup canonical index size: ${cgByCanonicalKey.size}, parse failures: ${cgParseFailures.length}`)
+
   const autoResolvedResolutions = initialResolutions.map((item) => {
     const reviewRow = reviewUiWithRaw.rows.find((r) => r.approvalItemId === item.approvalItemId)
     if (!reviewRow) return item
@@ -388,21 +433,25 @@ async function main(): Promise<void> {
 
     // ── ClassGroup: canonical key exact match only ──
     if (r.resolution.classGroups?.action === 'none' || !r.resolution.classGroups) {
+      const cohortRaw = (reviewRow as unknown as { raw?: { cohort?: string | null } }).raw?.cohort ?? null
+      const durationRaw = (reviewRow as unknown as { raw?: { duration?: string | null } }).raw?.duration ?? null
+      const cohort = normalizeCohortField(cohortRaw)
+      const duration = (durationRaw ?? '').trim()
+      const major = (majorName ?? '').trim()
       const tokens = tokenizeClassText(classText ?? '')
-      if (tokens.length > 0 && majorName != null && majorName.trim().length > 0) {
-        const majorTok = majorName.trim()
+      if (tokens.length > 0 && cohort.length > 0 && major.length > 0) {
         const matchedIds = new Set<number>()
-        for (const cg of existingClassGroups) {
-          // Both major token and classNo token must appear in the
-          // DB ClassGroup.name. No partial major match.
-          if (!cg.name.includes(majorTok)) continue
-          // classText token must be a full token within cg.name
-          // (i.e. cg.name has the token, but the token doesn't have
-          // to span the whole cg.name; e.g. "森林保护1班" contains
-          // "1班").
-          const tokenMatched = tokens.some((tk) => cg.name.includes(tk))
-          if (!tokenMatched) continue
-          matchedIds.add(cg.id)
+        for (const cn of tokens) {
+          const key = buildClassGroupCanonicalKey({
+            targetSemesterId: args.targetSemesterId,
+            cohort,
+            duration,
+            major,
+            classNo: cn,
+          })
+          const dbArr = cgByCanonicalKey.get(key)
+          if (!dbArr) continue
+          for (const db of dbArr) matchedIds.add(db.id)
         }
         if (matchedIds.size > 0) {
           r.resolution.classGroups = {
@@ -411,13 +460,71 @@ async function main(): Promise<void> {
           }
         }
       }
-      // If classText is empty or majorName missing or no match,
+      // If classText is empty or cohort / major missing or no match,
       // leave `classGroups` unset so plan builder pushes
       // classGroupMissing.
     }
 
     return r
   })
+
+  // L7-F6D2: K-column multi-teacher segment stats. For each approval
+  // row, parse the teacherText (which is the K-column raw text). Count
+  // total segments, segments with a resolved teacher, segments with
+  // missing teacher, segments with missing class tokens, and rows
+  // with multiple teacher segments.
+  const { parseKAssignmentSegments } = await import('@/lib/import/course-setting-canonical-key-l7-f6d2')
+  let kAssignmentSegmentCount = 0
+  let kAssignmentSegmentsResolvedTeacher = 0
+  let kAssignmentSegmentsMissingTeacher = 0
+  let kAssignmentSegmentsResolvedClassGroups = 0
+  let kAssignmentSegmentsMissingClassGroups = 0
+  let multiTeacherRowCount = 0
+  for (const reviewRow of reviewUiWithRaw.rows) {
+    const kText = reviewRow.raw.teacherText ?? null
+    if (!kText) continue
+    const parsed = parseKAssignmentSegments(kText)
+    if (parsed.segments.length < 2) continue
+    multiTeacherRowCount++
+    kAssignmentSegmentCount += parsed.segments.length
+    for (const seg of parsed.segments) {
+      // Teacher resolved?
+      if (seg.teacherText && seg.teacherText.length > 0) {
+        const tk = normalizeTeacherName(seg.teacherText)
+        if (teacherByExact.has(tk)) kAssignmentSegmentsResolvedTeacher++
+        else kAssignmentSegmentsMissingTeacher++
+      } else {
+        kAssignmentSegmentsMissingTeacher++
+      }
+      // Class groups resolved?
+      const cohortRaw = (reviewRow as unknown as { raw?: { cohort?: string | null } }).raw?.cohort ?? null
+      const durationRaw = (reviewRow as unknown as { raw?: { duration?: string | null } }).raw?.duration ?? null
+      const major = (reviewRow.raw.majorName ?? '').trim()
+      const cohort = normalizeCohortField(cohortRaw)
+      const duration = (durationRaw ?? '').trim()
+      if (cohort.length > 0 && major.length > 0) {
+        let any = false
+        for (const cn of seg.classTokens) {
+          const key = buildClassGroupCanonicalKey({
+            targetSemesterId: args.targetSemesterId,
+            cohort,
+            duration,
+            major,
+            classNo: cn,
+          })
+          if (cgByCanonicalKey.has(key)) {
+            any = true
+            break
+          }
+        }
+        if (any) kAssignmentSegmentsResolvedClassGroups++
+        else kAssignmentSegmentsMissingClassGroups++
+      } else {
+        kAssignmentSegmentsMissingClassGroups++
+      }
+    }
+  }
+  console.log(`  K-segment count: ${kAssignmentSegmentCount}, multiTeacherRowCount: ${multiTeacherRowCount}`)
 
   const plan = await buildCourseSettingPartialImportPlan({
     reviewRows: reviewUiWithRaw.rows,
@@ -571,15 +678,30 @@ async function main(): Promise<void> {
     }
   }
 
+  // L7-F6D2: count DB canonical-key collisions. For each canonical key
+  // in the DB index, if multiple DB rows share it, that is a
+  // CLASSGROUP_PLANNED_NAME_COLLISION (same cohort+major+classNo
+  // appears under different physical names). This includes both the
+  // L7-F6C 23-duplicate case and the legacy sem4 + L7-F6C collision
+  // case.
+  let duplicateCompositeKeyCollisionCount = 0
+  for (const arr of cgByCanonicalKey.values()) {
+    if (arr.length > 1) {
+      // +1 collision per extra row beyond the first
+      duplicateCompositeKeyCollisionCount += arr.length - 1
+    }
+  }
+
   const canApply =
     importable.length > 0 &&
     teacherIdNullAmongNonExemptImportable === 0 &&
     invalidTeacherExemptionCount === 0 &&
     classGroupEmptyAmongImportable === 0 &&
     allClassGroupsBelongToTargetSemester &&
-    duplicatePlannedNameSkipSafe
+    duplicatePlannedNameSkipSafe &&
+    duplicateCompositeKeyCollisionCount === 0
 
-  console.log(`\n  --- Semantic stats (L7-F6D1) ---`)
+  console.log(`\n  --- Semantic stats (L7-F6D2) ---`)
   console.log(`  totalRows:                          ${plan.summary.totalRows}`)
   console.log(`  plannedRows:                        ${plan.summary.plannedImportRows}`)
   console.log(`  importableRows:                     ${importable.length}`)
@@ -590,6 +712,12 @@ async function main(): Promise<void> {
   console.log(`  invalidTeacherExemptionCount:       ${invalidTeacherExemptionCount}`)
   console.log(`  teacherMissingCandidateCount:       ${teacherMissingCandidateCount}`)
   console.log(`  teacherAmbiguousCandidateCount:     ${teacherAmbiguousCandidateCount}`)
+  console.log(`  kAssignmentSegmentCount:            ${kAssignmentSegmentCount}`)
+  console.log(`  kAssignmentSegmentsResolvedTeacher: ${kAssignmentSegmentsResolvedTeacher}`)
+  console.log(`  kAssignmentSegmentsMissingTeacher:  ${kAssignmentSegmentsMissingTeacher}`)
+  console.log(`  kAssignmentSegmentsResolvedClassGroups: ${kAssignmentSegmentsResolvedClassGroups}`)
+  console.log(`  kAssignmentSegmentsMissingClassGroups: ${kAssignmentSegmentsMissingClassGroups}`)
+  console.log(`  multiTeacherRowCount:                ${multiTeacherRowCount}`)
   console.log(`  classGroupEmptyAmongImportable:     ${classGroupEmptyAmongImportable}`)
   console.log(`  classGroupMissingCandidateCount:    ${classGroupMissingCandidateCount}`)
   console.log(`  classGroupAmbiguousCandidateCount:  ${classGroupAmbiguousCandidateCount}`)
@@ -600,6 +728,7 @@ async function main(): Promise<void> {
   console.log(`  p90ClassGroupsPerCandidate:         ${p90CG}`)
   console.log(`  duplicatePlannedNameSkipped:        ${duplicateSkipped}`)
   console.log(`  duplicatePlannedNameSkipSafe:       ${duplicatePlannedNameSkipSafe}`)
+  console.log(`  duplicateCompositeKeyCollisionCount: ${duplicateCompositeKeyCollisionCount}`)
   console.log(`  allClassGroupsBelongToTargetSemester: ${allClassGroupsBelongToTargetSemester}`)
   console.log(`  canApply:                           ${canApply}`)
 

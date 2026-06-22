@@ -108,6 +108,14 @@ export type CourseSettingApprovalReviewUiRaw = {
   weeklyHoursText?: string | null
   examTypeText?: string | null
   majorName?: string | null
+  /**
+   * L7-F6D2: cohort (Excel A column grade) and duration (Excel B
+   * column program length) — optional, only present when the
+   * caller (e.g. trial script) populates them. Used to build the
+   * canonical classGroup key.
+   */
+  cohort?: string | null
+  duration?: string | null
 }
 
 /**
@@ -302,6 +310,8 @@ const emptyRaw = (): CourseSettingApprovalReviewUiRaw => ({
   weeklyHoursText: null,
   examTypeText: null,
   majorName: null,
+  cohort: null,
+  duration: null,
 })
 
 /**
@@ -328,6 +338,8 @@ const mergeRaw = (
         ? override.examTypeText
         : base.examTypeText,
     majorName: override.majorName !== undefined ? override.majorName : base.majorName,
+    cohort: override.cohort !== undefined ? override.cohort : base.cohort,
+    duration: override.duration !== undefined ? override.duration : base.duration,
   }
 }
 

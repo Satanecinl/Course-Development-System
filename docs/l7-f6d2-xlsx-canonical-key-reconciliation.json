@@ -1,0 +1,238 @@
+{
+  "stage": "L7-F6D2-XLSX-CANONICAL-KEY-RECONCILIATION",
+  "date": "2026-06-23",
+  "status": "CLOSED",
+  "dbWrite": false,
+  "applyExecuted": false,
+  "backupCreated": false,
+  "targetSemesterId": 4,
+  "xlsxSha256": "27075c17dc7ca30f1339055bd752dd8c1338dd3c5dd1a0d26fc20822fa8040ea",
+  "dbBaseline": {
+    "course": 104,
+    "teacher": 236,
+    "classGroupSem1": 36,
+    "classGroupSem4": 431,
+    "teachingTaskSem4": 0,
+    "teachingTaskClass": 446,
+    "scheduleSlotSem4": 0,
+    "scheduleAdjustmentSem4": 0,
+    "importBatchTotal": 39,
+    "importBatchId39": "APPLIED",
+    "importBatchId40": "absent"
+  },
+  "dbPostDryRun": {
+    "course": 104,
+    "teacher": 236,
+    "classGroupSem1": 36,
+    "classGroupSem4": 431,
+    "teachingTaskSem4": 0,
+    "teachingTaskClass": 446,
+    "scheduleSlotSem4": 0,
+    "scheduleAdjustmentSem4": 0,
+    "importBatchTotal": 39,
+    "importBatchId40": "absent"
+  },
+  "canonicalKey": {
+    "shape": "targetSemesterId|cohort|major|classNo",
+    "durationHandling": "optional secondary via buildClassGroupCanonicalKeyWithDuration",
+    "normalization": "whitespace + punctuation stripped; Chinese characters preserved; 级 stripped if double-级 (L7-F6C bug)"
+  },
+  "reconciliation": {
+    "excelRows": 1288,
+    "parsedClassTokens": 2197,
+    "canonicalClassKeysFromExcel": 227,
+    "dbSem4ClassGroups": 431,
+    "dbSem4ParseSuccess": 426,
+    "dbSem4ParseFailures": 5,
+    "dbSem4ParseFailureReasons": {
+      "CLASSNO_MISSING": 5
+    },
+    "matchedDbClassGroups": 234,
+    "missingDbClassGroups": 22,
+    "ambiguousDbClassGroups": 64,
+    "legacySem4ClassGroupsMatched": 197,
+    "duplicatePlannedNameGroups": 223,
+    "duplicatePlannedNameSafe": true,
+    "manualReviewClassGroupCount": 96,
+    "manualReviewReasonCounts": {
+      "major not found in major DB": 96
+    }
+  },
+  "manualReviewByMajor": {
+    "现代家政管理": { "count": 26, "action": "MANUAL_CREATE_CLASSGROUP_AFTER_REVIEW" },
+    "森林和草原资源保护": { "count": 23, "action": "MANUAL_CREATE_CLASSGROUP_AFTER_REVIEW" },
+    "冶金现场工程师班": { "count": 14, "action": "MANUAL_CREATE_CLASSGROUP_AFTER_REVIEW" },
+    "机电现场工程师班": { "count": 13, "action": "MANUAL_CREATE_CLASSGROUP_AFTER_REVIEW" },
+    "智慧健康养老与管理": { "count": 7, "action": "MANUAL_CREATE_CLASSGROUP_AFTER_REVIEW" },
+    "口腔修复工艺": { "count": 7, "action": "MANUAL_CREATE_CLASSGROUP_AFTER_REVIEW" },
+    "机电一体化五年制": { "count": 3, "action": "MANUAL_CONFIRM_MAJOR_ALIAS" },
+    "轧钢现场工程师班": { "count": 3, "action": "MANUAL_CREATE_CLASSGROUP_AFTER_REVIEW" }
+  },
+  "kAssignmentSegmentStats": {
+    "kAssignmentSegmentCount": 276,
+    "kAssignmentSegmentsResolvedTeacher": 246,
+    "kAssignmentSegmentsMissingTeacher": 30,
+    "kAssignmentSegmentsResolvedClassGroups": 270,
+    "kAssignmentSegmentsMissingClassGroups": 6,
+    "multiTeacherRowCount": 109,
+    "unsupportedKPatternCount": 0
+  },
+  "duplicatePlannedNameAnalysis": {
+    "l7f6cReportedDuplicateSkipped": 23,
+    "l7f6cDuplicateSafe": true,
+    "legacyCollisionWithL7f6cCount": 9,
+    "totalCanonicalKeyCollisions": 32,
+    "totalCanonicalKeyCollisionRows": 64,
+    "unsafeCollisionBreakdown": "9 legacy + L7-F6C collisions have different physical names (e.g. '2024级智能轧钢技术1班' vs '2024级级智能轧钢技术1班') but identical canonical key. These should trigger CLASSGROUP_PLANNED_NAME_COLLISION blocker on retry."
+  },
+  "dryRunStats": {
+    "totalRows": 1167,
+    "plannedRows": 85,
+    "importableRows": 85,
+    "unresolvedRows": 1082,
+    "teacherIdNullAmongImportable": 170,
+    "teacherIdNullAmongNonExemptImportable": 0,
+    "physicalEducationTeacherExemptCount": 170,
+    "invalidTeacherExemptionCount": 0,
+    "teacherMissingCandidateCount": 0,
+    "teacherAmbiguousCandidateCount": 0,
+    "kAssignmentSegmentCount": 276,
+    "kAssignmentSegmentsResolvedTeacher": 246,
+    "kAssignmentSegmentsMissingTeacher": 30,
+    "kAssignmentSegmentsResolvedClassGroups": 270,
+    "kAssignmentSegmentsMissingClassGroups": 6,
+    "multiTeacherRowCount": 109,
+    "classGroupEmptyAmongImportable": 0,
+    "classGroupMissingCandidateCount": 0,
+    "classGroupAmbiguousCandidateCount": 0,
+    "classGroupOverMatchedCandidateCount": 0,
+    "classGroupNotInTargetSemesterCount": 0,
+    "maxClassGroupsPerCandidate": 12,
+    "p50ClassGroupsPerCandidate": 2,
+    "p90ClassGroupsPerCandidate": 4,
+    "duplicatePlannedNameSkipped": 0,
+    "duplicatePlannedNameSkipSafe": true,
+    "duplicateCompositeKeyCollisionCount": 32,
+    "allClassGroupsBelongToTargetSemester": true,
+    "canApply": false,
+    "applied": false,
+    "dbWritten": false
+  },
+  "successCriteria": {
+    "noDbWrite": true,
+    "noApply": true,
+    "noBackup": true,
+    "canonicalKeyUnified": true,
+    "kColumnMultiTeacherStats": true,
+    "peTeacherExemptionPathCorrect": true,
+    "duplicatePlannedNameSafe": true,
+    "manualReviewReadOnly": true,
+    "teacherIdNullAmongNonExemptImportableZero": true,
+    "invalidTeacherExemptionCountZero": true,
+    "classGroupEmptyAmongImportableZero": true,
+    "allClassGroupsBelongToTargetSemesterTrue": true,
+    "duplicateCompositeKeyCollisionCountZero": false,
+    "duplicateCompositeKeyCollisionCountNote": "32 collisions are pre-existing L7-F6C (23) + legacy (9). Not introduced by L7-F6D2. Out of scope for L7-F6D2 read-only stage.",
+    "maxClassGroupsPerCandidateNotNear398": true,
+    "dbBaselineUnchanged": true,
+    "verifyRegressionsPass": true,
+    "forbiddenFilesClean": true
+  },
+  "validation": {
+    "l7f6d2Verify": {
+      "passed": 131,
+      "failed": 0,
+      "total": 131
+    },
+    "l7f6d1Regression": {
+      "passed": 130,
+      "failed": 0,
+      "total": 130,
+      "stageAwareUpdate": true
+    },
+    "l7f6cRegression": {
+      "passed": 142,
+      "failed": 0,
+      "total": 142,
+      "stageAwareUpdate": true
+    },
+    "l7f6bRegression": {
+      "passed": 110,
+      "failed": 0,
+      "total": 110,
+      "stageAwareUpdate": true
+    },
+    "l7f6aRegression": {
+      "passed": 110,
+      "failed": 0,
+      "total": 110,
+      "stageAwareUpdate": true
+    },
+    "l7f5dRegression": {
+      "passed": 101,
+      "failed": 0,
+      "total": 101,
+      "stageAwareUpdate": true
+    },
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "up to date",
+    "k22cVerify": "PASS",
+    "gitDiffCheck": "clean"
+  },
+  "remainingBlockers": [
+    {
+      "kind": "teacherMissing",
+      "count": 107,
+      "note": "rows whose teacher is missing (e.g. 外聘 teachers not in DB)"
+    },
+    {
+      "kind": "ambiguousMapping",
+      "count": 63,
+      "note": "merge remark ambiguous"
+    },
+    {
+      "kind": "examTypeInvalid",
+      "count": 145,
+      "note": "exam type not in {考试, 考查}"
+    },
+    {
+      "kind": "weeklyHoursInvalid",
+      "count": 19,
+      "note": "weekly hours non-numeric"
+    },
+    {
+      "kind": "l7f6cDuplicatePlannedNameCollision",
+      "count": 23,
+      "note": "L7-F6C's 23 duplicate plannedName collisions are now in DB; classified as safe (same canonical key)"
+    },
+    {
+      "kind": "legacyAndL7f6cUnsafeCollision",
+      "count": 9,
+      "note": "legacy sem4 + L7-F6C same canonical key but different physical names (e.g. double 级 vs single 级); need data migration to reconcile"
+    },
+    {
+      "kind": "manualReviewMajorNotInMajorDb",
+      "count": 96,
+      "uniqueMajors": 8,
+      "note": "8 majors not found in major DB; require human review"
+    }
+  ],
+  "rawIncluded": false,
+  "privacy": {
+    "rawTeacherNamesIncluded": false,
+    "rawClassNamesIncluded": false,
+    "rawCourseNamesIncluded": false,
+    "rawRemarksIncluded": false,
+    "rawSheetNamesIncluded": false,
+    "phoneNumbersIncluded": false,
+    "employeeNoIncluded": false,
+    "localArtifactsContainRawForReview": true
+  },
+  "localArtifacts": {
+    "canonicalKeyReconciliationRawLocal": "temp/local-artifacts/l7-f6d2/canonical-key-reconciliation.raw.local.json",
+    "manualReviewClassgroupsRawLocal": "temp/local-artifacts/l7-f6d2/manual-review-classgroups.raw.local.json",
+    "canonicalKeyReconciliationAggregate": "temp/local-artifacts/l7-f6d2/canonical-key-reconciliation.aggregate.json",
+    "allGitignored": true
+  },
+  "nextStageRecommendation": "L7-F6E-REMAINING-MANUAL-RESOLUTION-PLAN"
+}

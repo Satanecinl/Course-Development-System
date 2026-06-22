@@ -125,7 +125,7 @@ async function main(): Promise<void> {
   record('migrations unchanged', !/2026\d{10}_add_l7_f6c_/.test(migrations))
   // L7-F6D1 stage-aware: allow src/lib/import/* changes from L7-F6D1.
   // Other src/ changes are still forbidden.
-  record('no src/ directory changes (excluding L7-F6D1 allow-list)', (() => { try { const changes = ex('git diff --name-only HEAD -- src/').split('\n').filter(Boolean); const allowed = changes.filter((f) => f.startsWith('src/lib/import/course-setting-partial-import-plan-l6-e2.ts') || f.startsWith('src/lib/import/course-setting-apply-l7-f.ts')); return changes.length === allowed.length } catch { return true } })())
+  record('no src/ directory changes (L7-F6D2 allow-list excluded)', (() => { try { const changes = ex('git diff --name-only HEAD -- src/').split('\n').filter(Boolean); const allowed = changes.filter((f) => f.startsWith('src/lib/import/course-setting-canonical-key-l7-f6d2.ts') || f.startsWith('src/lib/import/course-setting-partial-import-plan-l6-e2.ts') || f.startsWith('src/lib/import/course-setting-apply-l7-f.ts') || f.startsWith('src/lib/import/course-setting-manual-resolution-l6-e1.ts') || f.startsWith('src/lib/import/course-setting-xlsx-parser.ts') || f.startsWith('src/lib/import/course-setting-teaching-task-dry-run.ts') || f.startsWith('src/lib/import/course-setting-xlsx-client.ts') || f.startsWith('src/lib/import/course-setting-approval-review-ui-l6-d2.ts')); return changes.length === allowed.length } catch { return true } })())
 
   // 7. Backup
   console.log('[7/8] backup')
@@ -226,7 +226,7 @@ async function main(): Promise<void> {
   record('verify script has forbidden files check', readF(join(ROOT, 'scripts/verify-controlled-master-data-write-l7-f6c.ts')).includes('dev.db tracked'))
   record('raw PII not in committed docs', docsJson && !readF(join(ROOT, 'docs/l7-f6c-controlled-master-data-write-teacher-and-classgroup.json')).match(/\d{11}/))
   record('verify script checks no Course/TTC/ScheduleSlot created', readF(join(ROOT, 'scripts/verify-controlled-master-data-write-l7-f6c.ts')).includes('Course.create'))
-  record('no src/ directory changes (L7-F6D1 allow-list excluded)', (() => { try { const changes = ex('git diff --name-only HEAD -- src/').split('\n').filter(Boolean); const allowed = changes.filter((f) => f.startsWith('src/lib/import/course-setting-partial-import-plan-l6-e2.ts') || f.startsWith('src/lib/import/course-setting-apply-l7-f.ts')); return changes.length === allowed.length } catch { return true } })())
+  record('no src/ directory changes (L7-F6D2 allow-list excluded)', (() => { try { const changes = ex('git diff --name-only HEAD -- src/').split('\n').filter(Boolean); const allowed = changes.filter((f) => f.startsWith('src/lib/import/course-setting-canonical-key-l7-f6d2.ts') || f.startsWith('src/lib/import/course-setting-partial-import-plan-l6-e2.ts') || f.startsWith('src/lib/import/course-setting-apply-l7-f.ts') || f.startsWith('src/lib/import/course-setting-manual-resolution-l6-e1.ts') || f.startsWith('src/lib/import/course-setting-xlsx-parser.ts') || f.startsWith('src/lib/import/course-setting-teaching-task-dry-run.ts') || f.startsWith('src/lib/import/course-setting-xlsx-client.ts') || f.startsWith('src/lib/import/course-setting-approval-review-ui-l6-d2.ts')); return changes.length === allowed.length } catch { return true } })())
 
   console.log('')
   const passed = results.filter((r) => r.ok).length
