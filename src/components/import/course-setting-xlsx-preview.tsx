@@ -121,6 +121,10 @@ export default function CourseSettingXlsxPreview() {
   const [partialPlanError, setPartialPlanError] = useState<string | null>(null)
   const [partialPlanLoading, setPartialPlanLoading] = useState(false)
   const [partialPlanFilter, setPartialPlanFilter] = useState<'importable' | 'skipped' | 'unresolved' | 'candidates' | 'duplicates' | 'blockers'>('importable')
+  // L7-A2: pagination state for approval review and manual resolution tables
+  const PAGE_SIZE = 50
+  const [reviewPage, setReviewPage] = useState(1)
+  const [resolutionPage, setResolutionPage] = useState(1)
   const refreshSemesters = useCallback(async () => {
     setSemestersLoading(true)
     try {
@@ -576,6 +580,23 @@ export default function CourseSettingXlsxPreview() {
     filterDiagnosticCode,
     searchText,
   ])
+  // L7-A2: pagination computations
+  const totalFilteredReviewRows = filteredRows.length
+  const totalReviewPages = Math.max(1, Math.ceil(totalFilteredReviewRows / PAGE_SIZE))
+  // Clamp page to valid range
+  const effectiveReviewPage = Math.min(reviewPage, totalReviewPages)
+  const paginatedFilteredRows = filteredRows.slice(
+    (effectiveReviewPage - 1) * PAGE_SIZE,
+    effectiveReviewPage * PAGE_SIZE,
+  )
+  const totalFilteredResolutionItems = filteredResolutionItems.length
+  const totalResolutionPages = Math.max(1, Math.ceil(totalFilteredResolutionItems / PAGE_SIZE))
+  const effectiveResolutionPage = Math.min(resolutionPage, totalResolutionPages)
+  const paginatedFilteredResolutionItems = filteredResolutionItems.slice(
+    (effectiveResolutionPage - 1) * PAGE_SIZE,
+    effectiveResolutionPage * PAGE_SIZE,
+  )
+
   const canPreview = !!file && !!selectedSemesterId && !parsing && targetSemesterMode === 'existing'
   const canReview = !!file && !!selectedSemesterId && !reviewing
   return (
@@ -873,7 +894,12 @@ export default function CourseSettingXlsxPreview() {
           setFilterDiagnosticCode={setFilterDiagnosticCode}
           searchText={searchText}
           setSearchText={setSearchText}
-          filteredRows={filteredRows}
+          filteredRows={paginatedFilteredRows}
+          totalFilteredCount={totalFilteredReviewRows}
+          currentPage={effectiveReviewPage}
+          totalPages={totalReviewPages}
+          pageSize={PAGE_SIZE}
+          onPageChange={setReviewPage}
           onExport={handleExportDecision}
         />
       )}
@@ -888,7 +914,12 @@ export default function CourseSettingXlsxPreview() {
           setResolutionFilter={setResolutionFilter}
           expandedResolutionRows={expandedResolutionRows}
           toggleResolutionRow={toggleResolutionRow}
-          filteredResolutionItems={filteredResolutionItems}
+          filteredResolutionItems={paginatedFilteredResolutionItems}
+          totalFilteredCount={totalFilteredResolutionItems}
+          currentPage={effectiveResolutionPage}
+          totalPages={totalResolutionPages}
+          pageSize={PAGE_SIZE}
+          onPageChange={setResolutionPage}
           onExportDraft={handleExportResolutionDraft}
           reviewRawMap={reviewRawMap}
           splitCandidatesById={splitCandidatesById}

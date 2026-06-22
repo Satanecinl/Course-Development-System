@@ -11,6 +11,10 @@
 
 import {
   AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   Download,
   FileSpreadsheet,
   ListChecks,
@@ -42,6 +46,12 @@ export type ManualResolutionSectionProps = {
   expandedResolutionRows: Set<string>
   toggleResolutionRow: (id: string) => void
   filteredResolutionItems: CourseSettingManualResolutionItem[]
+  // L7-A2: pagination props
+  totalFilteredCount: number
+  currentPage: number
+  totalPages: number
+  pageSize: number
+  onPageChange: (page: number) => void
   onExportDraft: () => void
   reviewRawMap: ReviewRawMap
   splitCandidatesById: Map<string, SplitCandidate[]>
@@ -61,6 +71,11 @@ export function ManualResolutionSection(props: ManualResolutionSectionProps) {
     expandedResolutionRows,
     toggleResolutionRow,
     filteredResolutionItems,
+    totalFilteredCount,
+    currentPage,
+    totalPages,
+    pageSize,
+    onPageChange,
     onExportDraft,
     reviewRawMap,
     splitCandidatesById,
@@ -148,8 +163,56 @@ export function ManualResolutionSection(props: ManualResolutionSectionProps) {
         </div>
         <Button size="sm" variant="outline" onClick={onExportDraft} data-l6e1-action="export-draft">
           <Download className="w-3.5 h-3.5 mr-1" />
-          导出处理结果 JSON
+          导出全量处理结果 JSON
         </Button>
+      </div>
+
+      {/* L7-A2: Pagination controls for manual resolution */}
+      <div className="flex items-center justify-between bg-white border border-gray-200 rounded-md p-2">
+        <span className="text-[11px] text-gray-500">
+          共 {totalFilteredCount} 条处理项，当前显示 {(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, totalFilteredCount)} / {totalFilteredCount}
+        </span>
+        <div className="flex items-center gap-1">
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-[10px] h-6 px-2"
+            disabled={currentPage <= 1}
+            onClick={() => onPageChange(1)}
+          >
+            <ChevronsLeft className="w-3 h-3" />
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-[10px] h-6 px-2"
+            disabled={currentPage <= 1}
+            onClick={() => onPageChange(currentPage - 1)}
+          >
+            <ChevronLeft className="w-3 h-3" />
+          </Button>
+          <span className="text-[11px] text-gray-600 px-2">
+            第 {currentPage} / {totalPages} 页
+          </span>
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-[10px] h-6 px-2"
+            disabled={currentPage >= totalPages}
+            onClick={() => onPageChange(currentPage + 1)}
+          >
+            <ChevronRight className="w-3 h-3" />
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-[10px] h-6 px-2"
+            disabled={currentPage >= totalPages}
+            onClick={() => onPageChange(totalPages)}
+          >
+            <ChevronsRight className="w-3 h-3" />
+          </Button>
+        </div>
       </div>
 
       {/* L6-E2: Generate partial import plan (no DB write, no apply) */}

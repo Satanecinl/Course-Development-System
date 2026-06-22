@@ -68,8 +68,10 @@ import type {
 } from '@/lib/import/course-setting-approval-review-ui-l6-d2'
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024 // 20MB
-const DEFAULT_MAX_ROWS = 200
-const ABSOLUTE_MAX_ROWS = 5000
+// L7-A2: raise default and max to allow full dataset review.
+// The frontend adds client-side pagination for performance.
+const DEFAULT_MAX_ROWS = 100000
+const ABSOLUTE_MAX_ROWS = 100000
 
 const ERROR_MISSING_TARGET_SEMESTER = 'MISSING_TARGET_SEMESTER'
 const ERROR_INVALID_TARGET_SEMESTER = 'INVALID_TARGET_SEMESTER'

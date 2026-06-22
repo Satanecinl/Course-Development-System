@@ -10,6 +10,10 @@
  */
 
 import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   Download,
   Info,
   ListChecks,
@@ -65,6 +69,12 @@ export type ApprovalReviewSectionProps = {
   searchText: string
   setSearchText: (v: string) => void
   filteredRows: CourseSettingApprovalReviewUiRow[]
+  // L7-A2: pagination props
+  totalFilteredCount: number
+  currentPage: number
+  totalPages: number
+  pageSize: number
+  onPageChange: (page: number) => void
   onExport: () => void
 }
 
@@ -87,6 +97,11 @@ export function ApprovalReviewSection(props: ApprovalReviewSectionProps) {
     searchText,
     setSearchText,
     filteredRows,
+    totalFilteredCount,
+    currentPage,
+    totalPages,
+    pageSize,
+    onPageChange,
     onExport,
   } = props
 
@@ -158,7 +173,7 @@ export function ApprovalReviewSection(props: ApprovalReviewSectionProps) {
             拒绝 <span className="font-semibold tabular-nums">{liveCounters.rejected}</span> /
             需复核 <span className="font-semibold tabular-nums">{liveCounters.needsReview}</span>
             <span className="ml-2 text-gray-400">
-              (显示 {filteredRows.length} / {liveCounters.total} 条)
+              (筛选结果 {totalFilteredCount} 条，当前显示 {(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, totalFilteredCount)} / {totalFilteredCount}，第 {currentPage}/{totalPages} 页)
             </span>
           </div>
           <Button size="sm" variant="outline" onClick={onExport} data-l6d2-action="export">
@@ -246,6 +261,58 @@ export function ApprovalReviewSection(props: ApprovalReviewSectionProps) {
             className="text-xs h-7"
             data-l6d2-filter="search"
           />
+        </div>
+      </div>
+
+      {/* L7-A2: Pagination controls */}
+      <div className="flex items-center justify-between bg-white border border-gray-200 rounded-md p-2">
+        <span className="text-[11px] text-gray-500">
+          共 {totalFilteredCount} 条审核项，当前显示 {(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, totalFilteredCount)} / {totalFilteredCount}
+        </span>
+        <div className="flex items-center gap-1">
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-[10px] h-6 px-2"
+            disabled={currentPage <= 1}
+            onClick={() => onPageChange(1)}
+            data-l7a2-action="first-page"
+          >
+            <ChevronsLeft className="w-3 h-3" />
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-[10px] h-6 px-2"
+            disabled={currentPage <= 1}
+            onClick={() => onPageChange(currentPage - 1)}
+            data-l7a2-action="prev-page"
+          >
+            <ChevronLeft className="w-3 h-3" />
+          </Button>
+          <span className="text-[11px] text-gray-600 px-2">
+            第 {currentPage} / {totalPages} 页
+          </span>
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-[10px] h-6 px-2"
+            disabled={currentPage >= totalPages}
+            onClick={() => onPageChange(currentPage + 1)}
+            data-l7a2-action="next-page"
+          >
+            <ChevronRight className="w-3 h-3" />
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-[10px] h-6 px-2"
+            disabled={currentPage >= totalPages}
+            onClick={() => onPageChange(totalPages)}
+            data-l7a2-action="last-page"
+          >
+            <ChevronsRight className="w-3 h-3" />
+          </Button>
         </div>
       </div>
 

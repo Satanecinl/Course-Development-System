@@ -1,0 +1,39 @@
+{
+  "stage": "L7-A2-XLSX-COURSE-SETTING-FULL-REVIEW-DATASET-AND-PAGINATION-FIX",
+  "version": "l7-a2-v1",
+  "browserBlocker": "review mode showed total=50 due to DEFAULT_MAX_ROWS=200 in approval-review route",
+  "fix": {
+    "backend": {
+      "approvalReviewDefaultMaxRows": 100000,
+      "approvalReviewAbsoluteMaxRows": 100000,
+      "previewDefaultMaxRows": 10000,
+      "previewMaxAllowed": 100000
+    },
+    "frontend": {
+      "pageSize": 50,
+      "paginationState": ["reviewPage", "resolutionPage"],
+      "filterBeforePaginate": true,
+      "stateKeyedByApprovalItemId": true,
+      "exportFullDataset": true,
+      "partialPlanFullDataset": true
+    }
+  },
+  "noDbWriteProof": {
+    "dbWrites": 0,
+    "applyRouteExists": false,
+    "applyButtons": false
+  },
+  "validationResults": {
+    "l7aVerify": "105/105 PASS",
+    "l6e2g1Regression": "54/54 PASS",
+    "l6e2fRegression": "45/45 PASS",
+    "l6e2aRegression": "85/85 PASS",
+    "l6e2Regression": "144/144 PASS",
+    "prismaValidate": "PASS",
+    "build": "PASS",
+    "tsc": "PASS",
+    "eslint": "0 errors, 3 pre-existing warnings"
+  },
+  "browserValidationStatus": "PENDING",
+  "rawIncluded": false
+}

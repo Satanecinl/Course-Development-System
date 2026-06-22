@@ -132,11 +132,12 @@ export async function POST(request: NextRequest) {
     }
 
     // ── L6-B1: optional maxPreviewRows from form ────────────────────────
+    // L7-A2: raise default and max to allow full dataset preview.
     const maxPreviewRowsRaw = formData.get('maxPreviewRows')
-    let maxPreviewRows = 50
+    let maxPreviewRows = 10000
     if (maxPreviewRowsRaw != null && maxPreviewRowsRaw !== '') {
       const parsed = Number(maxPreviewRowsRaw)
-      if (Number.isInteger(parsed) && parsed > 0 && parsed <= 200) {
+      if (Number.isInteger(parsed) && parsed > 0 && parsed <= 100000) {
         maxPreviewRows = parsed
       }
     }

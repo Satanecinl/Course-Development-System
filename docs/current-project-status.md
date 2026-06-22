@@ -176,3 +176,5 @@ The list reflects local history at the time of K36-A3 and does not assert remote
 - L7-A 替换 Excel 课程设置导入主规则为新版 A:M 固定列模板：每行独立解析，目标学期来自 UI 选择的 targetSemesterId，不再从 Excel 学年/学期列过滤；小计行跳过，K 列授课任务分配优先生成 task split，J 列任课教师为 fallback；不写 DB、不执行 apply，L6-F 继续暂缓。
 
 - L7-A 新版 A:M Excel 课程设置模板规则替换已通过浏览器验收与自动验证补证，可正式关闭；L7-F 写库仍需单独强 gate 阶段。
+
+- L7-A2 修复新版 Excel 课程设置审核数据全量与分页：后端返回全量审核项，前端按 50 条分页显示并展示当前范围/总数，导出与部分导入计划基于全量数据；不写 DB、不执行 apply。
