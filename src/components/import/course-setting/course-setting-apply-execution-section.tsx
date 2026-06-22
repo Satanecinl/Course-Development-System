@@ -72,6 +72,8 @@ export function ApplyExecutionSection({
 }: ApplyExecutionSectionProps) {
   const s = plan.summary
   const hasImportableRows = s.plannedImportRows > 0
+  const readiness = plan.targetSemesterReadiness
+  const canApply = readiness?.canApply !== false && hasImportableRows
   const [confirmToken, setConfirmToken] = useState('')
   const [showResult, setShowResult] = useState(false)
 
@@ -79,7 +81,7 @@ export function ApplyExecutionSection({
   const expectedToken = `APPLY_XLSX_COURSE_SETTING_${targetSemesterId}`
 
   const handleApplyClick = () => {
-    if (!tokenValid || !hasImportableRows) return
+    if (!tokenValid || !canApply) return
     onApply(confirmToken)
     setShowResult(true)
   }
@@ -170,13 +172,24 @@ export function ApplyExecutionSection({
         </p>
       </div>
 
+      {/* ── ClassGroup gate warning ── */}
+      {readiness && !readiness.canApply && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700 flex items-start gap-2" data-l7f-classgroup-gate-warning="true">
+          <ShieldAlert className="w-4 h-4 mt-0.5 shrink-0" />
+          <div>
+            <p className="font-medium">目标学期没有班级数据，不能执行课程设置导入。</p>
+            <p className="text-xs mt-1">请先创建/导入目标学期班级，或选择已有班级数据的目标学期。</p>
+          </div>
+        </div>
+      )}
+
       {/* ── Action buttons ── */}
       <div className="flex items-center gap-2 flex-wrap">
         <Button
           size="sm"
           variant="destructive"
           className="bg-red-600 hover:bg-red-700 text-white"
-          disabled={!tokenValid || applyLoading || !hasImportableRows}
+          disabled={!tokenValid || applyLoading || !canApply}
           onClick={handleApplyClick}
           data-l7f-apply-button="true"
         >

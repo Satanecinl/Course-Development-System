@@ -30,6 +30,7 @@ type CliArgs = {
   apply: boolean
   dryRun: boolean
   confirmToken: string | null
+  expectClassgroupGate: boolean
   help: boolean
 }
 
@@ -40,6 +41,7 @@ const parseArgs = (argv: string[]): CliArgs => {
     apply: false,
     dryRun: false,
     confirmToken: null,
+    expectClassgroupGate: false,
     help: false,
   }
   for (let i = 0; i < argv.length; i++) {
@@ -49,6 +51,7 @@ const parseArgs = (argv: string[]): CliArgs => {
     else if (a === '--apply') args.apply = true
     else if (a === '--dry-run') args.dryRun = true
     else if (a === '--confirm-token') args.confirmToken = argv[++i] ?? null
+    else if (a === '--expect-classgroup-gate') args.expectClassgroupGate = true
     else if (a === '--help' || a === '-h') args.help = true
   }
   return args
@@ -169,7 +172,7 @@ async function main(): Promise<void> {
     xlsxBuffer: buffer,
     artifactFilename: args.xlsx,
     existingData,
-    options: { parserVersion: 'l2-parser-v1', includeRawValues: false },
+    options: { parserVersion: 'l2-parser-v1', includeRawValues: false, maxPreviewRows: 100000 },
   })
   const filenameHash = createHash('sha256').update(args.xlsx, 'utf8').digest('hex').slice(0, 12)
   const idHash = createHash('sha256').update(String(semester.id), 'utf8').digest('hex').slice(0, 12)
@@ -245,6 +248,25 @@ async function main(): Promise<void> {
 
   // Run apply
   const { executeL7FCourseSettingApply } = await import('@/lib/import/course-setting-apply-l7-f')
+
+  // ClassGroup hard gate — must be checked before backup and transaction.
+  if (mode === 'apply') {
+    const classGroupCount = await prisma.classGroup.count({
+      where: { semesterId: args.targetSemesterId },
+    })
+    if (classGroupCount === 0) {
+      console.log(`\n--- CLASSGROUP GATE ---`)
+      console.log(`  Target semester ${args.targetSemesterId} has ${classGroupCount} ClassGroups.`)
+      console.log(`  Cannot apply: TARGET_SEMESTER_HAS_NO_CLASS_GROUPS`)
+      console.log(`  No backup created, no DB write.`)
+      if (args.expectClassgroupGate) {
+        console.log(`\n  --expect-classgroup-gate: gate triggered as expected. PASS.`)
+        process.exit(0)
+      }
+      process.exit(1)
+    }
+  }
+
   console.log(`\n--- Executing L7-F apply (${mode}) ---`)
   const result = await executeL7FCourseSettingApply({
     targetSemesterId: args.targetSemesterId,

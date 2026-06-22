@@ -871,6 +871,12 @@ export type CourseSettingPartialImportPlanResponse = {
     isActive: boolean
     setAsActive: false
   }
+  targetSemesterReadiness?: {
+    targetSemesterId: number
+    classGroupCount: number
+    canApply: boolean
+    blockingReason?: string
+  }
   sourceArtifact: { filename: string; sha256: string; sizeBytes: number }
   reviewPackageFingerprintHash: string
   reviewPackageDecisionAllPending: boolean

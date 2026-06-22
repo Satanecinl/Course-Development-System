@@ -186,3 +186,5 @@ The list reflects local history at the time of K36-A3 and does not assert remote
 - L7-F 实现新版 Excel 课程设置受控写库执行：基于 fullDataset partial plan，只导入 importable rows，允许创建已确认/自动允许的新 Course，禁止自动创建 Teacher/ClassGroup，不创建课表；执行前备份 DB，后端重算 plan，transaction 写入 ImportBatch/TeachingTask/TeachingTaskClass，并执行 post-apply audit。
 
 - L7-F1 只读诊断 L7-F apply trial 与 L7-A3 dry-run 口径不一致：对比 L7-A3 classification、browser-equivalent partial plan、L7-F service recompute，定位为何 apply trial 只创建空 ImportBatch #39；发现三级根因（maxPreviewRows=50 截断、importable 定义不一致、semester 4 无 ClassGroup）；不写 DB、不 rollback。
+
+- L7-F2 修复新版 Excel 课程设置写库前 full dataset wiring，确保 partial-import-plan / partial-import-apply / CLI trial 不再回退到 50 行；新增目标学期 ClassGroup hard gate，若目标学期无班级则禁止 apply，防止再次生成空 ImportBatch。

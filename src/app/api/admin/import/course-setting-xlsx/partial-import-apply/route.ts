@@ -192,7 +192,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       xlsxBuffer: buffer,
       artifactFilename: file.name,
       existingData,
-      options: { parserVersion: 'l2-parser-v1', includeRawValues: true },
+      options: { parserVersion: 'l2-parser-v1', includeRawValues: true, maxPreviewRows: 100000 },
     })
 
     // Step 2: Build L6-D approval package + L6-D2 review UI rows
@@ -296,6 +296,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // ═══════════════════════════════════════════════════════════════════
     // Execute the apply
     // ═══════════════════════════════════════════════════════════════════
+
+    // ClassGroup hard gate — must be checked before backup and transaction.
+    // If the target semester has no ClassGroups, block the apply even with
+    // a valid confirm token, to prevent empty ImportBatch creation.
+    if (!dryRunOnly) {
+      const classGroupCount = await prisma.classGroup.count({
+        where: { semesterId: targetSemesterId },
+      })
+      if (classGroupCount === 0) {
+        return errorResponse(
+          'TARGET_SEMESTER_HAS_NO_CLASS_GROUPS',
+          '目标学期没有班级数据，不能执行课程设置导入。请先创建/导入目标学期班级，或选择已有班级数据的目标学期。',
+          400,
+        )
+      }
+    }
 
     const applyResult = await executeL7FCourseSettingApply({
       targetSemesterId,

@@ -196,7 +196,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       xlsxBuffer: buffer,
       artifactFilename: file.name,
       existingData,
-      options: { parserVersion: 'l2-parser-v1', includeRawValues: true },
+      options: { parserVersion: 'l2-parser-v1', includeRawValues: true, maxPreviewRows: 100000 },
     })
 
     // ── Step 2: Build L6-D approval package + L6-D2 review UI rows ─────
@@ -279,6 +279,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       )
     }
 
+    // ── Target semester readiness ──────────────────────────────────────
+    const classGroupCount = await prisma.classGroup.count({
+      where: { semesterId: targetSemesterId },
+    })
+    const canApply = classGroupCount > 0
+    const blockingReason = canApply ? undefined : 'TARGET_SEMESTER_HAS_NO_CLASS_GROUPS'
+
     return NextResponse.json({
       success: true,
       stage: plan.stage,
@@ -301,6 +308,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         code: semester.code,
         isActive: semester.isActive,
         setAsActive: false as const,
+      },
+      targetSemesterReadiness: {
+        targetSemesterId: semester.id,
+        classGroupCount,
+        canApply,
+        blockingReason,
       },
       sourceArtifact: plan.sourceArtifact,
       reviewPackageFingerprintHash: plan.reviewPackageFingerprintHash,
