@@ -158,6 +158,7 @@ export type L7FApplyPlanInput = {
       teacherRef:
         | { kind: 'useExisting'; teacherId: number | null }
         | { kind: 'noTeacher' }
+        | { kind: 'physicalEducationExempt'; exemptionCode: 'PHYSICAL_EDUCATION_TEACHER_EXEMPT'; reason: string }
       classGroupRefs: Array<
         | { kind: 'useExisting'; classGroupId: number }
         | { kind: 'createCandidate'; candidateKey: string }

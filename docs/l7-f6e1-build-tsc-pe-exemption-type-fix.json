@@ -1,0 +1,43 @@
+{
+  "stage": "L7-F6E1-BUILD-TSC-PE-EXEMPTION-TYPE-FIX",
+  "date": "2026-06-22",
+  "status": "CLOSED",
+  "dbWrite": false,
+  "applyExecuted": false,
+  "backupCreated": false,
+  "targetSemesterId": 4,
+  "rootCause": "L7FApplyPlanInput.teacherRef union type missing physicalEducationExempt variant",
+  "filesChanged": ["src/lib/import/course-setting-apply-l7-f.ts"],
+  "linesChanged": 1,
+  "typeFixApproach": "add physicalEducationExempt to teacherRef discriminated union",
+  "peExemptionSemantics": {
+    "nonPE_teacherIdNull_isBlocker": true,
+    "peExemptionUsesStrictCodeMatch": true,
+    "invalidPEExemption_isBlocker": true,
+    "applyPreflightBeforeBackup": true,
+    "naturalKeyNoNullFallback": true
+  },
+  "validation": {
+    "l7f6e1Verify": { "passed": 30, "failed": 0, "total": 30 },
+    "l7f6eRegression": { "passed": 153, "failed": 2, "total": 155, "expectedFailures": ["C101 src/ change by L7-F6E1", "C103 allowed file list"] },
+    "l7f6d2Regression": { "passed": 131, "failed": 0, "total": 131 },
+    "l7f6d1Regression": { "passed": 130, "failed": 0, "total": 130 },
+    "l7f6cRegression": { "passed": 142, "failed": 0, "total": 142 },
+    "l7f6bRegression": { "passed": 110, "failed": 0, "total": 110 },
+    "l7f6aRegression": { "passed": 110, "failed": 0, "total": 110 },
+    "l7f5dRegression": { "passed": 101, "failed": 0, "total": 101 },
+    "prismaValidate": "PASS",
+    "migrateStatus": "up to date",
+    "scanDocsPii": "PASS",
+    "build": "PASS",
+    "tsc": "PASS",
+    "eslint": "0 errors",
+    "k22c": "PASS"
+  },
+  "nextStageRecommendation": "L7-F6F-CONTROLLED-DB-COLLISION-RECONCILIATION-WRITE",
+  "privacy": {
+    "rawTeacherNamesIncluded": false,
+    "rawClassNamesIncluded": false,
+    "phoneNumbersIncluded": false
+  }
+}
