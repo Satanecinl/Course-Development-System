@@ -1,0 +1,82 @@
+{
+  "stage": "L7-F6G1-MANUAL-DECISION-PACKAGE",
+  "date": "2026-06-22",
+  "status": "COMPLETED",
+  "dbWrite": false,
+  "targetSemesterId": 4,
+  "packageGenerated": true,
+  "readyForControlledWrite": false,
+  "requiredUserDecisionCount": 410,
+  "teacherCandidatesTotal": 346,
+  "staffContactsTeacherCandidates": {
+    "uniqueCandidateCount": 226,
+    "sourceStaffDbCount": 0,
+    "sourceContactsCount": 0,
+    "sourceBothCount": 204,
+    "departmentKnownCount": 204,
+    "departmentUnknownCount": 22,
+    "safeCreateTeacherCount": 0,
+    "possibleDuplicateTeacherCount": 204
+  },
+  "externalTeacherCandidates": {
+    "uniqueCandidateCount": 22,
+    "likelyPartTimeCount": 1,
+    "unknownCount": 21
+  },
+  "ambiguousTeacherCandidates": {
+    "uniqueGroupCount": 98,
+    "multiTokenGroupCount": 98
+  },
+  "classGroupCandidatesTotal": 8,
+  "newMajorClassGroupCandidates": {
+    "uniqueMajorCount": 8,
+    "majorMissingFromMajorDbCount": 8,
+    "majorExistsByAliasCount": 0,
+    "majorAmbiguousCount": 0
+  },
+  "majorAliasCandidates": {
+    "count": 1,
+    "affectedRows": 3
+  },
+  "skipRowsCount": 59,
+  "examTypeAutoFixCount": 145,
+  "weeklyHoursManualDecisionCount": 19,
+  "ambiguousMappingManualDecisionCount": 63,
+  "recommendedActionCounts": {
+    "CREATE_TEACHER_FROM_STAFF_CONTACTS": 0,
+    "USE_EXISTING_TEACHER_ALIAS": 0,
+    "MANUAL_REVIEW_DUPLICATE": 204,
+    "DO_NOT_CREATE": 0,
+    "CREATE_EXTERNAL_TEACHER_AFTER_CONFIRMATION": 22,
+    "SKIP_ROW": 59,
+    "MANUAL_SELECT_EXISTING_TEACHER": 98,
+    "SPLIT_MULTI_TEACHER_SEGMENT": 0,
+    "MANUAL_EDIT_TEACHER_TEXT": 0,
+    "CREATE_CLASSGROUP_AFTER_CONFIRMATION": 7,
+    "ADD_MAJOR_ALIAS_MAPPING": 1,
+    "ADD_MAJOR_ALIAS_MAPPING_AFTER_CONFIRMATION": 0,
+    "DO_NOT_ALIAS": 0,
+    "SOURCE_REVIEW_REQUIRED": 0,
+    "MANUAL_SET_WEEKLY_HOURS": 19,
+    "AUTO_NORMALIZE_EXAM_TYPE": 145,
+    "MANUAL_REVIEW_EXAM_TYPE": 0
+  },
+  "localArtifacts": {
+    "manualDecisionPackageMd": "temp/local-artifacts/l7-f6g1/manual-decision-package.md",
+    "manualDecisionPackageJson": "temp/local-artifacts/l7-f6g1/manual-decision-package.json",
+    "teacherCandidatesCsv": "temp/local-artifacts/l7-f6g1/teacher-candidates-for-confirmation.csv",
+    "classgroupCandidatesCsv": "temp/local-artifacts/l7-f6g1/classgroup-candidates-for-confirmation.csv",
+    "ambiguousTeacherCsv": "temp/local-artifacts/l7-f6g1/ambiguous-teacher-decisions.csv",
+    "externalTeacherCsv": "temp/local-artifacts/l7-f6g1/external-teacher-decisions.csv",
+    "skipRowCsv": "temp/local-artifacts/l7-f6g1/skip-row-review.csv",
+    "weeklyHoursCsv": "temp/local-artifacts/l7-f6g1/weekly-hours-review.csv",
+    "allGitignored": true
+  },
+  "privacy": {
+    "rawTeacherNamesIncluded": false,
+    "rawClassNamesIncluded": false,
+    "rawMajorNamesIncluded": false,
+    "phoneNumbersIncluded": false,
+    "localArtifactsContainRawForReview": true
+  }
+}

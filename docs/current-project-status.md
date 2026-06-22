@@ -218,3 +218,5 @@ The list reflects local history at the time of K36-A3 and does not assert remote
 - L7-F6F 受控修复新版 Excel 课程设置导入的 sem4 ClassGroup double-级 命名问题：通过 backup、confirm token、invalid token test、transaction 与 post-audit，规范化 366 个 double-级 ClassGroup 名称并删除 25 个与 legacy sem4 重复的 L7-F6C 副本（无 TeachingTaskClass 引用），修复后 double-级 从 391 降到 0，canonical key collision 从 25 降到 0，ClassGroup sem4 从 431 降到 406；不创建 Teacher/TeachingTask/ImportBatch/ScheduleSlot。
 
 - L7-F6F1 对 L7-F6F 越界数据修复做只读 containment 审查：验证 backup 存在、25 个删除的 sem4 ClassGroup 均为 L7-F6C duplicate 且无业务引用（zero TTC/ScheduleSlot/ScheduleAdj refs）、366 个 normalized rows 仅删除重复"级"且不改变 canonical identity，并判断 ClassGroup sem4=406（431-25 safe deletes）可作为新合法 baseline，L7-F6F accepted as scope exception；本阶段不写 DB、不 rollback、不进入后续导入。
+
+- L7-F6G1 生成新版 Excel 课程设置导入的人工确认包：将 226 个 staff/contacts teacher unique candidates、22 个 external teacher、98 个 ambiguous teacher groups、8 个 new major ClassGroup（含 1 个 major alias）、59 个 skip rows、weeklyHours/examType/ambiguous mapping 等剩余项整理为用户确认用 local artifacts；本阶段不写 DB、不执行 apply、不进入 L7-F7/L7-G。
