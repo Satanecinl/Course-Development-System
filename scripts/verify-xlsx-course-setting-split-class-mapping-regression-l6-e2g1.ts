@@ -21,8 +21,6 @@ const SPLIT_HELPER = join(ROOT, 'src/lib/import/course-setting-task-split-detect
 const L6E1_HELPER = join(ROOT, 'src/lib/import/course-setting-manual-resolution-l6-e1.ts')
 const L6E2G_HELPER = join(ROOT, 'src/lib/import/course-setting-new-course-candidate-l6-e2g.ts')
 const L6E2_HELPER = join(ROOT, 'src/lib/import/course-setting-partial-import-plan-l6-e2.ts')
-const L6E2_CLIENT = join(ROOT, 'src/lib/import/course-setting-xlsx-client.ts')
-const LOCALIZATION = join(ROOT, 'src/lib/import/course-setting-approval-review-localization.ts')
 const STATUS_PATH = join(ROOT, 'docs/current-project-status.md')
 
 type Check = { name: string; ok: boolean; detail?: string }
@@ -45,8 +43,6 @@ function main(): void {
   const l6e1 = readF(L6E1_HELPER)
   const l6e2g = readF(L6E2G_HELPER)
   const l6e2 = readF(L6E2_HELPER)
-  const client = readF(L6E2_CLIENT)
-  const loc = readF(LOCALIZATION)
 
   // ── 1. Stage + pre-flight ──
   console.log('[1/10] stage + pre-flight')
