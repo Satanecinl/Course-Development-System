@@ -1,19 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requirePermission } from '@/lib/auth/require-permission'
 import { prisma } from '@/lib/prisma'
-import { resolveSchedulerSemester } from '@/lib/semester'
 
 export async function GET(request: NextRequest) {
   const auth = await requirePermission('import:manage', request)
   if ('error' in auth) return auth.error
 
   try {
-    const semester = await resolveSchedulerSemester()
-
+    // L7-F5C: return all batches across all semesters, not just the active
+    // semester. XLSX course setting imports (L7-F5) use semesterId=4, while
+    // the active semester may differ.
     const batches = await prisma.importBatch.findMany({
-      where: {
-        semesterId: semester.id,
-      },
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
@@ -31,7 +28,7 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    return NextResponse.json({ success: true, batches, semesterId: semester.id })
+    return NextResponse.json({ success: true, batches })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(

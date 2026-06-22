@@ -72,6 +72,9 @@ const STATUS_LABELS: Record<string, string> = {
   rolled_back: '已回滚',
   rollback_failed: '回滚失败',
   abandoned: '已废弃',
+  // L7-F5C: XLSX course setting import status
+  applied: '已应用',
+  completed: '已完成',
 }
 
 const STATUS_VARIANTS: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
@@ -83,6 +86,9 @@ const STATUS_VARIANTS: Record<string, 'default' | 'secondary' | 'destructive' | 
   rolled_back: 'outline',
   rollback_failed: 'destructive',
   abandoned: 'outline',
+  // L7-F5C: XLSX course setting import status
+  applied: 'default',
+  completed: 'default',
 }
 
 const STATUS_GROUPS: ReadonlyArray<{
@@ -92,7 +98,8 @@ const STATUS_GROUPS: ReadonlyArray<{
 }> = [
   { key: 'all', label: '全部', match: () => true },
   { key: 'pending', label: '待确认', match: (s) => s === 'pending' || s === 'confirming' },
-  { key: 'confirmed', label: '已确认', match: (s) => s === 'confirmed' || s === 'rolled_back' || s === 'rolling_back' || s === 'rollback_failed' },
+  // L7-F5C: include 'applied' and 'completed' in confirmed group
+  { key: 'confirmed', label: '已确认/已应用', match: (s) => s === 'confirmed' || s === 'rolled_back' || s === 'rolling_back' || s === 'rollback_failed' || s === 'applied' || s === 'completed' },
   { key: 'failed', label: '失败/废弃', match: (s) => s === 'failed' || s === 'abandoned' },
 ]
 
@@ -209,7 +216,7 @@ export default function ImportManagementContent() {
     let latestCreatedAt: string | null = null
     for (const b of batches) {
       if (b.status === 'pending' || b.status === 'confirming') pending += 1
-      if (b.status === 'confirmed' || b.status === 'rolled_back' || b.status === 'rolling_back' || b.status === 'rollback_failed') confirmed += 1
+      if (b.status === 'confirmed' || b.status === 'rolled_back' || b.status === 'rolling_back' || b.status === 'rollback_failed' || b.status === 'applied' || b.status === 'completed') confirmed += 1
       if (b.status === 'failed' || b.status === 'abandoned') failed += 1
       if (!latestCreatedAt || (b.createdAt && b.createdAt > latestCreatedAt)) {
         latestCreatedAt = b.createdAt
@@ -540,6 +547,7 @@ export default function ImportManagementContent() {
                   <th className="px-4 py-2 text-left">批次 ID</th>
                   <th className="px-4 py-2 text-left">文件</th>
                   <th className="px-4 py-2 text-left">状态</th>
+                  <th className="px-4 py-2 text-left">类型</th>
                   <th className="px-4 py-2 text-right">记录数</th>
                   <th className="px-4 py-2 text-right">已建任务</th>
                   <th className="px-4 py-2 text-right">已建时段</th>
@@ -559,6 +567,14 @@ export default function ImportManagementContent() {
                       <Badge variant={STATUS_VARIANTS[b.status] ?? 'secondary'}>
                         {STATUS_LABELS[b.status] ?? b.status}
                       </Badge>
+                    </td>
+                    {/* L7-F5C: show batch strategy/type */}
+                    <td className="px-4 py-2 text-xs text-gray-600">
+                      {b.strategy === 'XLSX_COURSE_SETTING_NEW_TEMPLATE'
+                        ? '新版Excel课程设置'
+                        : b.strategy
+                          ? b.strategy
+                          : '-'}
                     </td>
                     <td className="px-4 py-2 text-right tabular-nums">{b.recordCount}</td>
                     <td className="px-4 py-2 text-right tabular-nums">{b.createdTaskCount ?? '-'}</td>

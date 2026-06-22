@@ -196,3 +196,5 @@ The list reflects local history at the time of K36-A3 and does not assert remote
 - L7-F5 在 semester 4 已具备 ClassGroup 后执行新版 Excel 课程设置有效导入试跑：backup + confirm token + server-side recompute + plan hash + transaction，只导入 importable rows，允许创建 Course/ImportBatch/TeachingTask/TeachingTaskClass，禁止创建 Teacher/ClassGroup/ScheduleSlot，并执行 post-apply audit。
 
 - L7-F5A 对 L7-F5 新版 Excel 课程设置有效导入进行 closeout：只读确认 ImportBatch #40、Course/TeachingTask/TeachingTaskClass 写入结果、Teacher/ClassGroup/ScheduleSlot 不变，解释 importableRows 与实际任务数的聚合口径，补齐 build/scan/K22/regression/git 证据，并准备浏览器验收。
+
+- L7-F5C 修复 /admin/import 导入批次列表无法显示新版 Excel 课程设置 ImportBatch #40 的问题：API 移除 semesterId 过滤改为返回所有学期批次，UI 增加 APPLIED/COMPLETED 状态支持，扩展 ImportBatchListItem 类型增加 strategy 字段；本阶段不写 DB。

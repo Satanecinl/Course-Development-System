@@ -133,6 +133,8 @@ export interface ImportBatchListItem {
   id: number
   filename: string
   status: string
+  // L7-F5C: strategy field for batch type differentiation
+  strategy: string | null
   recordCount: number
   createdTaskCount: number | null
   createdSlotCount: number | null
