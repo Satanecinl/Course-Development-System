@@ -210,3 +210,5 @@ The list reflects local history at the time of K36-A3 and does not assert remote
 - L7-F6D1 修复新版 Excel 课程设置导入 resolution wiring：移除 trial 脚本 teacher/classGroup substring auto-resolve，改为 teacher normalized exact match 与 ClassGroup targetSemesterId+年级+学制+专业+班号 canonical exact match；新增体育课教师豁免显式规则、plan builder final hard gate、apply preflight hard gate 与 dry-run semantic stats。本阶段不写 DB、不执行 apply。
 
 - L7-F6D2 对新版 Excel 课程设置导入 canonical key 做只读复核：统一 Excel row、K列分段授课、L7-F6C ClassGroup 写入结果与 resolver 的 targetSemesterId+年级+学制+专业+班号 key，复核 23 个 duplicate plannedName skip 与 22 个 manual-review ClassGroup，验证体育课教师豁免和 K列多教师通路；本阶段不写 DB、不执行 apply。
+
+- L7-F6E 对新版 Excel 课程设置导入剩余 blockers 做只读人工处理计划：分类 missing teachers（1060 个缺失教师，其中 844 可从 staff/contacts 导入）、manual-review ClassGroups（96 个 rows × 8 个 majors）、DB collisions（32 个，9 个 unsafe 阻塞）、exam type invalid（145 个，全部可归一）、weekly hours invalid（19 个，需人工输入）与 ambiguous mappings（63 个，需人工选择班级），输出 row/candidate-level final action aggregate（AUTO_FIX=1 + WRITE_MASTER_DATA=858 + MANUAL=164 + SKIP=59 = 1082）和 L7-F6F 后续受控处理建议；本阶段不写 DB、不执行 apply。

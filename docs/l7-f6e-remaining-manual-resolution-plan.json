@@ -1,0 +1,206 @@
+{
+  "stage": "L7-F6E-REMAINING-MANUAL-RESOLUTION-PLAN",
+  "date": "2026-06-22",
+  "status": "COMPLETED",
+  "keyVersion": "l7-f6e-remaining-resolution-plan-v1",
+  "dbWrite": false,
+  "applyExecuted": false,
+  "backupCreated": false,
+  "targetSemesterId": 4,
+  "xlsxSha256": "27075c17dc7ca30f1339055bd752dd8c1338dd3c5dd1a0d26fc20822fa8040ea",
+  "dbBaseline": {
+    "course": 104,
+    "teacher": 236,
+    "classGroupSem1": 36,
+    "classGroupSem4": 431,
+    "teachingTaskSem4": 0,
+    "teachingTaskClass": 446,
+    "scheduleSlotSem4": 0,
+    "scheduleAdjustmentSem4": 0,
+    "importBatchTotal": 39,
+    "importBatchId39": "APPLIED",
+    "importBatchId40": "absent"
+  },
+  "trialSummary": {
+    "totalRows": 1167,
+    "plannedImportRows": 85,
+    "importableRows": 85,
+    "unresolvedRows": 1082,
+    "blockingRows": 1664,
+    "teacherMissingRows": 107,
+    "classGroupMissingRows": 125,
+    "courseCreateCandidates": 4
+  },
+  "reconciliation": {
+    "excelRows": 1288,
+    "canonicalClassKeysFromExcel": 227,
+    "dbSem4ClassGroups": 431,
+    "matchedDbClassGroups": 234,
+    "missingDbClassGroups": 22,
+    "ambiguousDbClassGroups": 64,
+    "legacySem4ClassGroupsMatched": 197,
+    "manualReviewClassGroupCount": 96
+  },
+  "kSegmentStats": {
+    "kAssignmentSegmentCount": 276,
+    "kAssignmentSegmentsResolvedTeacher": 246,
+    "kAssignmentSegmentsMissingTeacher": 30,
+    "kAssignmentSegmentsResolvedClassGroups": 270,
+    "kAssignmentSegmentsMissingClassGroups": 6,
+    "multiTeacherRowCount": 109,
+    "unsupportedKPatternCount": 0
+  },
+  "remainingBlockers": {
+    "totalBlockerDiagnostics": 2492,
+    "affectedRows": 1082,
+    "affectedCandidates": 1082,
+    "importableRows": 85,
+    "unresolvedRows": 1082,
+    "overlapMatrix": {
+      "TEACHER_ID_MISSING": 674,
+      "TEACHER_ID_MISSING|teacherMissing": 90,
+      "TEACHER_ID_MISSING|ambiguousMapping": 28,
+      "TEACHER_ID_MISSING|examTypeInvalid": 94,
+      "CLASS_GROUP_IDS_MISSING|classGroupMissing": 13,
+      "CLASS_GROUP_IDS_MISSING|TEACHER_ID_MISSING|classGroupMissing": 112,
+      "CLASS_GROUP_IDS_MISSING|TEACHER_ID_MISSING|teacherMissing": 11,
+      "TEACHER_ID_MISSING|examTypeInvalid|weeklyHoursInvalid": 14,
+      "TEACHER_ID_MISSING|ambiguousMapping|examTypeInvalid|weeklyHoursInvalid": 5,
+      "TEACHER_ID_MISSING|ambiguousMapping|examTypeInvalid": 18,
+      "TEACHER_ID_MISSING|examTypeInvalid|teacherMissing": 3,
+      "TEACHER_ID_MISSING|ambiguousMapping|examTypeInvalid|teacherMissing": 3,
+      "CLASS_GROUP_IDS_MISSING|TEACHER_ID_MISSING|examTypeInvalid": 6,
+      "ambiguousMapping": 7,
+      "CLASS_GROUP_IDS_MISSING|TEACHER_ID_MISSING|ambiguousMapping": 2,
+      "examTypeInvalid": 1,
+      "CLASS_GROUP_IDS_MISSING|examTypeInvalid": 1
+    }
+  },
+  "missingTeacherPlan": {
+    "missingTeacherDiagnosticCount": 1060,
+    "missingTeacherRowCount": 1060,
+    "uniqueMissingTeacherHashCount": 219,
+    "foundInCurrentTeacherAfterF6C": 0,
+    "foundInStaffOrContacts": 844,
+    "likelyExternal": 37,
+    "ambiguousTeacherCount": 120,
+    "emptyTeacherCount": 59,
+    "physicalEducationExemptCount": 0,
+    "recommendedActionCounts": {
+      "USE_EXISTING_TEACHER_ALIAS": 0,
+      "IMPORT_FROM_STAFF_OR_CONTACTS": 844,
+      "CREATE_EXTERNAL_TEACHER_AFTER_CONFIRMATION": 37,
+      "PHYSICAL_EDUCATION_TEACHER_EXEMPT": 0,
+      "MANUAL_REVIEW_TEACHER_TEXT": 120,
+      "SKIP_ROW": 59
+    }
+  },
+  "manualReviewClassGroupPlan": {
+    "manualReviewClassGroupCount": 96,
+    "uniqueMajorHashCount": 8,
+    "affectedRows": 145,
+    "reasonCounts": {
+      "major not found in major DB": 96
+    },
+    "recommendedActionCounts": {
+      "ADD_MAJOR_ALIAS_MAPPING": 3,
+      "CREATE_CLASSGROUP_AFTER_CONFIRMATION": 93,
+      "DO_NOT_CREATE": 0,
+      "SOURCE_REVIEW_REQUIRED": 0,
+      "SKIP_ROW": 0
+    }
+  },
+  "dbCollisionPlan": {
+    "duplicateCompositeKeyCollisionCount": 32,
+    "safeDuplicateCount": 23,
+    "unsafeCollisionCount": 9,
+    "legacyCollisionCount": 9,
+    "plannedNameBugCount": 9,
+    "blockingCollisionCount": 9,
+    "recommendedActionCounts": {
+      "IGNORE_SAFE_DUPLICATE": 23,
+      "FIX_PLANNED_NAME_GENERATION": 9,
+      "ADD_ALIAS_MAPPING": 0,
+      "MANUALLY_SELECT_CANONICAL_CLASSGROUP": 0,
+      "DO_NOT_USE_LEGACY_CLASSGROUP": 0,
+      "NEEDS_SCHEMA_ROADMAP": 0
+    }
+  },
+  "examTypePlan": {
+    "examTypeInvalidCount": 145,
+    "rawExamTypeVariantCount": 2,
+    "normalizableExamTypeCount": 145,
+    "invalidExamTypeCount": 0,
+    "blankExamTypeCount": 0,
+    "ambiguousExamTypeCount": 0,
+    "recommendedActionCounts": {
+      "NORMALIZE_BY_RULE": 145,
+      "MANUAL_REVIEW_EXAM_TYPE": 0,
+      "SKIP_ROW": 0
+    }
+  },
+  "weeklyHoursPlan": {
+    "weeklyHoursInvalidCount": 19,
+    "rawWeeklyHoursVariantCount": 3,
+    "blankWeeklyHoursCount": 0,
+    "nonNumericWeeklyHoursCount": 19,
+    "rangeWeeklyHoursCount": 0,
+    "fractionWeeklyHoursCount": 0,
+    "totalHoursOnlyCount": 0,
+    "manualReviewRequiredCount": 0,
+    "recommendedActionCounts": {
+      "NORMALIZE_NUMERIC": 0,
+      "MANUAL_REVIEW_WEEKLY_HOURS": 19,
+      "SKIP_ROW": 0
+    }
+  },
+  "ambiguousMappingPlan": {
+    "ambiguousMappingCount": 63,
+    "ambiguousTeacherCount": 0,
+    "ambiguousCourseCount": 0,
+    "ambiguousClassGroupCount": 63,
+    "ambiguousMajorAliasCount": 0,
+    "ambiguousKSegmentCount": 0,
+    "ambiguousExamTypeMappingCount": 0,
+    "ambiguousWeeklyHoursMappingCount": 0,
+    "recommendedActionCounts": {
+      "MANUAL_SELECT_EXISTING": 63,
+      "ADD_ALIAS_MAPPING": 0,
+      "CREATE_NEW_AFTER_CONFIRMATION": 0,
+      "SKIP_ROW": 0
+    }
+  },
+  "finalActionAggregate": {
+    "autoFixByRuleCount": 1,
+    "writeMasterDataAfterConfirmationCount": 858,
+    "manualResolutionRequiredCount": 164,
+    "skipRowCount": 59,
+    "blockedByDbCollisionCount": 0,
+    "blockedBySourceAmbiguityCount": 0,
+    "unknownFinalActionCount": 0
+  },
+  "canProceedToWrite": false,
+  "canProceedToDryRun": false,
+  "nextStageRecommendation": "L7-F6F-CONTROLLED-DB-COLLISION-RECONCILIATION-WRITE",
+  "localArtifacts": {
+    "remainingResolutionPlanRawLocal": "temp/local-artifacts/l7-f6e/remaining-resolution-plan.raw.local.json",
+    "missingTeachersRawLocal": "temp/local-artifacts/l7-f6e/missing-teachers.raw.local.json",
+    "manualReviewClassgroupsRawLocal": "temp/local-artifacts/l7-f6e/manual-review-classgroups.raw.local.json",
+    "dbCollisionsRawLocal": "temp/local-artifacts/l7-f6e/db-collisions.raw.local.json",
+    "examWeeklyHoursIssuesRawLocal": "temp/local-artifacts/l7-f6e/exam-weekly-hours-issues.raw.local.json",
+    "allGitignored": true
+  },
+  "privacy": {
+    "rawTeacherNamesIncluded": false,
+    "rawClassNamesIncluded": false,
+    "rawCourseNamesIncluded": false,
+    "rawMajorNamesIncluded": false,
+    "rawRemarksIncluded": false,
+    "rawExamTypeIncluded": false,
+    "rawWeeklyHoursIncluded": false,
+    "phoneNumbersIncluded": false,
+    "emailIncluded": false,
+    "employeeNoIncluded": false,
+    "localArtifactsContainRawForReview": true
+  }
+}
