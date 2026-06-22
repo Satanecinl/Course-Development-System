@@ -121,7 +121,8 @@ async function main(): Promise<void> {
   const teacherCount = await prisma.teacher.count()
   record('Teacher count = 220', teacherCount === 220, `count=${teacherCount}`)
   const classGroupSem4 = await prisma.classGroup.count({ where: { semesterId: 4 } })
-  record('ClassGroup sem4 = 0', classGroupSem4 === 0, `count=${classGroupSem4}`)
+  // L7-F4 stage-aware: after L7-F4 copied 36 ClassGroups from sem1 to sem4
+  record('ClassGroup sem4 is 0 or 36 (stage-aware)', classGroupSem4 === 0 || classGroupSem4 === 36, `count=${classGroupSem4}`)
   const ttSem4 = await prisma.teachingTask.count({ where: { semesterId: 4 } })
   record('TeachingTask sem4 = 0', ttSem4 === 0, `count=${ttSem4}`)
   const slotSem4 = await prisma.scheduleSlot.count({ where: { semesterId: 4 } })
