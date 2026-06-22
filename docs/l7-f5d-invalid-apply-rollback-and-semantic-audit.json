@@ -1,0 +1,59 @@
+{
+  "stage": "L7-F5D-INVALID-APPLY-ROLLBACK-AND-SEMANTIC-AUDIT",
+  "date": "2026-06-22",
+  "status": "CLOSED",
+  "dbWrite": false,
+  "targetSemesterId": 4,
+  "invalidApplyDiagnosis": {
+    "teacherIdNull": {
+      "count": 248,
+      "total": 248,
+      "percent": 100,
+      "impact": "all teaching tasks have no teacher assignment"
+    },
+    "classGroupOverMatch": {
+      "totalTTC": 5398,
+      "totalTasks": 248,
+      "avgPerTask": 21.77,
+      "min": 1,
+      "max": 31,
+      "p50": 26,
+      "p90": 26,
+      "impact": "each task linked to 21+ class groups instead of 1-5"
+    },
+    "rootCause": "Excel teacher text not matched to DB teachers; classGroup auto-resolve too broad (substring match across unrelated majors)"
+  },
+  "evidenceBackup": {
+    "path": "prisma/dev.db.backup-invalid-l7-f5-before-rollback-20260622-214753",
+    "tracked": false
+  },
+  "restoreBackup": {
+    "path": "prisma/dev.db.backup-before-l7-f-xlsx-course-setting-import-20260622-200103",
+    "tracked": false
+  },
+  "rollbackExecution": {
+    "confirmToken": "ROLLBACK_L7_F5_INVALID_APPLY",
+    "invalidTokenTest": "rejected",
+    "rollbackStatus": "SUCCESS",
+    "postRollbackVerification": "12/12 passed"
+  },
+  "postRollbackDB": {
+    "course": 104,
+    "teacher": 220,
+    "classGroupSem1": 36,
+    "classGroupSem4": 36,
+    "teachingTaskSem4": 0,
+    "teachingTaskClass": 446,
+    "scheduleSlotSem4": 0,
+    "scheduleAdjustmentSem4": 0,
+    "importBatch39": { "exists": true, "status": "APPLIED", "tasks": 0 },
+    "importBatch40": "absent",
+    "importBatchTotal": 39
+  },
+  "nextStageHardGates": {
+    "teacherIdNull": "hard blocker - apply service must reject teacherId=null",
+    "classGroupExactMatching": "exact and scoped - no broad substring match",
+    "dryRunProof": "must show teacherId null count = 0, bounded classGroup sets"
+  },
+  "rawIncluded": false
+}

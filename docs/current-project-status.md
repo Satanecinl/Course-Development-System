@@ -198,3 +198,5 @@ The list reflects local history at the time of K36-A3 and does not assert remote
 - L7-F5A 对 L7-F5 新版 Excel 课程设置有效导入进行 closeout：只读确认 ImportBatch #40、Course/TeachingTask/TeachingTaskClass 写入结果、Teacher/ClassGroup/ScheduleSlot 不变，解释 importableRows 与实际任务数的聚合口径，补齐 build/scan/K22/regression/git 证据，并准备浏览器验收。
 
 - L7-F5C 修复 /admin/import 导入批次列表无法显示新版 Excel 课程设置 ImportBatch #40 的问题：API 移除 semesterId 过滤改为返回所有学期批次，UI 增加 APPLIED/COMPLETED 状态支持，扩展 ImportBatchListItem 类型增加 strategy 字段；本阶段不写 DB。
+
+- L7-F5D 将 L7-F5 视为 invalid apply 并回滚：诊断确认 248 个 TeachingTask 全部 teacherId=NULL，TeachingTaskClass 过度合班（avg 21.77 per task）；使用 L7-F5 apply 前 backup restore dev.db，保留 L7-F4 sem4 ClassGroup=36，移除 #40/248 Course/248 TeachingTask/5398 TTC，并固化后续 teacher/classGroup resolution hard gates。
