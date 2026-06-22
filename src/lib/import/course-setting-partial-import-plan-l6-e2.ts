@@ -843,6 +843,14 @@ export const buildCourseSettingPartialImportPlan = async (
     }
 
     // ── Build per-row plan entry ─────────────────────────────────────
+
+    // L7-F5: a row without class group refs cannot create a valid
+    // TeachingTask. Block these rows as unresolved so the apply
+    // service doesn't produce empty ImportBatch records.
+    if (blockersForRow.length === 0 && resolvedClassGroupIds.length === 0) {
+      blockersForRow.push('classGroupMissing')
+    }
+
     if (blockersForRow.length > 0) {
       // Record blockers list
       for (const b of blockersForRow) {

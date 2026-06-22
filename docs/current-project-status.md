@@ -192,3 +192,5 @@ The list reflects local history at the time of K36-A3 and does not assert remote
 - L7-F3 只读审计目标学期 ClassGroup readiness：确认 semesterId=4 无班级数据，分析 Excel 新模板班级需求与可用 source semester，输出选择已有学期、复制 ClassGroup、或从 Excel 派生 ClassGroup 的方案比较；推荐 Option B（从 semester 1 复制 36 个 ClassGroup 到 semester 4）；本阶段不写 DB。
 
 - L7-F4 受控复制 ClassGroup：在 backup + confirm token + transaction 下，将 semester 1 的 36 个 ClassGroup 复制到 target semester 4；只创建 ClassGroup，不创建 Course/Teacher/TeachingTask/TeachingTaskClass/ImportBatch/ScheduleSlot，为 L7-F valid apply trial 准备班级数据。
+
+- L7-F5 在 semester 4 已具备 ClassGroup 后执行新版 Excel 课程设置有效导入试跑：backup + confirm token + server-side recompute + plan hash + transaction，只导入 importable rows，允许创建 Course/ImportBatch/TeachingTask/TeachingTaskClass，禁止创建 Teacher/ClassGroup/ScheduleSlot，并执行 post-apply audit。

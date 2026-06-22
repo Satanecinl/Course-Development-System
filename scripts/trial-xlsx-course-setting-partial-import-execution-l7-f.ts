@@ -200,12 +200,116 @@ async function main(): Promise<void> {
     },
   })
 
-  const reviewUi = buildCourseSettingApprovalReviewUi({ approvalPackage })
+  const reviewUiRawEmpty = buildCourseSettingApprovalReviewUi({ approvalPackage })
+  void reviewUiRawEmpty // used by other flows; keep empty build for compatibility
 
-  // No manual resolutions provided in CLI mode → use initial state
+  // Parse again with includeRawValues to populate raw teacher/class text
+  // for auto-resolution. This mirrors what the approval-review route does.
+  const { parseCourseSettingXlsx } = await import('@/lib/import/course-setting-xlsx-parser')
+  const parseResult = await parseCourseSettingXlsx(buffer, {
+    artifactFilename: args.xlsx,
+    parserVersion: 'l2-parser-v1',
+    includeRawValues: true,
+  })
+  const rawByApprovalItemId = new Map<string, { courseName: string | null; teacherText: string | null; classText: string | null; remark: string | null; mergeRemark: string | null; weeklyHoursText: string | null; examTypeText: string | null; majorName: string | null }>()
+  const extractStr = (v: unknown): string | null => {
+    if (v == null) return null
+    if (typeof v === 'string') return v
+    if (typeof v === 'object' && v !== null) {
+      const obj = v as Record<string, unknown>
+      if (typeof obj.normalized === 'string') return obj.normalized
+      if (typeof obj.raw === 'string') return obj.raw
+    }
+    return null
+  }
+  for (const sheet of parseResult.sheets) {
+    for (const row of sheet.rows) {
+      if (row.rowKind !== 'course') continue
+      const id = `approval:${row.sheetIndex}:${row.sourceRowIndex}`
+      const rr = row as Record<string, unknown>
+      rawByApprovalItemId.set(id, {
+        courseName: extractStr(rr.courseName),
+        teacherText: extractStr(rr.teacherAssignment) ?? extractStr(rr.teacherAssignmentText),
+        classText: extractStr(rr.classNameText),
+        remark: extractStr(rr.remark),
+        mergeRemark: extractStr(rr.mergeRemark),
+        weeklyHoursText: extractStr(rr.weeklyHours),
+        examTypeText: extractStr(rr.examType),
+        majorName: extractStr(rr.gradeMajor) ?? extractStr(rr.majorName),
+      })
+    }
+  }
+  const reviewUiWithRaw = buildCourseSettingApprovalReviewUi({
+    approvalPackage,
+    rawByApprovalItemId,
+  })
+
+  // Build auto-resolved manual resolutions using existing DB data.
+  // This simulates what the browser does when the user resolves teacher
+  // and class groups in the manual resolution UI.
+  const { buildInitialManualResolutionState } = await import('@/lib/import/course-setting-manual-resolution-l6-e1')
+  const initialResolutions = buildInitialManualResolutionState(reviewUiWithRaw.rows, args.targetSemesterId)
+
+  // Load existing teachers and class groups for auto-resolution
+  const existingTeachers = await prisma.teacher.findMany({ select: { id: true, name: true } })
+  const teacherByName = new Map(existingTeachers.map((t) => [t.name, t.id]))
+
+  const existingClassGroups = await prisma.classGroup.findMany({
+    where: { semesterId: args.targetSemesterId },
+    select: { id: true, name: true },
+  })
+
+  // Auto-resolve teacher and class group references
+  const autoResolvedResolutions = initialResolutions.map((item) => {
+    const reviewRow = reviewUiWithRaw.rows.find((r) => r.approvalItemId === item.approvalItemId)
+    if (!reviewRow) return item
+
+    const r = { ...item, resolution: { ...item.resolution } }
+
+    // Auto-resolve teacher if not yet resolved
+    if (r.resolution.teacher?.action === 'none' || !r.resolution.teacher) {
+      const teacherText = reviewRow.raw.teacherText?.trim()
+      if (teacherText && teacherByName.has(teacherText)) {
+        r.resolution.teacher = {
+          action: 'useExistingTeacher',
+          existingTeacherId: teacherByName.get(teacherText)!,
+        }
+      } else if (teacherText) {
+        // Try partial match
+        for (const [name, id] of teacherByName) {
+          if (name.includes(teacherText) || teacherText.includes(name)) {
+            r.resolution.teacher = { action: 'useExistingTeacher', existingTeacherId: id }
+            break
+          }
+        }
+      }
+    }
+
+    // Auto-resolve class groups if not yet resolved
+    if (r.resolution.classGroups?.action === 'none' || !r.resolution.classGroups) {
+      const classText = reviewRow.raw.classText?.trim()
+      if (classText && existingClassGroups.length > 0) {
+        const matchedIds: number[] = []
+        // Extract class numbers from classText (e.g. "1班,2班" → [1, 2])
+        const nums = classText.match(/\d+/g) ?? []
+        for (const cg of existingClassGroups) {
+          const cgHasNum = nums.some((n) => cg.name.includes(n + '班') || cg.name.endsWith(n))
+          if (cgHasNum || classText.split(/[,，]/).some((t) => t.trim() && cg.name.includes(t.trim()))) {
+            matchedIds.push(cg.id)
+          }
+        }
+        if (matchedIds.length > 0) {
+          r.resolution.classGroups = { action: 'useExistingClassGroup', existingClassGroupIds: matchedIds }
+        }
+      }
+    }
+
+    return r
+  })
+
   const plan = await buildCourseSettingPartialImportPlan({
-    reviewRows: reviewUi.rows,
-    manualResolutions: [],
+    reviewRows: reviewUiWithRaw.rows,
+    manualResolutions: autoResolvedResolutions,
     existingData,
     targetSemesterId: args.targetSemesterId,
     sourceArtifact: { filename: args.xlsx, sha256: fileSha256, sizeBytes: buffer.length },
