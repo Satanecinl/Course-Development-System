@@ -247,6 +247,16 @@ export type CourseSettingPartialImportPlanSummary = {
   courseNameMissingRows: number
   /** L6-E2G: rows where DB had multiple matches (still review). */
   courseAmbiguousRows: number
+  /** L7-A3: rows where the only blocker is teacher missing (the user
+   *  must supply a teacher before the row can be planned). */
+  teacherMissingRows: number
+  /** L7-A3: rows where the only blocker is class group missing. */
+  classGroupMissingRows: number
+  /** L7-A3: rows where the only blocker is a task split that needs the
+   *  user's confirmation. */
+  taskAssignmentReviewRows: number
+  /** L7-A3: rows that reference an existing course in the DB. */
+  rowsUsingExistingCourse: number
   teacherCreateCandidates: 0
   classGroupCreateCandidates: number
   teachingTaskCandidates: number
@@ -527,13 +537,22 @@ export const buildCourseSettingPartialImportPlan = async (
     let ambiguousMappingConfirmed = false
 
     // ── Course resolution ───────────────────────────────────────────
-    // L6-E2G: the legacy `COURSE_MISSING` diagnostic conflates two cases:
+    // L6-E2G + L7-A3: distinguish three course-side cases:
     //   (a) Excel course name is empty / unparsable  → blocker `courseNameMissing`
-    //   (b) Excel has a course name but DB has no match → treat as a new
-    //       course candidate, plan to create it on apply (if user confirms).
-    // We split these here so the plan summary correctly reports
-    // `courseNameMissingRows` vs `confirmedNewCourseCandidates`.
-    const hasCourseMissingDiag = reviewRow.match.diagnosticCodes.includes('COURSE_MISSING')
+    //   (b) Excel has a course name but DB has no match → new course
+    //       candidate (`COURSE_CREATE_CANDIDATE` in L7-A3; legacy
+    //       `COURSE_MISSING` is treated the same).
+    //   (c) DB had multiple matches → `courseAmbiguous`.
+    const hasCourseMissingDiag =
+      reviewRow.match.diagnosticCodes.includes('COURSE_MISSING') ||
+      reviewRow.match.diagnosticCodes.includes('COURSE_NAME_MISSING')
+    const hasNewCourseCandidateDiag =
+      reviewRow.match.diagnosticCodes.includes('COURSE_CREATE_CANDIDATE')
+    // L7-A3: treat both COURSE_MISSING and COURSE_CREATE_CANDIDATE as
+    // "new course candidate" when Excel has a course name. The
+    // semantic difference is handled upstream in L4.
+    const hasCourseCandidateSignal =
+      hasCourseMissingDiag || hasNewCourseCandidateDiag
     const hasCourseAmbiguousDiag = reviewRow.match.diagnosticCodes.includes('COURSE_AMBIGUOUS')
     const rawCourseName = reviewRow.raw.courseName ?? null
     const isExcelCourseNameBlank = isBlank(rawCourseName)
@@ -586,7 +605,7 @@ export const buildCourseSettingPartialImportPlan = async (
         }
       } else {
         // Some other unresolved action (e.g. `none` or unsupported value).
-        if (hasCourseMissingDiag && !isExcelCourseNameBlank) {
+        if (hasCourseCandidateSignal && !isExcelCourseNameBlank) {
           // Implicit new course candidate — the Excel had a course name but
           // no DB match and the user hasn't yet chosen. Treat as a candidate
           // that still needs confirmation (not a hard blocker).
@@ -598,17 +617,21 @@ export const buildCourseSettingPartialImportPlan = async (
             source: 'excelCourseName',
             confirmed: false,
           }
-        } else if (hasCourseMissingDiag && isExcelCourseNameBlank) {
+        } else if (hasCourseCandidateSignal && isExcelCourseNameBlank) {
           blockersForRow.push('courseNameMissing')
         } else if (hasCourseAmbiguousDiag) {
           blockersForRow.push('courseAmbiguous')
         } else {
+          // L7-A3: deprecated legacy `courseMissing` fallback — should
+          // not trigger because L4 now emits `COURSE_NAME_MISSING` or
+          // `COURSE_CREATE_CANDIDATE` distinctly. We keep the branch
+          // for defense-in-depth.
           blockersForRow.push('courseMissing')
         }
       }
     } else if (hasCourseAmbiguousDiag) {
       blockersForRow.push('courseAmbiguous')
-    } else if (hasCourseMissingDiag && !isExcelCourseNameBlank) {
+    } else if (hasCourseCandidateSignal && !isExcelCourseNameBlank) {
       // No resolution, but Excel had a course name → new course candidate.
       // The candidate is auto-prefilled from Excel but not yet confirmed.
       plannedCourseAction = 'createCandidate'
@@ -619,7 +642,7 @@ export const buildCourseSettingPartialImportPlan = async (
         source: 'excelCourseName',
         confirmed: false,
       }
-    } else if (hasCourseMissingDiag && isExcelCourseNameBlank) {
+    } else if (hasCourseCandidateSignal && isExcelCourseNameBlank) {
       blockersForRow.push('courseNameMissing')
     } else {
       // No course diagnostic and no resolution — assume the L4 dry-run
@@ -1083,13 +1106,25 @@ export const buildCourseSettingPartialImportPlan = async (
   let courseAmbiguousRows = 0
   let rowsUsingNewCourseCandidate = 0
   let confirmedNewCourseCandidates = 0
+  // L7-A3: more granular blocker counts.
+  let teacherMissingRows = 0
+  let classGroupMissingRows = 0
+  let taskAssignmentReviewRows = 0
+  let rowsUsingExistingCourse = 0
   for (const r of blockers) {
     if (r.reason === 'courseNameMissing') courseNameMissingRows += 1
     if (r.reason === 'courseAmbiguous') courseAmbiguousRows += 1
+    if (r.reason === 'teacherMissing') teacherMissingRows += 1
+    if (r.reason === 'classGroupMissing') classGroupMissingRows += 1
+    if (r.reason === 'taskSplitRequired') taskAssignmentReviewRows += 1
   }
   for (const c of courseCreateList) {
     rowsUsingNewCourseCandidate += c.approvalItemIds.length
     confirmedNewCourseCandidates += c.confirmedCount
+  }
+  // L7-A3: count importable rows that use an existing course.
+  for (const ir of importableRows) {
+    if (ir.coursePlan.mode === 'useExistingCourse') rowsUsingExistingCourse += 1
   }
 
   // applyReadyForFutureStage: at least one importable row + no blockers inside
@@ -1117,6 +1152,10 @@ export const buildCourseSettingPartialImportPlan = async (
     confirmedNewCourseCandidates,
     courseNameMissingRows,
     courseAmbiguousRows,
+    teacherMissingRows,
+    classGroupMissingRows,
+    taskAssignmentReviewRows,
+    rowsUsingExistingCourse,
     teacherCreateCandidates: 0,
     classGroupCreateCandidates: classGroupCreateList.length,
     teachingTaskCandidates: teachingTasks.length,

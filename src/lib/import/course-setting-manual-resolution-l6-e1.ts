@@ -69,6 +69,13 @@ export type CourseSettingResolutionStatus =
   | 'needsResolution'
   | 'ignored'
   | 'pending'
+  /**
+   * L7-A3: row is a new course candidate (Excel has a course name, DB
+   * has no match). Defaulted to importable — the user can confirm or
+   * override before plan generation. The partial plan will surface
+   * these as `coursePlan.mode = "createCourse"` rows.
+   */
+  | 'autoAllowedNewCourse'
 
 export type CourseSettingResolutionAction =
   | 'none'
@@ -243,7 +250,7 @@ const VALID_EXAM_TYPES = ['考试', '考查', ''] as const
 export const evaluateManualResolutionItem = (
   item: CourseSettingManualResolutionItem,
 ): CourseSettingManualResolutionValidation => {
-  const { resolution, baseBlocked, baseCourseSituation } = item
+  const { resolution, baseCourseSituation } = item
   const blockers: string[] = []
   const warnings: string[] = []
 
@@ -252,117 +259,129 @@ export const evaluateManualResolutionItem = (
     return { importable: false, blockers: ['rowIgnored'], warnings: [] }
   }
 
-  // --- Blocked rows: check each dimension ---
-  if (baseBlocked) {
-    // Course blocker — split by situation (L6-E2G)
-    if (baseCourseSituation === 'courseNameMissing') {
-      if (!isCourseResolutionSatisfied(resolution)) {
-        blockers.push('courseNameMissing')
-      }
-    } else if (baseCourseSituation === 'newCourseCandidate') {
-      if (!isCourseResolutionSatisfied(resolution)) {
-        blockers.push('newCourseCandidate')
-      }
-    } else if (baseCourseSituation === 'courseAmbiguous') {
-      // Use existingCourseId OR confirmAmbiguousMapping must resolve it.
-      const courseResolved = isCourseResolutionSatisfied(resolution)
-      const ambiguousResolved =
-        resolution.ambiguousMapping?.action === 'confirmAmbiguousMapping'
-      if (!courseResolved && !ambiguousResolved) {
-        blockers.push('courseAmbiguous')
-      }
-    }
-    // courseResolved → no course blocker here.
+  // L7-A3: a new course candidate is NEVER a course blocker. The course
+  // resolution is pre-populated with `createCourseCandidate` by the
+  // initial-state builder, and the partial plan consumes it as
+  // `coursePlan.mode = "createCourse"`. If the user changes the
+  // resolution (e.g. to `useExistingCourse` or leaves it empty), the
+  // `isCourseResolutionSatisfied` helper still gates the row.
+  const courseSituationIsNewCandidate = baseCourseSituation === 'newCourseCandidate'
 
-    // Teacher blocker (only if teacher diagnostic present)
-    if (item.baseDiagnosticCodes.includes('TEACHER_MISSING') || item.baseDiagnosticCodes.includes('TEACHER_BLANK')) {
-      const teacherAction = resolution.teacher?.action ?? 'none'
-      if (
-        teacherAction === 'useExistingTeacher' ||
-        teacherAction === 'createTeacherCandidate' ||
-        teacherAction === 'allowBlankTeacher'
-      ) {
+  // --- Course dimension (split by situation) ---
+  // L7-A3: only check the course blocker when the situation is NOT
+  // `newCourseCandidate` (those are pre-resolved in the initial state).
+  if (baseCourseSituation === 'courseNameMissing') {
+    if (!isCourseResolutionSatisfied(resolution)) {
+      blockers.push('courseNameMissing')
+    }
+  } else if (courseSituationIsNewCandidate) {
+    // If the user explicitly changed the resolution away from the
+    // pre-filled createCourseCandidate, fall through to the resolution
+    // check. The default state already satisfies this.
+    if (!isCourseResolutionSatisfied(resolution)) {
+      blockers.push('newCourseCandidate')
+    }
+  } else if (baseCourseSituation === 'courseAmbiguous') {
+    // Use existingCourseId OR confirmAmbiguousMapping must resolve it.
+    const courseResolved = isCourseResolutionSatisfied(resolution)
+    const ambiguousResolved =
+      resolution.ambiguousMapping?.action === 'confirmAmbiguousMapping'
+    if (!courseResolved && !ambiguousResolved) {
+      blockers.push('courseAmbiguous')
+    }
+  }
+  // courseResolved → no course blocker here.
+
+  // --- Other-dimension blockers ---
+  // L7-A3: only check teacher / class / hours / exam / taskSplit / etc
+  // when the underlying diagnostic was emitted by L4. A new course
+  // candidate may also have e.g. a teacher missing — in that case
+  // teacher is still a real blocker.
+
+  // Teacher blocker (only if teacher diagnostic present)
+  if (item.baseDiagnosticCodes.includes('TEACHER_MISSING') || item.baseDiagnosticCodes.includes('TEACHER_BLANK')) {
+    const teacherAction = resolution.teacher?.action ?? 'none'
+    if (
+      teacherAction === 'useExistingTeacher' ||
+      teacherAction === 'createTeacherCandidate' ||
+      teacherAction === 'allowBlankTeacher'
+    ) {
+      // resolved
+    } else {
+      blockers.push('teacherMissing')
+    }
+  }
+
+  // Class group blocker (only if class diagnostic present)
+  if (item.baseDiagnosticCodes.includes('CLASS_GROUP_MISSING') || item.baseDiagnosticCodes.includes('CLASS_GROUP_AMBIGUOUS')) {
+    const classGroupAction = resolution.classGroups?.action ?? 'none'
+    if (
+      classGroupAction === 'useExistingClassGroup' ||
+      classGroupAction === 'createClassGroupCandidate'
+    ) {
+      // resolved
+    } else {
+      blockers.push('classGroupMissing')
+    }
+  }
+
+  // Weekly hours blocker (only if diagnostic present)
+  if (item.baseDiagnosticCodes.includes('WEEKLY_HOURS_NON_NUMERIC')) {
+    const hoursAction = resolution.weeklyHours?.action ?? 'none'
+    if (hoursAction === 'overrideWeeklyHours') {
+      const hoursValue = resolution.weeklyHours?.value
+      if (typeof hoursValue === 'number' && isFinite(hoursValue) && hoursValue > 0) {
         // resolved
-      } else {
-        blockers.push('teacherMissing')
-      }
-    }
-
-    // Class group blocker (only if class diagnostic present)
-    if (item.baseDiagnosticCodes.includes('CLASS_GROUP_MISSING') || item.baseDiagnosticCodes.includes('CLASS_GROUP_AMBIGUOUS')) {
-      const classGroupAction = resolution.classGroups?.action ?? 'none'
-      if (
-        classGroupAction === 'useExistingClassGroup' ||
-        classGroupAction === 'createClassGroupCandidate'
-      ) {
-        // resolved
-      } else {
-        blockers.push('classGroupMissing')
-      }
-    }
-
-    // Weekly hours blocker (only if diagnostic present)
-    if (item.baseDiagnosticCodes.includes('WEEKLY_HOURS_NON_NUMERIC')) {
-      const hoursAction = resolution.weeklyHours?.action ?? 'none'
-      if (hoursAction === 'overrideWeeklyHours') {
-        const hoursValue = resolution.weeklyHours?.value
-        if (typeof hoursValue === 'number' && isFinite(hoursValue) && hoursValue > 0) {
-          // resolved
-        } else {
-          blockers.push('weeklyHoursInvalid')
-        }
       } else {
         blockers.push('weeklyHoursInvalid')
       }
+    } else {
+      blockers.push('weeklyHoursInvalid')
     }
+  }
 
-    // Exam type blocker (only if diagnostic present)
-    if (item.baseDiagnosticCodes.includes('EXAM_TYPE_OTHER')) {
-      const examAction = resolution.examType?.action ?? 'none'
-      if (examAction === 'overrideExamType') {
-        const examValue = resolution.examType?.value
-        if (examValue !== undefined && (VALID_EXAM_TYPES as readonly string[]).includes(examValue)) {
-          // resolved
-        } else {
-          blockers.push('examTypeInvalid')
-        }
+  // Exam type blocker (only if diagnostic present)
+  if (item.baseDiagnosticCodes.includes('EXAM_TYPE_OTHER')) {
+    const examAction = resolution.examType?.action ?? 'none'
+    if (examAction === 'overrideExamType') {
+      const examValue = resolution.examType?.value
+      if (examValue !== undefined && (VALID_EXAM_TYPES as readonly string[]).includes(examValue)) {
+        // resolved
       } else {
         blockers.push('examTypeInvalid')
       }
+    } else {
+      blockers.push('examTypeInvalid')
     }
+  }
 
-    // Ambiguous mapping blocker (only if diagnostic present, and not already
-    // handled by the courseAmbiguous branch above)
-    if (
-      item.baseDiagnosticCodes.includes('MERGE_REMARK_AMBIGUOUS') &&
-      baseCourseSituation !== 'courseAmbiguous'
-    ) {
-      const ambiguousAction = resolution.ambiguousMapping?.action ?? 'none'
-      if (ambiguousAction === 'confirmAmbiguousMapping') {
-        // resolved
-      } else {
-        blockers.push('ambiguousMapping')
-      }
+  // Ambiguous mapping blocker (only if diagnostic present, and not already
+  // handled by the courseAmbiguous branch above)
+  if (
+    item.baseDiagnosticCodes.includes('MERGE_REMARK_AMBIGUOUS') &&
+    baseCourseSituation !== 'courseAmbiguous'
+  ) {
+    const ambiguousAction = resolution.ambiguousMapping?.action ?? 'none'
+    if (ambiguousAction === 'confirmAmbiguousMapping') {
+      // resolved
+    } else {
+      blockers.push('ambiguousMapping')
     }
+  }
 
-    // Task split blocker (only if TASK_SPLIT_REQUIRED diagnostic present)
-    if (item.baseDiagnosticCodes.includes('TASK_SPLIT_REQUIRED')) {
-      const splitAction = resolution.taskSplit?.action ?? 'none'
-      if (splitAction === 'confirmDetectedSplit') {
-        // resolved — confirmed split clears blocker
-      } else {
-        blockers.push('taskSplitRequired')
-      }
+  // Task split blocker (only if TASK_SPLIT_REQUIRED diagnostic present)
+  if (item.baseDiagnosticCodes.includes('TASK_SPLIT_REQUIRED')) {
+    const splitAction = resolution.taskSplit?.action ?? 'none'
+    if (splitAction === 'confirmDetectedSplit') {
+      // resolved — confirmed split clears blocker
+    } else {
+      blockers.push('taskSplitRequired')
     }
+  }
 
-    // --- Warnings ---
-    if (item.baseDiagnosticCodes.includes('LOW_CONFIDENCE_ROW')) {
-      warnings.push('lowConfidence')
-    }
-  } else {
-    // --- Not blocked (autoSafe or needsHumanReview) ---
-    // These rows are importable unless ignored (already handled above).
-    // No blockers; warnings may be informational but are currently empty.
+  // --- Warnings ---
+  if (item.baseDiagnosticCodes.includes('LOW_CONFIDENCE_ROW')) {
+    warnings.push('lowConfidence')
   }
 
   return {
@@ -395,7 +414,11 @@ export const buildInitialManualResolutionState = (
     // Determine initial resolution status
     let resolutionStatus: CourseSettingResolutionStatus
 
-    if (row.flags.blocked === false && row.flags.autoSafeCandidate === true) {
+    // L7-A3: new course candidates default to importable. They are NOT
+    // blockers — the partial plan will create the new course on apply.
+    if (row.flags.newCourseCandidate === true) {
+      resolutionStatus = 'autoAllowedNewCourse'
+    } else if (row.flags.blocked === false && row.flags.autoSafeCandidate === true) {
       resolutionStatus = 'importable'
     } else if (row.flags.blocked === true) {
       resolutionStatus = 'needsResolution'
@@ -412,6 +435,16 @@ export const buildInitialManualResolutionState = (
     // L6-E2G: classify the course situation at item-build time so the
     // UI doesn't have to re-derive it on every patch.
     const baseCourseSituation = classifyCourseSituation(row)
+
+    // L7-A3: for new course candidates, prefill the resolution with a
+    // createCourseCandidate action so the partial plan can use it as
+    // `coursePlan.mode = "createCourse"`.
+    if (baseCourseSituation === 'newCourseCandidate' && row.raw.courseName) {
+      resolution.course = {
+        action: 'createCourseCandidate',
+        candidateName: row.raw.courseName.trim(),
+      }
+    }
 
     const item: CourseSettingManualResolutionItem = {
       approvalItemId: row.approvalItemId,
@@ -601,6 +634,12 @@ export const summarizeManualResolutionState = (
     // Count by status
     switch (item.resolutionStatus) {
       case 'importable':
+        importableItems += 1
+        break
+      case 'autoAllowedNewCourse':
+        // L7-A3: treated as importable for the purpose of the summary
+        // counter. The partial plan will surface these as
+        // `coursePlan.mode = "createCourse"` rows.
         importableItems += 1
         break
       case 'needsResolution':

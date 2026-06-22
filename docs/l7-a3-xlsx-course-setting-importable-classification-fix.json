@@ -1,0 +1,63 @@
+{
+  "stage": "L7-A3-XLSX-COURSE-SETTING-IMPORTABLE-CLASSIFICATION-AND-NEW-COURSE-AUTO-CREATE-PLAN-FIX",
+  "previousStage": "L7-A2A",
+  "status": "code_complete_browser_validation_pending",
+  "semanticInvariants": {
+    "newCourseCandidateNotBlocker": true,
+    "courseNameMissingStillBlocker": true,
+    "deprecatedCourseMissingExcludedFromBlocking": true,
+    "teacherNotAutoCreateable": true,
+    "classGroupNotAutoCreateable": true,
+    "fullDatasetPreserved": true,
+    "paginationClientSide": true
+  },
+  "beforeAfterMetrics": {
+    "approvalPackage": {
+      "blockedItems": { "before": 1167, "after": 264 },
+      "newCourseCandidateItems": { "before": 0, "after": 903 },
+      "courseNameMissingItems": { "before": 0, "after": 0 }
+    },
+    "manualResolution": {
+      "importableItems": { "before": 0, "after": 903 },
+      "needsResolutionItems": { "before": 1167, "after": 264 },
+      "newCourseCandidateItems": { "before": 0, "after": 903 },
+      "confirmedNewCourseCandidateItems": { "before": 0, "after": 903 }
+    },
+    "partialPlan": {
+      "plannedImportRows": { "before": 0, "after": 795 },
+      "courseCreateCandidates": { "before": 0, "after": 248 },
+      "rowsUsingNewCourseCandidate": { "before": 0, "after": 620 },
+      "confirmedNewCourseCandidates": { "before": 0, "after": 620 },
+      "teacherMissingRows": { "before": 0, "after": 207 }
+    }
+  },
+  "checks": {
+    "total": 88,
+    "pass": 88,
+    "fail": 0
+  },
+  "forbiddenPatterns": {
+    "dbWriteMethods": false,
+    "courseCreate": false,
+    "teacherCreate": false,
+    "classGroupCreate": false,
+    "teachingTaskCreate": false,
+    "teachingTaskClassCreate": false,
+    "importBatchCreate": false,
+    "schemaChange": false,
+    "migrationChange": false,
+    "schedulerChange": false,
+    "scoreChange": false,
+    "wordParserChange": false,
+    "packageJsonChange": false,
+    "packageLockJsonChange": false,
+    "applyRoute": false,
+    "applyButton": false,
+    "writeDBButton": false
+  },
+  "aggregateOnly": true,
+  "rawCourseNamesIncluded": false,
+  "rawTeacherNamesIncluded": false,
+  "rawClassNamesIncluded": false,
+  "rawRemarksIncluded": false
+}

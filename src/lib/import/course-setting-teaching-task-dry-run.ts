@@ -129,6 +129,8 @@ export type DryRunDiagnosticSeverity = 'info' | 'warn' | 'error'
 
 export type DryRunDiagnosticCode =
   | 'COURSE_MISSING'
+  | 'COURSE_NAME_MISSING'
+  | 'COURSE_CREATE_CANDIDATE'
   | 'COURSE_AMBIGUOUS'
   | 'TEACHER_MISSING'
   | 'TEACHER_AMBIGUOUS'
@@ -601,7 +603,37 @@ export const mapParsedCourseSettingRowsToTeachingTaskCandidates = (
       }
       const courseCand = courseCandidates.get(courseKey)!
       if (courseCand.matchStatus === 'missing') {
-        rowDiags.push(mk('COURSE_MISSING', 'warn', 'course not found in existing courses', courseKey))
+        // L7-A3: split the legacy COURSE_MISSING into two semantically
+        // distinct cases:
+        //  - COURSE_NAME_MISSING — the row had no parsable course name.
+        //    This is a hard blocker.
+        //  - COURSE_CREATE_CANDIDATE — the row had a course name but
+        //    no DB match. This is a new course candidate, NOT a blocker.
+        // The legacy COURSE_MISSING code is kept for backward-compat in
+        // verify scripts but is never emitted on its own anymore; it is
+        // a deprecated superset.
+        const isCourseNameEmpty =
+          !courseRaw?.normalized ||
+          courseRaw.normalized.trim().length === 0
+        if (isCourseNameEmpty) {
+          rowDiags.push(
+            mk(
+              'COURSE_NAME_MISSING',
+              'warn',
+              'course name is empty or unparsable',
+              courseKey,
+            ),
+          )
+        } else {
+          rowDiags.push(
+            mk(
+              'COURSE_CREATE_CANDIDATE',
+              'warn',
+              'course name has no existing match; will be a new course candidate on apply',
+              courseKey,
+            ),
+          )
+        }
         rowNeedsManualReview = true
       } else if (courseCand.matchStatus === 'ambiguous') {
         rowDiags.push(mk('COURSE_AMBIGUOUS', 'warn', 'course name matches multiple existing courses', courseKey))

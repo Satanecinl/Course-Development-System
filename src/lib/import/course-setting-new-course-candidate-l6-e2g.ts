@@ -51,8 +51,19 @@ export const COURSE_CREATE_CANDIDATE = 'COURSE_CREATE_CANDIDATE' as const
 export const COURSE_DIAGNOSTIC_SEMANTIC_NEW_CANDIDATE = [
   COURSE_NAME_MISSING,
   COURSE_CREATE_CANDIDATE,
-  'COURSE_MISSING',
   'COURSE_AMBIGUOUS',
+] as const
+
+/**
+ * L7-A3: legacy diagnostic codes. The upstream L4 mapper used to emit
+ * `COURSE_MISSING` for both empty-name and new-candidate cases. The
+ * new mapper emits `COURSE_NAME_MISSING` and `COURSE_CREATE_CANDIDATE`
+ * distinctly. These legacy codes are kept for backward compatibility
+ * in verify scripts and consumer tests but no longer participate in
+ * blocking / importable classification.
+ */
+export const COURSE_DIAGNOSTIC_LEGACY_SUPERSEDED = [
+  'COURSE_MISSING',
 ] as const
 
 // ---------------------------------------------------------------------------
@@ -74,8 +85,8 @@ export const isExcelCourseNameMissing = (
 /**
  * True iff the row points at a new course that doesn't exist in the
  * current DB yet. Concretely: Excel has a non-empty course name AND
- * the dry-run emitted `COURSE_MISSING` (i.e. the course was looked up
- * against the DB and no match was found).
+ * the dry-run emitted `COURSE_CREATE_CANDIDATE` (L7-A3) or the legacy
+ * `COURSE_MISSING` (L6-E2G and earlier).
  *
  * Note: the upstream `COURSE_MISSING` diagnostic can be emitted even
  * when the course name is empty (the matcher still tries to look up
@@ -87,7 +98,10 @@ export const isNewCourseCandidate = (
   row: CourseSettingApprovalReviewUiRow,
 ): boolean => {
   if (isExcelCourseNameMissing(row)) return false
-  return row.match.diagnosticCodes.includes('COURSE_MISSING')
+  return (
+    row.match.diagnosticCodes.includes('COURSE_CREATE_CANDIDATE') ||
+    row.match.diagnosticCodes.includes('COURSE_MISSING')
+  )
 }
 
 /**
@@ -103,6 +117,11 @@ export const isCourseBlocked = (
   row: CourseSettingApprovalReviewUiRow,
 ): boolean => {
   const codes = row.match.diagnosticCodes
+  if (isExcelCourseNameMissing(row) && codes.includes('COURSE_NAME_MISSING')) {
+    return true
+  }
+  // Defensive: also treat legacy COURSE_MISSING with empty Excel name as
+  // a hard blocker.
   if (isExcelCourseNameMissing(row) && codes.includes('COURSE_MISSING')) {
     return true
   }
@@ -129,6 +148,11 @@ export type CourseSituation =
 export const classifyCourseSituation = (
   row: CourseSettingApprovalReviewUiRow,
 ): CourseSituation => {
+  if (isExcelCourseNameMissing(row) && row.match.diagnosticCodes.includes('COURSE_NAME_MISSING')) {
+    return 'courseNameMissing'
+  }
+  // L7-A3: also recognize the legacy COURSE_MISSING + empty Excel name
+  // combination as a true course-name gap.
   if (isExcelCourseNameMissing(row) && row.match.diagnosticCodes.includes('COURSE_MISSING')) {
     return 'courseNameMissing'
   }

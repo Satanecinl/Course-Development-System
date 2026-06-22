@@ -344,6 +344,9 @@ export type CourseSettingApprovalReviewUiRowFlags = {
   blocked: boolean
   autoSafeCandidate: boolean
   needsHumanReview: boolean
+  /** L7-A3: row is a new course candidate (Excel has a course name, DB
+   *  has no match). NOT a blocker. */
+  newCourseCandidate: boolean
 }
 
 export type CourseSettingApprovalReviewUiRow = {
@@ -384,6 +387,16 @@ export type CourseSettingApprovalReviewUiSummary = {
   needsReviewItems: 0
   blockedItems: number
   autoSafeCandidates: number
+  /** L7-A3: rows where Excel has a course name but DB has no match.
+   *  These are NOT counted in `blockedItems`. */
+  newCourseCandidateItems: number
+  /** L7-A3: rows where Excel course name is empty / unparsable. These
+   *  ARE hard blockers — counted separately from
+   *  `newCourseCandidateItems`. */
+  courseNameMissingItems: number
+  /** L7-A3: rows where the only blocker is teacher / class / task split
+   *  (i.e. could be importable if the user resolves them). */
+  importableAfterTeacherOrClassResolutionItems: number
   applyReady: false
 }
 
@@ -820,6 +833,14 @@ export type CourseSettingPartialImportSummary = {
   courseNameMissingRows: number
   /** L6-E2G: rows with multiple DB course matches. */
   courseAmbiguousRows: number
+  /** L7-A3: rows where the only blocker is teacher missing. */
+  teacherMissingRows: number
+  /** L7-A3: rows where the only blocker is class group missing. */
+  classGroupMissingRows: number
+  /** L7-A3: rows where the only blocker is task split / assignment review. */
+  taskAssignmentReviewRows: number
+  /** L7-A3: importable rows that reference an existing course. */
+  rowsUsingExistingCourse: number
   teacherCreateCandidates: 0
   classGroupCreateCandidates: number
   teachingTaskCandidates: number

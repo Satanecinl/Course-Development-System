@@ -165,6 +165,12 @@ export type CourseSettingApprovalReviewUiFlags = {
   autoSafeCandidate: boolean
   /** `suggestedAction === 'needsHumanReview'`. */
   needsHumanReview: boolean
+  /**
+   * L7-A3: `suggestedAction === 'newCourseCandidate'`. The Excel had a
+   * course name but the DB has no match. The row is NOT a hard blocker
+   * — the partial plan will plan it as `coursePlan.mode = "createCourse"`.
+   */
+  newCourseCandidate: boolean
 }
 
 export type CourseSettingApprovalReviewUiRow = {
@@ -198,6 +204,16 @@ export type CourseSettingApprovalReviewUiSummary = {
   /** Passthrough from `approvalPackage.approvalSummary.autoSafeCandidates`.
    *  Informational — does NOT imply any decision is approved. */
   autoSafeCandidates: number
+  /** L7-A3: count of `flags.newCourseCandidate === true`. These rows
+   *  are NOT counted in `blockedItems` and are eligible for the dry-run
+   *  importable plan. */
+  newCourseCandidateItems: number
+  /** L7-A3: count of `flags.blocked === true` rows whose suggestedAction
+   *  is `blockedByMissingCourse` (i.e. true empty-name course gap). */
+  courseNameMissingItems: number
+  /** L7-A3: rows where the only blocker is teacher / class / task split
+   *  (i.e. could be importable if the user resolves them). */
+  importableAfterTeacherOrClassResolutionItems: number
   applyReady: false
 }
 
@@ -270,6 +286,7 @@ const computeFlags = (
   blocked: suggestedAction.startsWith('blockedBy'),
   autoSafeCandidate: suggestedAction === 'approveCandidate',
   needsHumanReview: suggestedAction === 'needsHumanReview',
+  newCourseCandidate: suggestedAction === 'newCourseCandidate',
 })
 
 /**
@@ -391,6 +408,41 @@ export const buildCourseSettingApprovalReviewUi = (
   )
 
   const blockedItems = rows.reduce((n, r) => n + (r.flags.blocked ? 1 : 0), 0)
+  const newCourseCandidateItems = rows.reduce(
+    (n, r) => n + (r.flags.newCourseCandidate ? 1 : 0),
+    0,
+  )
+  const courseNameMissingItems = rows.reduce(
+    (n, r) =>
+      n +
+      (r.flags.blocked && r.match.suggestedAction === 'blockedByMissingCourse'
+        ? 1
+        : 0),
+    0,
+  )
+  // L7-A3: count rows whose only blockers are teacher / class / task
+  // assignment — these are importable in the partial plan if the user
+  // resolves them via manual resolution.
+  const importableAfterTeacherOrClassResolutionItems = rows.reduce(
+    (n, r) => {
+      if (!r.flags.blocked) return n
+      const sa = r.match.suggestedAction
+      const sa2: string = r.match.diagnosticCodes.includes('TASK_SPLIT_REQUIRED')
+        ? sa
+        : sa
+      if (
+        sa2 === 'blockedByMissingTeacher' ||
+        sa2 === 'blockedByMissingClassGroup' ||
+        sa2 === 'blockedByInvalidHours' ||
+        sa2 === 'blockedByInvalidExamType' ||
+        r.match.diagnosticCodes.includes('TASK_SPLIT_REQUIRED')
+      ) {
+        return n + 1
+      }
+      return n
+    },
+    0,
+  )
 
   const summary: CourseSettingApprovalReviewUiSummary = {
     totalItems: rows.length,
@@ -400,6 +452,9 @@ export const buildCourseSettingApprovalReviewUi = (
     needsReviewItems: 0,
     blockedItems,
     autoSafeCandidates: approvalPackage.approvalSummary.autoSafeCandidates,
+    newCourseCandidateItems,
+    courseNameMissingItems,
+    importableAfterTeacherOrClassResolutionItems,
     applyReady: false,
   }
 

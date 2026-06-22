@@ -156,7 +156,8 @@ function main(): void {
   record('git diff --check clean', ex('git diff --check', { cwd: ROOT }).toString().trim().length === 0)
   const status = ex('git status --short', { cwd: ROOT }).toString().trim()
   // Tolerate modifications to L7-A2A-allowed files + L7-A2A untracked files
-  // + L6-E1 stage-aware update (export button text regex).
+  // + L6-E1 stage-aware update (export button text regex)
+  // + L7-A3 in-scope files (classification rules).
   const allowedPaths = [
     'src/app/api/admin/import/course-setting-xlsx/approval-review/route.ts',
     'src/app/api/admin/import/course-setting-xlsx/preview/route.ts',
@@ -164,11 +165,17 @@ function main(): void {
     'src/lib/import/course-setting-xlsx-preview.ts',
     'src/lib/import/course-setting-approval-review-ui-l6-d2.ts',
     'src/lib/import/course-setting-partial-import-plan-l6-e2.ts',
+    'src/lib/import/course-setting-approval-package-l6-d.ts',
+    'src/lib/import/course-setting-manual-resolution-l6-e1.ts',
+    'src/lib/import/course-setting-new-course-candidate-l6-e2g.ts',
+    'src/lib/import/course-setting-teaching-task-dry-run.ts',
     'src/components/import/course-setting-xlsx-preview.tsx',
     'src/components/import/course-setting/',
     'scripts/verify-xlsx-course-setting-approval-review-full-dataset-wiring-l7-a2a.ts',
+    'scripts/verify-xlsx-course-setting-importable-classification-l7-a3.ts',
     'scripts/verify-xlsx-course-setting-manual-resolution-ui-l6-e1.ts',
     'docs/l7-a2a',
+    'docs/l7-a3',
     'docs/current-project-status.md',
   ]
   const isAllowed = (path: string): boolean =>

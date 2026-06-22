@@ -80,6 +80,11 @@ export function PartialPlanSection({ plan, filter, setFilter, onExport }: Partia
           tone={s.confirmedNewCourseCandidates > 0 ? 'success' : 'muted'}
         />
         <ReviewSummaryCard
+          label="使用现有课程行"
+          value={s.rowsUsingExistingCourse}
+          tone="default"
+        />
+        <ReviewSummaryCard
           label="课程名缺失行"
           value={s.courseNameMissingRows}
           tone={s.courseNameMissingRows > 0 ? 'danger' : 'muted'}
@@ -89,13 +94,43 @@ export function PartialPlanSection({ plan, filter, setFilter, onExport }: Partia
           value={s.courseAmbiguousRows}
           tone={s.courseAmbiguousRows > 0 ? 'warn' : 'muted'}
         />
+      </div>
+      {/* L7-A3: granular blocker breakdown — distinguishes teacher / class /
+          task split / hours / exam type so the user can see exactly what
+          still needs attention. */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-2" data-l7a3-plan-blockers>
+        <ReviewSummaryCard
+          label="教师缺失行"
+          value={s.teacherMissingRows}
+          tone={s.teacherMissingRows > 0 ? 'danger' : 'muted'}
+        />
+        <ReviewSummaryCard
+          label="班级缺失行"
+          value={s.classGroupMissingRows}
+          tone={s.classGroupMissingRows > 0 ? 'danger' : 'muted'}
+        />
+        <ReviewSummaryCard
+          label="任务分配需复核"
+          value={s.taskAssignmentReviewRows}
+          tone={s.taskAssignmentReviewRows > 0 ? 'warn' : 'muted'}
+        />
         <ReviewSummaryCard
           label="班级候选"
           value={s.classGroupCreateCandidates}
           tone="default"
         />
+        <ReviewSummaryCard
+          label="新课程候选引用行"
+          value={s.rowsUsingNewCourseCandidate}
+          tone="default"
+        />
+        <ReviewSummaryCard
+          label="重复风险"
+          value={s.duplicateRiskRows}
+          tone={s.duplicateRiskRows > 0 ? 'warn' : 'muted'}
+        />
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
         <ReviewSummaryCard
           label="教学任务候选"
           value={s.teachingTaskCandidates}
@@ -111,16 +146,6 @@ export function PartialPlanSection({ plan, filter, setFilter, onExport }: Partia
           value={s.teacherCreateCandidates}
           tone="muted"
           extra="L6-E1C 处理"
-        />
-        <ReviewSummaryCard
-          label="新课程候选引用行"
-          value={s.rowsUsingNewCourseCandidate}
-          tone="default"
-        />
-        <ReviewSummaryCard
-          label="重复风险"
-          value={s.duplicateRiskRows}
-          tone={s.duplicateRiskRows > 0 ? 'warn' : 'muted'}
         />
       </div>
       <div className="flex items-center gap-2 flex-wrap">

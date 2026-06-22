@@ -181,18 +181,31 @@ export function ApprovalReviewSection(props: ApprovalReviewSectionProps) {
         </div>
       </div>
 
-      {/* Summary cards (6) + autoSafe badge */}
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
+      {/* Summary cards (4) — L7-A3: split blockers into true blockers vs
+          new course candidates (which are auto-allowed, not blockers). */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2" data-l7a3-summary-cards>
         <ReviewSummaryCard label="总计" value={s.totalItems} tone="default" />
-        <ReviewSummaryCard label="待审核" value={s.pendingItems} tone="muted" />
-        <ReviewSummaryCard label="通过" value={s.approvedItems} tone="success" />
-        <ReviewSummaryCard label="拒绝" value={s.rejectedItems} tone="danger" />
-        <ReviewSummaryCard label="需复核" value={s.needsReviewItems} tone="warn" />
+        <ReviewSummaryCard
+          label="新课程候选"
+          value={s.newCourseCandidateItems}
+          tone="success"
+          extra="导入时将自动创建 Course"
+        />
+        <ReviewSummaryCard
+          label="课程名缺失"
+          value={s.courseNameMissingItems}
+          tone="danger"
+          extra="Excel 课程名为空"
+        />
         <ReviewSummaryCard label="阻塞" value={s.blockedItems} tone="danger" />
       </div>
       <div className="text-[11px] text-gray-500">
         自动安全候选：{' '}<Badge variant="outline" className="text-[10px]">{s.autoSafeCandidates}</Badge>
         <span className="ml-2 opacity-70">(仅供参考，不会自动通过)</span>
+        <span className="ml-2 opacity-70">
+          待审核/通过/拒绝/需复核 字段保留 review workflow 语义：
+          待审核 {s.pendingItems} / 通过 0 / 拒绝 0 / 需复核 0
+        </span>
       </div>
 
       {/* Live counters + export */}

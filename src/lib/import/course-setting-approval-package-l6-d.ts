@@ -100,6 +100,7 @@ export type CourseSettingApprovalPackageOptions = {
 export type CourseSettingApprovalReviewItemSuggestedAction =
   | 'approveCandidate'
   | 'needsHumanReview'
+  | 'newCourseCandidate'
   | 'blockedByMissingCourse'
   | 'blockedByMissingTeacher'
   | 'blockedByMissingClassGroup'
@@ -186,6 +187,14 @@ export type CourseSettingApprovalPackageResult = {
     needsReviewItems: number
     blockedItems: number
     autoSafeCandidates: number
+    /** L7-A3: rows where Excel has a course name but DB has no match.
+     *  These are NOT blockers — they can enter the dry-run importable
+     *  plan with `coursePlan.mode = "createCourse"`. */
+    newCourseCandidateItems: number
+    /** L7-A3: rows where Excel course name is empty / unparsable. These
+     *  ARE hard blockers — counted separately from
+     *  `newCourseCandidateItems`. */
+    courseNameMissingItems: number
   }
 
   reviewItems: CourseSettingApprovalReviewItem[]
@@ -251,10 +260,12 @@ const classGroupStatusSummary = (
  *
  * This is a heuristic (the apply stage L6-E will compute its own). The
  * rules are:
- *  - `missing` course → blockedByMissingCourse
- *  - `missing` class group → blockedByMissingClassGroup
+ *  - `missing` course + `COURSE_NAME_MISSING` → blockedByMissingCourse
+ *  - `missing` course + `COURSE_CREATE_CANDIDATE` → newCourseCandidate
+ *    (NOT a blocker; the row will be plan-eligible in the partial plan)
  *  - `ambiguous` course / class / teacher → blockedByAmbiguousMapping
  *  - `missing` teacher → blockedByMissingTeacher
+ *  - `missing` class group → blockedByMissingClassGroup
  *  - `weekly_hours_non_numeric` diagnostic → blockedByInvalidHours
  *  - `exam_type_other` diagnostic → blockedByInvalidExamType
  *  - `low_confidence_row` diagnostic OR confidence < 0.5 → blockedByLowConfidence
@@ -274,7 +285,19 @@ const suggestAction = (
   diagnosticCodes: string[],
   confidence: number,
 ): CourseSettingApprovalReviewItemSuggestedAction => {
-  if (courseMatchStatus === 'missing') return 'blockedByMissingCourse'
+  if (courseMatchStatus === 'missing') {
+    // L7-A3: new course candidates (Excel has a name, DB has no match) are
+    // NOT a blocker. Only a truly empty course name is a hard blocker.
+    if (diagnosticCodes.includes('COURSE_CREATE_CANDIDATE')) {
+      return 'newCourseCandidate'
+    }
+    if (diagnosticCodes.includes('COURSE_NAME_MISSING')) {
+      return 'blockedByMissingCourse'
+    }
+    // Legacy COURSE_MISSING (rare; L4 still emits it for empty input
+    // paths). Treat conservatively as a hard blocker.
+    return 'blockedByMissingCourse'
+  }
   if (
     courseMatchStatus === 'ambiguous' ||
     classGroupMatchStatuses.includes('ambiguous') ||
@@ -315,6 +338,11 @@ const blockingReasonsFor = (
 ): string[] => {
   if (suggested === 'approveCandidate') {
     return ['auto_safe_requires_human_review_in_l6_d']
+  }
+  // L7-A3: newCourseCandidate is NOT a blocker. Surface the underlying
+  // bucket only as informational reason (no blocker key).
+  if (suggested === 'newCourseCandidate') {
+    return [`bucket:${bucket}`, 'new_course_candidate_not_blocker']
   }
   switch (suggested) {
     case 'blockedByMissingCourse':
@@ -377,6 +405,8 @@ export const buildCourseSettingApprovalPackageWithTargetSemester = (input: {
   let needsReviewItems = 0
   let blockedItems = 0
   let autoSafeCandidates = 0
+  // L7-A3: separate counter for new course candidates (NOT blockers).
+  let newCourseCandidateItems = 0
 
   const previews: CourseSettingTeachingTaskDryRunPreviewCandidate[] =
     dryRunResult.previewCandidates
@@ -408,7 +438,11 @@ export const buildCourseSettingApprovalPackageWithTargetSemester = (input: {
     )
 
     if (suggested === 'approveCandidate') autoSafeCandidates += 1
-    else if (suggested.startsWith('blockedBy')) blockedItems += 1
+    else if (suggested === 'newCourseCandidate') {
+      // L7-A3: new course candidates are NOT blockers. Tracked separately
+      // in approvalSummary.newCourseCandidateItems.
+      newCourseCandidateItems += 1
+    } else if (suggested.startsWith('blockedBy')) blockedItems += 1
     else needsReviewItems += 1
 
     const item: CourseSettingApprovalReviewItem = {
@@ -505,6 +539,10 @@ export const buildCourseSettingApprovalPackageWithTargetSemester = (input: {
       needsReviewItems,
       blockedItems,
       autoSafeCandidates,
+      newCourseCandidateItems,
+      courseNameMissingItems: reviewItems.filter(
+        (it) => it.suggestedAction === 'blockedByMissingCourse',
+      ).length,
     },
 
     reviewItems,

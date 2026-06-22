@@ -170,7 +170,9 @@ function main(): void {
   // N41: plan pushes courseAmbiguous blocker
   record('plan pushes courseAmbiguous blocker', /blockersForRow\.push\('courseAmbiguous'\)/.test(l6e2))
   // N42: plan creates candidate from Excel courseName when DB has no match (no resolution)
-  record('plan auto-creates candidate from Excel courseName (no resolution branch)', /hasCourseMissingDiag && !isExcelCourseNameBlank/.test(l6e2))
+  // L7-A3 stage-aware: accept the new `hasCourseCandidateSignal` variable
+  // that supersedes the legacy `hasCourseMissingDiag`.
+  record('plan auto-creates candidate from Excel courseName (no resolution branch)', /hasCourseMissingDiag && !isExcelCourseNameBlank/.test(l6e2) || /hasCourseCandidateSignal && !isExcelCourseNameBlank/.test(l6e2))
   // N43: plan creates candidate when user confirms via createCourseCandidate
   record('plan honours createCourseCandidate resolution', /c\.action === 'createCourseCandidate'/.test(l6e2))
   // N44: confirmed candidates counted via confirmedCount increment

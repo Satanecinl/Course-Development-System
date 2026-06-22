@@ -156,6 +156,7 @@ export function ManualResolutionSection(props: ManualResolutionSectionProps) {
           >
             <option value="all">全部</option>
             <option value="importable">可导入</option>
+            <option value="autoAllowedNewCourse">新课程候选（自动允许）</option>
             <option value="needsResolution">需处理</option>
             <option value="ignored">已忽略</option>
             <option value="pending">暂不处理</option>
