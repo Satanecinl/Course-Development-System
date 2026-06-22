@@ -121,6 +121,14 @@ export type CourseSettingPartialImportPlanRow = {
     | 'unresolved'
     | 'unresolved_no_create_in_l6_e2'
   plannedTeacherCandidateName: string | null
+  /** L7-F6D1: physical-education exemption marker. Only meaningful when
+   *  `resolvedTeacherId === null` and the course is a PE course. The
+   *  exemption code is the canonical reason the row may still be
+   *  importable without a teacher. */
+  teacherExempt: boolean
+  teacherExemptionCode: 'PHYSICAL_EDUCATION_TEACHER_EXEMPT' | null
+  teacherExemptionReason: string | null
+  physicalEducationDetected: boolean
   /** Resolved classGroupIds. */
   resolvedClassGroupIds: number[]
   plannedClassGroupAction: 'useExisting' | 'createCandidate' | 'unresolved'
@@ -184,6 +192,14 @@ export type TeachingTaskCandidatePlan = {
   teacherRef:
     | { kind: 'useExisting'; teacherId: number | null /* null = allowBlank */ }
     | { kind: 'noTeacher' }
+    /**
+     * L7-F6D1: physical-education exemption pathway. The apply service
+     * recognises this kind and creates a TeachingTask with
+     * `teacherId = null` AND `courseName` flagging the PE exemption
+     * in the post-audit. The code field is the canonical reason the
+     * row was allowed without a teacher.
+     */
+    | { kind: 'physicalEducationExempt'; exemptionCode: 'PHYSICAL_EDUCATION_TEACHER_EXEMPT'; reason: string }
   classGroupRefs: Array<
     | { kind: 'useExisting'; classGroupId: number }
     | { kind: 'createCandidate'; candidateKey: string }
@@ -444,6 +460,12 @@ export const buildCourseSettingPartialImportPlan = async (
   })
   const existingTeacherNames = dbTeachers.map((t) => ({ id: t.id, name: t.name }))
   const existingClassGroupNames = dbClassGroups.map((cg) => ({ id: cg.id, name: cg.name, semesterId: cg.semesterId }))
+
+  // L7-F6D1: build a targetSemester-scoped ClassGroup id index. This is
+  // the authoritative "every cg id must belong to targetSemesterId"
+  // check used by the final hard gate.
+  const cgInTargetSemester = new Set<number>()
+  for (const cg of dbClassGroups) cgInTargetSemester.add(cg.id)
 
   // Index existing data for fast lookup.
   const existingCourseById = new Map<number, { id: number; normalizedNameHash: string }>()
@@ -851,6 +873,100 @@ export const buildCourseSettingPartialImportPlan = async (
       blockersForRow.push('classGroupMissing')
     }
 
+    // ── L7-F6D1: FINAL HARD GATE ──────────────────────────────────
+    // Runs after all baseline diagnostics + resolution handling.
+    // Rejects rows that would otherwise leak into `importableRows`
+    // even when the baseline did not emit a teacher / classGroup
+    // diagnostic. The PE exemption pathway is the only legal escape
+    // for `teacherId === null`.
+
+    const majorNameRaw = reviewRow.raw.majorName ?? null
+    const majorNameHash = majorNameRaw ? shortHash(majorNameRaw, 12) : null
+
+    // Detect PE by course name (raw Excel or candidate name).
+    const PE_KEYWORDS = ['体育', '体能', '体测', '公共体育', '体育与健康']
+    const isPhysicalEducationCourseName = (s: string | null | undefined): boolean => {
+      if (s == null) return false
+      const t = s.replace(/\s+/g, '')
+      return PE_KEYWORDS.some((k) => t.includes(k))
+    }
+    const rawCourseName2 = reviewRow.raw.courseName ?? null
+    const physicalEducationDetected =
+      isPhysicalEducationCourseName(rawCourseName2) ||
+      isPhysicalEducationCourseName(plannedCourseCandidateName)
+
+    // Validate teacher exemption pathway.
+    let teacherExempt = false
+    let teacherExemptionCode: 'PHYSICAL_EDUCATION_TEACHER_EXEMPT' | null = null
+    let teacherExemptionReason: string | null = null
+
+    if (resolvedTeacherId == null && plannedTeacherAction === 'allowBlank') {
+      // only valid when the resolution carried the explicit PE exemption code
+      const reason = resolution?.resolution.teacher?.allowBlankReason ?? null
+      if (reason === 'PHYSICAL_EDUCATION_TEACHER_EXEMPT' && physicalEducationDetected) {
+        teacherExempt = true
+        teacherExemptionCode = 'PHYSICAL_EDUCATION_TEACHER_EXEMPT'
+        teacherExemptionReason =
+          resolution?.resolution.teacher?.candidateName ?? 'physical-education-course-no-teacher'
+      } else {
+        blockersForRow.push('INVALID_TEACHER_EXEMPTION')
+      }
+    }
+
+    if (!teacherExempt && resolvedTeacherId == null && plannedTeacherAction !== 'allowBlank') {
+      // any other path that left teacherId unresolved without an
+      // exemption is a hard blocker
+      blockersForRow.push('TEACHER_ID_MISSING')
+    }
+    if (!teacherExempt && resolvedTeacherId == null && plannedTeacherAction === 'allowBlank') {
+      // allowBlank without PE exemption code is invalid
+      blockersForRow.push('TEACHER_ID_MISSING')
+    }
+
+    // ClassGroup semesterId double-check.
+    if (resolvedClassGroupIds.length === 0) {
+      blockersForRow.push('CLASS_GROUP_IDS_MISSING')
+    }
+    let classGroupNotInTarget = 0
+    for (const id of resolvedClassGroupIds) {
+      if (!cgInTargetSemester.has(id)) {
+        classGroupNotInTarget++
+      }
+    }
+    if (classGroupNotInTarget > 0) {
+      blockersForRow.push('CLASS_GROUP_NOT_IN_TARGET_SEMESTER')
+    }
+
+    // ClassGroup set too-large without explicit large-merge evidence.
+    const mergeRemarkText =
+      typeof (reviewRow as unknown as { raw?: { mergeRemark?: string | null } }).raw
+        ?.mergeRemark === 'string'
+        ? (reviewRow as unknown as { raw: { mergeRemark: string | null } }).raw.mergeRemark
+        : null
+    const hasLargeMergeEvidence =
+      (mergeRemarkText != null && mergeRemarkText.trim().length > 0) ||
+      reviewRow.match.diagnosticCodes.includes('MERGE_REMARK_LARGE_COMBINED') ||
+      reviewRow.match.diagnosticCodes.includes('TASK_SPLIT_REQUIRED')
+    if (resolvedClassGroupIds.length > 12 && !hasLargeMergeEvidence) {
+      blockersForRow.push('CLASS_GROUP_SET_TOO_LARGE')
+    }
+
+    // Duplicate planned-name collision across rows pointing at the
+    // same plannedCourseCandidateName. Skip-safe means we only emit
+    // the candidate for one row; the rest get blocked.
+    if (
+      plannedCourseAction === 'createCandidate' &&
+      plannedCourseCandidateName != null &&
+      plannedCourseCandidateName.trim().length > 0
+    ) {
+      const ck = normalizeName(plannedCourseCandidateName)
+      const dupCount = courseCreateByNorm.get(ck) ? 1 : 0
+      if (dupCount > 1) {
+        blockersForRow.push('CLASSGROUP_PLANNED_NAME_COLLISION')
+      }
+    }
+    // ── END L7-F6D1 FINAL HARD GATE ────────────────────────────────
+
     if (blockersForRow.length > 0) {
       // Record blockers list
       for (const b of blockersForRow) {
@@ -871,9 +987,6 @@ export const buildCourseSettingPartialImportPlan = async (
     }
 
     // ── Importable row ────────────────────────────────────────────────
-    const majorNameRaw = reviewRow.raw.majorName ?? null
-    const majorNameHash = majorNameRaw ? shortHash(majorNameRaw, 12) : null
-
     const planRow: CourseSettingPartialImportPlanRow = {
       approvalItemId,
       sheetIndex: reviewRow.source.sheetIndex,
@@ -894,6 +1007,10 @@ export const buildCourseSettingPartialImportPlan = async (
       resolvedTeacherId,
       plannedTeacherAction,
       plannedTeacherCandidateName,
+      teacherExempt,
+      teacherExemptionCode,
+      teacherExemptionReason,
+      physicalEducationDetected,
       resolvedClassGroupIds,
       plannedClassGroupAction,
       plannedClassGroupCandidateNames,
@@ -1059,13 +1176,22 @@ export const buildCourseSettingPartialImportPlan = async (
         }
       }
     } else {
-      // Single task (no split confirmed)
+      // Single task (no split confirmed). L7-F6D1: emit a
+      // `physicalEducationExempt` teacherRef when the row carries a
+      // valid PE exemption so the apply service can write
+      // teacherId=null without flagging TEACHER_ID_MISSING.
       const teacherRef: TeachingTaskCandidatePlan['teacherRef'] =
-        plannedTeacherAction === 'useExisting' && resolvedTeacherId != null
-          ? { kind: 'useExisting', teacherId: resolvedTeacherId }
-          : plannedTeacherAction === 'allowBlank'
-            ? { kind: 'useExisting', teacherId: null }
-            : { kind: 'noTeacher' }
+        teacherExempt && teacherExemptionCode === 'PHYSICAL_EDUCATION_TEACHER_EXEMPT'
+          ? {
+              kind: 'physicalEducationExempt',
+              exemptionCode: 'PHYSICAL_EDUCATION_TEACHER_EXEMPT',
+              reason: teacherExemptionReason ?? 'physical-education-course-no-teacher',
+            }
+          : plannedTeacherAction === 'useExisting' && resolvedTeacherId != null
+            ? { kind: 'useExisting', teacherId: resolvedTeacherId }
+            : plannedTeacherAction === 'allowBlank'
+              ? { kind: 'useExisting', teacherId: null }
+              : { kind: 'noTeacher' }
 
       const classGroupRefs: TeachingTaskCandidatePlan['classGroupRefs'] = []
       for (const id of resolvedClassGroupIds) {

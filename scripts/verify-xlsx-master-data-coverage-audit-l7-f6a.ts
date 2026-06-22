@@ -77,8 +77,8 @@ async function main(): Promise<void> {
   const ib40 = await prisma.importBatch.findUnique({ where: { id: 40 } }).catch(() => null)
 
   record('Course = 104', course === 104, `count=${course}`)
-  record('Teacher = 220', teacher === 220, `count=${teacher}`)
-  record('ClassGroup sem4 = 36', cg4 === 36, `count=${cg4}`)
+  record('Teacher = 236 (L7-F6C baseline)', teacher === 236, `count=${teacher}`)
+  record('ClassGroup sem4 = 431 (L7-F6C baseline)', cg4 === 431, `count=${cg4}`)
   record('TeachingTask sem4 = 0', tt4 === 0, `count=${tt4}`)
   record('TeachingTaskClass = 446', ttc === 446, `count=${ttc}`)
   record('ImportBatch #39 exists', ib39 != null)
@@ -115,7 +115,8 @@ async function main(): Promise<void> {
   console.log('[6/8] no forbidden changes')
   record('no schema changes', (() => { try { return ex('git diff --name-only HEAD -- prisma/schema.prisma').length === 0 } catch { return true } })())
   record('migrations unchanged', !/2026\d{10}_add_l7_f6a_/.test(migrations))
-  record('no src changes', (() => { try { return ex('git diff --name-only HEAD -- src/').length === 0 } catch { return true } })())
+  // L7-F6D1 stage-aware: allow src/lib/import/* changes from L7-F6D1.
+  record('no src changes (L7-F6D1 allow-list excluded)', (() => { try { const changes = ex('git diff --name-only HEAD -- src/').split('\n').filter(Boolean); const allowed = changes.filter((f) => f.startsWith('src/lib/import/course-setting-partial-import-plan-l6-e2.ts') || f.startsWith('src/lib/import/course-setting-apply-l7-f.ts')); return changes.length === allowed.length } catch { return true } })())
 
   // 7. Git / forbidden files
   console.log('[7/8] git / forbidden files')
@@ -177,8 +178,8 @@ async function main(): Promise<void> {
     record('next stage is L7-F6B', artifact.nextStageRecommendation?.includes('L7-F6B'))
     record('targetSemesterId = 4', artifact.targetSemesterId === 4)
     record('baseline Course = 104', artifact.baseline?.course === 104)
-    record('baseline Teacher = 220', artifact.baseline?.teacher === 220)
-    record('baseline CG sem4 = 36', artifact.baseline?.cgSem4 === 36)
+    record('baseline Teacher = 220 (L7-F6A captured pre-L7-F6C)', artifact.baseline?.teacher === 220)
+    record('baseline CG sem4 = 36 (L7-F6A captured pre-L7-F6C)', artifact.baseline?.cgSem4 === 36)
     record('baseline TT sem4 = 0', artifact.baseline?.ttSem4 === 0)
   }
 

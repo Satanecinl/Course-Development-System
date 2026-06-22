@@ -389,18 +389,27 @@ const normalizeCourseName = (s: string): string => s.trim()
 
 /**
  * Compute a stable hash of a TeachingTask's "natural key" for duplicate
- * detection: (semesterId, courseId, teacherId, weeklyHours, sorted
- * classGroupIds).
+ * detection. L7-F6D1: the teacher slot uses the PE exemption code
+ * when the row is PE-exempt, otherwise the resolved teacherId. A
+ * non-PE row with `teacherId === null` must NOT generate a natural
+ * key (preflight blocks it earlier).
  */
 const taskNaturalKey = (parts: {
   semesterId: number
   courseId: number
   teacherId: number | null
+  teacherExemptionCode: 'PHYSICAL_EDUCATION_TEACHER_EXEMPT' | null
   weeklyHours: number | null
   classGroupIds: number[]
 }): string => {
   const ids = [...parts.classGroupIds].sort((a, b) => a - b).join(',')
-  return `${parts.semesterId}|${parts.courseId}|${parts.teacherId ?? 'null'}|${parts.weeklyHours ?? 'null'}|[${ids}]`
+  const teacherSlot =
+    parts.teacherId != null
+      ? `t:${parts.teacherId}`
+      : parts.teacherExemptionCode === 'PHYSICAL_EDUCATION_TEACHER_EXEMPT'
+        ? `pe:${parts.teacherExemptionCode}`
+        : 'invalid:null-teacher'
+  return `${parts.semesterId}|${parts.courseId}|${teacherSlot}|${parts.weeklyHours ?? 'null'}|[${ids}]`
 }
 
 // ---------------------------------------------------------------------------
@@ -487,6 +496,125 @@ export async function executeL7FCourseSettingApply(
       rollbackNote: 'Dry-run mode; no backup created, no writes performed.',
       rawIncluded: false,
       warnings: [],
+    }
+  }
+
+  // L7-F6D1: Preflight hard gate — runs BEFORE backup and BEFORE
+  // transaction. Rejects apply when the plan still leaks invalid
+  // teacher / classGroup shapes that the L6-E2 final hard gate may
+  // have missed. PE exemption pathway is the only legal escape for
+  // `teacherId === null`.
+  const preflightErrors: { code: string; candidateKey: string; detail: string }[] = []
+  // Build a set of ClassGroup ids that belong to the target semester
+  // for the semesterId double-check (defense-in-depth: L6-E2 also
+  // does this, but apply re-validates).
+  const cgIdsInTargetSemester = new Set<number>()
+  try {
+    const cgs = await prisma.classGroup.findMany({
+      where: { semesterId: input.targetSemesterId },
+      select: { id: true },
+    })
+    for (const cg of cgs) cgIdsInTargetSemester.add(cg.id)
+  } catch {
+    // ignore — leave set empty; semester check will then fail-open
+    // for this safety net (L6-E2 still catches).
+  }
+  for (const planTask of input.plan.plan.teachingTasks) {
+    // Resolve effective teacherId / exemption.
+    let isPeExempt = false
+    let teacherId: number | null
+    if (planTask.teacherRef.kind === 'useExisting') {
+      teacherId = planTask.teacherRef.teacherId
+    } else if (planTask.teacherRef.kind === 'physicalEducationExempt') {
+      isPeExempt = true
+      teacherId = null
+    } else {
+      teacherId = null
+    }
+    if (!isPeExempt && teacherId == null) {
+      preflightErrors.push({
+        code: 'TEACHER_ID_MISSING',
+        candidateKey: planTask.candidateKey,
+        detail: `non-PE task ${planTask.candidateKey} has no teacherId`,
+      })
+    }
+    if (isPeExempt && planTask.teacherRef.kind === 'physicalEducationExempt') {
+      if (planTask.teacherRef.exemptionCode !== 'PHYSICAL_EDUCATION_TEACHER_EXEMPT') {
+        preflightErrors.push({
+          code: 'INVALID_TEACHER_EXEMPTION',
+          candidateKey: planTask.candidateKey,
+          detail: `unknown exemption code ${planTask.teacherRef.exemptionCode}`,
+        })
+      }
+    }
+
+    // Resolve classGroup ids (only useExisting — no auto-create).
+    const classGroupIds: number[] = []
+    for (const cg of planTask.classGroupRefs) {
+      if (cg.kind === 'useExisting') classGroupIds.push(cg.classGroupId)
+    }
+    if (classGroupIds.length === 0) {
+      preflightErrors.push({
+        code: 'CLASS_GROUP_IDS_MISSING',
+        candidateKey: planTask.candidateKey,
+        detail: `task ${planTask.candidateKey} has no classGroupIds`,
+      })
+    }
+    let classGroupNotInTarget = 0
+    for (const id of classGroupIds) {
+      if (!cgIdsInTargetSemester.has(id)) classGroupNotInTarget++
+    }
+    if (classGroupNotInTarget > 0) {
+      preflightErrors.push({
+        code: 'CLASS_GROUP_NOT_IN_TARGET_SEMESTER',
+        candidateKey: planTask.candidateKey,
+        detail: `task ${planTask.candidateKey} has ${classGroupNotInTarget} ClassGroup id(s) outside targetSemesterId=${input.targetSemesterId}`,
+      })
+    }
+    if (classGroupIds.length > 12) {
+      preflightErrors.push({
+        code: 'CLASS_GROUP_SET_TOO_LARGE',
+        candidateKey: planTask.candidateKey,
+        detail: `task ${planTask.candidateKey} has ${classGroupIds.length} classGroups without explicit large-merge evidence`,
+      })
+    }
+  }
+  if (preflightErrors.length > 0) {
+    return {
+      stage: L7_F_STAGE,
+      planVersion: L7_F_PLAN_VERSION,
+      templateVersion: L7_F_TEMPLATE_VERSION,
+      applied: false,
+      dryRunOnly: false,
+      dbWritten: false,
+      importBatchId: null,
+      backupPath: null, // no backup created: preflight rejected before backup
+      summary: {
+        importableRows: input.plan.plan.importableRows.length,
+        appliedRows: 0,
+        skippedRows: input.plan.plan.skippedRows.length,
+        unresolvedRows: input.plan.plan.unresolvedRows.length,
+        blockingRows: preflightErrors.length,
+        createdCourses: 0,
+        reusedCourses: 0,
+        createdTeachingTasks: 0,
+        createdTeachingTaskClasses: 0,
+        duplicateTeachingTasksSkipped: 0,
+        rowsUsingNewCourseCandidate: 0,
+        confirmedNewCourseCandidates: 0,
+      },
+      counts: zeroCounts(),
+      postApplyAudit: {
+        passed: false,
+        checks: preflightErrors.map((e) => ({
+          name: `APPLY_PREFLIGHT_FAILED:${e.code}`,
+          ok: false,
+          detail: `${e.candidateKey} ${e.detail}`,
+        })),
+      },
+      rollbackNote: `Preflight failed: ${preflightErrors.length} errors. No backup created. No transaction executed.`,
+      rawIncluded: false,
+      warnings: preflightErrors.map((e) => `${e.code}: ${e.candidateKey}: ${e.detail}`),
     }
   }
 
@@ -591,9 +719,20 @@ export async function executeL7FCourseSettingApply(
       }
       if (!courseId) continue
 
-      // Resolve teacherId.
-      const teacherId =
-        planTask.teacherRef.kind === 'useExisting' ? planTask.teacherRef.teacherId : null
+      // Resolve teacherId. L7-F6D1: recognise the PE exemption kind.
+      let teacherId: number | null
+      let isPeExempt = false
+      if (planTask.teacherRef.kind === 'useExisting') {
+        teacherId = planTask.teacherRef.teacherId
+      } else if (planTask.teacherRef.kind === 'physicalEducationExempt') {
+        isPeExempt = true
+        teacherId = null
+      } else {
+        teacherId = null
+      }
+      // Preflight already rejected non-PE teacherId=null. Defensive:
+      // skip any residual null that snuck through.
+      if (!isPeExempt && teacherId == null) continue
 
       // Resolve classGroupIds (only useExisting — no ClassGroup auto-create).
       const classGroupIds: number[] = []
@@ -609,6 +748,7 @@ export async function executeL7FCourseSettingApply(
         semesterId: input.targetSemesterId,
         courseId,
         teacherId,
+        teacherExemptionCode: isPeExempt ? 'PHYSICAL_EDUCATION_TEACHER_EXEMPT' : null,
         weeklyHours: planTask.weeklyHours,
         classGroupIds,
       })

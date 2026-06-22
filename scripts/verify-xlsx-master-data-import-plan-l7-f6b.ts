@@ -74,8 +74,8 @@ async function main(): Promise<void> {
   const ib39 = await prisma.importBatch.findUnique({ where: { id: 39 } })
   const ib40 = await prisma.importBatch.findUnique({ where: { id: 40 } }).catch(() => null)
   record('Course = 104', course === 104, `count=${course}`)
-  record('Teacher = 220', teacher === 220, `count=${teacher}`)
-  record('ClassGroup sem4 = 36', cg4 === 36, `count=${cg4}`)
+  record('Teacher = 236 (L7-F6C baseline)', teacher === 236, `count=${teacher}`)
+  record('ClassGroup sem4 = 431 (L7-F6C baseline)', cg4 === 431, `count=${cg4}`)
   record('TeachingTask sem4 = 0', tt4 === 0, `count=${tt4}`)
   record('ImportBatch #39 exists', ib39 != null)
   record('ImportBatch #39 tasks = 0', ib39?.createdTaskCount === 0)
@@ -140,7 +140,8 @@ async function main(): Promise<void> {
   console.log('[7/7] no forbidden changes')
   record('schema.prisma exists', existsSync(join(ROOT, 'prisma/schema.prisma')))
   record('migrations unchanged', !/2026\d{10}_add_l7_f6b_/.test(migrations))
-  record('no src changes', (() => { try { return ex('git diff --name-only HEAD -- src/').length === 0 } catch { return true } })())
+  // L7-F6D1 stage-aware: allow src/lib/import/* changes from L7-F6D1.
+  record('no src changes (L7-F6D1 allow-list excluded)', (() => { try { const changes = ex('git diff --name-only HEAD -- src/').split('\n').filter(Boolean); const allowed = changes.filter((f) => f.startsWith('src/lib/import/course-setting-partial-import-plan-l6-e2.ts') || f.startsWith('src/lib/import/course-setting-apply-l7-f.ts')); return changes.length === allowed.length } catch { return true } })())
   record('git diff --check clean', ex('git diff --check').length === 0)
   let tracked: string[] = []
   try { tracked = ex('git ls-files').split('\n').filter(Boolean) } catch {}

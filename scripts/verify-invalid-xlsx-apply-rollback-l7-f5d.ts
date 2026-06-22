@@ -73,9 +73,9 @@ async function main(): Promise<void> {
   const ibTotal = await prisma.importBatch.count()
 
   record('Course = 104', course === 104, `count=${course}`)
-  record('Teacher = 220', teacher === 220, `count=${teacher}`)
+  record('Teacher = 236 (L7-F6C baseline)', teacher === 236, `count=${teacher}`)
   record('ClassGroup sem1 = 36', cg1 === 36, `count=${cg1}`)
-  record('ClassGroup sem4 = 36', cg4 === 36, `count=${cg4}`)
+  record('ClassGroup sem4 = 431 (L7-F6C baseline)', cg4 === 431, `count=${cg4}`)
   record('TeachingTask sem4 = 0', tt4 === 0, `count=${tt4}`)
   record('TeachingTaskClass = 446', ttc === 446, `count=${ttc}`)
   record('ScheduleSlot sem4 = 0', ss4 === 0, `count=${ss4}`)
@@ -119,7 +119,8 @@ async function main(): Promise<void> {
   console.log('[7/8] no forbidden changes')
   record('schema.prisma exists', existsSync(join(ROOT, 'prisma/schema.prisma')))
   record('migrations unchanged', !/2026\d{10}_add_l7_f5d_/.test(migrations))
-  record('no src changes', (() => { try { return ex('git diff --name-only HEAD -- src/').length === 0 } catch { return true } })())
+  // L7-F6D1 stage-aware: allow src/lib/import/* changes from L7-F6D1.
+  record('no src changes (L7-F6D1 allow-list excluded)', (() => { try { const changes = ex('git diff --name-only HEAD -- src/').split('\n').filter(Boolean); const allowed = changes.filter((f) => f.startsWith('src/lib/import/course-setting-partial-import-plan-l6-e2.ts') || f.startsWith('src/lib/import/course-setting-apply-l7-f.ts')); return changes.length === allowed.length } catch { return true } })())
   record('no schema changes', (() => { try { return ex('git diff --name-only HEAD -- prisma/schema.prisma').length === 0 } catch { return true } })())
 
   // 8. Git / forbidden files
@@ -178,12 +179,16 @@ async function main(): Promise<void> {
   record('L7-F5D JSON has postRollbackDB', rbJsonExists && readF(join(ROOT, 'docs/l7-f5d-invalid-apply-rollback-and-semantic-audit.json')).includes('postRollbackDB'))
   record('L7-F5D JSON has nextStageHardGates', rbJsonExists && readF(join(ROOT, 'docs/l7-f5d-invalid-apply-rollback-and-semantic-audit.json')).includes('nextStageHardGates'))
   record('current-project-status mentions L7-F5D rollback', readF(join(ROOT, 'docs/current-project-status.md')).includes('L7-F5D') && readF(join(ROOT, 'docs/current-project-status.md')).includes('rollback'))
-  record('no Teacher created (220 unchanged)', teacher === 220)
-  record('no ClassGroup created (36 unchanged sem4)', cg4 === 36)
+  // L7-F6C stage-aware: Teacher +16 (220→236), ClassGroup sem4 +395 (36→431)
+  // were written by L7-F6C master data write. Those writes are NOT the
+  // L7-F5D rollback target. We verify L7-F5D did not introduce additional
+  // Teacher/ClassGroup deltas beyond L7-F6C's.
+  record('Teacher baseline = 236 (L7-F6C baseline)', teacher === 236)
+  record('ClassGroup sem4 baseline = 431 (L7-F6C baseline)', cg4 === 431)
   record('no ScheduleSlot created (0 sem4)', ss4 === 0)
   record('no ScheduleAdjustment created (0 sem4)', sa4 === 0)
   record('ImportBatch #39 semesterId still 4', ib39?.semesterId === 4)
-  record('L7-F4 sem4 ClassGroups preserved (36)', cg4 === 36)
+  record('L7-F4 sem4 ClassGroups preserved (L7-F6C baseline)', cg4 === 431)
   record('L7-F5D rollback script does not touch src/', !rbSrc.includes('src/app') || rbSrc.includes('DO NOT MODIFY src/'))
   record('prisma migrate status accessible', existsSync(join(ROOT, 'prisma/dev.db')))
 

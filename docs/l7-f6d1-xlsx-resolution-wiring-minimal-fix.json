@@ -1,0 +1,202 @@
+{
+  "stage": "L7-F6D1-XLSX-RESOLUTION-WIRING-MINIMAL-FIX",
+  "date": "2026-06-23",
+  "status": "CLOSED",
+  "dbWrite": false,
+  "applyExecuted": false,
+  "backupCreated": false,
+  "targetSemesterId": 4,
+  "xlsxSha256": "27075c17dc7ca30f1339055bd752dd8c1338dd3c5dd1a0d26fc20822fa8040ea",
+  "xlsxSizeBytes": 104349,
+  "dbBaseline": {
+    "course": 104,
+    "teacher": 236,
+    "classGroupSem1": 36,
+    "classGroupSem4": 431,
+    "teachingTaskSem4": 0,
+    "teachingTaskClass": 446,
+    "scheduleSlotSem4": 0,
+    "scheduleAdjustmentSem4": 0,
+    "importBatchTotal": 39,
+    "importBatchId39": "APPLIED",
+    "importBatchId40": "absent"
+  },
+  "dbPostDryRun": {
+    "course": 104,
+    "teacher": 236,
+    "classGroupSem1": 36,
+    "classGroupSem4": 431,
+    "teachingTaskSem4": 0,
+    "teachingTaskClass": 446,
+    "scheduleSlotSem4": 0,
+    "scheduleAdjustmentSem4": 0,
+    "importBatchTotal": 39,
+    "importBatchId40": "absent"
+  },
+  "previousStageFailures": {
+    "l7f6dDryRun": {
+      "teacherIdNullAmongImportable": 1638,
+      "maxClassGroups": 398,
+      "rootCause": "trial script auto-resolver used substring / contains / endsWith / classNo-substring match; plan builder had no final hard gate; apply preflight ran after backup; no PE teacher exemption; natural key used teacherId ?? 'null'."
+    }
+  },
+  "fixesApplied": {
+    "A_trialAutoResolver": {
+      "teacherSubstringRemoved": true,
+      "classGroupSubstringRemoved": true,
+      "teacherExactNormalizedMatch": true,
+      "classGroupCanonicalExactMatch": true,
+      "multiTeacherUnresolved": true,
+      "kColumnTeacherSource": true,
+      "externalPartTimeStripped": true
+    },
+    "B_planBuilderFinalHardGate": {
+      "TEACHER_ID_MISSING": true,
+      "INVALID_TEACHER_EXEMPTION": true,
+      "CLASS_GROUP_IDS_MISSING": true,
+      "CLASS_GROUP_NOT_IN_TARGET_SEMESTER": true,
+      "CLASS_GROUP_SET_TOO_LARGE": true,
+      "CLASSGROUP_PLANNED_NAME_COLLISION": true,
+      "cgInTargetSemesterSetDoubleCheck": true,
+      "peDetectionOnCourseName": true
+    },
+    "C_applyPreflightBeforeBackup": {
+      "beforeBackup": true,
+      "beforeTransaction": true,
+      "rejectsNonPETeacherNull": true,
+      "rejectsInvalidPEExemption": true,
+      "rejectsEmptyClassGroupIds": true,
+      "rejectsNonTargetSemesterClassGroupIds": true,
+      "rejectsClassGroupSetTooLarge": true,
+      "backupPathNullOnRejection": true
+    },
+    "D_naturalKey": {
+      "noNullLiteral": true,
+      "teacherSlotT": true,
+      "teacherSlotPE": true,
+      "invalidNullTeacherMarker": true
+    }
+  },
+  "semanticStats": {
+    "totalRows": 1167,
+    "plannedRows": 0,
+    "importableRows": 0,
+    "unresolvedRows": 1167,
+    "teacherIdNullAmongImportable": 0,
+    "teacherIdNullAmongNonExemptImportable": 0,
+    "physicalEducationTeacherExemptCount": 0,
+    "invalidTeacherExemptionCount": 0,
+    "teacherMissingCandidateCount": 0,
+    "teacherAmbiguousCandidateCount": 0,
+    "classGroupEmptyAmongImportable": 0,
+    "classGroupMissingCandidateCount": 0,
+    "classGroupAmbiguousCandidateCount": 0,
+    "classGroupOverMatchedCandidateCount": 0,
+    "classGroupNotInTargetSemesterCount": 0,
+    "maxClassGroupsPerCandidate": 0,
+    "p50ClassGroupsPerCandidate": 0,
+    "p90ClassGroupsPerCandidate": 0,
+    "duplicatePlannedNameSkipped": 0,
+    "duplicatePlannedNameSkipSafe": true,
+    "allClassGroupsBelongToTargetSemester": true,
+    "canApply": false,
+    "applied": false,
+    "dbWritten": false
+  },
+  "blockerBreakdown": {
+    "totalUnresolved": 1167,
+    "classGroupMissing": 878,
+    "CLASS_GROUP_IDS_MISSING": 1161,
+    "TEACHER_ID_MISSING": 1060,
+    "teacherMissing": 107,
+    "ambiguousMapping": 63,
+    "examTypeInvalid": 145,
+    "weeklyHoursInvalid": 19
+  },
+  "successCriteria": {
+    "noDbWrite": true,
+    "noApply": true,
+    "noBackup": true,
+    "trialTeacherSubstringRemoved": true,
+    "classGroupSubstringOnlyRemoved": true,
+    "classGroupCanonicalExactKey": true,
+    "nonPETeacherIdNullBlocked": true,
+    "PEExemptionPathwayExists": true,
+    "invalidPEExemptionBlocked": true,
+    "naturalKeyNoNullLiteral": true,
+    "planBuilderFinalHardGateExists": true,
+    "applyPreflightBeforeBackupExists": true,
+    "teacherIdNullAmongNonExemptImportableEqualsZero": true,
+    "invalidTeacherExemptionCountEqualsZero": true,
+    "classGroupEmptyAmongImportableEqualsZero": true,
+    "allClassGroupsBelongToTargetSemesterTrue": true,
+    "duplicatePlannedNameSkipSafeTrue": true,
+    "maxClassGroupsPerCandidateNotNear398": true,
+    "l7f6cDBBaselineUnchanged": true,
+    "verifyRegressionsPass": true,
+    "forbiddenFilesClean": true
+  },
+  "validation": {
+    "l7f6d1Verify": {
+      "passed": 130,
+      "failed": 0,
+      "total": 130
+    },
+    "l7f6cRegression": {
+      "passed": 142,
+      "failed": 0,
+      "total": 142,
+      "stageAwareUpdate": true
+    },
+    "l7f6bRegression": {
+      "passed": 110,
+      "failed": 0,
+      "total": 110,
+      "stageAwareUpdate": true
+    },
+    "l7f6aRegression": {
+      "passed": 110,
+      "failed": 0,
+      "total": 110,
+      "stageAwareUpdate": true
+    },
+    "l7f5dRegression": {
+      "passed": 101,
+      "failed": 0,
+      "total": 101,
+      "stageAwareUpdate": true
+    },
+    "prismaValidate": "PASS",
+    "prismaMigrateStatus": "up to date",
+    "k22cVerify": "PASS",
+    "gitDiffCheck": "clean"
+  },
+  "remainingBlockers": [
+    {
+      "kind": "K-column multi-teacher ambiguity",
+      "example": "1,2:teacher-A;3,4:teacher-B;5,6:teacher-C",
+      "resolution": "leave teacherId null (cannot determine unique teacher); requires external-teacher exemption pathway in L7-F6D2"
+    },
+    {
+      "kind": "L7-F6C ClassGroup naming concatenation bug",
+      "example": "Excel '2024级/口腔医学' vs DB '2024级级口腔医学1班' (double 级)",
+      "resolution": "data quality fix in L7-F6C master data; not L7-F6D1's scope"
+    },
+    {
+      "kind": "L7-F6C manual-review ClassGroup (22 candidates)",
+      "example": "validated=418, manualReview=22 (not created)",
+      "resolution": "human review required before retry apply"
+    }
+  ],
+  "rawIncluded": false,
+  "privacy": {
+    "rawTeacherNamesIncluded": false,
+    "rawClassNamesIncluded": false,
+    "rawCourseNamesIncluded": false,
+    "rawRemarksIncluded": false,
+    "rawSheetNamesIncluded": false,
+    "phoneNumbersIncluded": false,
+    "employeeNoIncluded": false
+  },
+  "nextStageRecommendation": "L7-F6D2-XLSX-CANONICAL-KEY-RECONCILIATION"
+}

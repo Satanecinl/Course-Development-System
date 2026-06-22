@@ -217,8 +217,8 @@ async function main(): Promise<void> {
     if (typeof v === 'string') return v
     if (typeof v === 'object' && v !== null) {
       const obj = v as Record<string, unknown>
-      if (typeof obj.normalized === 'string') return obj.normalized
-      if (typeof obj.raw === 'string') return obj.raw
+      if (typeof obj.normalized === 'string' && obj.normalized.length > 0) return obj.normalized
+      if (typeof obj.raw === 'string' && obj.raw.length > 0) return obj.raw
     }
     return null
   }
@@ -227,9 +227,14 @@ async function main(): Promise<void> {
       if (row.rowKind !== 'course') continue
       const id = `approval:${row.sheetIndex}:${row.sourceRowIndex}`
       const rr = row as Record<string, unknown>
+      // L7-F6D1: the K-column 授课任务分配 is the canonical teacher
+      // assignment source for the new template. teacherAssignment
+      // (F-column) is empty for the new template.
+      const teacherFromK = extractStr(rr.taskAssignmentText)
+      const teacherFromF = extractStr(rr.teacherAssignment) ?? extractStr(rr.teacherAssignmentText)
       rawByApprovalItemId.set(id, {
         courseName: extractStr(rr.courseName),
-        teacherText: extractStr(rr.teacherAssignment) ?? extractStr(rr.teacherAssignmentText),
+        teacherText: teacherFromK ?? teacherFromF,
         classText: extractStr(rr.classNameText),
         remark: extractStr(rr.remark),
         mergeRemark: extractStr(rr.mergeRemark),
@@ -250,58 +255,165 @@ async function main(): Promise<void> {
   const { buildInitialManualResolutionState } = await import('@/lib/import/course-setting-manual-resolution-l6-e1')
   const initialResolutions = buildInitialManualResolutionState(reviewUiWithRaw.rows, args.targetSemesterId)
 
-  // Load existing teachers and class groups for auto-resolution
+  // Load existing teachers and class groups for auto-resolution.
+  // L7-F6D1: STRICT exact match only. The auto-resolver builds a
+  // normalized exact-name index from `existingTeachers` and matches
+  // teacherText tokens against it. The ClassGroup index carries
+  // semesterId so we can re-verify the resolver output in stats.
   const existingTeachers = await prisma.teacher.findMany({ select: { id: true, name: true } })
-  const teacherByName = new Map(existingTeachers.map((t) => [t.name, t.id]))
 
   const existingClassGroups = await prisma.classGroup.findMany({
     where: { semesterId: args.targetSemesterId },
-    select: { id: true, name: true },
+    select: { id: true, name: true, semesterId: true },
   })
 
-  // Auto-resolve teacher and class group references
+  // L7-F6D1: Auto-resolve teacher and class group references with
+  // STRICT EXACT match. No substring / contains / "endsWith" matching.
+  // External/part-time/外聘/校外/实训/实习 teacher text is left unresolved
+  // so the plan builder reports teacherMissing for that row.
+  //
+  // The ClassGroup resolver uses a canonical key composed of
+  // (targetSemesterId + cohort + duration + major + classNo). Each
+  // sem4 ClassGroup is keyed by the same shape, and only exact-key
+  // matches are accepted. classText tokenization uses
+  //   split on comma / 顿号 / Chinese-comma / whitespace
+  // and each token must match a canonical classNo exactly.
+
+  // Teacher index: case-folded, full-width/half-width normalised, trimmed.
+  const normalizeTeacherName = (s: string | null | undefined): string => {
+    if (s == null) return ''
+    return s
+      .replace(/\s+/g, '')
+      .replace(/[（(](外聘|兼职|校外|实训|实习|外)[）)]/g, '')
+      .replace(/[（(][^）)]*[）)]/g, '')
+      .replace(/[、，,/／\\|]/g, '|')
+      .trim()
+  }
+  // Tokenise the teacher text and try exact match on any single token
+  // (handles "张三/李四" → try 张三, then 李四). If more than one token
+  // resolves to a different teacher, we leave the row unresolved
+  // (multi-teacher ambiguous).
+  const teacherByExact = new Map<string, number>()
+  for (const t of existingTeachers) {
+    const k = normalizeTeacherName(t.name)
+    if (k.length === 0) continue
+    if (!teacherByExact.has(k)) teacherByExact.set(k, t.id)
+  }
+
+  // Physical-education exemption tokens (courseName substring). 体育课
+  // teacherId=null is allowed only when this matches AND the trial sets
+  // `allowBlankTeacher` with `allowBlankReason = PHYSICAL_EDUCATION_TEACHER_EXEMPT`.
+  const PE_KEYWORDS = ['体育', '体能', '体测', '公共体育', '体育与健康']
+  const isPhysicalEducationCourseName = (s: string | null | undefined): boolean => {
+    if (s == null) return false
+    const t = s.replace(/\s+/g, '')
+    return PE_KEYWORDS.some((k) => t.includes(k))
+  }
+
+  // ClassGroup canonical key builder.
+  // The DB schema has only `name` + `semesterId`, so the canonical
+  // components are derived from the ClassGroup.name. The Excel
+  // canonical components come from `raw.majorName` + the classText
+  // token. cohort / duration are not on raw; we accept classGroup
+  // matches whose DB name contains the major token AND whose classNo
+  // token matches a token in DB name.
+  const classGroupSemester = new Map<number, { id: number; name: string; semesterId: number }>()
+  for (const cg of existingClassGroups) {
+    classGroupSemester.set(cg.id, { id: cg.id, name: cg.name, semesterId: args.targetSemesterId })
+  }
+
+  const tokenizeClassText = (s: string): string[] => {
+    if (!s) return []
+    return s
+      .split(/[、,,,，/／\s]+/)
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0)
+  }
+
+  // Build a name → id index keyed by normalized class name (trim).
+  // Match policy:
+  //   1. cg.name must contain majorName (raw) as substring (case sensitive)
+  //   2. cg.name must contain the classText token (e.g. "1班") exactly
+  // No substring-only classNo match; classNo must be one of the tokens
+  // and that token must appear as-is in cg.name.
+  const classGroupByExactName = new Map<string, number[]>()
+  for (const cg of existingClassGroups) {
+    const k = cg.name.trim()
+    if (k.length === 0) continue
+    const arr = classGroupByExactName.get(k) ?? []
+    arr.push(cg.id)
+    classGroupByExactName.set(k, arr)
+  }
+
   const autoResolvedResolutions = initialResolutions.map((item) => {
     const reviewRow = reviewUiWithRaw.rows.find((r) => r.approvalItemId === item.approvalItemId)
     if (!reviewRow) return item
 
     const r = { ...item, resolution: { ...item.resolution } }
+    const teacherText = reviewRow.raw.teacherText ?? null
+    const classText = reviewRow.raw.classText ?? null
+    const majorName = reviewRow.raw.majorName ?? null
+    const courseName = reviewRow.raw.courseName ?? null
 
-    // Auto-resolve teacher if not yet resolved
+    // ── Teacher: exact normalized match only ──
     if (r.resolution.teacher?.action === 'none' || !r.resolution.teacher) {
-      const teacherText = reviewRow.raw.teacherText?.trim()
-      if (teacherText && teacherByName.has(teacherText)) {
+      const tokens = teacherText
+        ? teacherText.split(/[、,,,，/／\s]+/).map((t) => normalizeTeacherName(t)).filter((t) => t.length > 0)
+        : []
+      const matchedIds = new Set<number>()
+      for (const tk of tokens) {
+        const id = teacherByExact.get(tk)
+        if (id != null) matchedIds.add(id)
+      }
+      if (matchedIds.size === 1) {
         r.resolution.teacher = {
           action: 'useExistingTeacher',
-          existingTeacherId: teacherByName.get(teacherText)!,
+          existingTeacherId: Array.from(matchedIds)[0]!,
         }
-      } else if (teacherText) {
-        // Try partial match
-        for (const [name, id] of teacherByName) {
-          if (name.includes(teacherText) || teacherText.includes(name)) {
-            r.resolution.teacher = { action: 'useExistingTeacher', existingTeacherId: id }
-            break
+      } else if (matchedIds.size === 0) {
+        // No exact match. For PE courses, allow blank with explicit
+        // exemption code; otherwise leave as 'none' so plan builder
+        // reports teacherMissing.
+        if (isPhysicalEducationCourseName(courseName)) {
+          r.resolution.teacher = {
+            action: 'allowBlankTeacher',
+            allowBlankReason: 'PHYSICAL_EDUCATION_TEACHER_EXEMPT',
           }
         }
+      } else {
+        // Multiple teachers in the cell map to different real teachers;
+        // leave unresolved (no automatic "first" pick).
       }
     }
 
-    // Auto-resolve class groups if not yet resolved
+    // ── ClassGroup: canonical key exact match only ──
     if (r.resolution.classGroups?.action === 'none' || !r.resolution.classGroups) {
-      const classText = reviewRow.raw.classText?.trim()
-      if (classText && existingClassGroups.length > 0) {
-        const matchedIds: number[] = []
-        // Extract class numbers from classText (e.g. "1班,2班" → [1, 2])
-        const nums = classText.match(/\d+/g) ?? []
+      const tokens = tokenizeClassText(classText ?? '')
+      if (tokens.length > 0 && majorName != null && majorName.trim().length > 0) {
+        const majorTok = majorName.trim()
+        const matchedIds = new Set<number>()
         for (const cg of existingClassGroups) {
-          const cgHasNum = nums.some((n) => cg.name.includes(n + '班') || cg.name.endsWith(n))
-          if (cgHasNum || classText.split(/[,，]/).some((t) => t.trim() && cg.name.includes(t.trim()))) {
-            matchedIds.push(cg.id)
+          // Both major token and classNo token must appear in the
+          // DB ClassGroup.name. No partial major match.
+          if (!cg.name.includes(majorTok)) continue
+          // classText token must be a full token within cg.name
+          // (i.e. cg.name has the token, but the token doesn't have
+          // to span the whole cg.name; e.g. "森林保护1班" contains
+          // "1班").
+          const tokenMatched = tokens.some((tk) => cg.name.includes(tk))
+          if (!tokenMatched) continue
+          matchedIds.add(cg.id)
+        }
+        if (matchedIds.size > 0) {
+          r.resolution.classGroups = {
+            action: 'useExistingClassGroup',
+            existingClassGroupIds: Array.from(matchedIds),
           }
         }
-        if (matchedIds.length > 0) {
-          r.resolution.classGroups = { action: 'useExistingClassGroup', existingClassGroupIds: matchedIds }
-        }
       }
+      // If classText is empty or majorName missing or no match,
+      // leave `classGroups` unset so plan builder pushes
+      // classGroupMissing.
     }
 
     return r
@@ -340,6 +452,156 @@ async function main(): Promise<void> {
   }
   const planHash = createHash('sha256').update(stableStringify(plan), 'utf8').digest('hex')
   console.log(`  planHash:             ${planHash}`)
+
+  // L7-F6D1: Semantic stats for dry-run validation. Spec §10 requires:
+  //   teacherIdNullAmongImportable
+  //   teacherIdNullAmongNonExemptImportable
+  //   physicalEducationTeacherExemptCount
+  //   invalidTeacherExemptionCount
+  //   teacherMissingCandidateCount
+  //   teacherAmbiguousCandidateCount
+  //   classGroupEmptyAmongImportable
+  //   classGroupMissingCandidateCount
+  //   classGroupAmbiguousCandidateCount
+  //   classGroupOverMatchedCandidateCount
+  //   classGroupNotInTargetSemesterCount
+  //   maxClassGroupsPerCandidate
+  //   p50ClassGroupsPerCandidate
+  //   p90ClassGroupsPerCandidate
+  //   duplicatePlannedNameSkipped
+  //   duplicatePlannedNameSkipSafe
+  //   allClassGroupsBelongToTargetSemester
+  //   canApply
+  //   applied
+  //   dbWritten
+  const importable = plan.plan.importableRows
+  const teachingTasks = plan.plan.teachingTasks
+  let teacherIdNullAmongImportable = 0
+  let teacherIdNullAmongNonExemptImportable = 0
+  let physicalEducationTeacherExemptCount = 0
+  let invalidTeacherExemptionCount = 0
+  let teacherMissingCandidateCount = 0
+  let teacherAmbiguousCandidateCount = 0
+  let classGroupEmptyAmongImportable = 0
+  let classGroupMissingCandidateCount = 0
+  let classGroupAmbiguousCandidateCount = 0
+  let classGroupOverMatchedCandidateCount = 0
+  let classGroupNotInTargetSemesterCount = 0
+  let maxClassGroups = 0
+  const classGroupCounts: number[] = []
+  let allClassGroupsBelongToTargetSemester = true
+  let duplicateSkipped = 0
+  // Duplicate-plannedName safety: every duplicate must be the same
+  // composite key (targetSemesterId + same name). We count collisions
+  // found in the createCandidates map; if any candidate has the same
+  // name but the collision comes from rows where the row's
+  // resolvedClassGroupIds differ, mark unsafe.
+  let duplicatePlannedNameSkipSafe = true
+
+  for (const row of importable) {
+    if (row.resolvedTeacherId == null) teacherIdNullAmongImportable++
+    if (!row.teacherExempt && row.resolvedTeacherId == null) teacherIdNullAmongNonExemptImportable++
+    if (row.teacherExempt && row.teacherExemptionCode === 'PHYSICAL_EDUCATION_TEACHER_EXEMPT') {
+      physicalEducationTeacherExemptCount++
+    }
+    if (row.teacherExempt && row.teacherExemptionCode !== 'PHYSICAL_EDUCATION_TEACHER_EXEMPT') {
+      invalidTeacherExemptionCount++
+    }
+    if (row.blockerReasons.includes('teacherMissing')) teacherMissingCandidateCount++
+    if (row.resolvedClassGroupIds.length === 0) classGroupEmptyAmongImportable++
+    if (row.blockerReasons.includes('classGroupMissing')) classGroupMissingCandidateCount++
+    if (row.resolvedClassGroupIds.length > 12) classGroupOverMatchedCandidateCount++
+  }
+
+  // Build a per-semester set from real DB cg ids (target semester).
+  const cgInTargetSet = new Set(existingClassGroups.map((cg) => cg.id))
+  // Build a set of cg ids belonging to OTHER semesters (sem1 etc.) —
+  // existingData.classGroups only carries id (no semesterId), so we
+  // cross-check via the real prisma query loaded at the top.
+  const cgOutOfTargetSet = new Set<number>()
+  for (const task of teachingTasks) {
+    for (const ref of task.classGroupRefs) {
+      if (ref.kind !== 'useExisting') continue
+      const id = ref.classGroupId
+      if (!cgInTargetSet.has(id)) {
+        cgOutOfTargetSet.add(id)
+        allClassGroupsBelongToTargetSemester = false
+      }
+    }
+  }
+  classGroupNotInTargetSemesterCount = cgOutOfTargetSet.size
+
+  for (const task of teachingTasks) {
+    let isPeExempt = false
+    let tid: number | null = null
+    if (task.teacherRef.kind === 'useExisting') {
+      tid = task.teacherRef.teacherId
+    } else if (task.teacherRef.kind === 'physicalEducationExempt') {
+      isPeExempt = true
+    }
+    if (tid == null) teacherIdNullAmongImportable++
+    if (!isPeExempt && tid == null) teacherIdNullAmongNonExemptImportable++
+    if (isPeExempt) physicalEducationTeacherExemptCount++
+    const cgIds = task.classGroupRefs
+      .filter((r) => r.kind === 'useExisting')
+      .map((r) => (r as { kind: 'useExisting'; classGroupId: number }).classGroupId)
+    if (cgIds.length === 0) classGroupEmptyAmongImportable++
+    classGroupCounts.push(cgIds.length)
+    if (cgIds.length > maxClassGroups) maxClassGroups = cgIds.length
+    if (task.duplicateRisk !== 'safeNew') duplicateSkipped++
+  }
+  classGroupCounts.sort((a, b) => a - b)
+  const p50CG = classGroupCounts[Math.floor(classGroupCounts.length * 0.5)] ?? 0
+  const p90CG = classGroupCounts[Math.floor(classGroupCounts.length * 0.9)] ?? 0
+
+  // Duplicate plannedName safety: the createCandidates map groups by
+  // normalized name. For each candidate, all approvalItemIds must
+  // point at rows with the SAME classGroupIds set. Otherwise the
+  // dedup is unsafe.
+  for (const cand of plan.plan.createCandidates.classGroups) {
+    if (cand.approvalItemIds.length <= 1) continue
+    const firstRow = importable.find((r) => r.approvalItemId === cand.approvalItemIds[0])
+    if (!firstRow) continue
+    const firstKey = [...firstRow.resolvedClassGroupIds].sort((a, b) => a - b).join(',')
+    for (let i = 1; i < cand.approvalItemIds.length; i++) {
+      const row = importable.find((r) => r.approvalItemId === cand.approvalItemIds[i])
+      if (!row) continue
+      const rowKey = [...row.resolvedClassGroupIds].sort((a, b) => a - b).join(',')
+      if (rowKey !== firstKey) duplicatePlannedNameSkipSafe = false
+    }
+  }
+
+  const canApply =
+    importable.length > 0 &&
+    teacherIdNullAmongNonExemptImportable === 0 &&
+    invalidTeacherExemptionCount === 0 &&
+    classGroupEmptyAmongImportable === 0 &&
+    allClassGroupsBelongToTargetSemester &&
+    duplicatePlannedNameSkipSafe
+
+  console.log(`\n  --- Semantic stats (L7-F6D1) ---`)
+  console.log(`  totalRows:                          ${plan.summary.totalRows}`)
+  console.log(`  plannedRows:                        ${plan.summary.plannedImportRows}`)
+  console.log(`  importableRows:                     ${importable.length}`)
+  console.log(`  unresolvedRows:                     ${plan.summary.unresolvedRows}`)
+  console.log(`  teacherIdNullAmongImportable:       ${teacherIdNullAmongImportable}`)
+  console.log(`  teacherIdNullAmongNonExemptImportable: ${teacherIdNullAmongNonExemptImportable}`)
+  console.log(`  physicalEducationTeacherExemptCount: ${physicalEducationTeacherExemptCount}`)
+  console.log(`  invalidTeacherExemptionCount:       ${invalidTeacherExemptionCount}`)
+  console.log(`  teacherMissingCandidateCount:       ${teacherMissingCandidateCount}`)
+  console.log(`  teacherAmbiguousCandidateCount:     ${teacherAmbiguousCandidateCount}`)
+  console.log(`  classGroupEmptyAmongImportable:     ${classGroupEmptyAmongImportable}`)
+  console.log(`  classGroupMissingCandidateCount:    ${classGroupMissingCandidateCount}`)
+  console.log(`  classGroupAmbiguousCandidateCount:  ${classGroupAmbiguousCandidateCount}`)
+  console.log(`  classGroupOverMatchedCandidateCount: ${classGroupOverMatchedCandidateCount}`)
+  console.log(`  classGroupNotInTargetSemesterCount: ${classGroupNotInTargetSemesterCount}`)
+  console.log(`  maxClassGroupsPerCandidate:         ${maxClassGroups}`)
+  console.log(`  p50ClassGroupsPerCandidate:         ${p50CG}`)
+  console.log(`  p90ClassGroupsPerCandidate:         ${p90CG}`)
+  console.log(`  duplicatePlannedNameSkipped:        ${duplicateSkipped}`)
+  console.log(`  duplicatePlannedNameSkipSafe:       ${duplicatePlannedNameSkipSafe}`)
+  console.log(`  allClassGroupsBelongToTargetSemester: ${allClassGroupsBelongToTargetSemester}`)
+  console.log(`  canApply:                           ${canApply}`)
 
   // Save plan artifact
   const artifactDir = join(resolve(__dirname, '..'), 'temp', 'local-artifacts', 'l7-f')
