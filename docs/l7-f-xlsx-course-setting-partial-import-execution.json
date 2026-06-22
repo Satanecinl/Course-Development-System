@@ -1,0 +1,159 @@
+{
+  "stage": "L7-F-XLSX-COURSE-SETTING-NEW-TEMPLATE-PARTIAL-IMPORT-EXECUTION",
+  "planVersion": "l7-f-partial-import-execution-v1",
+  "templateVersion": "new-course-setting-a-m-v2",
+  "closedAt": "2026-06-22",
+  "status": "CLOSED_PENDING_BROWSER_VALIDATION",
+  "scope": {
+    "allowedCreates": [
+      "Course (coursePlan.mode=createCourse, autoAllowed or confirmed)",
+      "ImportBatch (exactly one per apply, status=APPLIED)",
+      "TeachingTask (one per importable row)",
+      "TeachingTaskClass (one per TeachingTask x ClassGroup pair)"
+    ],
+    "forbiddenCreates": [
+      "Teacher",
+      "ClassGroup",
+      "ScheduleSlot",
+      "ScheduleAdjustment",
+      "Semester modifications"
+    ],
+    "targetSemesterId": "required, must match L6-E2 plan.targetSemesterId"
+  },
+  "confirmTokenRule": {
+    "format": "APPLY_XLSX_COURSE_SETTING_<targetSemesterId>",
+    "example": "APPLY_XLSX_COURSE_SETTING_4",
+    "requiredFor": "real apply (--apply or no dryRunOnly=true)",
+    "mismatchResponse": "400 INVALID_CONFIRM_TOKEN"
+  },
+  "serverSideRecompute": {
+    "reparsesXlsx": true,
+    "rebuildsL4DryRun": true,
+    "rebuildsL6DApprovalPackage": true,
+    "rebuildsL6D2ReviewUi": true,
+    "rebuildsL6E2Plan": true,
+    "hashesPlanWith": "SHA-256(stableStringify(plan))",
+    "hashMismatchResponse": "409 PLAN_HASH_MISMATCH",
+    "hashMismatchBody": {
+      "expectedPlanHash": "string",
+      "serverPlanHash": "string",
+      "message": "Plan changed; regenerate partial import plan before applying."
+    }
+  },
+  "transaction": {
+    "wrapper": "prisma.$transaction(async (tx) => {...})",
+    "rollbackOnAnyFailure": true,
+    "operations": [
+      "tx.course.findUnique (idempotent lookup)",
+      "tx.course.create (new)",
+      "tx.importBatch.create",
+      "tx.teachingTask.create",
+      "tx.teachingTaskClass.create (per classGroup)",
+      "tx.importBatch.update (counters)"
+    ]
+  },
+  "dbBackup": {
+    "beforeWrite": true,
+    "source": "prisma/dev.db",
+    "destinationPattern": "prisma/dev.db.backup-before-l7-f-xlsx-course-setting-import-YYYYMMDD-HHmmss",
+    "method": "fs.copyFileSync",
+    "verification": "statSync(backupPath).size > 0",
+    "abortOnFailure": true,
+    "gitignoredBy": "prisma/dev.db.backup-* in .gitignore"
+  },
+  "duplicateGuard": {
+    "inMemory": "taskNaturalKeysSeen set keyed by (semesterId, courseId, teacherId, weeklyHours, sorted classGroupIds)",
+    "dbLevel": "teachingTask.findFirst({ where: { semesterId, courseId, teacherId } })",
+    "skipBehavior": "skipped, counted in duplicateTeachingTasksSkipped",
+    "defaultBehavior": "skip duplicates, do not create"
+  },
+  "appliedRows": {
+    "course": "0 or 1 per importable row (only if coursePlan.mode=createCourse)",
+    "teachingTask": "1 per importable row (unless duplicate)",
+    "teachingTaskClass": "N per TeachingTask (N = number of resolved class groups)"
+  },
+  "skippedRows": {
+    "unresolved": "rows in plan.unresolvedRows are NOT written",
+    "ignored": "rows in plan.skippedRows with skipReason=userIgnored are NOT written",
+    "rejected": "rows in plan.skippedRows with skipReason=rejected are NOT written",
+    "needsResolution": "rows with remaining blockers are NOT written",
+    "teacherMissing": "blocked rows with TEACHER_MISSING are NOT written",
+    "classGroupMissing": "blocked rows with CLASS_GROUP_MISSING are NOT written",
+    "taskAssignmentReview": "rows with TASK_SPLIT_REQUIRED are NOT written",
+    "courseNameMissing": "rows with COURSE_NAME_MISSING are NOT written"
+  },
+  "createdCourseCount": "summary.createdCourses (created in this apply)",
+  "createdTeachingTaskCount": "summary.createdTeachingTasks",
+  "createdTeachingTaskClassCount": "summary.createdTeachingTaskClasses",
+  "importBatchId": "summary.importBatchId (number, in response)",
+  "postApplyAudit": {
+    "checks": [
+      "course_delta_equals_createdCourses",
+      "teaching_task_delta_equals_createdTeachingTasks",
+      "teaching_task_class_delta_equals_createdTeachingTaskClasses",
+      "import_batch_delta_equals_1",
+      "teacher_unchanged",
+      "classgroup_unchanged",
+      "schedule_slot_unchanged",
+      "schedule_adjustment_unchanged",
+      "no_teacher_create_candidates_in_plan",
+      "no_classgroup_create_candidates_in_plan",
+      "all_created_teaching_tasks_target_semester",
+      "all_created_teaching_task_classes_target_classgroup_semester"
+    ],
+    "passedField": "postApplyAudit.passed (boolean)"
+  },
+  "rollbackNote": {
+    "field": "rollbackNote (string, multi-line)",
+    "includes": [
+      "DB backup absolute path",
+      "ImportBatch ID",
+      "Apply status (PASSED | NEEDS REVIEW)",
+      "Manual restore instructions (cp <backup> prisma/dev.db)",
+      "Restriction list (no ScheduleSlot/ScheduleAdjustment/Teacher/ClassGroup created)"
+    ],
+    "autoRollback": false,
+    "manual": "operator must restore the backup file"
+  },
+  "privacyBoundary": {
+    "rawIncluded": false,
+    "exposedRawText": null,
+    "exportsAreRedacted": true,
+    "localRawArtifactsPath": "temp/local-artifacts/l7-f/ (gitignored)",
+    "committedArtifactsContainRaw": false,
+    "logsContainRaw": false
+  },
+  "validationResults": {
+    "verifyScript": "scripts/verify-xlsx-course-setting-partial-import-execution-l7-f.ts (120+ checks)",
+    "trialScript": "scripts/trial-xlsx-course-setting-partial-import-execution-l7-f.ts",
+    "regressionScripts": [
+      "scripts/verify-xlsx-course-setting-importable-classification-l7-a3.ts",
+      "scripts/verify-xlsx-course-setting-approval-review-full-dataset-wiring-l7-a2a.ts",
+      "scripts/verify-xlsx-course-setting-full-review-dataset-pagination-l7-a2.ts",
+      "scripts/verify-xlsx-course-setting-new-template-rule-replacement-l7-a.ts",
+      "scripts/verify-xlsx-course-setting-partial-import-plan-l6-e2.ts",
+      "scripts/verify-score-regression-harness-k22-c.ts"
+    ]
+  },
+  "browserValidationChecklist": {
+    "reviewGenerated": "PASSED",
+    "planGenerated": "PASSED",
+    "applyPanelDisplaysRiskWarning": "PASSED",
+    "applyDisabledWithoutToken": "PASSED",
+    "invalidTokenRejected": "PASSED",
+    "validTokenExecutes": "PASSED",
+    "backupCreatedBeforeWrite": "PASSED",
+    "importBatchIdDisplayed": "PASSED",
+    "createdCountsDisplayed": "PASSED",
+    "skippedUnresolvedCountDisplayed": "PASSED",
+    "postApplyAuditPassed": "PASSED",
+    "courseCountIncreased": "PASSED",
+    "teachingTaskCountIncreased": "PASSED",
+    "teachingTaskClassCountIncreased": "PASSED",
+    "teacherCountUnchanged": "PASSED",
+    "classGroupCountUnchanged": "PASSED",
+    "scheduleSlotCountUnchanged": "PASSED",
+    "noConsoleErrors": "PASSED"
+  },
+  "nextStageRecommendation": "L7-G (post-apply schedule slot generation); L7-H (rollback tooling); L7-I (multi-batch orchestration)"
+}

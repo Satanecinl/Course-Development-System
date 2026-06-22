@@ -143,8 +143,15 @@ function main(): void {
   record('export rawIncluded false preserved', /rawIncluded:\s*false/.test(clientSrc) || /exportedPlanRawIncluded:\s*false/.test(clientSrc))
 
   // ── 8. Hard constraints — no DB writes, no apply, no schema/migration change
+  // L7-F update: the apply route directory DOES exist now (L7-F is the
+  // controlled write stage). The route is gated by import:manage +
+  // confirm token + plan hash guard, so it's safe. Verify those guards.
   console.log('\n[8/8] hard constraints — no DB writes, no apply, no schema change')
-  record('no apply route directory', !existsSync(join(ROOT, 'src/app/api/admin/import/course-setting-xlsx/partial-import-apply')))
+  record('apply route exists (L7-F stage-aware: dir allowed)',
+    existsSync(join(ROOT, 'src/app/api/admin/import/course-setting-xlsx/partial-import-apply')))
+  const applyRouteForA2A = readF(join(ROOT, 'src/app/api/admin/import/course-setting-xlsx/partial-import-apply/route.ts'))
+  record('apply route requires import:manage (L7-F)', /import:manage/.test(applyRouteForA2A))
+  record('apply route requires confirm token (L7-F)', /INVALID_CONFIRM_TOKEN|APPLY_XLSX_COURSE_SETTING_/.test(applyRouteForA2A))
   record('no 执行导入 button text', !/执行导入/.test(mainSrc + reviewSectionSrc + resolutionSectionSrc))
   record('no 正式导入 button text', !/正式导入/.test(mainSrc + reviewSectionSrc + resolutionSectionSrc))
   record('no applyDB / writeDB button text', !/applyDB|writeDB|createImportBatch|createTeachingTask/.test(mainSrc + reviewSectionSrc + resolutionSectionSrc))
@@ -176,7 +183,19 @@ function main(): void {
     'scripts/verify-xlsx-course-setting-manual-resolution-ui-l6-e1.ts',
     'docs/l7-a2a',
     'docs/l7-a3',
+    // L7-A2 and L7-A were updated to be L7-F stage-aware:
+    'scripts/verify-xlsx-course-setting-full-review-dataset-pagination-l7-a2.ts',
+    'scripts/verify-xlsx-course-setting-new-template-rule-replacement-l7-a.ts',
+    // L7-F additions (stage-aware):
+    'src/app/api/admin/import/course-setting-xlsx/partial-import-apply/',
+    'src/lib/import/course-setting-apply-l7-f.ts',
+    'src/components/import/course-setting/course-setting-apply-execution-section.tsx',
+    'scripts/verify-xlsx-course-setting-partial-import-execution-l7-f.ts',
+    'scripts/trial-xlsx-course-setting-partial-import-execution-l7-f.ts',
+    'docs/l7-f',
     'docs/current-project-status.md',
+    // Pre-existing dirty doc (unrelated to L7-F):
+    'docs/l6-e1-xlsx-course-setting-manual-resolution-ui.json',
   ]
   const isAllowed = (path: string): boolean =>
     allowedPaths.some((p) => path.includes(p))
@@ -287,12 +306,17 @@ function main(): void {
   if (noWrite) record('no DB write patterns in approval-route + builders', true)
 
   // ── 12. Apply button / route / directory absence
+  // L7-F update: the apply route directory exists now. L7-A2A is
+  // stage-aware and verifies the route is properly guarded.
   console.log('\n[12/12] apply button / route absence')
-  record('no partial-import-apply directory', !existsSync(join(ROOT, 'src/app/api/admin/import/course-setting-xlsx/partial-import-apply')))
-  record('no partial-import-apply anywhere', !existsSync(join(ROOT, 'src/app/api/admin/import/course-setting-xlsx/partial-import-apply')) && !/partial-import-apply/.test(mainSrc + reviewSectionSrc))
-  record('no applyAllowed=true literal', !/applyAllowed:\s*true/.test(mainSrc + reviewSectionSrc + resolutionSectionSrc))
-  record('no canApply=true literal', !/canApply:\s*true/.test(mainSrc + reviewSectionSrc + resolutionSectionSrc))
-  record('dbWritten: false preserved', /dbWritten:\s*false/.test(approvalRouteSrc))
+  record('partial-import-apply directory exists (L7-F stage-aware)',
+    existsSync(join(ROOT, 'src/app/api/admin/import/course-setting-xlsx/partial-import-apply')))
+  record('apply route gated by import:manage', /requirePermission\s*\(\s*['"]import:manage['"]/.test(applyRouteForA2A))
+  record('apply route enforces confirm token', /INVALID_CONFIRM_TOKEN|APPLY_XLSX_COURSE_SETTING_/.test(applyRouteForA2A))
+  record('apply route enforces plan hash', /PLAN_HASH_MISMATCH/.test(applyRouteForA2A))
+  record('no applyAllowed=true literal (L6-D2 review UI)', !/applyAllowed:\s*true/.test(mainSrc + reviewSectionSrc + resolutionSectionSrc))
+  record('no canApply=true literal (L6-D2 review UI)', !/canApply:\s*true/.test(mainSrc + reviewSectionSrc + resolutionSectionSrc))
+  record('dbWritten: false preserved (L6-D2 review still plan-only)', /dbWritten:\s*false/.test(approvalRouteSrc))
   record('dryRunOnly: true preserved', /dryRunOnly:\s*true/.test(approvalRouteSrc))
   record('reviewOnly: true preserved', /reviewOnly:\s*true/.test(approvalRouteSrc))
   record('approval package applyAllowed=false literal type preserved', /applyAllowed:\s*false/.test(approvalPkgSrc))

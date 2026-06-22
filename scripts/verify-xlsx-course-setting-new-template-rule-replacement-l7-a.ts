@@ -182,9 +182,13 @@ function main(): void {
   record('no Course create in parser', !/course\.create/.test(parserSrc))
   record('no Teacher create in parser', !/teacher\.create/.test(parserSrc))
   record('no ClassGroup create in parser', !/classGroup\.create/.test(parserSrc))
-  record('no apply route dir', !fileExists(join(ROOT, 'src/app/api/admin/import/course-setting-xlsx/partial-import-apply')))
-  record('no 执行导入 button', !/执行导入/.test(mainSrc + planSectionSrc))
-  record('no 正式导入 button', !/正式导入/.test(mainSrc + planSectionSrc))
+  // L7-F update: the apply route directory exists now. L7-A is stage-aware.
+  record('apply route exists (L7-F stage-aware: dir allowed)',
+    fileExists(join(ROOT, 'src/app/api/admin/import/course-setting-xlsx/partial-import-apply')))
+  const applyRouteForA = readF(join(ROOT, 'src/app/api/admin/import/course-setting-xlsx/partial-import-apply/route.ts'))
+  record('apply route requires confirm token (L7-F)', /INVALID_CONFIRM_TOKEN|APPLY_XLSX_COURSE_SETTING_/.test(applyRouteForA))
+  record('no 执行导入 button in main+plan UI', !/执行导入/.test(mainSrc + planSectionSrc))
+  record('no 正式导入 button in main+plan UI', !/正式导入/.test(mainSrc + planSectionSrc))
   record('no schema changes', ex('git diff --name-only HEAD -- prisma/schema.prisma', { cwd: ROOT }).toString().trim().length === 0)
   record('no migration changes', ex('git diff --name-only HEAD -- prisma/migrations', { cwd: ROOT }).toString().trim().length === 0)
   record('no scheduler/score changes', ex('git diff --name-only HEAD -- src/lib/scheduler src/lib/score.ts', { cwd: ROOT }).toString().trim().length === 0)

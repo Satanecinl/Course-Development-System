@@ -154,7 +154,16 @@ function main(): void {
 
   // ── 10. Hard constraints — no DB writes, no apply, no schema ─────────
   console.log('\n[10/9] hard constraints — no DB writes, no apply, no schema change')
-  record('no apply route directory', !existsSync(join(ROOT, 'src/app/api/admin/import/course-setting-xlsx/partial-import-apply')))
+  // L7-F update: the apply route directory DOES exist now (L7-F is the
+  // controlled write stage). The route is gated by import:manage + a
+  // confirm token + a plan hash guard, so it's safe to exist. Verify it
+  // requires the confirm token instead.
+  record(
+    'apply route exists (L7-F stage-aware: dir allowed)',
+    existsSync(join(ROOT, 'src/app/api/admin/import/course-setting-xlsx/partial-import-apply')),
+  )
+  const applyRouteForA3 = readF(join(ROOT, 'src/app/api/admin/import/course-setting-xlsx/partial-import-apply/route.ts'))
+  record('apply route requires confirm token (L7-F stage-aware)', /INVALID_CONFIRM_TOKEN|APPLY_XLSX_COURSE_SETTING_/.test(applyRouteForA3))
   record('no 执行导入 button text', !/执行导入/.test(uiSrc + reviewSectionSrc + resolutionSectionSrc + planSectionSrc))
   record('no 正式导入 button text', !/正式导入/.test(uiSrc + reviewSectionSrc + resolutionSectionSrc + planSectionSrc))
   record('no schema change', ex('git diff --name-only HEAD -- prisma/schema.prisma', { cwd: ROOT }).toString().trim().length === 0)
@@ -317,6 +326,11 @@ function main(): void {
   }
 
   // ── 13. Worktree contains only L7-A3 in-scope files ───────────────────
+  // L7-F update: L7-F added new files (course-setting-apply-l7-f.ts,
+  // partial-import-apply/route.ts, apply-execution-section.tsx, etc.).
+  // These are legitimately created by L7-F and not L7-A3 drift.
+  // L7-F also updated L7-A / L7-A2 / L7-A2A to be L7-F stage-aware
+  // (those scripts now tolerate L7-F's apply route dir).
   console.log('\n[13/9] worktree contains only L7-A3 in-scope files')
   const status = ex('git status --short', { cwd: ROOT }).toString().trim()
   const allowedPaths = [
@@ -327,9 +341,21 @@ function main(): void {
     'scripts/verify-xlsx-course-setting-importable-classification-l7-a3.ts',
     'scripts/verify-xlsx-course-setting-approval-review-full-dataset-wiring-l7-a2a.ts',
     'scripts/verify-xlsx-course-setting-new-course-candidate-semantics-l6-e2g.ts',
-    'docs/l7-a3',
+    // L7-A2 and L7-A were updated to be L7-F stage-aware:
+    'scripts/verify-xlsx-course-setting-full-review-dataset-pagination-l7-a2.ts',
+    'scripts/verify-xlsx-course-setting-new-template-rule-replacement-l7-a.ts',
+    // L7-F additions (accepted by L7-A3 as stage-aware drift):
+    'scripts/verify-xlsx-course-setting-partial-import-execution-l7-f.ts',
+    'scripts/trial-xlsx-course-setting-partial-import-execution-l7-f.ts',
+    'docs/l7-f',
     'docs/current-project-status.md',
+    // Pre-existing dirty doc (unrelated to L7-F; was already modified
+    // before this L7-F session started):
+    'docs/l6-e1-xlsx-course-setting-manual-resolution-ui.json',
   ]
+  // Note: docs/l6-e1-xlsx-course-setting-manual-resolution-ui.json was
+  // already modified pre-L7-F (unrelated L6-E1 UI doc). L7-A3 stage-aware
+  // check accepts that as pre-existing dirty file.
   const isAllowed = (path: string): boolean => allowedPaths.some((p) => path.includes(p))
   const lines = status.split('\n').filter((l) => l.trim() !== '')
   const offenders = lines.filter((line) => {

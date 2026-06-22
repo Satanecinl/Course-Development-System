@@ -139,19 +139,55 @@ function main(): void {
   record('classifyCourseSituation exists', /classifyCourseSituation/.test(l6e2gSrc))
 
   // ── 11. No DB write / no apply ──
+  // L7-F update: the apply route directory exists now. L7-A2 is
+  // stage-aware and verifies the route is properly guarded.
   console.log('\n[11/12] no DB write / no apply')
-  record('no apply route dir', !existsSync(join(ROOT, 'src/app/api/admin/import/course-setting-xlsx/partial-import-apply')))
-  record('no 执行导入 button', !/执行导入/.test(mainSrc + reviewSectionSrc + resolutionSectionSrc))
-  record('no 正式导入 button', !/正式导入/.test(mainSrc + reviewSectionSrc + resolutionSectionSrc))
+  record('apply route exists (L7-F stage-aware: dir allowed)',
+    existsSync(join(ROOT, 'src/app/api/admin/import/course-setting-xlsx/partial-import-apply')))
+  const applyRouteForA2 = readF(join(ROOT, 'src/app/api/admin/import/course-setting-xlsx/partial-import-apply/route.ts'))
+  record('apply route requires confirm token (L7-F)', /INVALID_CONFIRM_TOKEN|APPLY_XLSX_COURSE_SETTING_/.test(applyRouteForA2))
+  record('apply route requires plan hash (L7-F)', /PLAN_HASH_MISMATCH/.test(applyRouteForA2))
+  record('no 执行导入 button in review/resolution UI', !/执行导入/.test(mainSrc + reviewSectionSrc + resolutionSectionSrc))
+  record('no 正式导入 button in review/resolution UI', !/正式导入/.test(mainSrc + reviewSectionSrc + resolutionSectionSrc))
   record('no schema changes', ex('git diff --name-only HEAD -- prisma/schema.prisma', { cwd: ROOT }).toString().trim().length === 0)
   record('no migration changes', ex('git diff --name-only HEAD -- prisma/migrations', { cwd: ROOT }).toString().trim().length === 0)
 
   // ── 12. Git / forbidden files ──
+  // L7-F update: L7-F legitimately added new files. Stage-aware check
+  // allows L7-F additions.
   console.log('\n[12/12] git / forbidden files')
   const diff = ex('git diff --check', { cwd: ROOT }).toString().trim()
   record('git diff --check clean', diff.length === 0, diff.split('\n')[0] || '')
   const status = ex('git status --short', { cwd: ROOT }).toString().trim()
-  record('worktree clean', status.length === 0)
+  // Tolerate L7-F additions:
+  const allowedL7F = [
+    'src/app/api/admin/import/course-setting-xlsx/partial-import-apply/',
+    'src/lib/import/course-setting-apply-l7-f.ts',
+    'src/components/import/course-setting/course-setting-apply-execution-section.tsx',
+    'scripts/verify-xlsx-course-setting-partial-import-execution-l7-f.ts',
+    'scripts/trial-xlsx-course-setting-partial-import-execution-l7-f.ts',
+    'docs/l7-f',
+    'docs/current-project-status.md',
+    // L7-F also touched these for stage-aware updates (L7-A, L7-A2A, L7-A3):
+    'scripts/verify-xlsx-course-setting-approval-review-full-dataset-wiring-l7-a2a.ts',
+    'scripts/verify-xlsx-course-setting-importable-classification-l7-a3.ts',
+    'scripts/verify-xlsx-course-setting-new-template-rule-replacement-l7-a.ts',
+    // L7-F modified main client + preview tsx (apply section wiring):
+    'src/components/import/course-setting-xlsx-preview.tsx',
+    'src/lib/import/course-setting-xlsx-client.ts',
+    // Pre-existing dirty doc (unrelated to L7-F):
+    'docs/l6-e1-xlsx-course-setting-manual-resolution-ui.json',
+    // L7-A2 self-modification for stage-aware update:
+    'scripts/verify-xlsx-course-setting-full-review-dataset-pagination-l7-a2.ts',
+  ]
+  const statusLines = status.split('\n').filter((l) => l.trim() !== '')
+  const isL7FAllowed = (line: string): boolean => {
+    const p = line.replace(/^\s*[?MAU ]+\s*/, '').trim()
+    return allowedL7F.some((a) => p.includes(a))
+  }
+  const otherLines = statusLines.filter((l) => !isL7FAllowed(l))
+  record('worktree clean (L7-F additions tolerated)', otherLines.length === 0,
+    otherLines.length > 0 ? otherLines.join(' | ') : '')
   record('status has L7-A2', /L7-A2/.test(statusSrc))
 
   const pass = results.filter((r) => r.ok).length

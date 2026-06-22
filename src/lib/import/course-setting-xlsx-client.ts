@@ -1089,3 +1089,150 @@ export function downloadCourseSettingPartialImportPlanExport(
   document.body.removeChild(a)
   setTimeout(() => URL.revokeObjectURL(url), 100)
 }
+
+// ── L7-F Partial Import Apply types + client helper ──────────────────────────
+
+/** L7-F: Post-apply audit check result (one item). */
+export type CourseSettingApplyAuditCheck = {
+  name: string
+  ok: boolean
+  detail?: string
+}
+
+/** L7-F: Apply summary. */
+export type CourseSettingApplySummary = {
+  importableRows: number
+  appliedRows: number
+  skippedRows: number
+  unresolvedRows: number
+  blockingRows: number
+  createdCourses: number
+  reusedCourses: number
+  createdTeachingTasks: number
+  createdTeachingTaskClasses: number
+  duplicateTeachingTasksSkipped: number
+  rowsUsingNewCourseCandidate: number
+  confirmedNewCourseCandidates: number
+}
+
+/** L7-F: Before/after counts. */
+export type CourseSettingApplyCounts = {
+  courseBefore: number
+  courseAfter: number
+  teachingTaskBefore: number
+  teachingTaskAfter: number
+  teachingTaskClassBefore: number
+  teachingTaskClassAfter: number
+  importBatchBefore: number
+  importBatchAfter: number
+  teacherBefore: number
+  teacherAfter: number
+  classGroupBefore: number
+  classGroupAfter: number
+  scheduleSlotBefore: number
+  scheduleSlotAfter: number
+  scheduleAdjustmentBefore: number
+  scheduleAdjustmentAfter: number
+}
+
+/** L7-F: Full apply response. */
+export type CourseSettingApplyResponse = {
+  success: true
+  stage: string
+  planVersion: string
+  templateVersion: string
+  dryRunOnly: boolean
+  dbWritten: boolean
+  applied: boolean
+  importBatchId: number | null
+  backupPath: string | null
+  targetSemester: {
+    id: number
+    name: string
+    code: string | null
+    isActive: boolean
+  }
+  sourceArtifact: { filename: string; sha256: string; sizeBytes: number }
+  serverPlanHash: string
+  summary: CourseSettingApplySummary
+  counts: CourseSettingApplyCounts
+  postApplyAudit: {
+    passed: boolean
+    checks: CourseSettingApplyAuditCheck[]
+  }
+  rollbackNote: string
+  rawIncluded: false
+  warnings: string[]
+}
+
+/** L7-F: Apply error response. */
+export type CourseSettingApplyErrorResponse = {
+  success: false
+  error: string
+  message: string
+  stage: string
+  dryRunOnly: boolean
+  dbWritten: false
+  rawIncluded: false
+}
+
+/** Compute the plan hash client-side (SHA-256 of the canonical plan JSON).
+ *  Mirrors the server-side `computeL7FPlanHash`. */
+export async function computePlanHashClient(
+  planResponse: CourseSettingPartialImportPlanResponse,
+): Promise<string> {
+  // Stable stringify: sort object keys, no extra whitespace.
+  const stableStringify = (v: unknown): string => {
+    if (v == null || typeof v !== 'object') return JSON.stringify(v)
+    if (Array.isArray(v)) return `[${v.map(stableStringify).join(',')}]`
+    const keys = Object.keys(v as Record<string, unknown>).sort()
+    return `{${keys.map((k) => JSON.stringify(k) + ':' + stableStringify((v as Record<string, unknown>)[k])).join(',')}}`
+  }
+  const canonical = stableStringify(planResponse)
+  const buf = new TextEncoder().encode(canonical)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', buf)
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+}
+
+/**
+ * L7-F: Apply the partial import plan to the database.
+ *
+ * POSTs the Excel file + targetSemesterId + manualResolutions (JSON) +
+ * confirmToken + expectedPlanHash to the apply endpoint. Backend re-parses
+ * the Excel, recomputes the plan, validates the hash, creates a DB backup,
+ * and (on real mode) executes the plan inside a Prisma transaction.
+ */
+export async function applyCourseSettingPartialImport(
+  file: File,
+  targetSemesterId: number,
+  manualResolutions: CourseSettingManualResolutionItem[],
+  confirmToken: string,
+  planHash: string,
+  options?: { dryRunOnly?: boolean },
+): Promise<CourseSettingApplyResponse> {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('targetSemesterId', String(targetSemesterId))
+  formData.append('manualResolutions', JSON.stringify(manualResolutions))
+  formData.append('confirmToken', confirmToken)
+  formData.append('expectedPlanHash', planHash)
+  if (options?.dryRunOnly) {
+    formData.append('dryRunOnly', 'true')
+  }
+
+  const res = await fetch(
+    '/api/admin/import/course-setting-xlsx/partial-import-apply',
+    { method: 'POST', body: formData },
+  )
+
+  const data = await res.json()
+
+  if (!res.ok || !data.success) {
+    const err = data as CourseSettingApplyErrorResponse
+    throw new Error(err.message ?? err.error ?? `Apply failed (HTTP ${res.status})`)
+  }
+
+  return data as CourseSettingApplyResponse
+}

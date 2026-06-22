@@ -48,6 +48,8 @@ import {
   downloadManualResolutionDraftExport,
   planCourseSettingPartialImport,
   downloadCourseSettingPartialImportPlanExport,
+  applyCourseSettingPartialImport,
+  computePlanHashClient,
   type CourseSettingXlsxPreviewResponse,
   type CourseSettingXlsxPreviewRow,
   type SemesterListItem,
@@ -56,6 +58,7 @@ import {
   type CourseSettingApprovalReviewUiDecisionValue,
   type CourseSettingResolutionOptionsResponse,
   type CourseSettingPartialImportPlanResponse,
+  type CourseSettingApplyResponse,
 } from '@/lib/import/course-setting-xlsx-client'
 import type { TargetSemesterMode, CreateSemesterFormState } from './course-setting/course-setting-ui-types'
 import {
@@ -70,6 +73,7 @@ import { ApprovalReviewSection } from './course-setting/course-setting-approval-
 import type { ReviewCounters } from './course-setting/course-setting-approval-review-section'
 import { ManualResolutionSection } from './course-setting/course-setting-manual-resolution-section'
 import { PartialPlanSection } from './course-setting/course-setting-partial-import-plan-section'
+import { ApplyExecutionSection } from './course-setting/course-setting-apply-execution-section'
 const EMPTY_CREATE_FORM: CreateSemesterFormState = {
   name: '',
   code: '',
@@ -121,6 +125,10 @@ export default function CourseSettingXlsxPreview() {
   const [partialPlanError, setPartialPlanError] = useState<string | null>(null)
   const [partialPlanLoading, setPartialPlanLoading] = useState(false)
   const [partialPlanFilter, setPartialPlanFilter] = useState<'importable' | 'skipped' | 'unresolved' | 'candidates' | 'duplicates' | 'blockers'>('importable')
+  // L7-F: apply execution state
+  const [applyResult, setApplyResult] = useState<CourseSettingApplyResponse | null>(null)
+  const [applyError, setApplyError] = useState<string | null>(null)
+  const [applyLoading, setApplyLoading] = useState(false)
   // L7-A2: pagination state for approval review and manual resolution tables
   const PAGE_SIZE = 50
   const [reviewPage, setReviewPage] = useState(1)
@@ -419,6 +427,66 @@ export default function CourseSettingXlsxPreview() {
       description: '已生成脱敏 JSON（rawIncluded: false）',
     })
   }, [partialPlan])
+  // L7-F: Apply execution handlers
+  const runApply = useCallback(
+    async (confirmToken: string, dryRunOnly: boolean) => {
+      if (!file) {
+        toast.error('请选择 .xlsx 课程设置文件')
+        return
+      }
+      if (!selectedSemesterId) {
+        toast.error('请先选择导入目标学期')
+        return
+      }
+      if (!partialPlan) {
+        toast.error('请先生成部分导入计划')
+        return
+      }
+      if (!dryRunOnly && !confirmToken) {
+        toast.error('请输入确认口令')
+        return
+      }
+      setApplyLoading(true)
+      setApplyError(null)
+      setApplyResult(null)
+      try {
+        const expectedToken = `APPLY_XLSX_COURSE_SETTING_${selectedSemesterId}`
+        if (!dryRunOnly && confirmToken !== expectedToken) {
+          throw new Error('确认口令与目标学期不匹配')
+        }
+        const planHash = await computePlanHashClient(partialPlan)
+        const data = await applyCourseSettingPartialImport(
+          file,
+          selectedSemesterId,
+          resolutionItems,
+          confirmToken,
+          planHash,
+          { dryRunOnly },
+        )
+        setApplyResult(data)
+        if (data.dbWritten) {
+          toast.success('导入执行成功', {
+            description: `ImportBatch ${data.importBatchId} · 课程 ${data.summary.createdCourses} · 教学任务 ${data.summary.createdTeachingTasks}`,
+          })
+        } else if (data.dryRunOnly) {
+          toast.info('试运行完成（未写入数据库）', {
+            description: `将创建课程 ${data.summary.createdCourses ?? 0} · 教学任务 ${data.summary.createdTeachingTasks ?? 0}`,
+          })
+        } else {
+          toast.warning('导入未完成', {
+            description: '请查看 Post-Apply Audit 结果',
+          })
+        }
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e)
+        setApplyError(msg)
+        toast.error(dryRunOnly ? '试运行失败' : '导入执行失败', { description: msg })
+      } finally {
+        setApplyLoading(false)
+      }
+    },
+    [file, selectedSemesterId, partialPlan, resolutionItems],
+  )
   // L6-D2: compute live counters from clientDecisions (not server state)
   const liveCounters = useMemo(() => {
     if (!reviewResult) return null
@@ -938,6 +1006,18 @@ export default function CourseSettingXlsxPreview() {
           filter={partialPlanFilter}
           setFilter={setPartialPlanFilter}
           onExport={handleExportPartialPlan}
+        />
+      )}
+      {/* L7-F: Apply execution section — controlled write panel */}
+      {partialPlan && selectedSemesterId && (
+        <ApplyExecutionSection
+          plan={partialPlan}
+          targetSemesterId={selectedSemesterId}
+          onApply={(token) => void runApply(token, false)}
+          onDryRun={() => void runApply('', true)}
+          applyLoading={applyLoading}
+          applyResult={applyResult}
+          applyError={applyError}
         />
       )}
       {/* Results */}
