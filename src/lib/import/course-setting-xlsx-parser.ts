@@ -11,6 +11,11 @@
  *  - No `any` in public exports.
  *  - Idempotent: same Buffer -> identical result.
  *  - Sensitive string values are exposed only when includeRawValues=true.
+ *
+ * L7-A: Supports both legacy template (merged cells, 8-column) and
+ * new A:M template (13-column, row-level, no forward-fill). The new
+ * template is detected via header keywords and produces rows with
+ * `templateVersion: 'new-course-setting-a-m-v2'`.
  */
 
 import { createHash } from 'node:crypto';
@@ -68,6 +73,14 @@ export type CourseSettingColumnMap = {
   teacherAssignment?: number;
   remark?: number;
   mergeRemark?: number;
+  // L7-A: new A:M template columns (populated only for new template sheets)
+  grade?: number;              // A 年级 (e.g. 2024级)
+  programLength?: number;      // B 学制 (e.g. 三年制)
+  majorName?: number;          // C 专业
+  classNameText?: number;      // D 班级 (e.g. 1班,2班,3班)
+  classStudentCountText?: number; // E 班级人数 (e.g. 1班47,2班37)
+  courseCategory?: number;     // G 课程类别 (optional)
+  taskAssignmentText?: number; // K 授课任务分配 (e.g. 1,2:杨秀芳;3,4:王芳)
 };
 export type ParsedCourseSettingRow = {
   sheetIndex: number;
@@ -75,6 +88,8 @@ export type ParsedCourseSettingRow = {
   sourceRowIndex: number;
   sourceRange?: string;
   rowKind: 'course' | 'header' | 'title' | 'subtotal' | 'blank' | 'malformed';
+  /** L7-A: template version detected for this sheet. */
+  templateVersion?: 'legacy' | 'new-course-setting-a-m-v2';
   gradeMajor?: ParsedTextValue;
   classCount?: ParsedClassCountValue;
   courseName?: ParsedTextValue;
@@ -83,6 +98,14 @@ export type ParsedCourseSettingRow = {
   teacherAssignment?: ParsedTeacherAssignmentValue;
   remark?: ParsedTextValue;
   mergeRemark?: ParsedTextValue;
+  // L7-A: new template fields (populated only when templateVersion is 'new-course-setting-a-m-v2')
+  grade?: ParsedTextValue;              // A 年级
+  programLength?: ParsedTextValue;      // B 学制
+  majorName?: ParsedTextValue;          // C 专业
+  classNameText?: ParsedTextValue;      // D 班级 (raw text, e.g. "1班,2班,3班,4班")
+  classStudentCountText?: ParsedTextValue; // E 班级人数 (raw text, e.g. "1班47,2班37")
+  courseCategory?: ParsedTextValue;     // G 课程类别 (optional)
+  taskAssignmentText?: ParsedTextValue; // K 授课任务分配 (raw text, e.g. "1,2:杨秀芳;3,4:王芳")
   sourceEvidence: CourseSettingSourceEvidenceDraft;
   warnings: CourseSettingDiagnostic[];
   confidence: number;
@@ -148,6 +171,11 @@ export type CourseSettingSourceEvidenceDraft = {
   sourceTeacherRawHash?: string;
   sourceRemarkHash?: string;
   sourceMergeRemarkHash?: string;
+  // L7-A: new template source evidence
+  sourceGradeHash?: string;
+  sourceProgramLengthHash?: string;
+  sourceClassNameTextHash?: string;
+  sourceTaskAssignmentHash?: string;
 };
 
 // ---------------------------------------------------------------------------
@@ -164,6 +192,18 @@ const HEADER_KEYWORDS = [
   '备注',
   '合班说明',
 ] as const;
+
+// L7-A: new A:M template keywords. Used to detect the new 13-column template.
+// These are distinct from the legacy keywords above.
+const NEW_TEMPLATE_KEYWORDS = [
+  '学制',
+  '专业',
+  '班级',
+  '授课任务分配',
+] as const;
+
+// Minimum keyword count to declare a header row (legacy threshold).
+const LEGACY_HEADER_THRESHOLD = 6;
 const CN_NUM: Record<string, number> = {
   一: 1,
   二: 2,
@@ -218,6 +258,19 @@ const countHeaderKeywords = (values: ReadonlyArray<string>): number => {
   }
   return count;
 };
+
+// L7-A: count new template keywords (学制, 专业, 班级, 授课任务分配)
+const countNewTemplateKeywords = (values: ReadonlyArray<string>): number => {
+  let count = 0;
+  for (const kw of NEW_TEMPLATE_KEYWORDS) {
+    if (values.some((v) => v.length > 0 && v.includes(kw))) count += 1;
+  }
+  return count;
+};
+
+/** L7-A: detect if the sheet uses the new A:M template based on header keywords. */
+const isNewTemplate = (values: ReadonlyArray<string>): boolean =>
+  countNewTemplateKeywords(values) >= 2;
 
 const trimCellValue = (value: unknown): string => {
   if (value === null || value === undefined) return '';
@@ -707,12 +760,151 @@ const parseText = (
 };
 
 // ---------------------------------------------------------------------------
+// L7-A: New A:M template field parsers
+// ---------------------------------------------------------------------------
+
+/** L7-A: Parse column D (班级) as direct class names.
+ *  Input: "1班,2班,3班,4班,5班,6班"
+ *  Produces one ParsedClassGroupCandidate per class name. */
+const parseDirectClassNames = (
+  raw: string,
+  includeRaw: boolean,
+): ParsedClassCountValue => {
+  const trimmed = raw.trim();
+  if (trimmed.length === 0)
+    return {
+      primaryClassification: 'blank',
+      parsedClassGroups: [],
+      rawHash: hash(''),
+      valueShape: 'blank',
+      warnings: [],
+      confidence: 1.0,
+    };
+  const parts = trimmed.split(/[、，,]+/).map((s) => s.trim()).filter((s) => s.length > 0);
+  const candidates: ParsedClassGroupCandidate[] = [];
+  for (const part of parts) {
+    candidates.push({
+      classLabel: includeRaw ? part : undefined,
+      classLabelHash: hash(part),
+      studentCount: undefined,
+      method: 'unknown',
+      confidence: 0.95,
+    });
+  }
+  return {
+    primaryClassification: 'single',
+    parsedClassGroups: candidates,
+    rawHash: hash(trimmed),
+    valueShape: `directClassNames:${parts.length}`,
+    warnings: [],
+    confidence: 0.95,
+  };
+};
+
+/** L7-A: Parse column E (班级人数) and merge student counts into class groups.
+ *  Input: "1班47,2班37,3班36,4班38,5班34,6班34"
+ *  Returns a map of className -> studentCount for merging. */
+const parseStudentCountMap = (
+  raw: string,
+): Map<string, number> => {
+  const trimmed = raw.trim();
+  const map = new Map<string, number>();
+  if (trimmed.length === 0) return map;
+  const parts = trimmed.split(/[、，,]+/).map((s) => s.trim()).filter((s) => s.length > 0);
+  for (const part of parts) {
+    const m = part.match(/^(.+?)(\d+)\s*人?\s*$/);
+    if (m && m[1] && m[2]) {
+      map.set(m[1].trim(), parseInt(m[2], 10));
+    }
+  }
+  return map;
+};
+
+/** L7-A: Parse column K (授课任务分配) as task assignments.
+ *  Format: "1,2:杨秀芳;3,4:王芳;5,6:姜剑书"
+ *  Each assignment: classNums : teacherName */
+const parseTaskAssignmentText = (
+  raw: string,
+  includeRaw: boolean,
+  mkDiag: (code: string, severity: 'info' | 'warn' | 'error', message: string) => CourseSettingDiagnostic,
+): ParsedTeacherAssignmentValue => {
+  const trimmed = raw.trim();
+  if (trimmed.length === 0) {
+    return {
+      primaryClassification: 'blank',
+      assignments: [],
+      rawHash: hash(''),
+      valueShape: 'blank',
+      warnings: [],
+      confidence: 1.0,
+    };
+  }
+
+  const assignments: ParsedTeacherAssignmentCandidate[] = [];
+  const warnings: CourseSettingDiagnostic[] = [];
+  let confidence = 1.0;
+
+  // Split by ; or ；
+  const parts = trimmed.split(/[;；]+/).map((s) => s.trim()).filter((s) => s.length > 0);
+  for (const part of parts) {
+    // Each part: "1,2:杨秀芳" or "1班,2班:杨秀芳"
+    const colonIdx = part.indexOf(':');
+    if (colonIdx < 0) {
+      // Malformed: no colon
+      warnings.push(mkDiag('TASK_ASSIGNMENT_NEEDS_REVIEW', 'warn', `task assignment missing colon: ${part.length} chars`));
+      confidence = Math.min(confidence, 0.3);
+      // Try to extract teacher name at least
+      assignments.push({
+        teacherName: includeRaw ? part : undefined,
+        teacherNameHash: hash(part),
+        scopeLabel: includeRaw ? '(unknown)' : undefined,
+        scopeLabelHash: hash('(unknown)'),
+        scopeType: 'unknown',
+        method: 'unknown',
+        confidence: 0.2,
+      });
+      continue;
+    }
+    const classNums = part.substring(0, colonIdx).trim();
+    const teacherName = part.substring(colonIdx + 1).trim();
+    if (teacherName.length === 0) {
+      warnings.push(mkDiag('TASK_ASSIGNMENT_NEEDS_REVIEW', 'warn', 'task assignment has empty teacher'));
+      confidence = Math.min(confidence, 0.3);
+      continue;
+    }
+    assignments.push({
+      teacherName: includeRaw ? teacherName : undefined,
+      teacherNameHash: hash(teacherName),
+      scopeLabel: includeRaw ? classNums : undefined,
+      scopeLabelHash: hash(classNums),
+      scopeType: 'section',
+      method: 'numberedScope',
+      confidence: 0.9,
+    });
+  }
+
+  if (assignments.length === 0) {
+    warnings.push(mkDiag('TASK_ASSIGNMENT_NEEDS_REVIEW', 'warn', 'task assignment text produced no assignments'));
+    confidence = 0.1;
+  }
+
+  return {
+    primaryClassification: assignments.length >= 2 ? 'numbered' : assignments.length === 1 ? 'single' : 'other',
+    assignments,
+    rawHash: hash(trimmed),
+    valueShape: `taskAssignment:${assignments.length}`,
+    warnings,
+    confidence,
+  };
+};
+
+// ---------------------------------------------------------------------------
 // Sheet-level parsing
 // ---------------------------------------------------------------------------
 
 const detectHeaderRow = (
   sheet: ExcelJS.Worksheet,
-): { headerRowIndex?: number; columnMap: CourseSettingColumnMap } => {
+): { headerRowIndex?: number; columnMap: CourseSettingColumnMap; isNewTemplate: boolean } => {
   const maxScan = Math.min(5, sheet.rowCount);
   for (let r = 1; r <= maxScan; r += 1) {
     const values: string[] = [];
@@ -722,12 +914,29 @@ const detectHeaderRow = (
         const ci = parseInt(cell.col, 10);
         if (Number.isFinite(ci) && ci > 0) values[ci] = cellText(cell);
       });
-    if (countHeaderKeywords(values) >= 6) {
+
+    // L7-A: check for new template first (has 授课任务分配 OR 班级+学制+专业)
+    const newTpl = isNewTemplate(values);
+    const legacyCount = countHeaderKeywords(values);
+
+    // Accept header row if: new template keywords match (≥2) OR legacy keywords match (≥6)
+    if (newTpl || legacyCount >= LEGACY_HEADER_THRESHOLD) {
       const columnMap: CourseSettingColumnMap = {};
       for (let c = 1; c < values.length; c += 1) {
         const v = values[c];
         if (typeof v !== 'string' || v.length === 0) continue;
-        if (v.includes('年级专业')) columnMap.gradeMajor = c;
+
+        // L7-A: new template column keywords (check before legacy to avoid conflicts)
+        if (v === '学制') columnMap.programLength = c;
+        else if (v === '专业') columnMap.majorName = c;
+        else if (v === '年级') columnMap.grade = c;
+        else if (v === '班级') columnMap.classNameText = c;
+        else if (v === '班级人数') columnMap.classStudentCountText = c;
+        else if (v === '课程类别') columnMap.courseCategory = c;
+        else if (v === '授课任务分配') columnMap.taskAssignmentText = c;
+
+        // Legacy column keywords (also map for backward compatibility)
+        else if (v.includes('年级专业')) columnMap.gradeMajor = c;
         else if (v.includes('班级人数')) columnMap.classCount = c;
         else if (
           v.includes('人才培养方案课程名称') ||
@@ -740,10 +949,10 @@ const detectHeaderRow = (
         else if (v.includes('备注')) columnMap.remark = c;
         else if (v.includes('合班说明')) columnMap.mergeRemark = c;
       }
-      return { headerRowIndex: r, columnMap };
+      return { headerRowIndex: r, columnMap, isNewTemplate: newTpl };
     }
   }
-  return { headerRowIndex: undefined, columnMap: {} };
+  return { headerRowIndex: undefined, columnMap: {}, isNewTemplate: false };
 };
 
 const buildSourceEvidenceDraft = (
@@ -756,12 +965,17 @@ const buildSourceEvidenceDraft = (
     : undefined,
   sourceSheetNameHash: sheetNameHash,
   sourceRowIndex: row.sourceRowIndex,
-  sourceMajorNameHash: row.gradeMajor?.rawHash,
+  sourceMajorNameHash: row.majorName?.rawHash ?? row.gradeMajor?.rawHash,
   sourceClassCountRawHash: row.classCount?.rawHash,
   sourceCourseNameHash: row.courseName?.rawHash,
-  sourceTeacherRawHash: row.teacherAssignment?.rawHash,
+  sourceTeacherRawHash: row.taskAssignmentText?.rawHash ?? row.teacherAssignment?.rawHash,
   sourceRemarkHash: row.remark?.rawHash,
   sourceMergeRemarkHash: row.mergeRemark?.rawHash,
+  // L7-A: new template source evidence
+  sourceGradeHash: row.grade?.rawHash,
+  sourceProgramLengthHash: row.programLength?.rawHash,
+  sourceClassNameTextHash: row.classNameText?.rawHash,
+  sourceTaskAssignmentHash: row.taskAssignmentText?.rawHash,
 });
 
 const computeRowConfidence = (vals: ReadonlyArray<number>): number => {
@@ -778,7 +992,6 @@ const parseSheet = (
   sheetNameHash: string,
 ): { sheet: ParsedCourseSettingSheet; hasCourseRows: boolean } => {
   const includeRaw = options.includeRawValues === true;
-  const lastCol = Math.max(sheet.columnCount, 8);
   const diagnostics: CourseSettingDiagnostic[] = [];
   const rows: ParsedCourseSettingRow[] = [];
   const mergedCellCount = getMergedCellCount(sheet);
@@ -791,19 +1004,29 @@ const parseSheet = (
       sheetIndex,
     });
 
-  const { headerRowIndex, columnMap } = detectHeaderRow(sheet);
+  const { headerRowIndex, columnMap, isNewTemplate: useNewTemplate } = detectHeaderRow(sheet);
   if (typeof headerRowIndex !== 'number')
     diagnostics.push({
       code: 'SHEET_HEADER_MISSING',
       severity: 'error',
-      message: 'No header row detected (expected ≥6 keyword matches in rows 1-5)',
+      message: useNewTemplate
+        ? 'No header row detected (new template keywords not found)'
+        : 'No header row detected (expected ≥6 keyword matches in rows 1-5)',
       sheetIndex,
     });
+
+  // L7-A: determine template version and column range for this sheet
+  const templateVersion: 'legacy' | 'new-course-setting-a-m-v2' = useNewTemplate
+    ? 'new-course-setting-a-m-v2'
+    : 'legacy';
+  const lastCol = useNewTemplate ? Math.max(sheet.columnCount, 13) : Math.max(sheet.columnCount, 8);
 
   const totalRows = sheet.rowCount;
   let hasCourseRows = false;
   let upstreamA = '';
   let upstreamB = '';
+
+  // Build mapped columns list (legacy 8 columns + new template columns)
   const mappedCols = [
     columnMap.gradeMajor,
     columnMap.classCount,
@@ -813,7 +1036,15 @@ const parseSheet = (
     columnMap.teacherAssignment,
     columnMap.remark,
     columnMap.mergeRemark,
-  ];
+    // L7-A: include new template columns in the "all blank" check
+    columnMap.grade,
+    columnMap.programLength,
+    columnMap.majorName,
+    columnMap.classNameText,
+    columnMap.classStudentCountText,
+    columnMap.courseCategory,
+    columnMap.taskAssignmentText,
+  ].filter((c): c is number => typeof c === 'number');
   const mkDiag = (
     code: CourseSettingDiagnostic['code'],
     severity: CourseSettingDiagnostic['severity'],
@@ -831,15 +1062,28 @@ const parseSheet = (
 
   for (let r = 1; r <= totalRows; r += 1) {
     const row = sheet.getRow(r);
-    const aCell = row.getCell(columnMap.gradeMajor ?? 1);
-    const bCell = row.getCell(columnMap.classCount ?? 2);
-    const aText = findMasterValue(sheet, aCell);
-    const bText = findMasterValue(sheet, bCell);
+
+    // L7-A: read cells based on template version
+    // For new template: read A-M columns directly, no forward-fill
+    // For legacy: use existing A/B forward-fill logic
+    const aCell = row.getCell(columnMap.grade ?? columnMap.gradeMajor ?? 1);
+    const bCell = row.getCell(columnMap.classStudentCountText ?? columnMap.classCount ?? 2);
+    const aText = useNewTemplate
+      ? readCellTextAt(sheet, r, columnMap.grade ?? columnMap.gradeMajor)
+      : findMasterValue(sheet, aCell);
+    const bText = useNewTemplate
+      ? readCellTextAt(sheet, r, columnMap.classStudentCountText ?? columnMap.classCount)
+      : findMasterValue(sheet, bCell);
     const aBlank = aText.trim().length === 0;
     const bBlank = bText.trim().length === 0;
-    if (!aBlank) upstreamA = aText;
-    if (!bBlank) upstreamB = bText;
 
+    // L7-A: only do forward-fill for legacy template
+    if (!useNewTemplate) {
+      if (!aBlank) upstreamA = aText;
+      if (!bBlank) upstreamB = bText;
+    }
+
+    // L7-A: read all columns (legacy + new template)
     const reads = {
       c: readCellTextAt(sheet, r, columnMap.courseName),
       d: readCellTextAt(sheet, r, columnMap.examType),
@@ -847,18 +1091,29 @@ const parseSheet = (
       f: readCellTextAt(sheet, r, columnMap.teacherAssignment),
       g: readCellTextAt(sheet, r, columnMap.remark),
       h: readCellTextAt(sheet, r, columnMap.mergeRemark),
+      // L7-A: new template columns
+      grade: readCellTextAt(sheet, r, columnMap.grade),
+      programLength: readCellTextAt(sheet, r, columnMap.programLength),
+      majorName: readCellTextAt(sheet, r, columnMap.majorName),
+      classNameText: readCellTextAt(sheet, r, columnMap.classNameText),
+      classStudentCountText: readCellTextAt(sheet, r, columnMap.classStudentCountText),
+      courseCategory: readCellTextAt(sheet, r, columnMap.courseCategory),
+      taskAssignmentText: readCellTextAt(sheet, r, columnMap.taskAssignmentText),
     };
 
-    const aMasterRow = parseInt(aCell.master.row, 10);
-    const bMasterRow = parseInt(bCell.master.row, 10);
-    if (aCell.isMerged && masterSpansMultipleRows(sheet, aCell) && r === aMasterRow)
-      diagnostics.push(
-        mkDiag('INHERITED_GRADE_MAJOR', 'info', `Column A master spans rows ${aMasterRow}-...`, r, 'gradeMajor'),
-      );
-    if (bCell.isMerged && masterSpansMultipleRows(sheet, bCell) && r === bMasterRow)
-      diagnostics.push(
-        mkDiag('INHERITED_CLASS_COUNT', 'info', `Column B master spans rows ${bMasterRow}-...`, r, 'classCount'),
-      );
+    // Legacy: merged cell diagnostics
+    if (!useNewTemplate) {
+      const aMasterRow = parseInt(aCell.master.row, 10);
+      const bMasterRow = parseInt(bCell.master.row, 10);
+      if (aCell.isMerged && masterSpansMultipleRows(sheet, aCell) && r === aMasterRow)
+        diagnostics.push(
+          mkDiag('INHERITED_GRADE_MAJOR', 'info', `Column A master spans rows ${aMasterRow}-...`, r, 'gradeMajor'),
+        );
+      if (bCell.isMerged && masterSpansMultipleRows(sheet, bCell) && r === bMasterRow)
+        diagnostics.push(
+          mkDiag('INHERITED_CLASS_COUNT', 'info', `Column B master spans rows ${bMasterRow}-...`, r, 'classCount'),
+        );
+    }
 
     let rowKind: ParsedCourseSettingRow['rowKind'];
     if (typeof headerRowIndex === 'number' && r === headerRowIndex) rowKind = 'header';
@@ -868,22 +1123,36 @@ const parseSheet = (
       const allBlank = mappedCols.every((c) => readCellTextAt(sheet, r, c).trim().length === 0);
       if (allBlank) rowKind = 'blank';
       else {
-        const nonBlank = [reads.c, reads.d, reads.e, reads.f, reads.g, reads.h].filter(
-          (v) => v.trim().length > 0,
-        ).length;
-        // Align with L1 audit heuristic:
-        //   - course:  has courseName (C) and at least A or B non-blank
-        //   - subtotal: no courseName but A or B has content (subtotal/小计/合计 rows)
-        //   - malformed: no courseName and both A/B blank (structural anomaly)
-        if (reads.c.trim().length === 0) {
-          if (!aBlank || !bBlank) rowKind = 'subtotal';
-          else rowKind = 'malformed';
+        // L7-A: for new template, check courseName (F column) for subtotal indicators
+        if (useNewTemplate) {
+          const courseNameText = reads.c.trim();
+          if (courseNameText.length === 0) {
+            // Empty course name in new template → check if it's a subtotal row
+            const hasAnyContent = [
+              reads.grade, reads.programLength, reads.majorName,
+              reads.classNameText, reads.classStudentCountText,
+            ].some((v) => v.trim().length > 0);
+            rowKind = hasAnyContent ? 'subtotal' : 'malformed';
+          } else if (/小计|合计|总计/.test(courseNameText)) {
+            rowKind = 'subtotal';
+          } else {
+            rowKind = 'course';
+            hasCourseRows = true;
+          }
         } else {
-          rowKind = 'course';
-          hasCourseRows = true;
+          // Legacy: original heuristic
+          const nonBlank = [reads.c, reads.d, reads.e, reads.f, reads.g, reads.h].filter(
+            (v) => v.trim().length > 0,
+          ).length;
+          if (reads.c.trim().length === 0) {
+            if (!aBlank || !bBlank) rowKind = 'subtotal';
+            else rowKind = 'malformed';
+          } else {
+            rowKind = 'course';
+            hasCourseRows = true;
+          }
+          void nonBlank;
         }
-        // suppress unused-var warning when nonBlank not referenced
-        void nonBlank;
       }
     }
 
@@ -903,23 +1172,80 @@ const parseSheet = (
     }
 
     const rowWarnings: CourseSettingDiagnostic[] = [];
-    if (aBlank && upstreamA.length > 0)
+    if (!useNewTemplate && aBlank && upstreamA.length > 0)
       rowWarnings.push(
         mkDiag('INHERITED_GRADE_MAJOR', 'info', 'Grade/major inherited from upstream row', r, 'gradeMajor'),
       );
-    if (bBlank && upstreamB.length > 0)
+    if (!useNewTemplate && bBlank && upstreamB.length > 0)
       rowWarnings.push(
         mkDiag('INHERITED_CLASS_COUNT', 'info', 'Class count inherited from upstream row', r, 'classCount'),
       );
 
-    const gradeMajor = parseText(aText, includeRaw, 'gradeMajor');
-    const classCount = parseClassCount(bText, includeRaw);
+    // L7-A: parse fields based on template version
+    let gradeMajor: ParsedTextValue;
+    let classCount: ParsedClassCountValue;
     const courseName = parseText(reads.c, includeRaw, 'courseName');
     const examType = parseExamType(reads.d);
     const weeklyHours = parseWeeklyHours(reads.e);
-    const teacherAssignment = parseTeacherAssignment(reads.f, includeRaw);
+    let teacherAssignment: ParsedTeacherAssignmentValue;
     const remark = parseRemarkOrMerge(reads.g, 'remark');
     const mergeRemark = parseRemarkOrMerge(reads.h, 'mergeRemark');
+
+    // L7-A: new template specific fields
+    let grade: ParsedTextValue | undefined;
+    let programLength: ParsedTextValue | undefined;
+    let majorName: ParsedTextValue | undefined;
+    let classNameText: ParsedTextValue | undefined;
+    let classStudentCountText: ParsedTextValue | undefined;
+    let courseCategory: ParsedTextValue | undefined;
+    let taskAssignmentText: ParsedTextValue | undefined;
+
+    if (useNewTemplate) {
+      // L7-A: new A:M template parsing
+      // A (年级) + C (专业) → gradeMajor
+      grade = parseText(reads.grade, includeRaw, 'gradeMajor');
+      programLength = parseText(reads.programLength, includeRaw, 'gradeMajor');
+      majorName = parseText(reads.majorName, includeRaw, 'courseName');
+      const combined = [reads.grade.trim(), reads.majorName.trim()].filter((v) => v.length > 0).join('/');
+      gradeMajor = parseText(combined, includeRaw, 'gradeMajor');
+
+      // D (班级) → classCount via parseDirectClassNames
+      classNameText = parseText(reads.classNameText, includeRaw, 'courseName');
+      classCount = parseDirectClassNames(reads.classNameText, includeRaw);
+
+      // E (班级人数) → merge student counts into classCount
+      classStudentCountText = parseText(reads.classStudentCountText, includeRaw, 'courseName');
+      const studentCountMap = parseStudentCountMap(reads.classStudentCountText);
+      if (studentCountMap.size > 0) {
+        for (const cg of classCount.parsedClassGroups) {
+          const label = cg.classLabel;
+          if (label && studentCountMap.has(label)) {
+            cg.studentCount = studentCountMap.get(label);
+          }
+        }
+      }
+
+      // G (课程类别) → optional
+      courseCategory = reads.courseCategory.trim().length > 0
+        ? parseText(reads.courseCategory, includeRaw, 'courseName')
+        : undefined;
+
+      // K (授课任务分配) → primary teacher assignment
+      taskAssignmentText = parseText(reads.taskAssignmentText, includeRaw, 'courseName');
+      const mkDiagForTask = (code: string, severity: 'info' | 'warn' | 'error', message: string) =>
+        mkDiag(code, severity, message, r, 'taskAssignmentText');
+      teacherAssignment = parseTaskAssignmentText(reads.taskAssignmentText, includeRaw, mkDiagForTask);
+
+      // J (任课教师) → fallback when K is empty
+      if (teacherAssignment.primaryClassification === 'blank' && reads.f.trim().length > 0) {
+        teacherAssignment = parseTeacherAssignment(reads.f, includeRaw);
+      }
+    } else {
+      // Legacy template parsing
+      gradeMajor = parseText(aText, includeRaw, 'gradeMajor');
+      classCount = parseClassCount(bText, includeRaw);
+      teacherAssignment = parseTeacherAssignment(reads.f, includeRaw);
+    }
 
     if (examType.classification === 'other')
       rowWarnings.push(
@@ -932,6 +1258,7 @@ const parseSheet = (
       sourceRowIndex: r,
       sourceRange: rangeForRow(r, lastCol),
       rowKind,
+      templateVersion,
       gradeMajor,
       classCount,
       courseName,
@@ -940,6 +1267,14 @@ const parseSheet = (
       teacherAssignment,
       remark,
       mergeRemark,
+      // L7-A: new template fields
+      grade,
+      programLength,
+      majorName,
+      classNameText,
+      classStudentCountText,
+      courseCategory,
+      taskAssignmentText,
       sourceEvidence: { sourceSheetNameHash: sheetNameHash, sourceRowIndex: r },
       warnings: rowWarnings,
       confidence: computeRowConfidence([

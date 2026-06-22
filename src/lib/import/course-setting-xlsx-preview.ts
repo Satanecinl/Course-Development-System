@@ -92,6 +92,8 @@ export type CourseSettingXlsxPreviewRow = {
   sourceRowIndex: number
   rowKind: string
   displayIndex: number
+  /** L7-A: template version detected for this row. */
+  templateVersion?: 'legacy' | 'new-course-setting-a-m-v2'
   raw?: CourseSettingXlsxPreviewRowRaw
   parsed: CourseSettingXlsxPreviewRowParsed
   match?: {
@@ -328,16 +330,26 @@ function buildPreviewRows(
       // `raw` carries original text for authorized admin UI; `parsed` carries
       // hash-based identifiers. Both are computed in-memory and never written
       // to committed artifacts.
-      const teacherText =
-        row.teacherAssignment?.assignments
+      //
+      // L7-A: for new template rows, use classNameText (D column) for classText
+      // and taskAssignmentText (K column) for teacherText with J column fallback.
+      const isNewTemplate = row.templateVersion === 'new-course-setting-a-m-v2';
+      const teacherText = isNewTemplate
+        ? (row.taskAssignmentText?.normalized
+          ?? row.teacherAssignment?.assignments
+            ?.map((a) => (a.scopeLabel ? `${a.teacherName}(${a.scopeLabel})` : a.teacherName))
+            .filter(Boolean)
+            .join('、') ?? null)
+        : (row.teacherAssignment?.assignments
           ?.map((a) => (a.scopeLabel ? `${a.teacherName}(${a.scopeLabel})` : a.teacherName))
           .filter(Boolean)
-          .join('、') ?? null
-      const classText =
-        row.classCount?.parsedClassGroups
+          .join('、') ?? null)
+      const classText = isNewTemplate
+        ? (row.classNameText?.normalized ?? null)
+        : (row.classCount?.parsedClassGroups
           ?.map((cg) => cg.classLabel)
           .filter(Boolean)
-          .join('、') ?? null
+          .join('、') ?? null)
 
       const raw: CourseSettingXlsxPreviewRowRaw = {
         courseName: row.courseName?.normalized ?? null,
@@ -345,7 +357,9 @@ function buildPreviewRows(
         classText,
         remark: row.remark?.normalized ?? null,
         mergeRemark: row.mergeRemark?.normalized ?? null,
-        majorName: row.gradeMajor?.normalized ?? null,
+        majorName: isNewTemplate
+          ? (row.majorName?.normalized ?? row.gradeMajor?.normalized ?? null)
+          : (row.gradeMajor?.normalized ?? null),
         weeklyHoursText: row.weeklyHours ? String(row.weeklyHours.value ?? '') : null,
         examTypeText: row.examType?.normalized ?? null,
       }
@@ -376,6 +390,7 @@ function buildPreviewRows(
         sourceRowIndex: row.sourceRowIndex,
         rowKind: row.rowKind,
         displayIndex,
+        templateVersion: row.templateVersion,
         raw,
         parsed,
         courseNameHash: row.courseName?.rawHash,

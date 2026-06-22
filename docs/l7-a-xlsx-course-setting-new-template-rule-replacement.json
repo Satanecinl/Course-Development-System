@@ -1,0 +1,70 @@
+{
+  "stage": "L7-A-XLSX-COURSE-SETTING-NEW-TEMPLATE-RULE-REPLACEMENT",
+  "version": "l7-a-v1",
+  "templateVersion": "new-course-setting-a-m-v2",
+  "columns": {
+    "count": 13,
+    "range": "A:M",
+    "headers": [
+      "年级", "学制", "专业", "班级", "班级人数",
+      "课程名称", "课程类别", "考试考查", "周学时",
+      "任课教师", "授课任务分配", "合班说明", "备注"
+    ]
+  },
+  "features": {
+    "mergedCellForwardFill": false,
+    "subtotalSkip": true,
+    "taskAssignmentPriority": "K column (授课任务分配)",
+    "teacherFallback": "J column (任课教师)",
+    "targetSemesterSource": "ui-selected-targetSemesterId",
+    "academicYearFilter": false,
+    "semesterFilter": false
+  },
+  "newFieldParsers": [
+    "parseDirectClassNames",
+    "parseStudentCountMap",
+    "parseTaskAssignmentText"
+  ],
+  "newTemplateDetection": {
+    "keywords": ["学制", "专业", "班级", "授课任务分配"],
+    "threshold": 2
+  },
+  "subtotalPattern": "小计|合计|总计",
+  "l6E2gSemanticsPreserved": true,
+  "l6E2g1ClassMappingPreserved": true,
+  "noDbWriteProof": {
+    "prismaWrites": 0,
+    "courseCreate": 0,
+    "teacherCreate": 0,
+    "classGroupCreate": 0,
+    "applyRouteExists": false
+  },
+  "noApplyProof": {
+    "applyAllowed": false,
+    "applyButtons": []
+  },
+  "validationResults": {
+    "l7aVerify": "PASS",
+    "l6e2g1Regression": "PASS",
+    "l6e2gRegression": "PASS",
+    "l6e2fRegression": "PASS",
+    "l6e2eRegression": "PASS",
+    "l6e1Regression": "PASS",
+    "l6e2Regression": "PASS",
+    "prismaValidate": "PASS",
+    "migrateStatus": "PASS",
+    "k22c": "PASS",
+    "tsc": "PASS",
+    "eslint": "PASS",
+    "gitDiff": "clean",
+    "forbiddenFiles": "clean"
+  },
+  "browserValidationStatus": "PENDING",
+  "rawIncluded": false,
+  "privacy": {
+    "rawCourseNamesIncluded": false,
+    "rawTeacherNamesIncluded": false,
+    "rawClassNamesIncluded": false,
+    "rawRemarksIncluded": false
+  }
+}

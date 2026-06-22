@@ -332,18 +332,30 @@ export async function POST(request: NextRequest) {
       const approvalItemId = `approval:${pc.sheetIndex}:${pc.sourceRowIndex}`
       const parsedRow = parsedRowByRef.get(`${pc.sheetIndex}:${pc.sourceRowIndex}`)
       if (!parsedRow) continue
-      const teacherText =
-        parsedRow.teacherAssignment?.assignments
+
+      // L7-A: for new template rows, use classNameText (D column) for classText
+      // and taskAssignmentText (K column) for teacherText with J column fallback.
+      const isNewTemplate = parsedRow.templateVersion === 'new-course-setting-a-m-v2';
+      const teacherText = isNewTemplate
+        ? (parsedRow.taskAssignmentText?.normalized
+          ?? parsedRow.teacherAssignment?.assignments
+            ?.map((a) =>
+              a.scopeLabel ? `${a.teacherName ?? ''}(${a.scopeLabel})` : a.teacherName,
+            )
+            .filter((s): s is string => typeof s === 'string' && s.length > 0)
+            .join('、') ?? null)
+        : (parsedRow.teacherAssignment?.assignments
           ?.map((a) =>
             a.scopeLabel ? `${a.teacherName ?? ''}(${a.scopeLabel})` : a.teacherName,
           )
           .filter((s): s is string => typeof s === 'string' && s.length > 0)
-          .join('、') ?? null
-      const classText =
-        parsedRow.classCount?.parsedClassGroups
+          .join('、') ?? null)
+      const classText = isNewTemplate
+        ? (parsedRow.classNameText?.normalized ?? null)
+        : (parsedRow.classCount?.parsedClassGroups
           ?.map((cg) => cg.classLabel)
           .filter((s): s is string => typeof s === 'string' && s.length > 0)
-          .join('、') ?? null
+          .join('、') ?? null)
       const weeklyHoursText =
         parsedRow.weeklyHours && parsedRow.weeklyHours.value !== undefined
           ? String(parsedRow.weeklyHours.value)
@@ -357,7 +369,9 @@ export async function POST(request: NextRequest) {
         mergeRemark: parsedRow.mergeRemark?.normalized ?? null,
         weeklyHoursText,
         examTypeText,
-        majorName: parsedRow.gradeMajor?.normalized ?? null,
+        majorName: isNewTemplate
+          ? (parsedRow.majorName?.normalized ?? parsedRow.gradeMajor?.normalized ?? null)
+          : (parsedRow.gradeMajor?.normalized ?? null),
       })
     }
 

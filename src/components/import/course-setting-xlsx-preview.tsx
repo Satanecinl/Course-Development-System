@@ -587,6 +587,12 @@ export default function CourseSettingXlsxPreview() {
           <Badge variant="outline" className="text-xs font-normal">
             Preview Only
           </Badge>
+          {/* L7-A: show new template badge when applicable */}
+          {result && result.previewRows.some((r) => (r as Record<string, unknown>)['templateVersion'] === 'new-course-setting-a-m-v2') && (
+            <Badge variant="outline" className="text-xs font-normal bg-blue-50 text-blue-700 border-blue-200">
+              新版课程设置模板规则（A:M 固定列）
+            </Badge>
+          )}
         </h3>
         <p className="text-xs text-gray-500 mt-1">
           上传 .xlsx 课程设置文件，解析并预览识别结果。此功能为只读预览，不会修改数据库。

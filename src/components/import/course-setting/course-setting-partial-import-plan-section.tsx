@@ -46,6 +46,15 @@ export function PartialPlanSection({ plan, filter, setFilter, onExport }: Partia
         >
           planOnly · dryRunOnly · applyAllowed=false
         </Badge>
+        {/* L7-A: show template version when new template is used */}
+        {(plan as Record<string, unknown>)['templateVersion'] === 'new-course-setting-a-m-v2' && (
+          <Badge
+            variant="outline"
+            className="text-[10px] font-normal bg-blue-50 text-blue-700 border-blue-200"
+          >
+            新版 A:M 模板
+          </Badge>
+        )}
         <span className="text-[11px] text-gray-500 ml-auto">
           {plan.targetSemester.name} (ID {plan.targetSemester.id})
         </span>

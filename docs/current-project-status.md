@@ -172,3 +172,5 @@ The list reflects local history at the time of K36-A3 and does not assert remote
 - L6-E2G 修复 Excel 课程设置导入中的课程缺失语义：Excel 有课程名但 DB 无匹配时改为“新课程候选/待创建课程”，不再作为错误性课程缺失；真正课程缺失仅指 Excel 课程名为空或无法解析。L6-F 未来只允许创建已确认的新 Course，仍禁止自动创建 Teacher/ClassGroup。
 
 - L6-E2G1 修复 Excel 课程设置 task split 班级映射回归：教师括号中的 1.2/3.4/5.6 会先展开为独立 token 再映射为当前行 classText 中的真实班级名，DB 未匹配只显示 missing，不再误报 classTokenUnmatched；不写 DB、不执行 apply。
+
+- L7-A 替换 Excel 课程设置导入主规则为新版 A:M 固定列模板：每行独立解析，目标学期来自 UI 选择的 targetSemesterId，不再从 Excel 学年/学期列过滤；小计行跳过，K 列授课任务分配优先生成 task split，J 列任课教师为 fallback；不写 DB、不执行 apply，L6-F 继续暂缓。

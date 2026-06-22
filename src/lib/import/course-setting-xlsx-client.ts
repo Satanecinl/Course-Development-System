@@ -41,6 +41,8 @@ export type CourseSettingXlsxPreviewRow = {
   sourceRowIndex: number
   rowKind: string
   displayIndex: number
+  /** L7-A: template version detected for this row. */
+  templateVersion?: 'legacy' | 'new-course-setting-a-m-v2'
   raw?: CourseSettingXlsxPreviewRowRaw
   parsed: CourseSettingXlsxPreviewRowParsed
   match?: {

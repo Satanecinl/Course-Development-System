@@ -248,6 +248,47 @@ const matchClassTokensToClasses = (
 }
 
 /**
+ * L7-A: Parse K column task assignment format.
+ * Format: "1,2:杨秀芳;3,4:王芳;5,6:姜剑书"
+ * Each assignment: classNums:teacherName
+ * Returns assignments in the same shape as detectParenthesizedTeacherClassAssignments
+ * so they can be fed directly into buildParenthesizedCandidate.
+ */
+const parseTaskAssignmentColumnFormat = (
+  taskAssignmentText: string,
+  classText: string | null,
+): Array<{ teacher: string; classTokens: string[]; resolvedClassNames: string[]; unmatched: string[] }> | null => {
+  if (isBlank(taskAssignmentText)) return null;
+  const parts = taskAssignmentText.split(/[;；]+/).map((s) => s.trim()).filter((s) => s.length > 0);
+  if (parts.length < 2) return null;
+
+  const classTextStr = trim(classText);
+  const results: Array<{ teacher: string; classTokens: string[]; resolvedClassNames: string[]; unmatched: string[] }> = [];
+  for (const part of parts) {
+    const colonIdx = part.indexOf(':');
+    if (colonIdx < 0) continue;
+    const classNums = part.substring(0, colonIdx).trim();
+    const teacherName = part.substring(colonIdx + 1).trim();
+    if (isBlank(teacherName) || isPlaceholder(teacherName)) continue;
+
+    // Parse class numbers: "1,2" → ["1", "2"], "1,2,5,6" → ["1", "2", "5", "6"]
+    const classTokens = classNums.split(/[、，,]+/).map((s) => s.trim()).filter((s) => s.length > 0);
+    if (classTokens.length === 0) continue;
+
+    // Map class tokens to real class names from classText
+    const mapping = matchClassTokensToClasses(classTokens, classTextStr);
+    results.push({
+      teacher: teacherName,
+      classTokens,
+      resolvedClassNames: mapping.resolvedNames,
+      unmatched: mapping.unmatched,
+    });
+  }
+
+  return results.length >= 2 ? results : null;
+};
+
+/**
  * Detect parenthesized teacher-class assignments like:
  *   杨秀芳(1,2)、王芳(3,4)、姜剑书(5,6)
  *   张三（1班、2班）；李四（3班、4班）
@@ -543,7 +584,37 @@ export const detectTaskSplitCandidates = (
     examTypeText,
   }
 
-  // ── Pattern 0: Real parenthesized teacher-class (L6-E2E PRIMARY) ──
+  // ── Pattern 0a: K column task assignment format (L7-A PRIMARY) ──
+  // Format: "1,2:杨秀芳;3,4:王芳;5,6:姜剑书"
+  // This is the primary source for new A:M template rows.
+  const colonPattern = /^[^:]+:[^:]+(?:;[^:]+:[^:]+)*$/;
+  if (colonPattern.test(tText)) {
+    const kColumnAssignments = parseTaskAssignmentColumnFormat(tText, trim(classText));
+    if (kColumnAssignments && kColumnAssignments.length >= 2) {
+      const candidate = buildParenthesizedCandidate({
+        approvalItemId,
+        sheetName,
+        sheetIndex,
+        sourceRowIndex,
+        majorName,
+        majorNameHash,
+        courseName,
+        weeklyHours,
+        weeklyHoursText,
+        examType,
+        examTypeText,
+        diagnosticCodes,
+        assignments: kColumnAssignments,
+        existingTeachers: input.existingTeachers,
+        existingClassGroups: input.existingClassGroups,
+      });
+      candidates.push(candidate);
+      const aggregateConfidence = Math.max(...candidates.map((c) => c.confidence));
+      return { hasSplitDetection: true, candidates, aggregateConfidence };
+    }
+  }
+
+  // ── Pattern 0b: Real parenthesized teacher-class (L6-E2E PRIMARY) ──
   const parenthesized = detectParenthesizedTeacherClassAssignments(tText, trim(classText))
   if (parenthesized && parenthesized.length >= 2) {
     const candidate = buildParenthesizedCandidate({
