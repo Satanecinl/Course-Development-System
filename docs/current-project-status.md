@@ -202,3 +202,5 @@ The list reflects local history at the time of K36-A3 and does not assert remote
 - L7-F5D 将 L7-F5 视为 invalid apply 并回滚：诊断确认 248 个 TeachingTask 全部 teacherId=NULL，TeachingTaskClass 过度合班（avg 21.77 per task）；使用 L7-F5 apply 前 backup restore dev.db，保留 L7-F4 sem4 ClassGroup=36，移除 #40/248 Course/248 TeachingTask/5398 TTC，并固化后续 teacher/classGroup resolution hard gates。
 
 - L7-F6A 对新版 Excel 课程设置导入所需 Teacher / ClassGroup 主数据覆盖率做只读审计：比较课程设置 Excel、当前 Teacher 表、职员数据库、通讯录、学院专业数据库与 sem4 ClassGroup，输出教师/班级覆盖率、缺失/歧义统计和 L7-F5 事故归因；本阶段不写 DB、不执行 apply。
+
+- L7-F6B 基于课程设置 Excel、学院专业数据库、职员数据库与通讯录生成 Teacher/ClassGroup 主数据补齐计划：规划 16 个可从 staff/contacts 高置信补齐的教师、32 个外聘/未知教师人工确认策略、440 个 sem4 ClassGroup 创建候选（418 validated + 22 manual review）与现有 36 个 legacy ClassGroup 处理策略；本阶段不写 DB、不执行 apply。

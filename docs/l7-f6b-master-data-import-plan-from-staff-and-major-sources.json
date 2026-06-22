@@ -1,0 +1,64 @@
+{
+  "stage": "L7-F6B-MASTER-DATA-IMPORT-PLAN-FROM-STAFF-AND-MAJOR-SOURCES",
+  "date": "2026-06-22",
+  "status": "CLOSED",
+  "dbWrite": false,
+  "targetSemesterId": 4,
+  "inputFiles": {
+    "courseSettingXlsx": true,
+    "majorDbXlsx": true,
+    "staffDb": true,
+    "contactsXlsx": true
+  },
+  "baseline": {
+    "course": 104,
+    "teacher": 220,
+    "classGroupSem4": 36,
+    "teachingTaskSem4": 0,
+    "teachingTaskClass": 446,
+    "importBatch39": "APPLIED",
+    "importBatch40": "absent"
+  },
+  "teacherPlanSummary": {
+    "excelDistinctTeachers": 261,
+    "currentTeacherMatched": 213,
+    "currentTeacherMissing": 48,
+    "staffOrContactsMatched": 16,
+    "externalOrUnknown": 32
+  },
+  "teacherPlanActionCounts": {
+    "IMPORT_FROM_STAFF_DB_AND_CONTACTS": 16,
+    "IMPORT_FROM_STAFF_DB": 0,
+    "IMPORT_FROM_CONTACTS": 0,
+    "MANUAL_ALIAS_REVIEW": 0,
+    "MANUAL_CONFIRM_EXTERNAL_TEACHER": 32
+  },
+  "classGroupPlanSummary": {
+    "excelClassGroupCandidates": 440,
+    "sem4ExistingClassGroups": 36,
+    "matchedExistingSem4": 0,
+    "plannedCreateCandidates": 418,
+    "manualReviewCandidates": 22,
+    "majorDbReadable": true,
+    "majorDbValidated": 418,
+    "majorDbNotFound": 22
+  },
+  "classGroupActionCounts": {
+    "CREATE_CLASSGROUP": 418,
+    "MANUAL_REVIEW": 22
+  },
+  "legacySem4Strategy": "Do not delete existing 36 ClassGroups. Create 418+ new candidates. Legacy ClassGroups remain untouched.",
+  "combinedDecision": {
+    "canProceedToTeacherWrite": "PARTIAL",
+    "canProceedToClassGroupWrite": "true_with_review_required",
+    "canProceedOverall": true,
+    "requiredHumanDecisions": [
+      "32 external/unknown teachers need manual confirmation",
+      "22 classGroup candidates not in major DB need manual review",
+      "All 440 classGroup candidates need human validation before creation",
+      "36 legacy sem4 ClassGroups will be preserved (not deleted)"
+    ]
+  },
+  "nextStageRecommendation": "L7-F6C-CONTROLLED-MASTER-DATA-WRITE-TEACHER-AND-CLASSGROUP",
+  "rawIncluded": false
+}
