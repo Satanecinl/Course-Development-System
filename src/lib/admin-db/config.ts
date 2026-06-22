@@ -41,7 +41,15 @@ export interface FormField {
 export function getFormFields(tableKey: string): FormField[] {
   switch (tableKey) {
     case 'teacher':
-      return [{ key: 'name', label: '教师姓名', type: 'text', required: true }]
+      return [
+        { key: 'name', label: '教师姓名', type: 'text', required: true },
+        { key: 'employeeNo', label: '工号', type: 'text' },
+        { key: 'department', label: '部门', type: 'text' },
+        { key: 'position', label: '职务', type: 'text' },
+        { key: 'rank', label: '职称', type: 'text' },
+        { key: 'phone', label: '手机', type: 'text' },
+        { key: 'officePhone', label: '办公电话', type: 'text' },
+      ]
     case 'course':
       return [{ key: 'name', label: '课程名称', type: 'text', required: true }]
     case 'room':

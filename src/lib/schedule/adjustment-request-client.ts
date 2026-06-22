@@ -137,12 +137,14 @@ export function listAdminAdjustmentRequests(filter: {
   status?: AdjustmentRequestStatus | 'ALL'
   semesterId?: number
   submittedByUserId?: number
+  limit?: number
 }) {
   const qs = new URLSearchParams()
   if (filter.status) qs.set('status', filter.status)
   if (filter.semesterId != null) qs.set('semesterId', String(filter.semesterId))
   if (filter.submittedByUserId != null)
     qs.set('submittedByUserId', String(filter.submittedByUserId))
+  if (filter.limit != null) qs.set('limit', String(filter.limit))
   const url = `/api/admin/schedule-adjustment-requests?${qs.toString()}`
   return getJson<AdjustmentRequestListResponse>(url)
 }

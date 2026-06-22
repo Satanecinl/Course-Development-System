@@ -1,13 +1,8 @@
 // src/app/data/page.tsx
-// Data management page — read-only data view for all authenticated users
+// Legacy read-only data page. Kept as a redirect so old links do not render it.
 
-import { ProtectedShell } from '@/components/layout/protected-shell'
-import { DataContent } from './data-content'
+import { redirect } from 'next/navigation'
 
 export default function DataPage() {
-  return (
-    <ProtectedShell>
-      <DataContent />
-    </ProtectedShell>
-  )
+  redirect('/dashboard')
 }

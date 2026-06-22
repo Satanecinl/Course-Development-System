@@ -2,6 +2,12 @@ export function fieldToChinese(field: string): string {
   const map: Record<string, string> = {
     id: 'ID',
     name: '名称',
+    employeeNo: '工号',
+    department: '部门',
+    position: '职务',
+    rank: '职称',
+    phone: '手机',
+    officePhone: '办公电话',
     remark: '备注',
     teacherId: '教师ID',
     courseId: '课程ID',

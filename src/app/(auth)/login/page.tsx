@@ -20,7 +20,6 @@ export default async function LoginPage({
     const user = await getCurrentUser(sessionToken)
     if (user) {
       if (user.permissions.has('schedule:view')) redirect('/dashboard')
-      if (user.permissions.has('data:read')) redirect('/data')
     }
   }
 

@@ -9,6 +9,9 @@ export function getColumns(activeTable: string, records: DbRecord[]): string[] {
   if (activeTable === 'scheduleslot') {
     return ['id', 'courseName', 'teacherName', 'dayOfWeek', 'slotIndex', 'roomName']
   }
+  if (activeTable === 'teacher') {
+    return Object.keys(records[0]).filter((k) => k !== 'id' && k !== 'createdAt' && k !== 'updatedAt')
+  }
   return Object.keys(records[0]).filter((k) => k !== 'createdAt' && k !== 'updatedAt')
 }
 

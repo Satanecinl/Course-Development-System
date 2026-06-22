@@ -1,5 +1,5 @@
 // src/lib/auth/navigation.ts
-// Navigation config — permission-based, not role-based
+// Navigation config — permission-first with small role-based visibility rules.
 
 import type { PermissionKey } from './types'
 
@@ -8,13 +8,14 @@ export interface NavItem {
   href: string
   permission: PermissionKey
   icon?: string
+  hidden?: boolean
+  hiddenForRoles?: string[]
 }
 
 /**
  * Main navigation items.
  * Each item requires a specific permission to be visible.
- * Admin (all permissions) sees everything; USER (data:read + schedule:view +
- * adjustment-request:*) sees dashboard / data / my-requests.
+ * Some user-only/read-only legacy entries are hidden from admin navigation.
  */
 export const NAV_ITEMS: NavItem[] = [
   {
@@ -28,12 +29,14 @@ export const NAV_ITEMS: NavItem[] = [
     href: '/my-adjustment-requests',
     permission: 'adjustment-request:read',
     icon: 'scroll-text',
+    hiddenForRoles: ['ADMIN'],
   },
   {
     label: '数据管理',
     href: '/data',
     permission: 'data:read',
     icon: 'database',
+    hidden: true,
   },
   {
     label: '调课审批',
@@ -90,11 +93,19 @@ export const NAV_ITEMS: NavItem[] = [
  * Returns only items where the user has the required permission.
  */
 export function filterNavItems(
-  userPermissions: Set<string> | string[]
+  userPermissions: Set<string> | string[],
+  userRoles: string[] = [],
 ): NavItem[] {
   const perms =
     userPermissions instanceof Set
       ? userPermissions
       : new Set(userPermissions)
-  return NAV_ITEMS.filter((item) => perms.has(item.permission))
+  const roles = new Set(userRoles.map((role) => role.toUpperCase()))
+  return NAV_ITEMS.filter((item) => {
+    if (item.hidden) return false
+    if (item.hiddenForRoles?.some((role) => roles.has(role.toUpperCase()))) {
+      return false
+    }
+    return perms.has(item.permission)
+  })
 }

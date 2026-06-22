@@ -17,7 +17,7 @@ const MODEL_MAP: Record<string, keyof typeof prisma> = {
 
 const FIELD_WHITELIST: Record<string, string[]> = {
   classgroup: ['name', 'advisorName', 'advisorPhone'],
-  teacher: ['name'],
+  teacher: ['name', 'employeeNo', 'department', 'position', 'rank', 'phone', 'officePhone'],
   course: ['name'],
   room: ['name', 'building', 'capacity', 'type'],
   teachingtask: ['courseId', 'teacherId', 'weekType', 'startWeek', 'endWeek', 'remark'],

@@ -32,8 +32,8 @@ export async function ProtectedShell({ children }: ProtectedShellProps) {
     redirect('/login')
   }
 
-  // Filter nav items by user permissions
-  const navItems = filterNavItems(user.permissions)
+  // Filter nav items by user permissions and role-specific visibility.
+  const navItems = filterNavItems(user.permissions, user.roles)
 
   return (
     <CurrentUserProvider

@@ -1,18 +1,16 @@
 'use client'
 
-import { Table, Upload, Plus, History } from 'lucide-react'
+import { Table, Plus, History } from 'lucide-react'
 
 interface AdminToolbarProps {
   tableName: string
   recordCount: number
-  onImportClick: () => void
   onAddClick: () => void
   onHistoryClick?: () => void
   canCreate?: boolean
-  canImport?: boolean
 }
 
-export function AdminToolbar({ tableName, recordCount, onImportClick, onAddClick, onHistoryClick, canCreate = true, canImport = true }: AdminToolbarProps) {
+export function AdminToolbar({ tableName, recordCount, onAddClick, onHistoryClick, canCreate = true }: AdminToolbarProps) {
   return (
     <div className="mb-4 flex items-center justify-between">
       <div className="flex items-center gap-2">
@@ -31,14 +29,6 @@ export function AdminToolbar({ tableName, recordCount, onImportClick, onAddClick
             导入历史
           </button>
         )}
-        <button
-          onClick={onImportClick}
-          disabled={!canImport}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Upload className="w-4 h-4" />
-          导入课程表
-        </button>
         <button
           onClick={onAddClick}
           disabled={!canCreate}

@@ -25,6 +25,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useSemesterStore } from '@/store/semesterStore'
 import {
   Dialog,
   DialogContent,
@@ -55,11 +56,38 @@ const STATUS_MAP: Record<AdjustmentRequestStatus, { label: string; color: string
   CANCELLED: { label: '已取消', color: 'bg-gray-100 text-gray-500 border-gray-200', icon: <History className="w-3 h-3" /> },
 }
 
+interface ApplicantOption {
+  id: number
+  label: string
+}
+
+function buildApplicantOptions(items: AdjustmentRequestListItem[]): ApplicantOption[] {
+  const map = new Map<number, ApplicantOption>()
+  for (const item of items) {
+    if (map.has(item.submittedByUserId)) continue
+    const name = item.submittedByDisplayName || `用户 ${item.submittedByUserId}`
+    map.set(item.submittedByUserId, {
+      id: item.submittedByUserId,
+      label: `${name} (#${item.submittedByUserId})`,
+    })
+  }
+  return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label, 'zh-CN', { numeric: true }))
+}
+
 export default function AdminAdjustmentRequestsContent() {
   const [items, setItems] = useState<AdjustmentRequestListItem[] | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<AdjustmentRequestStatus | 'ALL'>('PENDING')
+  const [semesterFilter, setSemesterFilter] = useState<number | 'ALL'>('ALL')
+  const [applicantFilter, setApplicantFilter] = useState<number | 'ALL'>('ALL')
+  const [applicantOptions, setApplicantOptions] = useState<ApplicantOption[]>([])
+  const {
+    semesters,
+    loaded: semestersLoaded,
+    loading: semestersLoading,
+    fetchSemesters,
+  } = useSemesterStore()
 
   const [approveOpen, setApproveOpen] = useState<AdjustmentRequestListItem | null>(null)
   const [rejectOpen, setRejectOpen] = useState<AdjustmentRequestListItem | null>(null)
@@ -69,25 +97,60 @@ export default function AdminAdjustmentRequestsContent() {
   // K32-A: track which row is currently exporting (to disable its button).
   const [exportingId, setExportingId] = useState<number | null>(null)
 
+  useEffect(() => {
+    if (!semestersLoaded && !semestersLoading) {
+      fetchSemesters()
+    }
+  }, [semestersLoaded, semestersLoading, fetchSemesters])
+
+  useEffect(() => {
+    let cancelled = false
+    listAdminAdjustmentRequests({
+      status: 'ALL',
+      semesterId: semesterFilter === 'ALL' ? undefined : semesterFilter,
+      limit: 1000,
+    })
+      .then((r) => {
+        if (cancelled) return
+        const options = buildApplicantOptions(r.items)
+        setApplicantOptions(options)
+        setApplicantFilter((current) =>
+          current !== 'ALL' && !options.some((option) => option.id === current) ? 'ALL' : current,
+        )
+      })
+      .catch(() => {
+        if (!cancelled) setApplicantOptions([])
+      })
+    return () => { cancelled = true }
+  }, [semesterFilter])
+
   // Initial data load — inline fetch to avoid setState-in-effect lint rule
   useEffect(() => {
     let cancelled = false
-    listAdminAdjustmentRequests({ status: statusFilter })
+    listAdminAdjustmentRequests({
+      status: statusFilter,
+      semesterId: semesterFilter === 'ALL' ? undefined : semesterFilter,
+      submittedByUserId: applicantFilter === 'ALL' ? undefined : applicantFilter,
+    })
       .then((r) => { if (!cancelled) setItems(r.items) })
       .catch((e) => { if (!cancelled) setError(e instanceof Error ? e.message : '加载失败') })
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
-  }, [statusFilter])
+  }, [statusFilter, semesterFilter, applicantFilter])
 
   // Refresh handler for the refresh button
   const load = useCallback(() => {
     setLoading(true)
     setError(null)
-    listAdminAdjustmentRequests({ status: statusFilter })
+    listAdminAdjustmentRequests({
+      status: statusFilter,
+      semesterId: semesterFilter === 'ALL' ? undefined : semesterFilter,
+      submittedByUserId: applicantFilter === 'ALL' ? undefined : applicantFilter,
+    })
       .then((r) => setItems(r.items))
       .catch((e) => setError(e instanceof Error ? e.message : '加载失败'))
       .finally(() => setLoading(false))
-  }, [statusFilter])
+  }, [statusFilter, semesterFilter, applicantFilter])
 
   const handleApprove = async () => {
     if (!approveOpen) return
@@ -164,7 +227,39 @@ export default function AdminAdjustmentRequestsContent() {
           <h1 className="text-lg font-bold text-gray-900">调课审批</h1>
           <Badge className="text-xs bg-rose-100 text-rose-700 border-rose-200">ADMIN</Badge>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <select
+            className="flex h-9 min-w-[180px] rounded-md border border-gray-200 bg-white px-2 text-sm"
+            value={semesterFilter}
+            onChange={(e) => {
+              const value = e.target.value
+              setSemesterFilter(value === 'ALL' ? 'ALL' : Number(value))
+            }}
+            aria-label="按学期筛选调课审批"
+          >
+            <option value="ALL">全部学期</option>
+            {semesters.map((semester) => (
+              <option key={semester.id} value={semester.id}>
+                {semester.name}{semester.isActive ? ' (当前)' : ''}
+              </option>
+            ))}
+          </select>
+          <select
+            className="flex h-9 min-w-[150px] rounded-md border border-gray-200 bg-white px-2 text-sm"
+            value={applicantFilter}
+            onChange={(e) => {
+              const value = e.target.value
+              setApplicantFilter(value === 'ALL' ? 'ALL' : Number(value))
+            }}
+            aria-label="按申请人筛选调课审批"
+          >
+            <option value="ALL">全部申请人</option>
+            {applicantOptions.map((applicant) => (
+              <option key={applicant.id} value={applicant.id}>
+                {applicant.label}
+              </option>
+            ))}
+          </select>
           <select
             className="flex h-9 rounded-md border border-gray-200 bg-white px-2 text-sm"
             value={statusFilter}
@@ -210,6 +305,7 @@ export default function AdminAdjustmentRequestsContent() {
               <tr className="border-b border-gray-200 text-left text-gray-500">
                 <th className="py-2 px-3 font-medium">申请号</th>
                 <th className="py-2 px-3 font-medium">状态</th>
+                <th className="py-2 px-3 font-medium">学期</th>
                 <th className="py-2 px-3 font-medium">申请人</th>
                 <th className="py-2 px-3 font-medium">课程</th>
                 <th className="py-2 px-3 font-medium">原位置</th>
@@ -234,6 +330,9 @@ export default function AdminAdjustmentRequestsContent() {
                         {sm.icon}
                         {sm.label}
                       </Badge>
+                    </td>
+                    <td className="py-2 px-3 text-xs text-gray-600 whitespace-nowrap">
+                      {r.semesterName ?? r.semesterCode ?? `#${r.semesterId}`}
                     </td>
                     <td className="py-2 px-3">
                       <div className="text-sm font-medium text-gray-900">{r.submittedByDisplayName}</div>

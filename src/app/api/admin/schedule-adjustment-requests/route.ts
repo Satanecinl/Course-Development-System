@@ -14,11 +14,16 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status') ?? 'ALL'
     const semesterIdParam = searchParams.get('semesterId')
     const submittedByUserIdParam = searchParams.get('submittedByUserId')
+    const limitParam = searchParams.get('limit')
+    const parsedLimit = limitParam ? Number(limitParam) : 200
+    const limit = Number.isInteger(parsedLimit) && parsedLimit > 0
+      ? Math.min(parsedLimit, 1000)
+      : 200
     const result = await listAdjustmentRequests({
       status: status as 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'ALL',
       semesterId: semesterIdParam ? Number(semesterIdParam) : null,
       submittedByUserId: submittedByUserIdParam ? Number(submittedByUserIdParam) : null,
-      limit: 200,
+      limit,
     })
     return NextResponse.json({
       success: true,

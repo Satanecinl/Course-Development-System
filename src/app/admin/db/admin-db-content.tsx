@@ -17,7 +17,6 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { ScheduleImportDialog } from '@/components/schedule-import-dialog'
 import { ImportBatchHistory } from '@/components/import-batch-history'
 import { ScheduleSlotDialog } from '@/components/admin-db/schedule-slot-dialog'
 import { TeachingTaskDialog } from '@/components/admin-db/teaching-task-dialog'
@@ -28,11 +27,14 @@ import { TABLES, MASTER_TABLES, DEDICATED_TABLES, getFormFields, getDefaultFormD
 import { getColumns, getCellValue } from '@/lib/admin-db/columns'
 import { fetchAdminTableRecords, fetchAdminTableCounts, fetchEntityOptions as apiFetchEntityOptions, fetchTaskOptions as apiFetchTaskOptions, createNamedEntity } from '@/lib/admin-db/api'
 
+const EMPTY_DEPARTMENT_FILTER = '__EMPTY_DEPARTMENT__'
+
 export default function AdminDbContent() {
   const [activeTable, setActiveTable] = useState('scheduleslot')
   const [records, setRecords] = useState<DbRecord[]>([])
   const [loading, setLoading] = useState(false)
   const [counts, setCounts] = useState<Record<string, number>>({})
+  const [departmentFilter, setDepartmentFilter] = useState<string>('ALL')
 
   // K25-E: semester store
   const {
@@ -72,16 +74,12 @@ export default function AdminDbContent() {
     slotIndex: 1,
   })
 
-  // 导入课程表弹窗状态
-  const [importOpen, setImportOpen] = useState(false)
-
   // 导入历史弹窗状态
   const [importHistoryOpen, setImportHistoryOpen] = useState(false)
 
   // K15-FIX-E: Model-specific permission gating
   const canWriteCurrentModel = useHasPermission(getAdminModelWritePermission(activeTable))
   const canDelete = useHasPermission('data:delete')
-  const canImport = useHasPermission('import:manage')
 
   // 下拉选项
   const [courses, setCourses] = useState<EntityOption[]>([])
@@ -135,6 +133,11 @@ export default function AdminDbContent() {
     } finally {
       setLoading(false)
     }
+  }
+
+  function handleTableChange(key: string) {
+    setActiveTable(key)
+    setDepartmentFilter('ALL')
   }
 
   // K25-E: load semester list on mount
@@ -507,6 +510,40 @@ export default function AdminDbContent() {
 
   const columns = getColumns(activeTable, records)
 
+  function getDepartmentFilterValue(record: DbRecord): string {
+    const department = record.department
+    if (typeof department !== 'string') return EMPTY_DEPARTMENT_FILTER
+    const trimmed = department.trim()
+    return trimmed.length > 0 && trimmed !== '-' ? trimmed : EMPTY_DEPARTMENT_FILTER
+  }
+
+  const teacherDepartmentOptions =
+    activeTable === 'teacher'
+      ? Array.from(new Set(records.map(getDepartmentFilterValue))).sort((a, b) => {
+          if (a === EMPTY_DEPARTMENT_FILTER) return 1
+          if (b === EMPTY_DEPARTMENT_FILTER) return -1
+          return a.localeCompare(b, 'zh-CN')
+        })
+      : []
+
+  function compareTeacherEmployeeNo(a: DbRecord, b: DbRecord): number {
+    const aNo = typeof a.employeeNo === 'string' ? a.employeeNo.trim() : ''
+    const bNo = typeof b.employeeNo === 'string' ? b.employeeNo.trim() : ''
+
+    if (!aNo && !bNo) return a.id - b.id
+    if (!aNo) return 1
+    if (!bNo) return -1
+    return aNo.localeCompare(bNo, 'zh-CN', { numeric: true })
+  }
+
+  const visibleRecords =
+    activeTable === 'teacher'
+      ? records
+          .filter((record) => departmentFilter === 'ALL' || getDepartmentFilterValue(record) === departmentFilter)
+          .slice()
+          .sort(compareTeacherEmployeeNo)
+      : records
+
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* 左侧导航 */}
@@ -514,7 +551,7 @@ export default function AdminDbContent() {
         tables={TABLES}
         activeTable={activeTable}
         counts={counts}
-        onTableChange={setActiveTable}
+        onTableChange={handleTableChange}
         onRefresh={() => {
           fetchData()
           fetchCounts()
@@ -527,19 +564,37 @@ export default function AdminDbContent() {
         <div className="mb-4 flex items-center justify-between">
           <AdminToolbar
             tableName={TABLES.find((t) => t.key === activeTable)?.label ?? ''}
-            recordCount={records.length}
-            onImportClick={() => setImportOpen(true)}
+            recordCount={visibleRecords.length}
             onAddClick={openCreate}
             onHistoryClick={() => setImportHistoryOpen(true)}
             canCreate={canWriteCurrentModel}
-            canImport={canImport}
           />
           {/* K25-E: semester selector */}
-          <SemesterSelector className="ml-4" showFallbackWarning={false} />
+          <div className="flex items-center gap-3">
+            {activeTable === 'teacher' && (
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-gray-500 whitespace-nowrap">部门</label>
+                <select
+                  value={departmentFilter}
+                  onChange={(e) => setDepartmentFilter(e.target.value)}
+                  className="h-9 min-w-[180px] rounded-lg border border-gray-200 bg-white px-2 text-sm"
+                  aria-label="按部门筛选教师"
+                >
+                  <option value="ALL">全部部门</option>
+                  {teacherDepartmentOptions.map((department) => (
+                    <option key={department} value={department}>
+                      {department === EMPTY_DEPARTMENT_FILTER ? '未设置' : department}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <SemesterSelector className="ml-4" showFallbackWarning={false} />
+          </div>
         </div>
 
         <AdminDataTable
-          records={records}
+          records={visibleRecords}
           loading={loading}
           columns={columns}
           activeTable={activeTable}
@@ -626,9 +681,6 @@ export default function AdminDbContent() {
         onFieldChange={(field, value) => setSlotForm((prev) => ({ ...prev, [field]: value }))}
         onSubmit={handleSlotSave}
       />
-
-      {/* 导入课程表弹窗 */}
-      <ScheduleImportDialog open={importOpen} onOpenChange={setImportOpen} />
 
       {/* 导入历史弹窗 */}
       <ImportBatchHistory open={importHistoryOpen} onOpenChange={setImportHistoryOpen} />

@@ -22,6 +22,16 @@ export function AdminSidebar({ tables, activeTable, counts, onTableChange, onRef
         <p className="text-xs text-gray-500 mt-1">可视化浏览与编辑数据</p>
       </div>
 
+      <div className="p-3 border-b border-gray-200">
+        <button
+          onClick={onRefresh}
+          className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+        >
+          <RefreshCw className="w-4 h-4" />
+          刷新数据
+        </button>
+      </div>
+
       <nav className="flex-1 overflow-auto p-3 space-y-1">
         {tables.map((t) => (
           <button
@@ -45,16 +55,6 @@ export function AdminSidebar({ tables, activeTable, counts, onTableChange, onRef
           </button>
         ))}
       </nav>
-
-      <div className="p-4 border-t border-gray-200">
-        <button
-          onClick={onRefresh}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-        >
-          <RefreshCw className="w-4 h-4" />
-          刷新数据
-        </button>
-      </div>
     </aside>
   )
 }

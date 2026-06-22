@@ -14,10 +14,10 @@ export default function ForbiddenPage() {
           </p>
           <div className="mt-6">
             <Link
-              href="/data"
+              href="/dashboard"
               className="inline-block rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500"
             >
-              返回数据管理
+              返回排课展示
             </Link>
           </div>
         </div>

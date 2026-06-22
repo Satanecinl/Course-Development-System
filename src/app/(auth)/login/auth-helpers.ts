@@ -10,6 +10,5 @@ export function getDefaultRedirectForAuthUser(
   permissions: Set<string>
 ): string {
   if (permissions.has('schedule:view' as PermissionKey)) return '/dashboard'
-  if (permissions.has('data:read' as PermissionKey)) return '/data'
   return '/login?error=no-permission'
 }
