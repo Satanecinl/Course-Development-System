@@ -188,3 +188,5 @@ The list reflects local history at the time of K36-A3 and does not assert remote
 - L7-F1 只读诊断 L7-F apply trial 与 L7-A3 dry-run 口径不一致：对比 L7-A3 classification、browser-equivalent partial plan、L7-F service recompute，定位为何 apply trial 只创建空 ImportBatch #39；发现三级根因（maxPreviewRows=50 截断、importable 定义不一致、semester 4 无 ClassGroup）；不写 DB、不 rollback。
 
 - L7-F2 修复新版 Excel 课程设置写库前 full dataset wiring，确保 partial-import-plan / partial-import-apply / CLI trial 不再回退到 50 行；新增目标学期 ClassGroup hard gate，若目标学期无班级则禁止 apply，防止再次生成空 ImportBatch。
+
+- L7-F3 只读审计目标学期 ClassGroup readiness：确认 semesterId=4 无班级数据，分析 Excel 新模板班级需求与可用 source semester，输出选择已有学期、复制 ClassGroup、或从 Excel 派生 ClassGroup 的方案比较；推荐 Option B（从 semester 1 复制 36 个 ClassGroup 到 semester 4）；本阶段不写 DB。
