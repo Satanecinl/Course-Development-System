@@ -276,8 +276,11 @@ export default function CourseSettingXlsxPreview() {
         init[row.approvalItemId] = row.decision.value
       }
       setClientDecisions(init)
+      // L7-A2A: surface the real full-dataset total to the user; never
+      // report pageSize as the total.
+      const total = data.reviewDatasetSummary?.totalReviewItems ?? data.summary.totalItems
       toast.success('审核视图已生成', {
-        description: `共 ${data.summary.totalItems} 条，不会写入数据库`,
+        description: `共 ${total} 条审核项（${data.reviewDatasetSummary?.dataScope ?? 'fullDataset'}），不会写入数据库`,
       })
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e)

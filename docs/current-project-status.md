@@ -178,3 +178,5 @@ The list reflects local history at the time of K36-A3 and does not assert remote
 - L7-A 新版 A:M Excel 课程设置模板规则替换已通过浏览器验收与自动验证补证，可正式关闭；L7-F 写库仍需单独强 gate 阶段。
 
 - L7-A2 修复新版 Excel 课程设置审核数据全量与分页：后端返回全量审核项，前端按 50 条分页显示并展示当前范围/总数，导出与部分导入计划基于全量数据；不写 DB、不执行 apply。
+
+- L7-A2A 修复新版 Excel 课程设置"生成审核视图"仍只返回 50 条的问题：approval-review API 与 review package builder 使用全量数据（root cause：L4 mapper 默认 maxPreviewRows=50 在 L7-A2 漏修），PAGE_SIZE=50 仅用于前端分页展示；新增 reviewDatasetSummary 暴露 dataScope=fullDataset 与 approvalItemsReturned；导出与部分导入计划基于全量审核项；不写 DB、不执行 apply。L7-F 写库继续 blocked。

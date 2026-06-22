@@ -1,0 +1,56 @@
+{
+  "stage": "L7-A2A-XLSX-COURSE-SETTING-APPROVAL-REVIEW-FULL-DATASET-WIRING-FIX",
+  "previousStage": "L7-A2",
+  "status": "code_complete_browser_validation_pending",
+  "aggregateCounts": {
+    "totalCourseRows": 1167,
+    "approvalItemsReturned": 1167,
+    "approvalItemsExpected": 1167,
+    "paginationPages": 24,
+    "pageSize": 50,
+    "maxRowsSafetyCap": 100000,
+    "rowsSafetyTruncated": 0
+  },
+  "checks": {
+    "total": 78,
+    "pass": 78,
+    "fail": 0
+  },
+  "rootCause": {
+    "file": "src/app/api/admin/import/course-setting-xlsx/approval-review/route.ts",
+    "symbol": "buildCourseSettingTeachingTaskDryRun call site",
+    "issue": "L4 mapper default of 50 capped previewCandidates at 50 even though the route's route-level maxRows was 100000. L7-A2 raised the route cap but missed the upstream mapper cap.",
+    "fix": "Pass maxPreviewRows: ABSOLUTE_MAX_ROWS in the route's L4 mapper options"
+  },
+  "invariant": {
+    "approvalItemsReturnedEqualsTotalReviewItems": true,
+    "dataScope": "fullDataset",
+    "paginationMode": "client-side",
+    "pageSizeEquals50": true,
+    "truncatedRowsEquals0": true
+  },
+  "forbiddenPatterns": {
+    "dbWriteMethods": false,
+    "courseCreate": false,
+    "teacherCreate": false,
+    "classGroupCreate": false,
+    "teachingTaskCreate": false,
+    "teachingTaskClassCreate": false,
+    "importBatchCreate": false,
+    "schemaChange": false,
+    "migrationChange": false,
+    "schedulerChange": false,
+    "scoreChange": false,
+    "wordParserChange": false,
+    "packageJsonChange": false,
+    "packageLockJsonChange": false,
+    "applyRoute": false,
+    "applyButton": false,
+    "writeDBButton": false
+  },
+  "aggregateOnly": true,
+  "rawCourseNamesIncluded": false,
+  "rawTeacherNamesIncluded": false,
+  "rawClassNamesIncluded": false,
+  "rawRemarksIncluded": false
+}

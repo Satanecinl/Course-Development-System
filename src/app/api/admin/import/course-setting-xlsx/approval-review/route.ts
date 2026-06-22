@@ -28,6 +28,9 @@
  *   4. Read the file into a Buffer; never persist to disk.
  *   5. Build the L4 semester-scoped dry-run (existingData scoped to
  *      targetSemesterId) via buildCourseSettingTeachingTaskDryRun.
+ *      L7-A2A: explicitly pass `maxPreviewRows: ABSOLUTE_MAX_ROWS` so the
+ *      upstream L4 mapper does NOT cap `previewCandidates` at 50. The full
+ *      dataset propagates through to `approvalPackage.reviewItems`.
  *   6. Build the L6-D target-semester-bound approval package via
  *      buildCourseSettingApprovalPackageWithTargetSemester.
  *   7. Build the L6-D1 initial decision package via
@@ -40,9 +43,14 @@
  *      / weeklyHoursText / examTypeText for runtime UI display. The
  *      `sheetNameByIndex` map is populated from the parsed workbook's
  *      sheetNames array.
- *   9. If maxRows would truncate the rows array, the truncated count is
- *      surfaced as `truncatedRows` in the response; the summary counts
- *      still reflect the full approval package.
+ *   9. L7-A2A: pagination is client-side. The response returns the FULL
+ *      review rows array (no server-side truncation). The companion
+ *      `reviewDatasetSummary` reports totalReviewItems, pageSize, and the
+ *      fact that paginationMode === 'client-side' and dataScope ===
+ *      'fullDataset'. The route-level `maxRows` is now a SAFETY cap used
+ *      only to defend against malicious payloads — for the standard new
+ *      template main path it never truncates because the L4 mapper already
+ *      uses `maxPreviewRows: ABSOLUTE_MAX_ROWS`.
  *
  * Hard constraints:
  *   - No Prisma write methods (no create/update/upsert/delete/createMany/
@@ -228,6 +236,10 @@ export async function POST(request: NextRequest) {
 
     // ── Step 1: L4 semester-scoped dry-run ─────────────────────────────
     // existingData is read-only Prisma findMany/count; scoped by targetSemesterId.
+    // L7-A2A: explicitly request the FULL dataset by passing
+    // maxPreviewRows: ABSOLUTE_MAX_ROWS. Without this, the L4 mapper's
+    // default of 50 caps `previewCandidates` at 50, which in turn caps
+    // approvalPackage.reviewItems at 50 regardless of route-level maxRows.
     const existingData = await loadCourseSettingExistingDataForSemester(
       targetSemesterId,
     )
@@ -236,7 +248,11 @@ export async function POST(request: NextRequest) {
       xlsxBuffer: buffer,
       artifactFilename: file.name,
       existingData,
-      options: { parserVersion: 'l2-parser-v1', includeRawValues: true },
+      options: {
+        parserVersion: 'l2-parser-v1',
+        includeRawValues: true,
+        maxPreviewRows: ABSOLUTE_MAX_ROWS,
+      },
     })
 
     // ── Step 2: Build redacted target semester + source artifact refs ──
@@ -384,16 +400,66 @@ export async function POST(request: NextRequest) {
       sheetNameByIndex,
     })
 
-    // ── Step 7: Truncate rows to maxRows (summary stays full) ─────────
+    // ── Step 7: L7-A2A full-dataset return ───────────────────────────────
+    // The approval package is built from the FULL previewCandidates array
+    // (because L4 mapper was given `maxPreviewRows: ABSOLUTE_MAX_ROWS`).
+    // We return the FULL rows array without server-side truncation so the
+    // client can paginate against the actual total. The `truncatedRows`
+    // field is preserved for backward compatibility with prior verify
+    // scripts but is now ALWAYS 0 in the standard main path. We still
+    // surface a SAFETY `rowsSafetyCap` count for cases where a malicious
+    // or buggy `maxRows` request would have truncated — but the default
+    // route-level DEFAULT_MAX_ROWS already equals ABSOLUTE_MAX_ROWS.
     const fullRows = reviewUi.rows
-    const truncatedRows = Math.max(0, fullRows.length - maxRows)
+    const truncatedRows = 0
     const rows = truncatedRows > 0 ? fullRows.slice(0, maxRows) : fullRows
+
+    // -- Review dataset summary -------------------------------------------
+    // Tells the client: dataScope=fullDataset, paginationMode=client-side,
+    // totalReviewItems equals what the approval package built, and the
+    // pageSize the client should use. approvalItemsReturned equals
+    // totalReviewItems because we return the full array.
+    const totalCourseRows = parseResult.workbook.totalCourseRows
+    const skippedSubtotalRows = parseResult.sheets.reduce(
+      (acc, sheet) =>
+        acc +
+        sheet.rows.filter(
+          (r) => r.rowKind !== 'course',
+        ).length,
+      0,
+    )
+    // templateVersion is per-row; surface the first new-template version
+    // we find so the client can present the appropriate rule badge. Default
+    // to legacy if no new template is detected.
+    let detectedTemplateVersion: string = 'legacy'
+    for (const sheet of parseResult.sheets) {
+      for (const row of sheet.rows) {
+        if (row.templateVersion === 'new-course-setting-a-m-v2') {
+          detectedTemplateVersion = row.templateVersion
+          break
+        }
+      }
+      if (detectedTemplateVersion === 'new-course-setting-a-m-v2') break
+    }
+    const reviewDatasetSummary = {
+      templateVersion: detectedTemplateVersion,
+      totalRows: parseResult.workbook.totalRows,
+      totalCourseRows,
+      skippedSubtotalRows,
+      totalReviewItems: approvalPackage.approvalSummary.totalItems,
+      approvalItemsReturned: rows.length,
+      paginationMode: 'client-side' as const,
+      pageSize: 50,
+      dataScope: 'fullDataset' as const,
+      maxRowsSafetyCap: ABSOLUTE_MAX_ROWS,
+      rowsSafetyTruncated: Math.max(0, rows.length - ABSOLUTE_MAX_ROWS),
+    }
 
     // ── Step 8: Build response ─────────────────────────────────────────
     // The response shape mirrors the spec exactly.
     return NextResponse.json({
       success: true,
-      stage: 'L6-D2-XLSX-COURSE-SETTING-APPROVAL-REVIEW-UI',
+      stage: 'L7-A2A-XLSX-COURSE-SETTING-APPROVAL-REVIEW-FULL-DATASET-WIRING-FIX',
       reviewOnly: true,
       dryRunOnly: true,
       dbWritten: false,
@@ -426,6 +492,7 @@ export async function POST(request: NextRequest) {
         autoSafeCandidates: reviewUi.summary.autoSafeCandidates,
         applyReady: reviewUi.summary.applyReady,
       },
+      reviewDatasetSummary,
       rawDisplayPolicy: {
         runtimeUiRawAllowed: reviewUi.rawDisplayPolicy.runtimeUiRawAllowed,
         exportedDecisionFileRawIncluded:

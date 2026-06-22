@@ -125,6 +125,38 @@ export function ApprovalReviewSection(props: ApprovalReviewSectionProps) {
         <span>当前仅用于人工审核，不会写入数据库，不会创建教学任务或导入批次。</span>
       </div>
 
+      {/* L7-A2A: dataset scope descriptor (proves full dataset wiring) */}
+      {reviewResult.reviewDatasetSummary && (
+        <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-[11px] text-emerald-800" data-l7a2a-dataset-summary>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="outline" className="text-[10px] bg-emerald-100 text-emerald-700 border-emerald-300">
+              全量数据集 / fullDataset
+            </Badge>
+            <span>
+              模板: <span className="font-mono">{reviewResult.reviewDatasetSummary.templateVersion}</span>
+            </span>
+            <span>
+              模板总行数: <span className="tabular-nums font-semibold">{reviewResult.reviewDatasetSummary.totalRows}</span>
+            </span>
+            <span>
+              课程行: <span className="tabular-nums font-semibold">{reviewResult.reviewDatasetSummary.totalCourseRows}</span>
+            </span>
+            <span>
+              审核项总数: <span className="tabular-nums font-semibold">{reviewResult.reviewDatasetSummary.totalReviewItems}</span>
+            </span>
+            <span>
+              已返回: <span className="tabular-nums font-semibold">{reviewResult.reviewDatasetSummary.approvalItemsReturned}</span>
+            </span>
+            <span>
+              分页模式: <span className="font-mono">{reviewResult.reviewDatasetSummary.paginationMode}</span>
+            </span>
+            <span>
+              每页: <span className="tabular-nums font-semibold">{reviewResult.reviewDatasetSummary.pageSize}</span>
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Target semester + package ref summary */}
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-xs text-gray-700">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">

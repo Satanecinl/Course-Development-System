@@ -617,11 +617,17 @@ export async function buildCourseSettingXlsxPreviewWithSemester(
   // 2. Run L2 parser + L4 mapper (both in-memory, no DB)
   // includeRawValues=true: raw text is in-memory ONLY and used for the
   // authorized preview response. The L4 mapper's output is sanitized.
+  // L7-A2A: forward the caller's `maxPreviewRows` so the upstream L4
+  // mapper does NOT cap `previewCandidates` at its default of 50.
   const dryRunResult = await buildCourseSettingTeachingTaskDryRun({
     xlsxBuffer: buffer,
     artifactFilename: filename,
     existingData,
-    options: { parserVersion: 'l2-parser-v1', includeRawValues: true },
+    options: {
+      parserVersion: 'l2-parser-v1',
+      includeRawValues: true,
+      maxPreviewRows,
+    },
   })
 
   // 3. L6-B1: Parse again with includeRawValues=true to get raw text for UI.

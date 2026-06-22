@@ -280,7 +280,8 @@ async function main(): Promise<void> {
   chk(56, /考试类型异常/.test(allSrc), 'examType override controls exist')
   chk(57, /忽略本行/.test(allSrc), 'ignore row control exists')
   chk(58, /resolutionFilter|处理状态/.test(allSrc), 'resolution status filter exists')
-  chk(59, /导出处理结果/.test(allSrc), 'export resolution draft button exists')
+  // L7-A2 stage-aware: accept "导出全量处理结果 JSON" too.
+  chk(59, /导出.*处理结果/.test(allSrc), 'export resolution draft button exists (L7-A2 stage-aware: accepts "导出全量处理结果 JSON")')
   chk(60, !/<button[^>]*>\s*导入\s*</.test(allSrc) && !/<button[^>]*>\s*应用\s*</.test(allSrc) && !/<button[^>]*>\s*写入数据库\s*</.test(allSrc), 'no apply/import/write as button inner text')
   chk(61, /buildInitialManualResolutionState/.test(compSrc), 'component uses buildInitialManualResolutionState')
   chk(62, /applyManualResolutionUpdate/.test(allSrc), 'component uses applyManualResolutionUpdate')

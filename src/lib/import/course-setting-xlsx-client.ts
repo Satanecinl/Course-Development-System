@@ -387,6 +387,28 @@ export type CourseSettingApprovalReviewUiSummary = {
   applyReady: false
 }
 
+/**
+ * L7-A2A: Full-dataset scope descriptor returned by the approval-review API.
+ * Confirms that the server returned the COMPLETE review dataset (not a
+ * truncated slice) so the client can paginate client-side over the actual
+ * total. `approvalItemsReturned` must equal `totalReviewItems` in the
+ * standard main path. `paginationMode === 'client-side'` and
+ * `dataScope === 'fullDataset'` are required invariants.
+ */
+export type CourseSettingApprovalReviewUiDatasetSummary = {
+  templateVersion: 'legacy' | 'new-course-setting-a-m-v2' | string
+  totalRows: number
+  totalCourseRows: number
+  skippedSubtotalRows: number
+  totalReviewItems: number
+  approvalItemsReturned: number
+  paginationMode: 'client-side'
+  pageSize: number
+  dataScope: 'fullDataset'
+  maxRowsSafetyCap: number
+  rowsSafetyTruncated: number
+}
+
 export type CourseSettingApprovalReviewUiRawDisplayPolicy = {
   runtimeUiRawAllowed: true
   exportedDecisionFileRawIncluded: false
@@ -396,7 +418,7 @@ export type CourseSettingApprovalReviewUiRawDisplayPolicy = {
 
 export type CourseSettingApprovalReviewUiResponse = {
   success: true
-  stage: 'L6-D2-XLSX-COURSE-SETTING-APPROVAL-REVIEW-UI'
+  stage: 'L6-D2-XLSX-COURSE-SETTING-APPROVAL-REVIEW-UI' | 'L7-A2A-XLSX-COURSE-SETTING-APPROVAL-REVIEW-FULL-DATASET-WIRING-FIX'
   reviewOnly: true
   dryRunOnly: true
   dbWritten: false
@@ -406,6 +428,8 @@ export type CourseSettingApprovalReviewUiResponse = {
   sourceArtifact: CourseSettingApprovalReviewUiSourceArtifact
   packageRef: CourseSettingApprovalReviewUiPackageRef
   summary: CourseSettingApprovalReviewUiSummary
+  /** L7-A2A: full-dataset scope descriptor. */
+  reviewDatasetSummary?: CourseSettingApprovalReviewUiDatasetSummary
   rawDisplayPolicy: CourseSettingApprovalReviewUiRawDisplayPolicy
   rows: CourseSettingApprovalReviewUiRow[]
   truncatedRows: number
