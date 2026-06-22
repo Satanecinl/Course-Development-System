@@ -1,0 +1,63 @@
+{
+  "stage": "L7-F6A-XLSX-MASTER-DATA-COVERAGE-AUDIT",
+  "date": "2026-06-22",
+  "status": "CLOSED",
+  "dbWrite": false,
+  "targetSemesterId": 4,
+  "inputFiles": {
+    "courseSettingXlsx": true,
+    "majorDbXlsx": true,
+    "staffDb": true,
+    "contactsXlsx": true
+  },
+  "baseline": {
+    "course": 104,
+    "teacher": 220,
+    "classGroupSem4": 36,
+    "teachingTaskSem4": 0,
+    "teachingTaskClass": 446,
+    "importBatch39": "APPLIED",
+    "importBatch40": "absent"
+  },
+  "teacherCoverage": {
+    "excelRowsTotal": 1059,
+    "excelRowsWithTeacherJ": 1051,
+    "excelRowsWithTeacherK": 141,
+    "distinctTeachersJ": 261,
+    "distinctTeachersK": 128,
+    "distinctTeachersMerged": 261,
+    "dbTeacherCount": 220,
+    "matchedInCurrentTeacher": 213,
+    "missingInCurrentTeacher": 48,
+    "ambiguousInCurrentTeacher": 0,
+    "coverageRateCurrentTeacher": 81.6,
+    "staffDbPersonCount": 436,
+    "matchedInStaffDb": 226,
+    "currentMissingButStaffDbMatched": 16,
+    "staffDbCoverageRate": 86.6,
+    "contactsPersonCount": 436,
+    "matchedInContacts": 226,
+    "currentMissingButContactsMatched": 16,
+    "contactsCoverageRate": 86.6
+  },
+  "classGroupCoverage": {
+    "excelClassGroupCandidateCount": 126,
+    "sem4ClassGroupCount": 36,
+    "matchedSem4ClassGroups": 0,
+    "missingSem4ClassGroups": 126,
+    "ambiguousSem4ClassGroups": 0,
+    "coverageRateSem4ClassGroups": 0.0,
+    "majorDbReadable": true,
+    "majorDbClassGroupCandidateCount": 41
+  },
+  "attributionMatrix": {
+    "teacherDbIncomplete": "YES",
+    "teacherParserResolutionBroken": "NO",
+    "classGroupDbIncomplete": "YES",
+    "classGroupResolutionUnsafe": "YES",
+    "applyHardGateMissing": "YES"
+  },
+  "l7f5RootCause": "Both incomplete master data AND unsafe resolution logic. Teacher: 48 missing (16 in staff DB, 32 unknown). ClassGroup: sem4 ClassGroups don't match Excel structure. Apply: teacherId=null allowed through.",
+  "nextStageRecommendation": "L7-F6B-MASTER-DATA-IMPORT-PLAN-FROM-STAFF-AND-MAJOR-SOURCES",
+  "rawIncluded": false
+}
