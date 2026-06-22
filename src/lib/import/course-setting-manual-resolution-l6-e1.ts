@@ -22,6 +22,17 @@
  *  6. `serializeManualResolutionDraftExport` produces a redacted JSON draft
  *     that can be saved/loaded without ever including raw Excel text.
  *
+ * L6-E2G update (semantic fix):
+ *  The legacy `COURSE_MISSING` diagnostic conflates two cases:
+ *   - the Excel row has no course name at all (true course-name gap → blocker)
+ *   - the Excel row has a course name but no DB match (new course candidate,
+ *     not a blocker — it can be confirmed or altered and a Course will be
+ *     created on apply)
+ *  The L6-E2G stage splits these:
+ *   - `courseNameMissing` is a true blocker (Excel course name blank)
+ *   - `newCourseCandidate` is satisfied when the user picks an existing
+ *     course OR confirms/altered a new candidate.
+ *
  * Hard constraints:
  *  - No Prisma, no DB, no filesystem, no React, no API.
  *  - No `console.log` / `console.error`.
@@ -31,6 +42,11 @@
  *  - The serialized draft MUST NOT include raw course/teacher/class/remark/sheet text.
  */
 
+import {
+  classifyCourseSituation,
+  isCourseResolutionSatisfied,
+  type CourseSituation,
+} from './course-setting-new-course-candidate-l6-e2g'
 import type {
   CourseSettingApprovalReviewUiRow,
 } from './course-setting-approval-review-ui-l6-d2'
@@ -141,6 +157,18 @@ export type CourseSettingManualResolutionItem = {
   baseDiagnosticCodes: string[]
   baseBlocked: boolean
   baseAutoSafeCandidate: boolean
+  /**
+   * L6-E2G: Raw course name from the Excel row (runtime-only, never
+   * persisted to disk). `null` when the row did not include a course
+   * name. Used to distinguish true course-name gaps from new course
+   * candidates.
+   */
+  baseRawCourseName: string | null
+  /**
+   * L6-E2G: Derived course situation. Cached at item-build time so the
+   * UI doesn't have to re-derive it on every patch.
+   */
+  baseCourseSituation: CourseSituation
   resolutionStatus: CourseSettingResolutionStatus
   resolution: CourseSettingManualResolution
   validation: CourseSettingManualResolutionValidation
@@ -158,6 +186,20 @@ export type CourseSettingManualResolutionSummary = {
   pendingItems: number
   manuallyResolvedItems: number
   unresolvedBlockers: Record<string, number>
+  /**
+   * L6-E2G: course-specific aggregate counts derived from
+   * `baseCourseSituation` and the per-item validation.
+   *  - `courseNameMissingItems`: rows with no Excel course name (true blockers)
+   *  - `newCourseCandidateItems`: rows where the Excel has a course name but
+   *    DB has no match (will be created on apply if user confirms)
+   *  - `courseAmbiguousItems`: rows with multiple DB matches
+   *  - `confirmedNewCourseCandidateItems`: new-course-candidate rows that the
+   *    user has explicitly confirmed via `createCourseCandidate`
+   */
+  courseNameMissingItems: number
+  newCourseCandidateItems: number
+  courseAmbiguousItems: number
+  confirmedNewCourseCandidateItems: number
 }
 
 // ---------------------------------------------------------------------------
@@ -184,11 +226,24 @@ const VALID_EXAM_TYPES = ['考试', '考查', ''] as const
  *  - If `baseBlocked` is true → check each resolution dimension; any
  *    unresolved dimension produces a blocker string.
  *  - If NOT baseBlocked (autoSafe or needsHumanReview) → importable (unless ignored).
+ *
+ * L6-E2G course dimension semantics:
+ *  - `baseCourseSituation === 'courseNameMissing'` (true missing): the
+ *    user must select an existing course OR provide a candidate name;
+ *    if neither, blocker is `courseNameMissing` (not `courseMissing`).
+ *  - `baseCourseSituation === 'newCourseCandidate'` (DB has no match):
+ *    the user can either select an existing course OR confirm a new
+ *    candidate; if neither, blocker is `newCourseCandidate`. This is
+ *    NOT the same as a hard courseMissing — the row will become
+ *    importable on confirm.
+ *  - `baseCourseSituation === 'courseAmbiguous'`: blocker is
+ *    `courseAmbiguous` if not disambiguated.
+ *  - `baseCourseSituation === 'courseResolved'`: no course blocker.
  */
 export const evaluateManualResolutionItem = (
   item: CourseSettingManualResolutionItem,
 ): CourseSettingManualResolutionValidation => {
-  const { resolution, baseBlocked, baseDiagnosticCodes } = item
+  const { resolution, baseBlocked, baseCourseSituation } = item
   const blockers: string[] = []
   const warnings: string[] = []
 
@@ -199,18 +254,28 @@ export const evaluateManualResolutionItem = (
 
   // --- Blocked rows: check each dimension ---
   if (baseBlocked) {
-    // Course blocker (only if course diagnostic present)
-    if (baseDiagnosticCodes.includes('COURSE_MISSING') || baseDiagnosticCodes.includes('COURSE_AMBIGUOUS')) {
-      const courseAction = resolution.course?.action ?? 'none'
-      if (courseAction === 'useExistingCourse' || courseAction === 'createCourseCandidate') {
-        // resolved
-      } else {
-        blockers.push('courseMissing')
+    // Course blocker — split by situation (L6-E2G)
+    if (baseCourseSituation === 'courseNameMissing') {
+      if (!isCourseResolutionSatisfied(resolution)) {
+        blockers.push('courseNameMissing')
+      }
+    } else if (baseCourseSituation === 'newCourseCandidate') {
+      if (!isCourseResolutionSatisfied(resolution)) {
+        blockers.push('newCourseCandidate')
+      }
+    } else if (baseCourseSituation === 'courseAmbiguous') {
+      // Use existingCourseId OR confirmAmbiguousMapping must resolve it.
+      const courseResolved = isCourseResolutionSatisfied(resolution)
+      const ambiguousResolved =
+        resolution.ambiguousMapping?.action === 'confirmAmbiguousMapping'
+      if (!courseResolved && !ambiguousResolved) {
+        blockers.push('courseAmbiguous')
       }
     }
+    // courseResolved → no course blocker here.
 
     // Teacher blocker (only if teacher diagnostic present)
-    if (baseDiagnosticCodes.includes('TEACHER_MISSING') || baseDiagnosticCodes.includes('TEACHER_BLANK')) {
+    if (item.baseDiagnosticCodes.includes('TEACHER_MISSING') || item.baseDiagnosticCodes.includes('TEACHER_BLANK')) {
       const teacherAction = resolution.teacher?.action ?? 'none'
       if (
         teacherAction === 'useExistingTeacher' ||
@@ -224,7 +289,7 @@ export const evaluateManualResolutionItem = (
     }
 
     // Class group blocker (only if class diagnostic present)
-    if (baseDiagnosticCodes.includes('CLASS_GROUP_MISSING') || baseDiagnosticCodes.includes('CLASS_GROUP_AMBIGUOUS')) {
+    if (item.baseDiagnosticCodes.includes('CLASS_GROUP_MISSING') || item.baseDiagnosticCodes.includes('CLASS_GROUP_AMBIGUOUS')) {
       const classGroupAction = resolution.classGroups?.action ?? 'none'
       if (
         classGroupAction === 'useExistingClassGroup' ||
@@ -237,7 +302,7 @@ export const evaluateManualResolutionItem = (
     }
 
     // Weekly hours blocker (only if diagnostic present)
-    if (baseDiagnosticCodes.includes('WEEKLY_HOURS_NON_NUMERIC')) {
+    if (item.baseDiagnosticCodes.includes('WEEKLY_HOURS_NON_NUMERIC')) {
       const hoursAction = resolution.weeklyHours?.action ?? 'none'
       if (hoursAction === 'overrideWeeklyHours') {
         const hoursValue = resolution.weeklyHours?.value
@@ -252,7 +317,7 @@ export const evaluateManualResolutionItem = (
     }
 
     // Exam type blocker (only if diagnostic present)
-    if (baseDiagnosticCodes.includes('EXAM_TYPE_OTHER')) {
+    if (item.baseDiagnosticCodes.includes('EXAM_TYPE_OTHER')) {
       const examAction = resolution.examType?.action ?? 'none'
       if (examAction === 'overrideExamType') {
         const examValue = resolution.examType?.value
@@ -266,8 +331,12 @@ export const evaluateManualResolutionItem = (
       }
     }
 
-    // Ambiguous mapping blocker (only if diagnostic present)
-    if (baseDiagnosticCodes.includes('MERGE_REMARK_AMBIGUOUS')) {
+    // Ambiguous mapping blocker (only if diagnostic present, and not already
+    // handled by the courseAmbiguous branch above)
+    if (
+      item.baseDiagnosticCodes.includes('MERGE_REMARK_AMBIGUOUS') &&
+      baseCourseSituation !== 'courseAmbiguous'
+    ) {
       const ambiguousAction = resolution.ambiguousMapping?.action ?? 'none'
       if (ambiguousAction === 'confirmAmbiguousMapping') {
         // resolved
@@ -277,7 +346,7 @@ export const evaluateManualResolutionItem = (
     }
 
     // Task split blocker (only if TASK_SPLIT_REQUIRED diagnostic present)
-    if (baseDiagnosticCodes.includes('TASK_SPLIT_REQUIRED')) {
+    if (item.baseDiagnosticCodes.includes('TASK_SPLIT_REQUIRED')) {
       const splitAction = resolution.taskSplit?.action ?? 'none'
       if (splitAction === 'confirmDetectedSplit') {
         // resolved — confirmed split clears blocker
@@ -287,7 +356,7 @@ export const evaluateManualResolutionItem = (
     }
 
     // --- Warnings ---
-    if (baseDiagnosticCodes.includes('LOW_CONFIDENCE_ROW')) {
+    if (item.baseDiagnosticCodes.includes('LOW_CONFIDENCE_ROW')) {
       warnings.push('lowConfidence')
     }
   } else {
@@ -340,6 +409,10 @@ export const buildInitialManualResolutionState = (
       ignored: false,
     }
 
+    // L6-E2G: classify the course situation at item-build time so the
+    // UI doesn't have to re-derive it on every patch.
+    const baseCourseSituation = classifyCourseSituation(row)
+
     const item: CourseSettingManualResolutionItem = {
       approvalItemId: row.approvalItemId,
       targetSemesterId,
@@ -348,6 +421,8 @@ export const buildInitialManualResolutionState = (
       baseDiagnosticCodes: row.match.diagnosticCodes,
       baseBlocked: row.flags.blocked,
       baseAutoSafeCandidate: row.flags.autoSafeCandidate,
+      baseRawCourseName: row.raw.courseName ?? null,
+      baseCourseSituation,
       resolutionStatus,
       resolution,
       validation: { importable: false, blockers: [], warnings: [] },
@@ -494,6 +569,17 @@ const deriveResolutionStatus = (
  *
  * `unresolvedBlockers` aggregates all remaining blocker strings across
  * non-importable, non-ignored items.
+ *
+ * L6-E2G course-specific counters:
+ *  - `courseNameMissingItems`: total rows whose baseCourseSituation is
+ *    `courseNameMissing` (regardless of whether the user resolved them).
+ *  - `newCourseCandidateItems`: total rows whose baseCourseSituation is
+ *    `newCourseCandidate`.
+ *  - `courseAmbiguousItems`: total rows whose baseCourseSituation is
+ *    `courseAmbiguous`.
+ *  - `confirmedNewCourseCandidateItems`: rows where baseCourseSituation
+ *    is `newCourseCandidate` AND resolution.course.action ===
+ *    `createCourseCandidate` with a non-empty candidateName.
  */
 export const summarizeManualResolutionState = (
   state: CourseSettingManualResolutionItem[],
@@ -503,6 +589,11 @@ export const summarizeManualResolutionState = (
   let ignoredItems = 0
   let pendingItems = 0
   let manuallyResolvedItems = 0
+
+  let courseNameMissingItems = 0
+  let newCourseCandidateItems = 0
+  let courseAmbiguousItems = 0
+  let confirmedNewCourseCandidateItems = 0
 
   const unresolvedBlockerCounts: Record<string, number> = {}
 
@@ -528,6 +619,29 @@ export const summarizeManualResolutionState = (
       manuallyResolvedItems += 1
     }
 
+    // L6-E2G: course-specific aggregate counts
+    switch (item.baseCourseSituation) {
+      case 'courseNameMissing':
+        courseNameMissingItems += 1
+        break
+      case 'newCourseCandidate':
+        newCourseCandidateItems += 1
+        break
+      case 'courseAmbiguous':
+        courseAmbiguousItems += 1
+        break
+      case 'courseResolved':
+        break
+    }
+    if (
+      item.baseCourseSituation === 'newCourseCandidate' &&
+      item.resolution.course?.action === 'createCourseCandidate' &&
+      typeof item.resolution.course.candidateName === 'string' &&
+      item.resolution.course.candidateName.trim().length > 0
+    ) {
+      confirmedNewCourseCandidateItems += 1
+    }
+
     // Aggregate unresolved blockers
     if (!item.validation.importable && item.resolutionStatus !== 'ignored') {
       for (const blocker of item.validation.blockers) {
@@ -544,6 +658,10 @@ export const summarizeManualResolutionState = (
     pendingItems,
     manuallyResolvedItems,
     unresolvedBlockers: unresolvedBlockerCounts,
+    courseNameMissingItems,
+    newCourseCandidateItems,
+    courseAmbiguousItems,
+    confirmedNewCourseCandidateItems,
   }
 }
 

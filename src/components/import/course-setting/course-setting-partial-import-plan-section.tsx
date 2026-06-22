@@ -18,7 +18,7 @@ import type {
   CourseSettingPartialImportPlanResponse,
 } from '@/lib/import/course-setting-xlsx-client'
 import type { PlanTableFilter } from './course-setting-ui-types'
-import { toneClass, truncateId } from './course-setting-display-utils'
+import { truncateId } from './course-setting-display-utils'
 import { ReviewSummaryCard } from './course-setting-summary-card'
 
 export type PartialPlanSectionProps = {
@@ -66,37 +66,69 @@ export function PartialPlanSection({ plan, filter, setFilter, onExport }: Partia
       <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
         <ReviewSummaryCard label="课程候选" value={s.courseCreateCandidates} tone="default" />
         <ReviewSummaryCard
+          label="新课程候选（已确认）"
+          value={s.confirmedNewCourseCandidates}
+          tone={s.confirmedNewCourseCandidates > 0 ? 'success' : 'muted'}
+        />
+        <ReviewSummaryCard
+          label="课程名缺失行"
+          value={s.courseNameMissingRows}
+          tone={s.courseNameMissingRows > 0 ? 'danger' : 'muted'}
+        />
+        <ReviewSummaryCard
+          label="课程匹配歧义行"
+          value={s.courseAmbiguousRows}
+          tone={s.courseAmbiguousRows > 0 ? 'warn' : 'muted'}
+        />
+        <ReviewSummaryCard
+          label="班级候选"
+          value={s.classGroupCreateCandidates}
+          tone="default"
+        />
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+        <ReviewSummaryCard
+          label="教学任务候选"
+          value={s.teachingTaskCandidates}
+          tone="default"
+        />
+        <ReviewSummaryCard
+          label="任务-班级关联"
+          value={s.teachingTaskClassCandidates}
+          tone="default"
+        />
+        <ReviewSummaryCard
           label="教师候选"
           value={s.teacherCreateCandidates}
           tone="muted"
           extra="L6-E1C 处理"
         />
-        <ReviewSummaryCard label="班级候选" value={s.classGroupCreateCandidates} tone="default" />
-        <ReviewSummaryCard label="教学任务候选" value={s.teachingTaskCandidates} tone="default" />
-        <ReviewSummaryCard label="任务-班级关联" value={s.teachingTaskClassCandidates} tone="default" />
-      </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
         <ReviewSummaryCard
-          label="applyReadyForFutureStage"
-          value={s.applyReadyForFutureStage ? 1 : 0}
-          tone={s.applyReadyForFutureStage ? 'success' : 'muted'}
+          label="新课程候选引用行"
+          value={s.rowsUsingNewCourseCandidate}
+          tone="default"
         />
         <ReviewSummaryCard
           label="重复风险"
           value={s.duplicateRiskRows}
           tone={s.duplicateRiskRows > 0 ? 'warn' : 'muted'}
         />
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={onExport}
-            data-l6e2-action="export-plan"
-          >
-            <Download className="w-3.5 h-3.5 mr-1" />
-            导出部分导入计划 JSON
-          </Button>
-        </div>
+      </div>
+      <div className="flex items-center gap-2 flex-wrap">
+        <ReviewSummaryCard
+          label="applyReadyForFutureStage"
+          value={s.applyReadyForFutureStage ? 1 : 0}
+          tone={s.applyReadyForFutureStage ? 'success' : 'muted'}
+        />
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onExport}
+          data-l6e2-action="export-plan"
+        >
+          <Download className="w-3.5 h-3.5 mr-1" />
+          导出部分导入计划 JSON
+        </Button>
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">
@@ -166,11 +198,15 @@ function PartialPlanImportableTable({ rows }: { rows: CourseSettingPartialImport
               <td className="px-2 py-1.5 text-right tabular-nums">{r.sourceRowIndex}</td>
               <td className="px-2 py-1.5 text-[10px]">{r.majorNameRaw ?? '—'}</td>
               <td className="px-2 py-1.5">
-                {r.plannedCourseAction === 'useExisting' && r.resolvedCourseId != null
-                  ? <span className="text-green-700">已有 (ID:{r.resolvedCourseId})</span>
-                  : r.plannedCourseAction === 'createCandidate'
-                    ? <span className="text-blue-700">新候选</span>
-                    : <span className="text-gray-400">—</span>}
+                {r.coursePlan.mode === 'useExistingCourse' && r.coursePlan.courseId != null
+                  ? <span className="text-green-700">已有 (ID:{r.coursePlan.courseId})</span>
+                  : r.coursePlan.mode === 'createCourse'
+                    ? r.coursePlan.createCourseCandidate?.confirmed
+                      ? <span className="text-blue-700" data-l6e2g-plan-course="confirmed">新候选（已确认）</span>
+                      : <span className="text-amber-700" data-l6e2g-plan-course="unconfirmed">新候选（未确认）</span>
+                    : r.plannedCourseAction === 'createCandidate'
+                      ? <span className="text-blue-700">新候选</span>
+                      : <span className="text-gray-400">—</span>}
               </td>
               <td className="px-2 py-1.5">
                 {r.plannedTeacherAction === 'useExisting' && r.resolvedTeacherId != null
@@ -290,15 +326,23 @@ function PartialPlanCandidatesView({
                 <th className="px-2 py-1.5 text-left">candidateKey</th>
                 <th className="px-2 py-1.5 text-left">候选名称</th>
                 <th className="px-2 py-1.5 text-right">关联行数</th>
+                <th className="px-2 py-1.5 text-right">已确认行数</th>
                 <th className="px-2 py-1.5 text-right">置信度</th>
               </tr>
             </thead>
             <tbody>
               {courses.map((c) => (
-                <tr key={c.candidateKey} className="border-t">
+                <tr key={c.candidateKey} className="border-t" data-l6e2g-candidate-row={c.candidateKey}>
                   <td className="px-2 py-1.5 font-mono text-[10px]">{c.candidateKey}</td>
                   <td className="px-2 py-1.5">{c.candidateName}</td>
                   <td className="px-2 py-1.5 text-right tabular-nums">{c.approvalItemIds.length}</td>
+                  <td className="px-2 py-1.5 text-right tabular-nums">
+                    {c.confirmedCount > 0 ? (
+                      <span className="text-blue-700">{c.confirmedCount}</span>
+                    ) : (
+                      <span className="text-gray-400">0</span>
+                    )}
+                  </td>
                   <td className="px-2 py-1.5 text-right tabular-nums">{c.confidence.toFixed(2)}</td>
                 </tr>
               ))}

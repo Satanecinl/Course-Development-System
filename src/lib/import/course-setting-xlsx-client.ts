@@ -730,6 +730,17 @@ export type CourseSettingPartialImportPlanRow = {
   resolvedCourseId: number | null
   plannedCourseAction: 'useExisting' | 'createCandidate' | 'unresolved'
   plannedCourseCandidateName: string | null
+  /** L6-E2G: explicit coursePlan mode + metadata for the future L6-F apply stage. */
+  coursePlan: {
+    mode: 'useExistingCourse' | 'createCourse' | 'unresolved'
+    courseId?: number
+    courseNameHash?: string
+    createCourseCandidate?: {
+      nameHash: string
+      source: 'excelCourseName' | 'manualOverride'
+      confirmed: boolean
+    }
+  }
   resolvedTeacherId: number | null
   plannedTeacherAction:
     | 'useExisting'
@@ -774,6 +785,15 @@ export type CourseSettingPartialImportSummary = {
   duplicateRiskRows: number
   blockingRows: number
   courseCreateCandidates: number
+  /** L6-E2G: rows that reference a new course candidate (Excel had a
+   *  course name but DB had no match). */
+  rowsUsingNewCourseCandidate: number
+  /** L6-E2G: subset of `rowsUsingNewCourseCandidate` confirmed by the user. */
+  confirmedNewCourseCandidates: number
+  /** L6-E2G: rows with a true Excel course-name gap. */
+  courseNameMissingRows: number
+  /** L6-E2G: rows with multiple DB course matches. */
+  courseAmbiguousRows: number
   teacherCreateCandidates: 0
   classGroupCreateCandidates: number
   teachingTaskCandidates: number
@@ -817,6 +837,7 @@ export type CourseSettingPartialImportPlanResponse = {
         candidateKey: string
         approvalItemIds: string[]
         candidateName: string
+        confirmedCount: number
         confidence: number
         sourceEvidenceHashes: string[]
       }>
@@ -970,10 +991,19 @@ export function buildCourseSettingPartialImportPlanExport(
     importableRowCount: plan.plan.importableRows.length,
     skippedRowCount: plan.plan.skippedRows.length,
     unresolvedRowCount: plan.plan.unresolvedRows.length,
+    // L6-E2G: course-specific counts surfaced explicitly
+    courseSummary: {
+      courseCreateCandidates: plan.summary.courseCreateCandidates,
+      rowsUsingNewCourseCandidate: plan.summary.rowsUsingNewCourseCandidate,
+      confirmedNewCourseCandidates: plan.summary.confirmedNewCourseCandidates,
+      courseNameMissingRows: plan.summary.courseNameMissingRows,
+      courseAmbiguousRows: plan.summary.courseAmbiguousRows,
+    },
     createCandidates: {
       courses: plan.plan.createCandidates.courses.map((c) => ({
         candidateKey: c.candidateKey,
         approvalItemCount: c.approvalItemIds.length,
+        confirmedCount: c.confirmedCount,
       })),
       classGroups: plan.plan.createCandidates.classGroups.map((c) => ({
         candidateKey: c.candidateKey,

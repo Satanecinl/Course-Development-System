@@ -118,28 +118,13 @@ export const APPROVAL_REVIEW_DECISION_SOURCE_LABELS: Readonly<Record<string, str
 }
 
 // ---------------------------------------------------------------------------
-// Suggested action labels (per L6-D enum)
-// ---------------------------------------------------------------------------
-
-export const APPROVAL_REVIEW_SUGGESTED_ACTION_LABELS: Readonly<Record<string, string>> = {
-  approveCandidate: '建议通过',
-  needsHumanReview: '需人工复核',
-  blockedByMissingCourse: '因课程缺失阻塞',
-  blockedByMissingTeacher: '因教师缺失阻塞',
-  blockedByMissingClassGroup: '因班级缺失阻塞',
-  blockedByAmbiguousMapping: '因匹配歧义阻塞',
-  blockedByInvalidHours: '因周课时异常阻塞',
-  blockedByInvalidExamType: '因考试类型异常阻塞',
-  blockedByLowConfidence: '因低置信度阻塞',
-  blockedByTargetSemesterMismatch: '因目标学期不匹配阻塞',
-}
-
-// ---------------------------------------------------------------------------
-// Diagnostic code labels (L4 / L6-D codes)
+// Diagnostic code labels (L4 / L6-D / L6-E2G codes)
 // ---------------------------------------------------------------------------
 
 export const APPROVAL_REVIEW_DIAGNOSTIC_LABELS: Readonly<Record<string, string>> = {
-  COURSE_MISSING: '课程缺失',
+  COURSE_MISSING: '课程缺失（已弃用，参见 COURSE_NAME_MISSING / COURSE_CREATE_CANDIDATE）',
+  COURSE_NAME_MISSING: '课程名缺失',
+  COURSE_CREATE_CANDIDATE: '新课程候选',
   COURSE_AMBIGUOUS: '课程匹配歧义',
   TEACHER_MISSING: '教师缺失',
   TEACHER_AMBIGUOUS: '教师匹配歧义',
@@ -157,6 +142,50 @@ export const APPROVAL_REVIEW_DIAGNOSTIC_LABELS: Readonly<Record<string, string>>
   TASK_SPLIT_REQUIRED: '需拆分教学任务',
   TASK_CANDIDATE_SKIPPED: '教学任务候选已跳过',
   SOURCE_EVIDENCE_INCOMPLETE: '来源证据不完整',
+}
+
+// ---------------------------------------------------------------------------
+// Course situation labels (L6-E2G) — long-form descriptions for the UI.
+// These are SEPARATE from the diagnostic-code label map: the long-form
+// descriptions are used by the Manual Resolution section to explain
+// "what does this state mean" to the human reviewer.
+// ---------------------------------------------------------------------------
+
+export const COURSE_SITUATION_LABELS = {
+  courseNameMissing: {
+    short: '课程名缺失',
+    long: '课程名缺失 — Excel 行中没有可识别的课程名，必须人工处理。',
+  },
+  newCourseCandidate: {
+    short: '新课程候选',
+    long: '新课程候选 — 系统未找到已有课程，将作为新课程创建。',
+  },
+  courseAmbiguous: {
+    short: '课程匹配歧义',
+    long: '课程匹配歧义 — 请选择已有课程，或确认作为新课程创建。',
+  },
+  courseResolved: {
+    short: '课程已解析',
+    long: '课程已解析 — 当前行已确定使用某个课程，无需处理。',
+  },
+} as const
+
+// ---------------------------------------------------------------------------
+// Suggested action labels (L6-E2G — new course candidate variant)
+// ---------------------------------------------------------------------------
+
+export const APPROVAL_REVIEW_SUGGESTED_ACTION_LABELS: Readonly<Record<string, string>> = {
+  approveCandidate: '建议通过',
+  needsHumanReview: '需人工复核',
+  blockedByMissingCourse: '因课程名缺失阻塞',
+  blockedByNewCourseCandidate: '新课程候选（需确认）',
+  blockedByMissingTeacher: '因教师缺失阻塞',
+  blockedByMissingClassGroup: '因班级缺失阻塞',
+  blockedByAmbiguousMapping: '因匹配歧义阻塞',
+  blockedByInvalidHours: '因周课时异常阻塞',
+  blockedByInvalidExamType: '因考试类型异常阻塞',
+  blockedByLowConfidence: '因低置信度阻塞',
+  blockedByTargetSemesterMismatch: '因目标学期不匹配阻塞',
 }
 
 // ---------------------------------------------------------------------------

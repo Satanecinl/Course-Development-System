@@ -91,13 +91,42 @@ export function ManualResolutionSection(props: ManualResolutionSectionProps) {
 
       {/* Summary cards */}
       {resolutionSummary && (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-          <ReviewSummaryCard label="可导入" value={resolutionSummary.importableItems} tone="success" />
-          <ReviewSummaryCard label="需处理" value={resolutionSummary.needsResolutionItems} tone="warn" />
-          <ReviewSummaryCard label="已忽略" value={resolutionSummary.ignoredItems} tone="muted" />
-          <ReviewSummaryCard label="暂不处理" value={resolutionSummary.pendingItems} tone="default" />
-          <ReviewSummaryCard label="已手动处理" value={resolutionSummary.manuallyResolvedItems} tone="success" />
-        </div>
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+            <ReviewSummaryCard label="可导入" value={resolutionSummary.importableItems} tone="success" />
+            <ReviewSummaryCard label="需处理" value={resolutionSummary.needsResolutionItems} tone="warn" />
+            <ReviewSummaryCard label="已忽略" value={resolutionSummary.ignoredItems} tone="muted" />
+            <ReviewSummaryCard label="暂不处理" value={resolutionSummary.pendingItems} tone="default" />
+            <ReviewSummaryCard label="已手动处理" value={resolutionSummary.manuallyResolvedItems} tone="success" />
+          </div>
+          {/* L6-E2G: course-specific counts */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <ReviewSummaryCard
+              label="课程名缺失"
+              value={resolutionSummary.courseNameMissingItems}
+              tone={resolutionSummary.courseNameMissingItems > 0 ? 'danger' : 'muted'}
+              data-l6e2g-summary="course-name-missing"
+            />
+            <ReviewSummaryCard
+              label="新课程候选"
+              value={resolutionSummary.newCourseCandidateItems}
+              tone={resolutionSummary.newCourseCandidateItems > 0 ? 'warn' : 'muted'}
+              data-l6e2g-summary="new-course-candidate"
+            />
+            <ReviewSummaryCard
+              label="课程匹配歧义"
+              value={resolutionSummary.courseAmbiguousItems}
+              tone={resolutionSummary.courseAmbiguousItems > 0 ? 'warn' : 'muted'}
+              data-l6e2g-summary="course-ambiguous"
+            />
+            <ReviewSummaryCard
+              label="新课程候选（已确认）"
+              value={resolutionSummary.confirmedNewCourseCandidateItems}
+              tone={resolutionSummary.confirmedNewCourseCandidateItems > 0 ? 'success' : 'muted'}
+              data-l6e2g-summary="confirmed-new-course-candidate"
+            />
+          </div>
+        </>
       )}
 
       {/* Filter + Export */}

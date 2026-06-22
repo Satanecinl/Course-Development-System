@@ -168,3 +168,5 @@ The list reflects local history at the time of K36-A3 and does not assert remote
 - L6-E2E 修复 Excel 课程设置真实教学任务拆分解析：支持教师字段中“姓名(班级编号)”模式并映射到真实班级，不再生成教师A/班级1占位候选；确认拆分后 partial import plan 可按真实 assignment 生成多个 TeachingTask candidates；不写 DB、不执行 apply。
 
 - L6-E2F 拆分 Excel 课程设置预览巨型组件：将 course-setting-xlsx-preview.tsx 中的审核表、人工处理、任务拆分候选、部分导入计划等 UI 拆成子组件，保持 L6-E2E 行为不变；不写 DB、不执行 apply。
+
+- L6-E2G 修复 Excel 课程设置导入中的课程缺失语义：Excel 有课程名但 DB 无匹配时改为“新课程候选/待创建课程”，不再作为错误性课程缺失；真正课程缺失仅指 Excel 课程名为空或无法解析。L6-F 未来只允许创建已确认的新 Course，仍禁止自动创建 Teacher/ClassGroup。

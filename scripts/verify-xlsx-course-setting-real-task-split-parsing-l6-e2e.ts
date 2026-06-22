@@ -22,6 +22,14 @@ import { join, resolve } from 'node:path'
 
 const ROOT = resolve(__dirname, '..')
 const UI_PATH = join(ROOT, 'src/components/import/course-setting-xlsx-preview.tsx')
+// L6-E2F: extracted files (task split panel, manual resolution row) carry
+// the split-detection UI. We accept patterns in either orchestrator OR
+// extracted files.
+const APPROVAL_REVIEW_SECTION = join(ROOT, 'src/components/import/course-setting/course-setting-approval-review-section.tsx')
+const APPROVAL_REVIEW_TABLE = join(ROOT, 'src/components/import/course-setting/course-setting-approval-review-table.tsx')
+const MANUAL_RESOLUTION_SECTION = join(ROOT, 'src/components/import/course-setting/course-setting-manual-resolution-section.tsx')
+const MANUAL_RESOLUTION_ROW = join(ROOT, 'src/components/import/course-setting/course-setting-manual-resolution-row.tsx')
+const TASK_SPLIT_PANEL = join(ROOT, 'src/components/import/course-setting/course-setting-task-split-candidate-panel.tsx')
 const SPLIT_HELPER = join(ROOT, 'src/lib/import/course-setting-task-split-detection-l6-e2c.ts')
 const L6E2_HELPER = join(ROOT, 'src/lib/import/course-setting-partial-import-plan-l6-e2.ts')
 const L6E2_CLIENT = join(ROOT, 'src/lib/import/course-setting-xlsx-client.ts')
@@ -42,6 +50,9 @@ function main(): void {
   const split = readF(SPLIT_HELPER)
   const l6e2 = readF(L6E2_HELPER)
   const client = readF(L6E2_CLIENT)
+  // L6-E2F: union of orchestrator + extracted files
+  const extractedUi = readF(APPROVAL_REVIEW_SECTION) + readF(APPROVAL_REVIEW_TABLE) + readF(MANUAL_RESOLUTION_SECTION) + readF(MANUAL_RESOLUTION_ROW) + readF(TASK_SPLIT_PANEL)
+  const allUi = ui + '\n' + extractedUi
   const { execSync: ex } = { execSync }
   const gitLs = (pat: string) => ex(`git ls-files "${pat}"`, { cwd: ROOT }).toString().trim()
 
@@ -92,15 +103,15 @@ function main(): void {
   record('UI removes 教师B placeholder', !/教师B/.test(ui))
   record('UI removes 班级1 placeholder', !/班级1/.test(ui))
   record('UI removes 班级2 placeholder', !/班级2/.test(ui))
-  record('UI shows teacherRaw from candidate', /a\.teacherRaw/.test(ui))
-  record('UI shows classRaw from candidate', /a\.classRaw/.test(ui))
-  record('UI shows teacherMatchStatus from candidate', /a\.teacherMatchStatus/.test(ui))
-  record('UI shows classMatchStatus from candidate', /a\.classMatchStatus/.test(ui))
-  record('UI shows teacherId when matched', /a\.teacherId != null/.test(ui))
-  record('UI shows classGroupIds when matched', /a\.classGroupIds\.length/.test(ui))
-  record('UI uses real candidateId in confirm', /selectedCandidateId: candidate\.candidateId/.test(ui))
-  record('UI no longer uses "detected-split" as candidateId', !/selectedCandidateId: 'detected-split'/.test(ui))
-  record('UI shows real assignment iteration', /candidate\.assignments\.map/.test(ui))
+  record('UI shows teacherRaw from candidate', /a\.teacherRaw/.test(allUi) || /assignment\.teacherRaw/.test(allUi))
+  record('UI shows classRaw from candidate', /a\.classRaw/.test(allUi) || /assignment\.classRaw/.test(allUi))
+  record('UI shows teacherMatchStatus from candidate', /a\.teacherMatchStatus/.test(allUi) || /assignment\.teacherMatchStatus/.test(allUi))
+  record('UI shows classMatchStatus from candidate', /a\.classMatchStatus/.test(allUi) || /assignment\.classMatchStatus/.test(allUi))
+  record('UI shows teacherId when matched', /a\.teacherId != null/.test(allUi) || /assignment\.teacherId/.test(allUi))
+  record('UI shows classGroupIds when matched', /a\.classGroupIds\.length/.test(allUi) || /assignment\.classGroupIds/.test(allUi))
+  record('UI uses real candidateId in confirm', /selectedCandidateId: candidate\.candidateId/.test(allUi))
+  record('UI no longer uses "detected-split" as candidateId', !/selectedCandidateId: 'detected-split'/.test(allUi))
+  record('UI shows real assignment iteration', /candidate\.assignments\.map/.test(allUi))
 
   // ── 6. Plan consumes confirmed splits ──
   console.log('\n[6/10] plan consumes confirmed splits')

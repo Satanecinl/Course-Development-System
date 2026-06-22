@@ -3,6 +3,24 @@
  *
  * Stage: L6-E2-XLSX-COURSE-SETTING-PARTIAL-IMPORT-PLAN-IN-PAGE
  *
+ * L6-E2G update (semantic fix):
+ *  The legacy `COURSE_MISSING` diagnostic conflates two semantically distinct
+ *  situations:
+ *   - Excel course name is empty / unparsable → `courseNameMissing` (true
+ *     blocker; cannot be auto-resolved)
+ *   - Excel has a course name but DB has no match → new course candidate.
+ *     This is NOT a blocker — the row can become importable when the user
+ *     confirms or alters the new course via `createCourseCandidate`. Future
+ *     L6-F will create the Course on apply.
+ *
+ *  The plan summary now distinguishes:
+ *   - `courseNameMissingRows` (true blockers, hard `courseNameMissing`)
+ *   - `rowsUsingNewCourseCandidate` (rows pointing at a new course candidate)
+ *   - `confirmedNewCourseCandidates` (subset above that the user has confirmed)
+ *
+ *  Per-row `coursePlan` mirrors `plannedCourseAction` but is the structured
+ *  form the L6-F apply stage should read.
+ *
  * Builds a dry-run PARTIAL import plan from:
  *   1. L4 dry-run existing data (current Course / Teacher / ClassGroup /
  *      TeachingTask / TeachingTaskClass in the target semester)
@@ -76,6 +94,25 @@ export type CourseSettingPartialImportPlanRow = {
   resolvedCourseId: number | null
   plannedCourseAction: 'useExisting' | 'createCandidate' | 'unresolved'
   plannedCourseCandidateName: string | null
+  /**
+   * L6-E2G: explicit coursePlan mode. Mirrors `plannedCourseAction` but
+   * is intended for the future L6-F apply stage so it can read the
+   * resolved decision unambiguously:
+   *  - `useExistingCourse`: a real Course exists and `resolvedCourseId` is set.
+   *  - `createCourse`: a new Course will be created; `courseCreateCandidate`
+   *    carries the candidate metadata (nameHash, source, confirmed flag).
+   *  - `unresolved`: no decision yet (caller must re-derive during apply).
+   */
+  coursePlan: {
+    mode: 'useExistingCourse' | 'createCourse' | 'unresolved'
+    courseId?: number
+    courseNameHash?: string
+    createCourseCandidate?: {
+      nameHash: string
+      source: 'excelCourseName' | 'manualOverride'
+      confirmed: boolean
+    }
+  }
   /** Resolved teacherId. May be null when allowBlankTeacher is set. */
   resolvedTeacherId: number | null
   plannedTeacherAction:
@@ -120,6 +157,12 @@ export type CourseCreateCandidatePlan = {
   candidateKey: string
   approvalItemIds: string[]
   candidateName: string
+  /**
+   * L6-E2G: whether at least one row referencing this candidate has been
+   * explicitly confirmed by the user. A candidate is fully eligible for
+   * apply only when `confirmedCount > 0`.
+   */
+  confirmedCount: number
   confidence: number
   sourceEvidenceHashes: string[]
 }
@@ -189,7 +232,21 @@ export type CourseSettingPartialImportPlanSummary = {
   ignoredRows: number
   duplicateRiskRows: number
   blockingRows: number
+  /** L6-E2G: number of new course candidates the plan will create on apply. */
   courseCreateCandidates: number
+  /** L6-E2G: number of rows that reference a new course candidate (the
+   *  Excel had a course name but DB had no match). Each such row may or
+   *  may not be confirmed; if not confirmed, it stays in `unresolvedRows`. */
+  rowsUsingNewCourseCandidate: number
+  /** L6-E2G: subset of `rowsUsingNewCourseCandidate` where the user has
+   *  explicitly confirmed the new course via `createCourseCandidate`.
+   *  These rows are eligible to enter `importableRows`. */
+  confirmedNewCourseCandidates: number
+  /** L6-E2G: rows with a true Excel course-name gap (no course name in the
+   *  Excel cell). These remain hard blockers (`courseNameMissing`). */
+  courseNameMissingRows: number
+  /** L6-E2G: rows where DB had multiple matches (still review). */
+  courseAmbiguousRows: number
   teacherCreateCandidates: 0
   classGroupCreateCandidates: number
   teachingTaskCandidates: number
@@ -451,6 +508,9 @@ export const buildCourseSettingPartialImportPlan = async (
     let plannedCourseAction: CourseSettingPartialImportPlanRow['plannedCourseAction'] =
       'unresolved'
     let plannedCourseCandidateName: string | null = null
+    /** L6-E2G: explicit coursePlan mode + metadata for the L6-F apply stage. */
+    let coursePlanMode: 'useExistingCourse' | 'createCourse' | 'unresolved' = 'unresolved'
+    let coursePlanCreateCandidate: CourseSettingPartialImportPlanRow['coursePlan']['createCourseCandidate'] = undefined
 
     let resolvedTeacherId: number | null = null
     let plannedTeacherAction: CourseSettingPartialImportPlanRow['plannedTeacherAction'] =
@@ -467,12 +527,24 @@ export const buildCourseSettingPartialImportPlan = async (
     let ambiguousMappingConfirmed = false
 
     // ── Course resolution ───────────────────────────────────────────
+    // L6-E2G: the legacy `COURSE_MISSING` diagnostic conflates two cases:
+    //   (a) Excel course name is empty / unparsable  → blocker `courseNameMissing`
+    //   (b) Excel has a course name but DB has no match → treat as a new
+    //       course candidate, plan to create it on apply (if user confirms).
+    // We split these here so the plan summary correctly reports
+    // `courseNameMissingRows` vs `confirmedNewCourseCandidates`.
+    const hasCourseMissingDiag = reviewRow.match.diagnosticCodes.includes('COURSE_MISSING')
+    const hasCourseAmbiguousDiag = reviewRow.match.diagnosticCodes.includes('COURSE_AMBIGUOUS')
+    const rawCourseName = reviewRow.raw.courseName ?? null
+    const isExcelCourseNameBlank = isBlank(rawCourseName)
+
     if (resolution?.resolution.course) {
       const c = resolution.resolution.course
       if (c.action === 'useExistingCourse' && c.existingCourseId != null) {
         if (existingCourseById.has(c.existingCourseId)) {
           resolvedCourseId = c.existingCourseId
           plannedCourseAction = 'useExisting'
+          coursePlanMode = 'useExistingCourse'
         } else {
           blockersForRow.push('courseReferenceNotFound')
         }
@@ -483,14 +555,72 @@ export const buildCourseSettingPartialImportPlan = async (
       ) {
         plannedCourseAction = 'createCandidate'
         plannedCourseCandidateName = c.candidateName.trim()
+        coursePlanMode = 'createCourse'
+        const source: 'excelCourseName' | 'manualOverride' = !isExcelCourseNameBlank &&
+          c.candidateName.trim() === (rawCourseName ?? '').trim()
+          ? 'excelCourseName'
+          : 'manualOverride'
+        coursePlanCreateCandidate = {
+          nameHash: shortHash(c.candidateName.trim(), 16),
+          source,
+          confirmed: true,
+        }
+      } else if (
+        c.action === 'createCourseCandidate' &&
+        (c.candidateName == null || isBlank(c.candidateName))
+      ) {
+        // Action says createCandidate but no name was supplied → still
+        // ambiguous. Default to using the raw Excel course name if any,
+        // otherwise mark as courseNameMissing.
+        if (!isExcelCourseNameBlank) {
+          plannedCourseAction = 'createCandidate'
+          plannedCourseCandidateName = (rawCourseName ?? '').trim()
+          coursePlanMode = 'createCourse'
+          coursePlanCreateCandidate = {
+            nameHash: shortHash((rawCourseName ?? '').trim(), 16),
+            source: 'excelCourseName',
+            confirmed: false,
+          }
+        } else {
+          blockersForRow.push('courseNameMissing')
+        }
       } else {
-        blockersForRow.push('courseMissing')
+        // Some other unresolved action (e.g. `none` or unsupported value).
+        if (hasCourseMissingDiag && !isExcelCourseNameBlank) {
+          // Implicit new course candidate — the Excel had a course name but
+          // no DB match and the user hasn't yet chosen. Treat as a candidate
+          // that still needs confirmation (not a hard blocker).
+          plannedCourseAction = 'createCandidate'
+          plannedCourseCandidateName = (rawCourseName ?? '').trim()
+          coursePlanMode = 'createCourse'
+          coursePlanCreateCandidate = {
+            nameHash: shortHash((rawCourseName ?? '').trim(), 16),
+            source: 'excelCourseName',
+            confirmed: false,
+          }
+        } else if (hasCourseMissingDiag && isExcelCourseNameBlank) {
+          blockersForRow.push('courseNameMissing')
+        } else if (hasCourseAmbiguousDiag) {
+          blockersForRow.push('courseAmbiguous')
+        } else {
+          blockersForRow.push('courseMissing')
+        }
       }
-    } else if (
-      reviewRow.match.diagnosticCodes.includes('COURSE_MISSING') ||
-      reviewRow.match.diagnosticCodes.includes('COURSE_AMBIGUOUS')
-    ) {
-      blockersForRow.push('courseMissing')
+    } else if (hasCourseAmbiguousDiag) {
+      blockersForRow.push('courseAmbiguous')
+    } else if (hasCourseMissingDiag && !isExcelCourseNameBlank) {
+      // No resolution, but Excel had a course name → new course candidate.
+      // The candidate is auto-prefilled from Excel but not yet confirmed.
+      plannedCourseAction = 'createCandidate'
+      plannedCourseCandidateName = (rawCourseName ?? '').trim()
+      coursePlanMode = 'createCourse'
+      coursePlanCreateCandidate = {
+        nameHash: shortHash((rawCourseName ?? '').trim(), 16),
+        source: 'excelCourseName',
+        confirmed: false,
+      }
+    } else if (hasCourseMissingDiag && isExcelCourseNameBlank) {
+      blockersForRow.push('courseNameMissing')
     } else {
       // No course diagnostic and no resolution — assume the L4 dry-run
       // already found an exact match. We don't have the exact id here, so
@@ -498,15 +628,8 @@ export const buildCourseSettingPartialImportPlan = async (
       // Since we don't carry the L4 candidate, fall back to "unresolved"
       // only if there's a course diagnostic. Otherwise leave plannedCourse
       // as unresolved because we cannot safely invent an id.
-      if (
-        !reviewRow.match.diagnosticCodes.includes('COURSE_MISSING') &&
-        !reviewRow.match.diagnosticCodes.includes('COURSE_AMBIGUOUS')
-      ) {
-        // No diagnostic, no resolution. We can still plan it if L4 marked
-        // it as a known match, but we lack the id here. Keep as unresolved
-        // so the caller (API) re-derives the id during apply.
-        plannedCourseAction = 'unresolved'
-      }
+      plannedCourseAction = 'unresolved'
+      coursePlanMode = 'unresolved'
     }
 
     // ── Teacher resolution ───────────────────────────────────────────
@@ -728,6 +851,15 @@ export const buildCourseSettingPartialImportPlan = async (
       resolvedCourseId,
       plannedCourseAction,
       plannedCourseCandidateName,
+      coursePlan: {
+        mode: coursePlanMode,
+        ...(coursePlanMode === 'useExistingCourse' && resolvedCourseId != null
+          ? { courseId: resolvedCourseId }
+          : {}),
+        ...(coursePlanCreateCandidate
+          ? { createCourseCandidate: coursePlanCreateCandidate }
+          : {}),
+      },
       resolvedTeacherId,
       plannedTeacherAction,
       plannedTeacherCandidateName,
@@ -800,14 +932,17 @@ export const buildCourseSettingPartialImportPlan = async (
     if (plannedCourseAction === 'createCandidate' && plannedCourseCandidateName) {
       const key = normalizeName(plannedCourseCandidateName)
       const existing = courseCreateByNorm.get(key)
+      const isConfirmed = coursePlanCreateCandidate?.confirmed === true
       if (existing) {
         existing.approvalItemIds.push(approvalItemId)
         existing.sourceEvidenceHashes.push(sourceEvidenceHash)
+        if (isConfirmed) existing.confirmedCount += 1
       } else {
         courseCreateByNorm.set(key, {
           candidateKey: `course:${shortHash(key, 10)}`,
           approvalItemIds: [approvalItemId],
           candidateName: plannedCourseCandidateName,
+          confirmedCount: isConfirmed ? 1 : 0,
           confidence: reviewRow.match.confidence,
           sourceEvidenceHashes: [sourceEvidenceHash],
         })
@@ -943,6 +1078,20 @@ export const buildCourseSettingPartialImportPlan = async (
   const courseCreateList = Array.from(courseCreateByNorm.values())
   const classGroupCreateList = Array.from(classGroupCreateByNorm.values())
 
+  // L6-E2G: aggregate course-specific counts.
+  let courseNameMissingRows = 0
+  let courseAmbiguousRows = 0
+  let rowsUsingNewCourseCandidate = 0
+  let confirmedNewCourseCandidates = 0
+  for (const r of blockers) {
+    if (r.reason === 'courseNameMissing') courseNameMissingRows += 1
+    if (r.reason === 'courseAmbiguous') courseAmbiguousRows += 1
+  }
+  for (const c of courseCreateList) {
+    rowsUsingNewCourseCandidate += c.approvalItemIds.length
+    confirmedNewCourseCandidates += c.confirmedCount
+  }
+
   // applyReadyForFutureStage: at least one importable row + no blockers inside
   // the importable set + every planned create candidate is internally valid.
   const internalBlockers = importableRows.reduce(
@@ -964,6 +1113,10 @@ export const buildCourseSettingPartialImportPlan = async (
     duplicateRiskRows: duplicateRisks.length,
     blockingRows: blockers.length,
     courseCreateCandidates: courseCreateList.length,
+    rowsUsingNewCourseCandidate,
+    confirmedNewCourseCandidates,
+    courseNameMissingRows,
+    courseAmbiguousRows,
     teacherCreateCandidates: 0,
     classGroupCreateCandidates: classGroupCreateList.length,
     teachingTaskCandidates: teachingTasks.length,
@@ -1080,6 +1233,44 @@ export const validatePartialImportPlan = (
 
   if (plan.summary.applyReadyForFutureStage && plan.applyAllowed) {
     violations.push('applyReadyForFutureStage=true must not imply applyAllowed=true')
+  }
+
+  // L6-E2G: course semantic invariants
+  if (plan.summary.rowsUsingNewCourseCandidate < 0) {
+    violations.push('rowsUsingNewCourseCandidate must be >= 0')
+  }
+  if (plan.summary.confirmedNewCourseCandidates < 0) {
+    violations.push('confirmedNewCourseCandidates must be >= 0')
+  }
+  if (plan.summary.confirmedNewCourseCandidates > plan.summary.rowsUsingNewCourseCandidate) {
+    violations.push(
+      `confirmedNewCourseCandidates (${plan.summary.confirmedNewCourseCandidates}) must be <= rowsUsingNewCourseCandidate (${plan.summary.rowsUsingNewCourseCandidate})`,
+    )
+  }
+  if (plan.summary.courseNameMissingRows < 0) {
+    violations.push('courseNameMissingRows must be >= 0')
+  }
+  if (plan.summary.courseAmbiguousRows < 0) {
+    violations.push('courseAmbiguousRows must be >= 0')
+  }
+  // Every importable row's coursePlan.mode must be consistent with
+  // plannedCourseAction.
+  for (const r of plan.plan.importableRows) {
+    if (r.coursePlan.mode === 'useExistingCourse' && r.plannedCourseAction !== 'useExisting') {
+      violations.push(
+        `importable row ${r.approvalItemId}: coursePlan.mode=useExistingCourse but plannedCourseAction=${r.plannedCourseAction}`,
+      )
+    }
+    if (r.coursePlan.mode === 'createCourse' && r.plannedCourseAction !== 'createCandidate') {
+      violations.push(
+        `importable row ${r.approvalItemId}: coursePlan.mode=createCourse but plannedCourseAction=${r.plannedCourseAction}`,
+      )
+    }
+    if (r.coursePlan.mode === 'createCourse' && !r.coursePlan.createCourseCandidate) {
+      violations.push(
+        `importable row ${r.approvalItemId}: coursePlan.mode=createCourse missing createCourseCandidate`,
+      )
+    }
   }
 
   if (plan.summary.totalRows === 0) {

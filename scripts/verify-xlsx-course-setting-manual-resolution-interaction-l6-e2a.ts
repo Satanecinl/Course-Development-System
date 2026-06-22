@@ -22,6 +22,13 @@ import { execSync } from 'node:child_process'
 
 const ROOT = resolve(__dirname, '..')
 const PREVIEW = join(ROOT, 'src/components/import/course-setting-xlsx-preview.tsx')
+// L6-E2F: the per-row resolution UI moved from `course-setting-xlsx-preview.tsx`
+// into the extracted `course-setting-manual-resolution-row.tsx`. We accept
+// handler patterns in EITHER file (L6-E2F-decomposed UI is the new shape).
+const RESOLUTION_ROW = join(ROOT, 'src/components/import/course-setting/course-setting-manual-resolution-row.tsx')
+// L6-E2F: `updateItem` and section-level handlers also moved into
+// `course-setting-manual-resolution-section.tsx`.
+const RESOLUTION_SECTION = join(ROOT, 'src/components/import/course-setting/course-setting-manual-resolution-section.tsx')
 const L6_E1_HELPER = join(ROOT, 'src/lib/import/course-setting-manual-resolution-l6-e1.ts')
 const L6_E2_HELPER = join(ROOT, 'src/lib/import/course-setting-partial-import-plan-l6-e2.ts')
 const L6_E2_CLIENT = join(ROOT, 'src/lib/import/course-setting-xlsx-client.ts')
@@ -40,8 +47,17 @@ const readIfExists = (p: string): string => (existsSync(p) ? readFileSync(p, 'ut
 // Read the helper source once
 const helperSrc = readIfExists(L6_E1_HELPER)
 const previewSrc = readIfExists(PREVIEW)
+// L6-E2F: handlers are now in the extracted row file (stage-aware).
+const rowSrc = readIfExists(RESOLUTION_ROW)
+const sectionSrc = readIfExists(RESOLUTION_SECTION)
 const l6e2HelperSrc = readIfExists(L6_E2_HELPER)
 const l6e2ClientSrc = readIfExists(L6_E2_CLIENT)
+// L6-E2G: handlers may also live in the row file. Use whichever file
+// the pattern actually appears in (orchestrator OR extracted row).
+const handlersSrc = previewSrc + '\n' + rowSrc
+// L6-E2F: section-level wrappers (updateItem, summary card reads) live in
+// RESOLUTION_SECTION.
+const sectionOrPreviewSrc = previewSrc + '\n' + sectionSrc
 
 function main(): void {
   console.log('=== L6-E2A Verify: Manual Resolution Interaction Fix ===\n')
@@ -77,8 +93,9 @@ function main(): void {
 
   // ── 3. UI controls call applyManualResolutionUpdate correctly (N21-N40) ──
   console.log('\n[3/9] UI control bindings')
-  // Find the updateItem wrapper in ResolutionSection
-  const updateItemMatch = previewSrc.match(/const updateItem = \([\s\S]*?\}\)/)
+  // Find the updateItem wrapper in ResolutionSection (L6-E2F moved it to
+  // the extracted section file; we accept either location).
+  const updateItemMatch = sectionOrPreviewSrc.match(/const updateItem = \([\s\S]*?setResolutionItems\(updated\)/)
   record('updateItem wrapper present in ResolutionSection', updateItemMatch !== null)
   if (updateItemMatch) {
     const m = updateItemMatch[0]
@@ -87,30 +104,32 @@ function main(): void {
   }
 
   // Use-existing course
-  record('use-existing course handler uses Number(value)', /onChange=\{\(e\) => onUpdate\(\{ course: \{ action: 'useExistingCourse', existingCourseId: e\.target\.value \? Number\(e\.target\.value\) : undefined \} \}\)\}/.test(previewSrc))
+  // L6-E2F: handlers may be in PREVIEW (orchestrator) OR in RESOLUTION_ROW
+  // (extracted component). Test the union of both files.
+  record('use-existing course handler uses Number(value)', /onChange=\{\(e\) => onUpdate\(\{ course: \{ action: 'useExistingCourse', existingCourseId: e\.target\.value \? Number\(e\.target\.value\) : undefined \} \}\)\}/.test(handlersSrc))
   record('use-existing course clears courseMissing blocker (via deep-merged resolution)', /'useExistingCourse'/.test(helperSrc))
   // Use-existing teacher
-  record('use-existing teacher handler uses Number(value)', /onChange=\{\(e\) => onUpdate\(\{ teacher: \{ action: 'useExistingTeacher', existingTeacherId: e\.target\.value \? Number\(e\.target\.value\) : undefined \} \}\)\}/.test(previewSrc))
+  record('use-existing teacher handler uses Number(value)', /onChange=\{\(e\) => onUpdate\(\{ teacher: \{ action: 'useExistingTeacher', existingTeacherId: e\.target\.value \? Number\(e\.target\.value\) : undefined \} \}\)\}/.test(handlersSrc))
   // Use-existing class group
-  record('use-existing class group stores number[]', /existingClassGroupIds: \[Number\(e\.target\.value\)\]/.test(previewSrc))
+  record('use-existing class group stores number[]', /existingClassGroupIds: \[Number\(e\.target\.value\)\]/.test(handlersSrc))
   // Create-candidate inputs are controlled (not defaultValue)
-  record('createCourseCandidate input is controlled (value=)', /<Input[\s\S]*?placeholder="新课程候选名称"[\s\S]*?value=\{item\.resolution\.course\?\.candidateName \?\? ''\}/.test(previewSrc))
-  record('createTeacherCandidate input is controlled (value=)', /<Input[\s\S]*?placeholder="新教师候选名称"[\s\S]*?value=\{item\.resolution\.teacher\?\.candidateName \?\? ''\}/.test(previewSrc))
-  record('createClassGroupCandidate input is controlled (value=)', /<Input[\s\S]*?placeholder="新班级候选名称"[\s\S]*?value=\{item\.resolution\.classGroups\?\.candidateNames\?\.\[0\] \?\? ''\}/.test(previewSrc))
+  record('createCourseCandidate input is controlled (value=)', /<Input[\s\S]*?placeholder="新课程候选名称"[\s\S]*?value=\{item\.resolution\.course\?\.candidateName \?\? ''\}/.test(handlersSrc))
+  record('createTeacherCandidate input is controlled (value=)', /<Input[\s\S]*?placeholder="新教师候选名称"[\s\S]*?value=\{item\.resolution\.teacher\?\.candidateName \?\? ''\}/.test(handlersSrc))
+  record('createClassGroupCandidate input is controlled (value=)', /<Input[\s\S]*?placeholder="新班级候选名称"[\s\S]*?value=\{item\.resolution\.classGroups\?\.candidateNames\?\.\[0\] \?\? ''\}/.test(handlersSrc))
   // Weekly hours override
-  record('weeklyHours override is controlled', /<Input[\s\S]*?type="number"[\s\S]*?value=\{item\.resolution\.weeklyHours\?\.value \?\? ''\}/.test(previewSrc))
-  record('weeklyHours value converted to number', /const v = Number\(e\.target\.value\)/.test(previewSrc))
+  record('weeklyHours override is controlled', /<Input[\s\S]*?type="number"[\s\S]*?value=\{item\.resolution\.weeklyHours\?\.value \?\? ''\}/.test(handlersSrc))
+  record('weeklyHours value converted to number', /const v = Number\(e\.target\.value\)/.test(handlersSrc))
   // Exam type override
-  record('examType override is controlled select', /value=\{item\.resolution\.examType\?\.value \?\? ''\}/.test(previewSrc))
+  record('examType override is controlled select', /value=\{item\.resolution\.examType\?\.value \?\? ''\}/.test(handlersSrc))
   // Ambiguous
-  record('ambiguousMapping confirm handler exists', /onChange=\{\(\) => onUpdate\(\{ ambiguousMapping: \{ action: 'confirmAmbiguousMapping' \} \}\)\}/.test(previewSrc))
-  record('ambiguousMapping markNeedsReview handler exists', /onChange=\{\(\) => onUpdate\(\{ ambiguousMapping: \{ action: 'markNeedsReview' \} \}\)\}/.test(previewSrc))
+  record('ambiguousMapping confirm handler exists', /onChange=\{\(\) => onUpdate\(\{ ambiguousMapping: \{ action: 'confirmAmbiguousMapping' \} \}\)\}/.test(handlersSrc))
+  record('ambiguousMapping markNeedsReview handler exists', /onChange=\{\(\) => onUpdate\(\{ ambiguousMapping: \{ action: 'markNeedsReview' \} \}\)\}/.test(handlersSrc))
   // Low confidence uses the same ambiguousMapping control
-  record('low-confidence confirm uses confirmAmbiguousMapping', /name=\{`lc-\$\{item\.approvalItemId\}`\}[\s\S]*?'confirmAmbiguousMapping'/.test(previewSrc))
+  record('low-confidence confirm uses confirmAmbiguousMapping', /name=\{`lc-\$\{item\.approvalItemId\}`\}[\s\S]*?'confirmAmbiguousMapping'/.test(handlersSrc))
   // Ignore button
-  record('ignore button toggles resolution.ignored', /onClick=\{\(\) => onUpdate\(\{ ignored: !item\.resolution\.ignored, ignoreReason: item\.resolution\.ignored \? undefined : item\.resolution\.ignoreReason \}\)\}/.test(previewSrc))
+  record('ignore button toggles resolution.ignored', /onClick=\{\(\) => onUpdate\(\{ ignored: !item\.resolution\.ignored, ignoreReason: item\.resolution\.ignored \? undefined : item\.resolution\.ignoreReason \}\)\}/.test(handlersSrc))
   // Allow blank teacher
-  record('allowBlankTeacher handler sets action', /onChange=\{\(e\) => onUpdate\(\{ teacher: e\.target\.checked \? \{ action: 'allowBlankTeacher', allowBlankReason: '用户允许暂缺' \} : \{ action: 'none' \} \}\)\}/.test(previewSrc))
+  record('allowBlankTeacher handler sets action', /onChange=\{\(e\) => onUpdate\(\{ teacher: e\.target\.checked \? \{ action: 'allowBlankTeacher', allowBlankReason: '用户允许暂缺' \} : \{ action: 'none' \} \}\)\}/.test(handlersSrc))
 
   // ── 4. State flows: single source of truth (N41-N55) ──
   console.log('\n[4/9] state flows: single source of truth')
@@ -124,7 +143,7 @@ function main(): void {
   // Counters use live state
   record('partial plan is built from current state at click time', /planCourseSettingPartialImport\([\s\S]*?resolutionItems[\s\S]*?\)/.test(previewSrc))
   // Summary reads live state
-  record('summary cards read resolutionSummary (which reads resolutionItems)', /resolutionSummary\.importableItems/.test(previewSrc) && /resolutionSummary\.ignoredItems/.test(previewSrc))
+  record('summary cards read resolutionSummary (which reads resolutionItems)', /resolutionSummary\.importableItems/.test(sectionOrPreviewSrc) && /resolutionSummary\.ignoredItems/.test(sectionOrPreviewSrc))
 
   // ── 5. No DB write / no apply (N56-N65) ──
   console.log('\n[5/9] no DB write / no apply / no schema change')

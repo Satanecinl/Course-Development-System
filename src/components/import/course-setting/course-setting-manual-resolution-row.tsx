@@ -7,6 +7,21 @@
  *
  * Pure UI presentation for a single resolution row with expanded controls.
  * State lives in the top-level orchestrator. Pure refactor from L6-E2E.
+ *
+ * L6-E2G update (semantic fix):
+ *  The legacy "课程缺失" UI label is split into TWO distinct sections so
+ *  that Excel-course-name-empty (true blocker) and Excel-course-name-but-
+ *  no-DB-match (new course candidate, confirmable) are no longer
+ *  conflated:
+ *
+ *  - "课程名缺失" — Excel 行中没有可识别的课程名；显示 select-existing + 候选
+ *    输入，必须选择/输入才能 importable。
+ *  - "新课程候选" — Excel 有课程名但 DB 无匹配；默认从 Excel 课程名
+ *    自动派生候选，用户可以：
+ *      (a) 确认创建新课程（直接使用 Excel 课程名）
+ *      (b) 选择已有课程替代
+ *      (c) 修改候选名称后确认创建
+ *      (d) 忽略本行
  */
 
 import {
@@ -17,6 +32,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
+  COURSE_SITUATION_LABELS,
   formatDiagnosticCodeLabel,
   formatSuggestedActionLabel,
 } from '@/lib/import/course-setting-approval-review-localization'
@@ -52,7 +68,12 @@ export function ResolutionItemRow({
 }: ResolutionItemRowProps) {
   const truncatedId = truncateId(item.approvalItemId, 16)
   const ctx = reviewRawMap.get(item.approvalItemId)
-  const hasCourseMissing = item.baseDiagnosticCodes.includes('COURSE_MISSING') || item.baseDiagnosticCodes.includes('COURSE_AMBIGUOUS')
+  // L6-E2G: distinguish true course-name missing from new course candidate
+  const courseSituation = item.baseCourseSituation
+  const hasCourseNameMissing = courseSituation === 'courseNameMissing'
+  const hasNewCourseCandidate = courseSituation === 'newCourseCandidate'
+  const hasCourseAmbiguous = courseSituation === 'courseAmbiguous'
+  const hasCourseIssue = hasCourseNameMissing || hasNewCourseCandidate || hasCourseAmbiguous
   const hasTeacherMissing = item.baseDiagnosticCodes.includes('TEACHER_MISSING') || item.baseDiagnosticCodes.includes('TEACHER_BLANK')
   const hasClassMissing = item.baseDiagnosticCodes.includes('CLASS_GROUP_MISSING') || item.baseDiagnosticCodes.includes('CLASS_GROUP_AMBIGUOUS')
   const hasHoursInvalid = item.baseDiagnosticCodes.includes('WEEKLY_HOURS_NON_NUMERIC')
@@ -93,11 +114,13 @@ export function ResolutionItemRow({
             {item.baseDiagnosticCodes.length === 0 ? (
               <span className="text-gray-400">-</span>
             ) : (
-              item.baseDiagnosticCodes.map((code) => (
-                <Badge key={code} variant="outline" className="text-[9px] bg-red-50 text-red-600 border-red-200">
-                  {formatDiagnosticCodeLabel(code)}
-                </Badge>
-              ))
+              item.baseDiagnosticCodes
+                .filter((c) => c !== 'COURSE_MISSING')
+                .map((code) => (
+                  <Badge key={code} variant="outline" className="text-[9px] bg-red-50 text-red-600 border-red-200">
+                    {formatDiagnosticCodeLabel(code)}
+                  </Badge>
+                ))
             )}
           </div>
         </td>
@@ -147,39 +170,131 @@ export function ResolutionItemRow({
                     <div className="truncate max-w-[300px]"><span className="opacity-70">建议处理: </span>{ctx.suggestedAction}</div>
                     <div className="flex flex-wrap gap-1">
                       <span className="opacity-70">诊断: </span>
-                      {item.baseDiagnosticCodes.map((code) => (
-                        <Badge key={code} variant="outline" className="text-[9px] bg-red-50 text-red-600 border-red-200">
-                          {formatDiagnosticCodeLabel(code)}
-                        </Badge>
-                      ))}
+                      {item.baseDiagnosticCodes
+                        .filter((c) => c !== 'COURSE_MISSING')
+                        .map((code) => (
+                          <Badge key={code} variant="outline" className="text-[9px] bg-red-50 text-red-600 border-red-200">
+                            {formatDiagnosticCodeLabel(code)}
+                          </Badge>
+                        ))}
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Course resolution */}
-              {hasCourseMissing && (
-                <div className="space-y-1" data-l6e1-course-controls={item.approvalItemId}>
-                  <span className="font-medium text-red-700">课程缺失</span>
-                  <div className="flex gap-2 items-center">
-                    <select
-                      className="border border-gray-300 rounded px-2 py-0.5 text-[11px] bg-white max-w-[200px]"
-                      value={item.resolution.course?.existingCourseId ?? ''}
-                      onChange={(e) => onUpdate({ course: { action: 'useExistingCourse', existingCourseId: e.target.value ? Number(e.target.value) : undefined } })}
-                    >
-                      <option value="">选择已有课程</option>
-                      {resolutionOptions?.courses.map((c) => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
-                      ))}
-                    </select>
-                    <span className="text-gray-400">或</span>
-                    <Input
-                      placeholder="新课程候选名称"
-                      className="text-[11px] h-6 max-w-[160px]"
-                      value={item.resolution.course?.candidateName ?? ''}
-                      onChange={(e) => onUpdate({ course: { action: 'createCourseCandidate', candidateName: e.target.value || undefined } })}
-                    />
+              {/* Course resolution — split by L6-E2G situation */}
+              {hasCourseIssue && (
+                <div className="space-y-2" data-l6e1-course-controls={item.approvalItemId} data-l6e2g-course-situation={courseSituation}>
+                  <div className="flex items-center gap-2">
+                    <span className={`font-medium ${hasCourseNameMissing ? 'text-red-700' : 'text-amber-700'}`}>
+                      {COURSE_SITUATION_LABELS[courseSituation].short}
+                    </span>
+                    <span className="text-[10px] text-gray-500">
+                      {COURSE_SITUATION_LABELS[courseSituation].long}
+                    </span>
                   </div>
+
+                  {hasCourseNameMissing && (
+                    <div className="flex gap-2 items-center" data-l6e2g-course-controls="name-missing">
+                      <select
+                        className="border border-gray-300 rounded px-2 py-0.5 text-[11px] bg-white max-w-[200px]"
+                        value={item.resolution.course?.existingCourseId ?? ''}
+                        onChange={(e) => onUpdate({ course: { action: 'useExistingCourse', existingCourseId: e.target.value ? Number(e.target.value) : undefined } })}
+                      >
+                        <option value="">选择已有课程</option>
+                        {resolutionOptions?.courses.map((c) => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                      </select>
+                      <span className="text-gray-400">或</span>
+                      <Input
+                        placeholder="新课程候选名称"
+                        className="text-[11px] h-6 max-w-[160px]"
+                        value={item.resolution.course?.candidateName ?? ''}
+                        onChange={(e) => onUpdate({ course: { action: 'createCourseCandidate', candidateName: e.target.value || undefined } })}
+                      />
+                    </div>
+                  )}
+
+                  {hasNewCourseCandidate && (
+                    <div className="space-y-1" data-l6e2g-course-controls="new-candidate">
+                      <div className="flex gap-2 items-center flex-wrap">
+                        <span className="text-[10px] text-gray-500">Excel 课程名:</span>
+                        <Badge variant="outline" className="text-[10px] bg-blue-50 text-blue-700 border-blue-200">
+                          {ctx?.courseName ?? item.baseRawCourseName ?? '—'}
+                        </Badge>
+                      </div>
+                      <div className="flex gap-2 items-center flex-wrap">
+                        <select
+                          className="border border-gray-300 rounded px-2 py-0.5 text-[11px] bg-white max-w-[200px]"
+                          value={item.resolution.course?.existingCourseId ?? ''}
+                          onChange={(e) => onUpdate({ course: { action: 'useExistingCourse', existingCourseId: e.target.value ? Number(e.target.value) : undefined } })}
+                          data-l6e2g-course-action="use-existing"
+                        >
+                          <option value="">选择已有课程（替代）</option>
+                          {resolutionOptions?.courses.map((c) => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                          ))}
+                        </select>
+                        <span className="text-gray-400">或</span>
+                        <Input
+                          placeholder="新课程候选名称"
+                          className="text-[11px] h-6 max-w-[160px]"
+                          value={
+                            item.resolution.course?.action === 'createCourseCandidate'
+                              ? (item.resolution.course.candidateName ?? '')
+                              : (item.baseRawCourseName ?? '')
+                          }
+                          onChange={(e) => onUpdate({ course: { action: 'createCourseCandidate', candidateName: e.target.value } })}
+                          data-l6e2g-course-action="rename"
+                        />
+                        <Button
+                          size="sm"
+                          variant="default"
+                          className="text-[10px] h-6"
+                          data-l6e2g-course-action="confirm-create"
+                          onClick={() => {
+                            const name =
+                              item.resolution.course?.action === 'createCourseCandidate'
+                                ? (item.resolution.course.candidateName ?? '').trim()
+                                : (item.baseRawCourseName ?? '').trim()
+                            onUpdate({
+                              course: { action: 'createCourseCandidate', candidateName: name || (item.baseRawCourseName ?? '') },
+                            })
+                          }}
+                        >
+                          确认创建新课程
+                        </Button>
+                      </div>
+                      <p className="text-[10px] text-gray-500" data-l6e2g-course-status>
+                        {item.resolution.course?.action === 'createCourseCandidate'
+                          ? `已确认创建新课程："${item.resolution.course.candidateName ?? ''}"`
+                          : '默认将作为新课程创建（可点击确认或选择已有课程）'}
+                      </p>
+                    </div>
+                  )}
+
+                  {hasCourseAmbiguous && (
+                    <div className="flex gap-2 items-center" data-l6e2g-course-controls="ambiguous">
+                      <select
+                        className="border border-gray-300 rounded px-2 py-0.5 text-[11px] bg-white max-w-[200px]"
+                        value={item.resolution.course?.existingCourseId ?? ''}
+                        onChange={(e) => onUpdate({ course: { action: 'useExistingCourse', existingCourseId: e.target.value ? Number(e.target.value) : undefined } })}
+                      >
+                        <option value="">选择已有课程（消歧）</option>
+                        {resolutionOptions?.courses.map((c) => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                      </select>
+                      <span className="text-gray-400">或</span>
+                      <Input
+                        placeholder="新课程候选名称"
+                        className="text-[11px] h-6 max-w-[160px]"
+                        value={item.resolution.course?.candidateName ?? ''}
+                        onChange={(e) => onUpdate({ course: { action: 'createCourseCandidate', candidateName: e.target.value || undefined } })}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
 

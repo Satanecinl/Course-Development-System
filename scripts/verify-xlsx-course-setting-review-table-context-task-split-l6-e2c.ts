@@ -21,6 +21,13 @@ import { join, resolve } from 'node:path'
 
 const ROOT = resolve(__dirname, '..')
 const UI_PATH = join(ROOT, 'src/components/import/course-setting-xlsx-preview.tsx')
+// L6-E2F: review table moved to extracted file. We accept patterns in
+// either orchestrator OR extracted files.
+const APPROVAL_REVIEW_SECTION = join(ROOT, 'src/components/import/course-setting/course-setting-approval-review-section.tsx')
+const APPROVAL_REVIEW_TABLE = join(ROOT, 'src/components/import/course-setting/course-setting-approval-review-table.tsx')
+const MANUAL_RESOLUTION_SECTION = join(ROOT, 'src/components/import/course-setting/course-setting-manual-resolution-section.tsx')
+const MANUAL_RESOLUTION_ROW = join(ROOT, 'src/components/import/course-setting/course-setting-manual-resolution-row.tsx')
+const TASK_SPLIT_PANEL = join(ROOT, 'src/components/import/course-setting/course-setting-task-split-candidate-panel.tsx')
 const SPLIT_HELPER = join(ROOT, 'src/lib/import/course-setting-task-split-detection-l6-e2c.ts')
 const L6E1_HELPER = join(ROOT, 'src/lib/import/course-setting-manual-resolution-l6-e1.ts')
 const L6E2_HELPER = join(ROOT, 'src/lib/import/course-setting-partial-import-plan-l6-e2.ts')
@@ -43,6 +50,14 @@ function main(): void {
   const l6e1 = readF(L6E1_HELPER)
   const l6e2 = readF(L6E2_HELPER)
   const client = readF(L6E2_CLIENT)
+  // L6-E2F: union of orchestrator + extracted files for stage-aware checks
+  const approvalReviewSection = readF(APPROVAL_REVIEW_SECTION)
+  const approvalReviewTable = readF(APPROVAL_REVIEW_TABLE)
+  const manualResolutionSection = readF(MANUAL_RESOLUTION_SECTION)
+  const manualResolutionRow = readF(MANUAL_RESOLUTION_ROW)
+  const taskSplitPanel = readF(TASK_SPLIT_PANEL)
+  const extractedUi = approvalReviewSection + approvalReviewTable + manualResolutionSection + manualResolutionRow + taskSplitPanel
+  const allUi = ui + '\n' + extractedUi
   const { execSync: ex } = { execSync }
   const gitLs = (pat: string) => ex(`git ls-files "${pat}"`, { cwd: ROOT }).toString().trim()
 
@@ -55,21 +70,23 @@ function main(): void {
 
   // ── 2. Review table context columns (N4-N15) ──
   console.log('\n[2/9] review table context columns')
-  record('review table has 专业 column', /<th[^>]*>专业<\/th>/.test(ui))
-  record('review table has 课程名 column', /<th[^>]*>课程名<\/th>/.test(ui))
-  record('review table has 教师 column', /<th[^>]*>教师<\/th>/.test(ui))
-  record('review table has 班级 column', /<th[^>]*>班级<\/th>/.test(ui))
-  record('review table has 备注 column', /<th[^>]*>备注<\/th>/.test(ui))
-  record('review table has 合班备注 column', /<th[^>]*>合班备注<\/th>/.test(ui))
-  record('review table has 诊断 column', /<th[^>]*>诊断<\/th>/.test(ui))
-  record('review table has 建议处理 column', /<th[^>]*>建议处理<\/th>/.test(ui))
-  record('review table has 匹配状态 column', /<th[^>]*>匹配状态<\/th>/.test(ui))
-  record('review table has 置信度 column', /<th[^>]*>置信度<\/th>/.test(ui))
-  record('review table has 审核决定 column', /<th[^>]*>审核决定<\/th>/.test(ui))
-  record('review table colSpan updated to 16', /colSpan=\{16\}/.test(ui))
-  record('ReviewRow shows majorName', /majorName.*row\.raw/.test(ui) || /record<.*majorName/.test(ui))
-  record('row context header shows 专业', /专业:/.test(ui))
-  record('row context header shows majorName', /ctx\.majorName/.test(ui))
+  // L6-E2F: review table now lives in extracted files; we accept patterns
+  // in either orchestrator OR extracted files.
+  record('review table has 专业 column', /<th[^>]*>专业<\/th>/.test(allUi))
+  record('review table has 课程名 column', /<th[^>]*>课程名<\/th>/.test(allUi))
+  record('review table has 教师 column', /<th[^>]*>教师<\/th>/.test(allUi))
+  record('review table has 班级 column', /<th[^>]*>班级<\/th>/.test(allUi))
+  record('review table has 备注 column', /<th[^>]*>备注<\/th>/.test(allUi))
+  record('review table has 合班备注 column', /<th[^>]*>合班备注<\/th>/.test(allUi))
+  record('review table has 诊断 column', /<th[^>]*>诊断<\/th>/.test(allUi))
+  record('review table has 建议处理 column', /<th[^>]*>建议处理<\/th>/.test(allUi))
+  record('review table has 匹配状态 column', /<th[^>]*>匹配状态<\/th>/.test(allUi))
+  record('review table has 置信度 column', /<th[^>]*>置信度<\/th>/.test(allUi))
+  record('review table has 审核决定 column', /<th[^>]*>审核决定<\/th>/.test(allUi))
+  record('review table colSpan updated to 16', /colSpan=\{16\}/.test(allUi))
+  record('ReviewRow shows majorName', /majorName.*row\.raw/.test(allUi) || /record<.*majorName/.test(allUi))
+  record('row context header shows 专业', /专业:/.test(allUi))
+  record('row context header shows majorName', /ctx\.majorName/.test(allUi))
 
   // ── 3. Task split detection helper (N16-N35) ──
   console.log('\n[3/9] task split detection helper')
@@ -78,7 +95,7 @@ function main(): void {
   record('exports TaskSplitDetectionKind type', /export type TaskSplitDetectionKind/.test(split))
   record('exports TeacherAssignmentSplitCandidate type', /export type TeacherAssignmentSplitCandidate/.test(split))
   record('numbered teacher detection', /detectNumberedAssignments/.test(split))
-  record('parenthesized class detection', /detectParenthesizedAssignments/.test(split))
+  record('parenthesized class detection', /detectParenthesizedTeacherClassAssignments/.test(split))
   record('parallel list detection', /detectParallelAssignments/.test(split))
   record('merge remark detection', /detectMergeRemarkAssignment/.test(split))
   record('placeholder teacher safety (all/unknown)', /isPlaceholder/.test(split))
@@ -87,7 +104,7 @@ function main(): void {
   record('candidate has kind', /kind:.*TaskSplitDetectionKind/.test(split) || /kind:.*numbered/.test(split))
   record('candidate has confidence', /confidence:/.test(split))
   record('candidate has assignments array', /assignments:/.test(split))
-  record('assignment has teacherHash', /teacherHash:/.test(split))
+  record('assignment has teacherHash', /teacherNameHash:/.test(split))
   record('assignment has classNameHashes', /classNameHashes:/.test(split))
   record('helper has zero console.log', !/console\.log\(/.test(split))
   record('helper has zero fs writes', !/(writeFile|appendFile|unlink|rmSync|rename)/.test(split))
@@ -128,16 +145,17 @@ function main(): void {
 
   // ── 7. No DB / no apply (N57-N66) ──
   console.log('\n[7/9] no DB / no apply')
-  record('no prisma.create in ui', !/prisma\.create/.test(ui))
-  record('no prisma.update in ui', !/prisma\.update/.test(ui))
-  record('no schema.migration change', !/ALTER\s+TABLE/.test(ui))
-  record('no Course create', !/course\.create/.test(ui))
-  record('no TeachingTask create', !/teachingTask\.create/.test(ui))
-  record('no ImportBatch create', !/importBatch\.create/.test(ui))
-  record('no ClassGroup create', !/classGroup\.create/.test(ui))
-  record('no apply route', !/api\/admin\/import.*\bapply\b/.test(ui))
-  record('no 执行导入 button', !/执行导入/.test(ui))
-  record('no 写入数据库 button', !/button[^>]*>\s*写入数据库/.test(ui))
+  // L6-E2F: scan the union of orchestrator + extracted files.
+  record('no prisma.create in ui', !/prisma\.create/.test(allUi))
+  record('no prisma.update in ui', !/prisma\.update/.test(allUi))
+  record('no schema.migration change', !/ALTER\s+TABLE/.test(allUi))
+  record('no Course create', !/course\.create/.test(allUi))
+  record('no TeachingTask create', !/teachingTask\.create/.test(allUi))
+  record('no ImportBatch create', !/importBatch\.create/.test(allUi))
+  record('no ClassGroup create', !/classGroup\.create/.test(allUi))
+  record('no apply route', !/api\/admin\/import.*\bapply\b/.test(allUi))
+  record('no 执行导入 button', !/执行导入/.test(allUi))
+  record('no 写入数据库 button', !/button[^>]*>\s*写入数据库/.test(allUi))
 
   // ── 8. Regression (N67-N75) ──
   console.log('\n[8/9] regression')
@@ -145,8 +163,8 @@ function main(): void {
   record('tsc passes', ex('npx tsc --noEmit', { cwd: ROOT, timeout: 120000 }).toString().includes('') || true)
   const diff = ex('git diff --check', { cwd: ROOT }).toString().trim()
   record('git diff --check clean', diff.length === 0, diff.split('\n')[0])
-  record('no scheduler/score changes', !/src\/lib\/scheduler|src\/lib\/score/.test(ui))
-  record('no Word parser changes', !/parse_schedule\.py/.test(ui))
+  record('no scheduler/score changes', !/src\/lib\/scheduler|src\/lib\/score/.test(allUi))
+  record('no Word parser changes', !/parse_schedule\.py/.test(allUi))
 
   // ── 9. Forbidden files (N76-N90) ──
   console.log('\n[9/9] forbidden files')

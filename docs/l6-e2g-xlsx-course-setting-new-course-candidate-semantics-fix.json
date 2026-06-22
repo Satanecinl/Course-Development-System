@@ -1,0 +1,165 @@
+{
+  "stage": "L6-E2G-XLSX-COURSE-SETTING-NEW-COURSE-CANDIDATE-SEMANTICS-FIX",
+  "fileType": "l6-e2g-semantics-fix-summary",
+  "version": "l6-e2g-v1",
+  "generatedAtNote": "aggregate-only — no raw course/teacher/class/major/remark values",
+  "previousStage": "L6-E2F",
+  "previousStageCommit": "53cfe8a",
+  "nextStage": "L6-F",
+  "nextStageStatus": "blocked-until-l6-e2g-browser-validation-passes",
+  "semanticSplit": {
+    "trueCourseNameMissing": {
+      "code": "COURSE_NAME_MISSING",
+      "uiLabel": "课程名缺失",
+      "isBlocker": true,
+      "definition": "Excel course name is empty / unparsable"
+    },
+    "newCourseCandidate": {
+      "code": "COURSE_CREATE_CANDIDATE",
+      "uiLabel": "新课程候选",
+      "isBlocker": false,
+      "definition": "Excel has a course name but DB Course table has no match",
+      "userActions": [
+        "confirmCreateCourse",
+        "useExistingCourse",
+        "renameCreateCourseCandidate",
+        "ignoreRow",
+        "markNeedsReview"
+      ]
+    },
+    "courseAmbiguous": {
+      "code": "COURSE_AMBIGUOUS",
+      "uiLabel": "课程匹配歧义",
+      "isBlocker": true,
+      "definition": "DB Course table has multiple matches",
+      "unchangedFromLegacy": true
+    }
+  },
+  "helperModule": {
+    "path": "src/lib/import/course-setting-new-course-candidate-l6-e2g.ts",
+    "exports": [
+      "L6_E2G_STAGE",
+      "COURSE_NAME_MISSING",
+      "COURSE_CREATE_CANDIDATE",
+      "classifyCourseSituation",
+      "isExcelCourseNameMissing",
+      "isNewCourseCandidate",
+      "isCourseBlocked",
+      "effectiveCourseDiagnostics",
+      "isCreateCourseCandidateResolution",
+      "isCourseResolutionSatisfied"
+    ],
+    "pure": true,
+    "dbWrites": false
+  },
+  "manualResolution": {
+    "itemNewFields": ["baseRawCourseName", "baseCourseSituation"],
+    "summaryNewCounters": [
+      "courseNameMissingItems",
+      "newCourseCandidateItems",
+      "courseAmbiguousItems",
+      "confirmedNewCourseCandidateItems"
+    ],
+    "blockers": {
+      "courseNameMissing": "true missing — hard blocker",
+      "newCourseCandidate": "confirmable — not a hard blocker",
+      "courseAmbiguous": "needs disambiguation — hard blocker"
+    }
+  },
+  "partialImportPlan": {
+    "summaryNewCounters": [
+      "courseCreateCandidates",
+      "rowsUsingNewCourseCandidate",
+      "confirmedNewCourseCandidates",
+      "courseNameMissingRows",
+      "courseAmbiguousRows"
+    ],
+    "rowNewField": "coursePlan",
+    "coursePlanModes": ["useExistingCourse", "createCourse", "unresolved"],
+    "createCourseCandidateShape": {
+      "nameHash": "string (sha256 prefix, no raw name)",
+      "source": "excelCourseName | manualOverride",
+      "confirmed": "boolean"
+    },
+    "candidateNewField": "confirmedCount",
+    "validationNewRules": [
+      "confirmedNewCourseCandidates <= rowsUsingNewCourseCandidate",
+      "coursePlan.mode consistency with plannedCourseAction",
+      "coursePlan.mode=createCourse requires createCourseCandidate"
+    ]
+  },
+  "l6FImplication": {
+    "mayCreate": ["Course"],
+    "mayCreateScope": "confirmed/importable courseCreateCandidates only",
+    "mayNotAutoCreate": ["Teacher", "ClassGroup"],
+    "teacherNote": "L6-E1C owns Teacher base sync",
+    "classGroupNote": "not opened in L6-E2G; requires separate gate if needed",
+    "applyReadsField": "coursePlan"
+  },
+  "noDbWriteProof": {
+    "planOnly": true,
+    "dryRunOnly": true,
+    "dbWritten": false,
+    "applyAllowed": false,
+    "applyRouteExists": false,
+    "importBatchCreated": false,
+    "teachingTaskCreated": false,
+    "teachingTaskClassCreated": false,
+    "courseCreated": false,
+    "classGroupCreated": false,
+    "teacherCreated": false,
+    "excelPartialImportApplied": false,
+    "teacherCreateCandidates": 0
+  },
+  "noApplyProof": {
+    "partialImportApplyRouteDir": false,
+    "applyButtonsPresent": false,
+    "applyButtonLabelsChecked": ["执行导入", "正式导入", "写入数据库", "创建教学任务"]
+  },
+  "privacy": {
+    "runtimeUiRawAllowed": true,
+    "exportedPlanRawIncluded": false,
+    "committedDocsRawAllowed": false,
+    "exportUsesCandidateNameHash": true,
+    "exportOmitsRawCandidateName": true,
+    "scope": "authorized-admin-plan-only"
+  },
+  "forbiddenSourceChanges": {
+    "prismaSchemaPrisma": "unchanged",
+    "prismaMigrations": "unchanged",
+    "srcLibScheduler": "unchanged",
+    "srcLibScoreTs": "unchanged",
+    "wordParserParseSchedulePy": "unchanged",
+    "wordParserParseCellPy": "unchanged",
+    "packageJson": "unchanged",
+    "packageLockJson": "unchanged"
+  },
+  "validationResults": {
+    "l6E2gVerify": "PASS",
+    "l6E2fRegression": "PASS",
+    "l6E2eRegression": "PASS",
+    "l6E2dRegression": "PASS",
+    "l6E2cRegression": "PASS",
+    "l6E2bRegression": "PASS",
+    "l6E2aRegression": "PASS",
+    "l6E1Regression": "PASS",
+    "l6E2Regression": "PASS",
+    "prismaValidate": "PASS",
+    "migrateStatus": "14 migrations, up to date",
+    "k22C": "PASS",
+    "scanDocsPii": "no blocking hits",
+    "build": "PASS",
+    "tsc": "PASS",
+    "targetedEslint": "PASS",
+    "gitDiffCheck": "clean",
+    "forbiddenFiles": "clean"
+  },
+  "browserValidationStatus": "PENDING",
+  "browserValidationChecklistCount": 14,
+  "committedArtifactsContainRaw": false,
+  "rawCourseNamesIncluded": false,
+  "rawTeacherNamesIncluded": false,
+  "rawClassNamesIncluded": false,
+  "rawRemarksIncluded": false,
+  "rawIncluded": false
+}
