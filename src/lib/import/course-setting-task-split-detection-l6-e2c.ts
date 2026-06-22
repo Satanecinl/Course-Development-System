@@ -149,6 +149,7 @@ const stripLeadingNumber = (s: string): string =>
  *   张三(1班、2班) → ("张三", ["1班", "2班"])
  *   杨秀芳(1,2) → ("杨秀芳", ["1", "2"])
  *   王芳（3，4） → ("王芳", ["3", "4"])
+ *   李四(1.2) → ("李四", ["1", "2"])   ← dot-separated class numbers
  * Returns null if no parentheses found.
  */
 const extractParenthesizedTeacherClasses = (
@@ -166,7 +167,21 @@ const extractParenthesizedTeacherClasses = (
     .map((t) => t.trim())
     .filter((t) => t.length > 0)
   if (tokens.length === 0) return null
-  return { teacher, classTokens: tokens }
+
+  // L6-E2G1: further split dot-separated number pairs (e.g. "1.2" → ["1", "2"])
+  // This handles xlsx scope labels like 杨秀芳(1.2) meaning "classes 1 and 2".
+  // Only split when the token is purely "N.M" (two digit groups separated by a dot).
+  const expanded: string[] = []
+  for (const t of tokens) {
+    const dotPair = t.match(/^(\d+)\.(\d+)$/)
+    if (dotPair) {
+      expanded.push(dotPair[1]!, dotPair[2]!)
+    } else {
+      expanded.push(t)
+    }
+  }
+
+  return { teacher, classTokens: expanded }
 }
 
 /**

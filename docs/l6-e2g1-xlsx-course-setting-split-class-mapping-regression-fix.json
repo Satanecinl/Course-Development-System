@@ -1,0 +1,36 @@
+{
+  "stage": "L6-E2G1-XLSX-COURSE-SETTING-SPLIT-CLASS-MAPPING-REGRESSION-FIX",
+  "fileType": "l6-e2g1-regression-fix-summary",
+  "version": "l6-e2g1-v1",
+  "previousStage": "L6-E2G",
+  "previousStageCommit": "38779aa",
+  "nextStage": "L6-F",
+  "nextStageStatus": "blocked-until-l6-e2g1-browser-validation-passes",
+  "rootCause": "Scope labels like '1.2' in 杨秀芳(1.2) were not split into individual class tokens [1,2] — the dot separator was not handled",
+  "fix": "extractParenthesizedTeacherClasses now expands dot-separated numeric pairs (e.g. '1.2' → ['1','2']) before token processing",
+  "mappingRule": "Token → classText lookup: try token+班, try other suffixes, exact match, then mark unmatched",
+  "classTokenUnmatchedRule": "Only set when classText is blank OR token genuinely cannot map to any class in classText parts",
+  "noDbWriteProof": {
+    "modifiedFunction": "extractParenthesizedTeacherClasses (pure string manipulation)",
+    "prismaCalls": 0,
+    "dbWrites": 0,
+    "applyRouteExists": false
+  },
+  "regressionResults": {
+    "l6E2g1Verify": "PASS",
+    "l6E2gRegression": "PASS",
+    "l6E2fRegression": "PASS",
+    "l6E2eRegression": "PASS",
+    "l6E2dRegression": "PASS",
+    "l6E2cRegression": "PASS",
+    "l6E2bRegression": "PASS",
+    "l6E2aRegression": "PASS",
+    "l6E1Regression": "PASS (1 pre-existing)",
+    "l6E2Regression": "PASS",
+    "tsc": "PASS",
+    "prismaValidate": "PASS",
+    "k22C": "PASS"
+  },
+  "browserValidationStatus": "PENDING",
+  "rawIncluded": false
+}
