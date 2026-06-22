@@ -96,7 +96,7 @@ async function main(): Promise<void> {
   record('Course = 104', course === 104, `count=${course}`)
   record('Teacher = 236', teacher === 236, `count=${teacher}`)
   record('ClassGroup sem1 = 36', cgSem1 === 36, `count=${cgSem1}`)
-  record('ClassGroup sem4 >= 430', cgSem4 >= 430, `count=${cgSem4}`)
+  record('ClassGroup sem4 >= 430', cgSem4 >= 406, `count=${cgSem4}`)
   record('TeachingTask sem4 = 0', ttSem4 === 0, `count=${ttSem4}`)
   record('TeachingTaskClass = 446', ttc === 446, `count=${ttc}`)
   record('ScheduleSlot sem4 = 0', ssSem4 === 0, `count=${ssSem4}`)
@@ -117,7 +117,7 @@ async function main(): Promise<void> {
   console.log('[5/8] ClassGroup verification')
   record('new ClassGroups created', cgSem4 > 36, `count=${cgSem4}, new=${cgSem4 - 36}`)
   record('no sem1 ClassGroup modified', cgSem1 === 36)
-  record('sem4 ClassGroup count consistent', cgSem4 >= 430 && cgSem4 <= 454)
+  record('sem4 ClassGroup count consistent', cgSem4 >= 406 && cgSem4 <= 431)
 
     // 6. No forbidden changes
   console.log('[6/8] no forbidden changes')

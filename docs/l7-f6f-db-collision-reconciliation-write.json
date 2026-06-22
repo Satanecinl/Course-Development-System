@@ -1,0 +1,78 @@
+{
+  "stage": "L7-F6F-CONTROLLED-DB-COLLISION-RECONCILIATION-WRITE",
+  "date": "2026-06-22",
+  "status": "CLOSED",
+  "dbWrite": true,
+  "applyExecuted": true,
+  "backupCreated": true,
+  "targetSemesterId": 4,
+  "repairSummary": {
+    "doubleJiCountBefore": 391,
+    "normalizedCount": 366,
+    "deletedDuplicateCount": 25,
+    "totalChanged": 391,
+    "collisionKeysBefore": 25,
+    "unsafeBefore": 25,
+    "blockingBefore": 25,
+    "doubleJiAfter": 0,
+    "collisionKeysAfter": 0,
+    "unsafeAfter": 0,
+    "blockingAfter": 0,
+    "ttcRefCount": 0,
+    "wouldCreateRows": 0,
+    "wouldDeleteRows": 25,
+    "wouldUpdateRows": 366
+  },
+  "dbBaseline": {
+    "course": 104,
+    "teacher": 236,
+    "classGroupSem1": 36,
+    "classGroupSem4After": 406,
+    "teachingTaskSem4": 0,
+    "teachingTaskClass": 446,
+    "scheduleSlotSem4": 0,
+    "scheduleAdjustmentSem4": 0,
+    "importBatchTotal": 39,
+    "importBatchId39": "APPLIED",
+    "importBatchId40": "absent"
+  },
+  "confirmTokenTest": {
+    "invalidToken": "WRONG_TOKEN",
+    "rejected": true,
+    "backupCreated": false,
+    "dbWrite": false
+  },
+  "apply": {
+    "confirmToken": "REPAIR_L7_F6F_DB_COLLISIONS",
+    "transactionUsed": true,
+    "updatedClassGroupCount": 366,
+    "deletedClassGroupCount": 25,
+    "createdRows": 0,
+    "touchedEntityTypes": ["ClassGroup"]
+  },
+  "validation": {
+    "l7f6fVerify": { "passed": 37, "failed": 0, "total": 37 },
+    "l7f6e1Regression": { "passed": 30, "failed": 0, "total": 30 },
+    "l7f6eRegression": { "passed": 153, "failed": 2, "total": 155, "note": "C103 expected: L7-F6F files changed" },
+    "l7f6d2Regression": { "passed": 131, "failed": 0, "total": 131 },
+    "l7f6d1Regression": { "passed": 130, "failed": 0, "total": 130 },
+    "l7f6cRegression": { "passed": 142, "failed": 0, "total": 142 },
+    "l7f6bRegression": { "passed": 110, "failed": 0, "total": 110 },
+    "l7f6aRegression": { "passed": 110, "failed": 0, "total": 110 },
+    "l7f5dRegression": { "passed": 101, "failed": 0, "total": 101 },
+    "prismaValidate": "PASS",
+    "migrateStatus": "up to date",
+    "scanDocsPii": "PASS",
+    "build": "PASS",
+    "tsc": "PASS",
+    "eslint": "0 errors, 6 warnings",
+    "k22c": "PASS"
+  },
+  "rollbackNote": "cp prisma/dev.db.backup-before-l7-f6f-db-collision-repair-* prisma/dev.db",
+  "nextStageRecommendation": "L7-F6G-CONTROLLED-MASTER-DATA-WRITE-PLAN-OR-APPLY",
+  "privacy": {
+    "rawClassGroupNamesIncluded": false,
+    "rawTeacherNamesIncluded": false,
+    "phoneNumbersIncluded": false
+  }
+}

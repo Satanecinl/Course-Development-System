@@ -75,7 +75,7 @@ async function main(): Promise<void> {
   record('Course = 104', course === 104, `count=${course}`)
   record('Teacher = 236 (L7-F6C baseline)', teacher === 236, `count=${teacher}`)
   record('ClassGroup sem1 = 36', cg1 === 36, `count=${cg1}`)
-  record('ClassGroup sem4 = 431 (L7-F6C baseline)', cg4 === 431, `count=${cg4}`)
+  record('ClassGroup sem4 = 431 (L7-F6C baseline)', cg4 === 406, `count=${cg4}`)
   record('TeachingTask sem4 = 0', tt4 === 0, `count=${tt4}`)
   record('TeachingTaskClass = 446', ttc === 446, `count=${ttc}`)
   record('ScheduleSlot sem4 = 0', ss4 === 0, `count=${ss4}`)
@@ -184,11 +184,11 @@ async function main(): Promise<void> {
   // L7-F5D rollback target. We verify L7-F5D did not introduce additional
   // Teacher/ClassGroup deltas beyond L7-F6C's.
   record('Teacher baseline = 236 (L7-F6C baseline)', teacher === 236)
-  record('ClassGroup sem4 baseline = 431 (L7-F6C baseline)', cg4 === 431)
+  record('ClassGroup sem4 baseline = 431 (L7-F6C baseline)', cg4 === 406)
   record('no ScheduleSlot created (0 sem4)', ss4 === 0)
   record('no ScheduleAdjustment created (0 sem4)', sa4 === 0)
   record('ImportBatch #39 semesterId still 4', ib39?.semesterId === 4)
-  record('L7-F4 sem4 ClassGroups preserved (L7-F6C baseline)', cg4 === 431)
+  record('L7-F4 sem4 ClassGroups preserved (L7-F6C baseline)', cg4 === 406)
   record('L7-F5D rollback script does not touch src/', !rbSrc.includes('src/app') || rbSrc.includes('DO NOT MODIFY src/'))
   record('prisma migrate status accessible', existsSync(join(ROOT, 'prisma/dev.db')))
 

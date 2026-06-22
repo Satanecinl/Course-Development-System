@@ -213,7 +213,7 @@ async function main(): Promise<void> {
   record('Course = 104', course === 104, `count=${course}`)
   record('Teacher = 236', teacher === 236, `count=${teacher}`)
   record('ClassGroup sem1 = 36', cgSem1 === 36, `count=${cgSem1}`)
-  record('ClassGroup sem4 = 431', cgSem4 === 431, `count=${cgSem4}`)
+  record('ClassGroup sem4 = 406 (L7-F6F: 431 - 25 deleted duplicates)', cgSem4 === 406, `count=${cgSem4}`)
   record('TeachingTask sem4 = 0', ttSem4 === 0, `count=${ttSem4}`)
   record('TeachingTaskClass = 446', ttc === 446, `count=${ttc}`)
   record('ScheduleSlot sem4 = 0', ssSem4 === 0, `count=${ssSem4}`)

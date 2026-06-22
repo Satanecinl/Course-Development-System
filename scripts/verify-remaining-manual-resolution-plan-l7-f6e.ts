@@ -98,7 +98,7 @@ async function main(): Promise<void> {
   record('C04 Course = 104', course === 104, `actual: ${course}`)
   record('C05 Teacher = 236', teacher === 236, `actual: ${teacher}`)
   record('C06 ClassGroup sem1 = 36', cgSem1 === 36, `actual: ${cgSem1}`)
-  record('C07 ClassGroup sem4 = 431', cgSem4 === 431, `actual: ${cgSem4}`)
+  record('C07 ClassGroup sem4 = 406 (L7-F6F: 431 - 25 deleted duplicates)', cgSem4 === 406, `actual: ${cgSem4}`)
   record('C08 TeachingTask sem4 = 0', ttSem4 === 0, `actual: ${ttSem4}`)
   record('C09 TeachingTaskClass = 446', ttc === 446, `actual: ${ttc}`)
   record('C10 ScheduleSlot sem4 = 0', ssSem4 === 0, `actual: ${ssSem4}`)
@@ -251,7 +251,7 @@ async function main(): Promise<void> {
   // After running plan, DB counts should be same as baseline
   record('C91 no new Course created', course === 104)
   record('C92 no new Teacher created', teacher === 236)
-  record('C93 no new ClassGroup created', cgSem4 === 431)
+  record('C93 no new ClassGroup created', cgSem4 === 406)
   record('C94 no new TeachingTask created', ttSem4 === 0)
   record('C95 no new TeachingTaskClass created', ttc === 446)
   record('C96 no new ScheduleSlot created', ssSem4 === 0)

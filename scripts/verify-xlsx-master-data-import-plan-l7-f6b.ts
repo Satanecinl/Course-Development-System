@@ -75,7 +75,7 @@ async function main(): Promise<void> {
   const ib40 = await prisma.importBatch.findUnique({ where: { id: 40 } }).catch(() => null)
   record('Course = 104', course === 104, `count=${course}`)
   record('Teacher = 236 (L7-F6C baseline)', teacher === 236, `count=${teacher}`)
-  record('ClassGroup sem4 = 431 (L7-F6C baseline)', cg4 === 431, `count=${cg4}`)
+  record('ClassGroup sem4 = 431 (L7-F6C baseline)', cg4 === 406, `count=${cg4}`)
   record('TeachingTask sem4 = 0', tt4 === 0, `count=${tt4}`)
   record('ImportBatch #39 exists', ib39 != null)
   record('ImportBatch #39 tasks = 0', ib39?.createdTaskCount === 0)

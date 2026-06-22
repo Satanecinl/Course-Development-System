@@ -59,7 +59,7 @@ async function main(): Promise<void> {
   console.log('\n--- 1. DB baseline ---')
   record('C01 Course = 104', course === 104, `actual: ${course}`)
   record('C02 Teacher = 236', teacher === 236, `actual: ${teacher}`)
-  record('C03 ClassGroup sem4 = 431', cgSem4 === 431, `actual: ${cgSem4}`)
+  record('C03 ClassGroup sem4 = 406 (L7-F6F: 431 - 25 deleted duplicates)', cgSem4 === 406, `actual: ${cgSem4}`)
   record('C04 TeachingTask sem4 = 0', ttSem4 === 0, `actual: ${ttSem4}`)
   record('C05 ImportBatch #40 absent', ib40 === null || ib40 === undefined)
 

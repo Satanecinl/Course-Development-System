@@ -214,3 +214,5 @@ The list reflects local history at the time of K36-A3 and does not assert remote
 - L7-F6E 对新版 Excel 课程设置导入剩余 blockers 做只读人工处理计划：分类 missing teachers（1060 个缺失教师，其中 844 可从 staff/contacts 导入）、manual-review ClassGroups（96 个 rows × 8 个 majors）、DB collisions（32 个，9 个 unsafe 阻塞）、exam type invalid（145 个，全部可归一）、weekly hours invalid（19 个，需人工输入）与 ambiguous mappings（63 个，需人工选择班级），输出 row/candidate-level final action aggregate（AUTO_FIX=1 + WRITE_MASTER_DATA=858 + MANUAL=164 + SKIP=59 = 1082）和 L7-F6F 后续受控处理建议；本阶段不写 DB、不执行 apply。
 
 - L7-F6E1 修复新版 Excel 课程设置导入 PE teacher exemption 的 TypeScript/build 类型错误，保持非体育课 teacherId=null blocker、体育课 PHYSICAL_EDUCATION_TEACHER_EXEMPT 显式豁免、apply preflight before backup 与 natural key 语义不变；本阶段不写 DB、不执行 apply。
+
+- L7-F6F 受控修复新版 Excel 课程设置导入的 sem4 ClassGroup double-级 命名问题：通过 backup、confirm token、invalid token test、transaction 与 post-audit，规范化 366 个 double-级 ClassGroup 名称并删除 25 个与 legacy sem4 重复的 L7-F6C 副本（无 TeachingTaskClass 引用），修复后 double-级 从 391 降到 0，canonical key collision 从 25 降到 0，ClassGroup sem4 从 431 降到 406；不创建 Teacher/TeachingTask/ImportBatch/ScheduleSlot。
