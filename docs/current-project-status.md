@@ -222,3 +222,5 @@ The list reflects local history at the time of K36-A3 and does not assert remote
 - L7-F6G1 生成新版 Excel 课程设置导入的人工确认包：将 226 个 staff/contacts teacher unique candidates、22 个 external teacher、98 个 ambiguous teacher groups、8 个 new major ClassGroup（含 1 个 major alias）、59 个 skip rows、weeklyHours/examType/ambiguous mapping 等剩余项整理为用户确认用 local artifacts；本阶段不写 DB、不执行 apply、不进入 L7-F7/L7-G。
 
 - L7-F6G2 摄入新版 Excel 课程设置导入的用户人工决策，并生成 L7-F6H 受控主数据写入计划；当前无用户决策文件，标记 BLOCKED_WAITING_FOR_USER_DECISIONS（411 个 pending items），recommendedAction 未被自动转成 approval；本阶段不写 DB、不执行 apply、不创建 Teacher/ClassGroup/TeachingTask/ImportBatch。
+
+- L7-F6G2A 生成新版 Excel 课程设置导入的用户决策补全草案：将 G1/G2 的 358 个 pending decisions 分层为 22 个可批量确认低风险项、204 个 duplicate risk 教师、22 个 external teacher、98 个 ambiguous teacher、8 个 new major ClassGroup、weeklyHours/ambiguousMapping 等需要 manualValue 的项，输出 user-decisions.intake.local.draft.json 与用户 review 文档；本阶段不写 DB、不执行 apply、不创建 Teacher/ClassGroup/TeachingTask/ImportBatch。
