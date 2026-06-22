@@ -115,16 +115,17 @@ async function main(): Promise<void> {
     record('ImportBatch #39 createdSlotCount = 0', ib39.createdSlotCount === 0)
   }
   const ibCount = await prisma.importBatch.count()
-  record('ImportBatch count = 39', ibCount === 39, `count=${ibCount}`)
+  // L7-F5 stage-aware: after L7-F5 applied 248 Courses, counts changed
+  record('ImportBatch count is 39 or 40 (L7-F5 stage-aware)', ibCount === 39 || ibCount === 40, `count=${ibCount}`)
   const courseCount = await prisma.course.count()
-  record('Course count = 104', courseCount === 104, `count=${courseCount}`)
+  record('Course count is 104 or 352 (L7-F5 stage-aware)', courseCount === 104 || courseCount === 352, `count=${courseCount}`)
   const teacherCount = await prisma.teacher.count()
   record('Teacher count = 220', teacherCount === 220, `count=${teacherCount}`)
   const classGroupSem4 = await prisma.classGroup.count({ where: { semesterId: 4 } })
   // L7-F4 stage-aware: after L7-F4 copied 36 ClassGroups from sem1 to sem4
   record('ClassGroup sem4 is 0 or 36 (stage-aware)', classGroupSem4 === 0 || classGroupSem4 === 36, `count=${classGroupSem4}`)
   const ttSem4 = await prisma.teachingTask.count({ where: { semesterId: 4 } })
-  record('TeachingTask sem4 = 0', ttSem4 === 0, `count=${ttSem4}`)
+  record('TeachingTask sem4 is 0 or 248 (L7-F5 stage-aware)', ttSem4 === 0 || ttSem4 === 248, `count=${ttSem4}`)
   const slotSem4 = await prisma.scheduleSlot.count({ where: { semesterId: 4 } })
   record('ScheduleSlot sem4 = 0', slotSem4 === 0, `count=${slotSem4}`)
 

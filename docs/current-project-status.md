@@ -194,3 +194,5 @@ The list reflects local history at the time of K36-A3 and does not assert remote
 - L7-F4 受控复制 ClassGroup：在 backup + confirm token + transaction 下，将 semester 1 的 36 个 ClassGroup 复制到 target semester 4；只创建 ClassGroup，不创建 Course/Teacher/TeachingTask/TeachingTaskClass/ImportBatch/ScheduleSlot，为 L7-F valid apply trial 准备班级数据。
 
 - L7-F5 在 semester 4 已具备 ClassGroup 后执行新版 Excel 课程设置有效导入试跑：backup + confirm token + server-side recompute + plan hash + transaction，只导入 importable rows，允许创建 Course/ImportBatch/TeachingTask/TeachingTaskClass，禁止创建 Teacher/ClassGroup/ScheduleSlot，并执行 post-apply audit。
+
+- L7-F5A 对 L7-F5 新版 Excel 课程设置有效导入进行 closeout：只读确认 ImportBatch #40、Course/TeachingTask/TeachingTaskClass 写入结果、Teacher/ClassGroup/ScheduleSlot 不变，解释 importableRows 与实际任务数的聚合口径，补齐 build/scan/K22/regression/git 证据，并准备浏览器验收。

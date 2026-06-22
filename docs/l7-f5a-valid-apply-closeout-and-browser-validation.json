@@ -1,0 +1,76 @@
+{
+  "stage": "L7-F5A-VALID-APPLY-CLOSEOUT-AND-BROWSER-VALIDATION",
+  "date": "2026-06-22",
+  "status": "CLOSED_PENDING_BROWSER_VALIDATION",
+  "dbWrite": false,
+  "targetSemesterId": 4,
+  "importBatch40": {
+    "id": 40,
+    "status": "APPLIED",
+    "strategy": "XLSX_COURSE_SETTING_NEW_TEMPLATE",
+    "recordCount": 795,
+    "createdTaskCount": 248,
+    "createdSlotCount": 0,
+    "semesterId": 4,
+    "confirmedAt": "2026-06-22T12:01:03Z",
+    "rolledBackAt": null
+  },
+  "importBatch39": {
+    "id": 39,
+    "status": "APPLIED",
+    "createdTaskCount": 0,
+    "untouched": true
+  },
+  "dbCounts": {
+    "course": 352,
+    "teacher": 220,
+    "classGroupSem1": 36,
+    "classGroupSem4": 36,
+    "teachingTaskSem4": 248,
+    "teachingTaskClassSem4Linked": 5398,
+    "importBatch": 40,
+    "scheduleSlotSem4": 0,
+    "scheduleAdjustmentSem4": 0
+  },
+  "countDeltas": {
+    "course": 248,
+    "teacher": 0,
+    "classGroupSem1": 0,
+    "classGroupSem4": 0,
+    "teachingTaskSem4": 248,
+    "teachingTaskClassSem4Linked": 5398,
+    "importBatch": 1,
+    "scheduleSlotSem4": 0,
+    "scheduleAdjustmentSem4": 0
+  },
+  "sizingReconciliation": {
+    "importableRows": 795,
+    "createdTeachingTasks": 248,
+    "duplicateSkipped": 372,
+    "createdTeachingTaskClasses": 5398,
+    "avgClassesPerTask": 21.77,
+    "courseTeachingTaskMatch": "248 = 248 (one course per task)",
+    "explanation": "795 importable rows → 248 unique teaching tasks (natural key dedupe) → 5398 class links (multi-class per task)"
+  },
+  "dataIntegrity": {
+    "allSem4TeachingTaskSemesterId": 4,
+    "allSem4TeachingTaskTeacherIdExists": true,
+    "allSem4TeachingTaskCourseIdExists": true,
+    "allTeachingTaskClassTeachingTaskIdValid": true,
+    "allTeachingTaskClassClassGroupIdInSem4": true,
+    "noTeachingTaskClassLinkedToSem1": true,
+    "noOrphanTeachingTaskClass": true,
+    "noDuplicateTeachingTaskClassPair": true
+  },
+  "rollbackNote": {
+    "backupPath": "prisma/dev.db.backup-before-l7-f-xlsx-course-setting-import-20260622-200103",
+    "importBatchId": 40,
+    "createdCourses": 248,
+    "createdTeachingTasks": 248,
+    "createdTeachingTaskClasses": 5398,
+    "manualRestore": "cp <backup> prisma/dev.db"
+  },
+  "browserValidationStatus": "PENDING",
+  "l7FCanClose": "YES after browser validation passes",
+  "rawIncluded": false
+}
