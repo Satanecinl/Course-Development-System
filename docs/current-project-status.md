@@ -204,3 +204,5 @@ The list reflects local history at the time of K36-A3 and does not assert remote
 - L7-F6A 对新版 Excel 课程设置导入所需 Teacher / ClassGroup 主数据覆盖率做只读审计：比较课程设置 Excel、当前 Teacher 表、职员数据库、通讯录、学院专业数据库与 sem4 ClassGroup，输出教师/班级覆盖率、缺失/歧义统计和 L7-F5 事故归因；本阶段不写 DB、不执行 apply。
 
 - L7-F6B 基于课程设置 Excel、学院专业数据库、职员数据库与通讯录生成 Teacher/ClassGroup 主数据补齐计划：规划 16 个可从 staff/contacts 高置信补齐的教师、32 个外聘/未知教师人工确认策略、440 个 sem4 ClassGroup 创建候选（418 validated + 22 manual review）与现有 36 个 legacy ClassGroup 处理策略；本阶段不写 DB、不执行 apply。
+
+- L7-F6C 受控写入 Teacher/ClassGroup 主数据：基于 L7-F6B 计划，在 confirm token 与 DB backup 保护下只写入 16 个 high-confidence Teacher（Teacher 220→236）与 395 个 validated sem4 ClassGroup（sem4 36→431，23 duplicate names skipped），保留 36 个 legacy sem4 ClassGroup，跳过 32 个 external/unknown Teacher 与 22 个 manual-review ClassGroup；不执行 Excel apply、不创建 ImportBatch/TeachingTask/ScheduleSlot。

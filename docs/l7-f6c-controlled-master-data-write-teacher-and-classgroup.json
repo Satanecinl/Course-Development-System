@@ -1,0 +1,54 @@
+{
+  "stage": "L7-F6C-CONTROLLED-MASTER-DATA-WRITE-TEACHER-AND-CLASSGROUP",
+  "date": "2026-06-22",
+  "status": "CLOSED",
+  "dbWrite": true,
+  "targetSemesterId": 4,
+  "preWrite": {
+    "course": 104,
+    "teacher": 220,
+    "classGroupSem1": 36,
+    "classGroupSem4": 36,
+    "teachingTaskSem4": 0,
+    "teachingTaskClass": 446,
+    "scheduleSlotSem4": 0,
+    "importBatchTotal": 39,
+    "importBatch39": "APPLIED"
+  },
+  "postWrite": {
+    "course": 104,
+    "teacher": 236,
+    "classGroupSem1": 36,
+    "classGroupSem4": 431,
+    "teachingTaskSem4": 0,
+    "teachingTaskClass": 446,
+    "scheduleSlotSem4": 0,
+    "importBatchTotal": 39,
+    "importBatch39": "APPLIED"
+  },
+  "teacherWrite": {
+    "highConfidenceCandidates": 16,
+    "created": 16,
+    "duplicateSkipped": 0,
+    "externalSkipped": 32,
+    "countDelta": 16
+  },
+  "classGroupWrite": {
+    "validatedCandidates": 418,
+    "uniquePlannedName": 395,
+    "duplicateNamesSkipped": 23,
+    "created": 395,
+    "manualReviewSkipped": 22,
+    "legacySem4Preserved": 36,
+    "countDeltaSem4": 395
+  },
+  "safetyControls": {
+    "confirmToken": "WRITE_L7_F6C_MASTER_DATA",
+    "invalidTokenTest": "rejected",
+    "backupCreated": true,
+    "transactionUsed": true
+  },
+  "rollbackNote": "Restore prisma/dev.db from backup-before-l7-f6c-master-data-write-20260622-225133",
+  "nextStageRecommendation": "L7-F6D-XLSX-TEACHER-CLASSGROUP-RESOLUTION-HARD-GATE-FIX",
+  "rawIncluded": false
+}
