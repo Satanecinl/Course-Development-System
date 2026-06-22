@@ -1,0 +1,65 @@
+{
+  "stage": "L7-F6F1-DB-COLLISION-REPAIR-SCOPE-VALIDATION-AND-CONTAINMENT",
+  "date": "2026-06-22",
+  "status": "CLOSED",
+  "dbWrite": false,
+  "rollbackExecuted": false,
+  "targetSemesterId": 4,
+  "f6fScopeDeviation": {
+    "originalAllowedChangedRows": 9,
+    "actualUpdatedRows": 366,
+    "actualDeletedRows": 25,
+    "classGroupSem4Before": 431,
+    "classGroupSem4After": 406,
+    "scopeViolationConfirmed": true,
+    "scopeViolationRationale": "F6F normalized 391 double-级 entries (not just 9), deleted 25 duplicates (not allowed by original spec)"
+  },
+  "backupSafety": {
+    "backupExists": true,
+    "backupPath": "prisma/dev.db.backup-before-l7-f6f-db-collision-repair-20260622175109",
+    "backupSize": 62222336,
+    "backupTrackedByGit": false,
+    "rollbackPossible": true
+  },
+  "deletedClassGroupSafety": {
+    "deletedClassGroupCount": 25,
+    "deletedAllFromTargetSemester": true,
+    "deletedAllDuplicateCanonicalKey": true,
+    "deletedAllZeroTTCRefs": true,
+    "deletedAllZeroScheduleSlotRefs": true,
+    "deletedAllZeroScheduleAdjRefs": true,
+    "deletedAllZeroOtherRefs": true,
+    "deletedHasAnyBusinessReference": false,
+    "deletedUnsafeCount": 0
+  },
+  "normalizedRowSafety": {
+    "updatedClassGroupCount": 366,
+    "updatedAllTargetSemester": true,
+    "updatedAllOnlyNameChanged": true,
+    "updatedAllOnlyRemovedDuplicateJi": true,
+    "updatedChangedCanonicalIdentityCount": 0,
+    "updatedUnsafeCount": 0
+  },
+  "newBaselineAssessment": {
+    "newBaselineCandidateSem4Count": 406,
+    "newBaselineExplainedBySafeDeletes": true,
+    "blockingCollisionCountAfter": 0,
+    "unsafeCollisionCountAfter": 0,
+    "acceptNewBaselineRecommended": true,
+    "rollbackRequired": false,
+    "additionalEvidenceRequired": false
+  },
+  "regressionMaskingAssessment": {
+    "stageAwareRegressionCount": 8,
+    "regressionsUpdatedExpectedSem4Count": true,
+    "regressionsStillCheckNoUnsafeDeletes": true,
+    "regressionsStillCheckCanonicalSafety": true,
+    "regressionMaskingRisk": "LOW"
+  },
+  "containmentDecision": "L7-F6F ACCEPTED as scope exception. All 25 deleted rows verified safe (duplicate canonical key, zero business refs). All 366 normalized rows verified safe (only removed duplicate 级). ClassGroup sem4 = 406 accepted as new baseline.",
+  "nextStageRecommendation": "L7-F6G1-MANUAL-DECISION-PACKAGE or L7-F6G-CONTROLLED-MASTER-DATA-WRITE-PLAN (depending on user confirmation of 844 teachers + 14 ClassGroups)",
+  "privacy": {
+    "rawClassGroupNamesIncluded": false,
+    "rawTeacherNamesIncluded": false
+  }
+}
