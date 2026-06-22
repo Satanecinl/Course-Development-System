@@ -1,0 +1,92 @@
+{
+  "stage": "L7-F1-XLSX-COURSE-SETTING-APPLY-TRIAL-SEMANTIC-DIAGNOSTIC",
+  "date": "2026-06-22",
+  "status": "CLOSED",
+  "dbWrite": false,
+  "targetSemesterId": 4,
+  "importBatch39": {
+    "exists": true,
+    "status": "APPLIED",
+    "strategy": "XLSX_COURSE_SETTING_NEW_TEMPLATE",
+    "recordCount": 4,
+    "createdTaskCount": 0,
+    "createdSlotCount": 0,
+    "semesterId": 4,
+    "createdAt": "2026-06-22T09:25:52.093Z",
+    "recommendation": "defer"
+  },
+  "threeLevelRootCause": {
+    "level1_maxPreviewRows": {
+      "description": "L4 mapper defaults maxPreviewRows to 50. Plan/apply routes don't override it. CLI trial only processed 50 of 1167 rows, yielding 4 importable instead of 175.",
+      "fix": "Add maxPreviewRows: 100000 to partial-import-plan/route.ts, partial-import-apply/route.ts, and CLI trial script.",
+      "severity": "ESSENTIAL"
+    },
+    "level2_importableDefinition": {
+      "description": "L7-A3 counts resolutionStatus='autoAllowedNewCourse' as importable (903). L6-E2 plan requires zero blockers (175). 434 rows have teacherMissing/examTypeInvalid/ambiguousMapping/weeklyHoursInvalid blockers.",
+      "fix": "Reconcile 'importable' definitions in UI/docs.",
+      "severity": "RECOMMENDED"
+    },
+    "level3_classGroupScope": {
+      "description": "Semester 4 has 0 ClassGroups. Historical ClassGroups are in LEGACY-DEFAULT semester. No TeachingTaskClass links can be created.",
+      "fix": "User must import ClassGroups into semester 4 or select a semester with ClassGroups.",
+      "severity": "ESSENTIAL"
+    }
+  },
+  "threeCodePaths": {
+    "l7a3Classification": {
+      "totalReviewItems": 1167,
+      "importableItems": 903,
+      "needsResolutionItems": 264,
+      "newCourseCandidateItems": 0,
+      "unresolvedBlockers": {
+        "teacherMissing": 207,
+        "taskSplitRequired": 109,
+        "ambiguousMapping": 63,
+        "examTypeInvalid": 145,
+        "weeklyHoursInvalid": 19
+      }
+    },
+    "browserEquivalentPlan": {
+      "importableRows": 175,
+      "skippedRows": 0,
+      "unresolvedRows": 992,
+      "courseCreateCandidates": 0,
+      "rowsUsingNewCourseCandidate": 0,
+      "teacherMissingRows": 207,
+      "unresolvedReasonBreakdown": {
+        "teacherMissing": 207,
+        "courseNameMissing": 903,
+        "ambiguousMapping": 63,
+        "examTypeInvalid": 145,
+        "weeklyHoursInvalid": 19
+      }
+    },
+    "l7fServiceRecompute": {
+      "importableRows": 175,
+      "unresolvedRows": 992,
+      "planHash": "80da06f098b7c9e85b8557308b2442f4f9ccf12efd2d0a5a81d0107aeb88294b",
+      "unresolvedReasonBreakdown": {
+        "teacherMissing": 207,
+        "courseNameMissing": 903,
+        "ambiguousMapping": 63,
+        "examTypeInvalid": 145,
+        "weeklyHoursInvalid": 19
+      }
+    }
+  },
+  "firstDivergence": {
+    "level1": "L7-A3 importableItems=903 ≠ browser plan importableRows=175",
+    "level2": "browser plan importableRows=175 = CLI plan importableRows=175 (buildInitialManualResolutionState makes no difference to L6-E2 plan)",
+    "level3": "semester 4 has 0 ClassGroups — cannot create TeachingTaskClass links"
+  },
+  "dbCountsUnchanged": true,
+  "recommendation": {
+    "keepImportBatch39": "defer",
+    "rollbackRecommended": "defer",
+    "fixMaxPreviewRows": "ESSENTIAL",
+    "classGroupScope": "ESSENTIAL",
+    "reconcileImportableDefinition": "RECOMMENDED",
+    "nextStage": "Fix maxPreviewRows in plan/apply routes; ensure target semester has ClassGroups; re-run trial."
+  },
+  "rawIncluded": false
+}

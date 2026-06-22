@@ -184,3 +184,5 @@ The list reflects local history at the time of K36-A3 and does not assert remote
 - L7-A3 修复新版 Excel 课程设置可导入分类：新课程候选（COURSE_CREATE_CANDIDATE）不再作为阻塞项，可进入 dry-run importable plan 并由未来写库阶段创建 Course；blockedItems 从 1167 降至 264（仅教师缺失/班级缺失/任务分配异常等）；可导入从 0 升至 903；真正课程名缺失（COURSE_NAME_MISSING）仍阻塞；旧 COURSE_MISSING 从 blocking 移除（deprecated superset）；partial plan 现有 795 条 importableRows / 248 个课程候选 / 207 条教师缺失；不写 DB、不执行 apply；L7-F 写库继续 blocked（等浏览器验收）。
 
 - L7-F 实现新版 Excel 课程设置受控写库执行：基于 fullDataset partial plan，只导入 importable rows，允许创建已确认/自动允许的新 Course，禁止自动创建 Teacher/ClassGroup，不创建课表；执行前备份 DB，后端重算 plan，transaction 写入 ImportBatch/TeachingTask/TeachingTaskClass，并执行 post-apply audit。
+
+- L7-F1 只读诊断 L7-F apply trial 与 L7-A3 dry-run 口径不一致：对比 L7-A3 classification、browser-equivalent partial plan、L7-F service recompute，定位为何 apply trial 只创建空 ImportBatch #39；发现三级根因（maxPreviewRows=50 截断、importable 定义不一致、semester 4 无 ClassGroup）；不写 DB、不 rollback。
