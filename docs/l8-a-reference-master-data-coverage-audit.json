@@ -1,0 +1,166 @@
+{
+  "stage": "L8-A-REFERENCE-MASTER-DATA-COVERAGE-AUDIT",
+  "status": "CLOSED",
+  "generatedAt": "2026-06-23T02:40:37Z",
+  "branch": "master",
+  "head": "c27b579bc4f67b067e75ada7e614f45676d47a74",
+  "dbWrite": false,
+  "dbBaselineUnchanged": true,
+  "targetSemesterId": 4,
+  "inputFiles": {
+    "staffDb": "exists (read-only)",
+    "contactsXlsx": "exists (read-only)",
+    "majorXlsx": "exists (read-only)"
+  },
+  "staffDb": {
+    "tableCount": 1,
+    "tableNameHash": "职员",
+    "candidatePersonCount": 436,
+    "classifiedCounts": {
+      "TEACHER_CANDIDATE": 258,
+      "STAFF_ONLY": 137,
+      "AMBIGUOUS_PERSON": 41,
+      "ADMIN_OR_DEPARTMENT_CONTACT": 0,
+      "INVALID_NAME": 0
+    }
+  },
+  "contactsXlsx": {
+    "sheetCount": 30,
+    "nonEmptySheetCount": 28,
+    "candidatePersonCount": 436,
+    "classifiedCounts": {
+      "TEACHER_CANDIDATE": 258,
+      "STAFF_ONLY": 137,
+      "AMBIGUOUS_PERSON": 41,
+      "ADMIN_OR_DEPARTMENT_CONTACT": 0,
+      "INVALID_NAME": 0
+    }
+  },
+  "unionCandidates": {
+    "unionCandidateCount": 424,
+    "bothSourcesCount": 414,
+    "staffDbOnlyCount": 0,
+    "contactsOnlyCount": 10,
+    "alreadyInTeacherCount": 231,
+    "missingTeacherCandidateCount": 70,
+    "ambiguousTeacherMatchCount": 0,
+    "skipStaffOnlyCount": 123,
+    "intraSourceDuplicateCount": 10,
+    "dbOnlyTeacherCount": 5
+  },
+  "dbTeacher": {
+    "totalCount": 236,
+    "duplicateNormalizedNameGroupCount": 0,
+    "suspiciousNameCount": 0,
+    "notFoundInAnySourceCount": 5
+  },
+  "majorClassXlsx": {
+    "sheetCount": 3,
+    "referenceMajorCount": 38,
+    "referenceClassCount": 227,
+    "referenceByCollegeCounts": {
+      "collegesCount": 6,
+      "largestCollegeClassCount": 80,
+      "smallestCollegeClassCount": 4,
+      "collegeClassCountDistribution": {
+        "range_1_to_10": 1,
+        "range_11_to_50": 3,
+        "range_51_to_100": 2
+      }
+    },
+    "referenceByGradeCounts": {
+      "gradesCount": 5,
+      "gradeClassCountDistribution": {
+        "range_1_to_10": 1,
+        "range_11_to_50": 2,
+        "range_51_to_100": 2
+      }
+    }
+  },
+  "sem4ClassGroupCoverage": {
+    "sem4ClassGroupCount": 406,
+    "duplicateNormalizedGroupCount": 0,
+    "suspiciousClassGroupCount": 4,
+    "suspiciousReasons": ["missing-班-suffix"],
+    "referenceAlreadyInSem4Count": 81,
+    "referenceMissingInSem4Count": 6,
+    "referenceAmbiguousMatchCount": 0,
+    "referenceOnlyClassCount": 6,
+    "dbOnlyClassGroupCount": 227
+  },
+  "syncPlan": {
+    "safeCreateTeacherCandidatesCount": 70,
+    "needsManualTeacherReviewCount": 38,
+    "skipStaffOnlyCount": 123,
+    "ambiguousTeacherMatchesCount": 0,
+    "duplicateTeacherRisksCount": 10,
+    "safeCreateClassGroupCandidatesCount": 0,
+    "needsManualClassGroupReviewCount": 6,
+    "duplicateClassGroupRisksCount": 0,
+    "suspiciousExistingClassGroupsCount": 4,
+    "referenceOnlyClassesCount": 6,
+    "dbOnlyClassesCount": 227
+  },
+  "dbBaseline": {
+    "before": {
+      "Course": 104,
+      "Teacher": 236,
+      "ClassGroup_sem1": 36,
+      "ClassGroup_sem4": 406,
+      "TeachingTask_sem4": 0,
+      "TeachingTaskClass": 446,
+      "ScheduleSlot_sem4": 0,
+      "ScheduleAdjustment_sem4": 0,
+      "ImportBatch_total": 39,
+      "ImportBatch_39_status": "APPLIED",
+      "ImportBatch_40_present": false
+    },
+    "after": {
+      "Course": 104,
+      "Teacher": 236,
+      "ClassGroup_sem1": 36,
+      "ClassGroup_sem4": 406,
+      "TeachingTask_sem4": 0,
+      "TeachingTaskClass": 446,
+      "ScheduleSlot_sem4": 0,
+      "ScheduleAdjustment_sem4": 0,
+      "ImportBatch_total": 39,
+      "ImportBatch_39_status": "APPLIED",
+      "ImportBatch_40_present": false
+    },
+    "unchanged": true
+  },
+  "dbPgContaminationCheck": {
+    "protectedPathsChecked": [
+      "prisma/schema.prisma",
+      "prisma/migrations/**",
+      ".env",
+      "package.json",
+      "package-lock.json"
+    ],
+    "diffAgainstOriginMaster": "clean",
+    "diffAgainstHeadFive": "clean",
+    "workingTreeStatus": "clean"
+  },
+  "verification": {
+    "auditScriptRan": "PASS",
+    "dbBaselineUnchanged": "PASS",
+    "noDbWrite": "PASS",
+    "noBackup": "PASS",
+    "noApply": "PASS",
+    "committedDocsContainNoRawPII": "PASS",
+    "privateLocalArtifactsContainRawForReview": "PASS (gitignored)"
+  },
+  "nextStageRecommendation": "L8-B1-REFERENCE-MASTER-DATA-MANUAL-REVIEW-WORKBOOK",
+  "teachingTaskImportBlocked": true,
+  "rawIncludedInCommitted": false,
+  "privateLocalArtifacts": [
+    "temp/local-artifacts/l8-a/staff-db-people.raw.local.json",
+    "temp/local-artifacts/l8-a/contacts-people.raw.local.json",
+    "temp/local-artifacts/l8-a/major-class-reference.raw.local.json",
+    "temp/local-artifacts/l8-a/reference-teacher-candidates.union.local.json",
+    "temp/local-artifacts/l8-a/db-teacher-coverage.local.json",
+    "temp/local-artifacts/l8-a/db-classgroup-coverage.local.json",
+    "temp/local-artifacts/l8-a/reference-master-data-sync-plan.local.json"
+  ]
+}
