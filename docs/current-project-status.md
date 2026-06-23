@@ -230,3 +230,5 @@ The list reflects local history at the time of K36-A3 and does not assert remote
 - L7-F6G2C0 对 L7-F6G2B 后的 pending count 口径做只读 reconciliation：解释 G2 intake 的 411/378 与 G2A/G2B grouped decision breakdown 的 358/325 差异（53 extra = row-level expansion of 59 skipRows + 19 weeklyHours），明确后续用户决策 source of truth 为 L7-F6G2A_DRAFT（composite decisions，358 项），并确认无 bug、无需 code fix、safeToProceedToNextDecisionBatch=true；本阶段不写 DB、不执行 apply、不创建 Teacher/ClassGroup/TeachingTask/ImportBatch。
 
 - L7-F6G2D 引入新版 Excel 课程设置导入的人工决策工作簿流程：基于 G2A 358 composite decisions 和 G2B 33 formal decisions，生成本地 user-decision-workbook.local.xlsx，把剩余 325 个 pending 拆成 External_21（21 个非泛称外聘教师）、DuplicateRisk_204（204 个 duplicate risk 教师）、Ambiguous_98（98 个多 token 教师）、Other_2（weeklyHours+ambiguousMapping）等可筛选 sheet，并准备 workbook→formal decision JSON 转换脚本；本阶段不写 DB、不执行 apply、不创建 Teacher/ClassGroup/TeachingTask/ImportBatch。
+
+- L7-F6G2D2 验证人工审核后的 workbook：325 个 pending decisions 中 319 个已转换为 formal decisions（formal file 从 33 扩展到 352），5 个 ambiguousTeacher 和 1 个 ambiguousMapping-aggregate 保持 needsReview；readyForControlledWrite=false，不能进入 L7-F6H。

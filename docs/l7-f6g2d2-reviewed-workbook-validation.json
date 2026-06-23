@@ -1,0 +1,63 @@
+{
+  "stage": "L7-F6G2D2-REVIEWED-WORKBOOK-VALIDATION-AND-REMAINING-DECISION-EXPANSION",
+  "status": "PARTIAL_REMAINING_NEEDS_REVIEW",
+  "dbWrite": false,
+  "totalDecisionItems": 358,
+  "decidedItems": 352,
+  "pendingItems": 6,
+  "readyForControlledWrite": false,
+  "invalidActions": 0,
+  "missingSelectedExistingId": 0,
+  "missingEditedValue": 0,
+  "highRiskApproveMissingNote": 0,
+  "duplicateCompositeDecisionKeys": 0,
+  "needsReviewItems": 6,
+  "blockingReasons": [
+    "REMAINING_NEEDS_REVIEW"
+  ],
+  "needsReviewBreakdown": {
+    "ambiguousTeacher": 5,
+    "ambiguousMappingAggregate": 1
+  },
+  "needsReviewDetails": [
+    {
+      "decisionId": "85af8665960c794e",
+      "category": "ambiguousTeacher",
+      "reason": "two teachers but source has no task assignment — cannot auto-split"
+    },
+    {
+      "decisionId": "dcab9c9111a2116d",
+      "category": "ambiguousTeacher",
+      "reason": "1,2:teacherA;3,4:teacherB pattern — needs row-level expansion or user selection"
+    },
+    {
+      "decisionId": "6a9018730359997a",
+      "category": "ambiguousTeacher",
+      "reason": "1,2:teacherA;3,4:teacherB pattern — needs row-level expansion or user selection"
+    },
+    {
+      "decisionId": "5f4ee2d0cdd7cd1d",
+      "category": "ambiguousTeacher",
+      "reason": "messy source text — needs manual interpretation"
+    },
+    {
+      "decisionId": "7081a99ebaea8ae6",
+      "category": "ambiguousTeacher",
+      "reason": "1班 teacher missing — cannot auto-assign"
+    },
+    {
+      "decisionId": "ambiguousMapping-aggregate",
+      "category": "ambiguousMapping",
+      "reason": "aggregate of 63 merge-remark rows — needs row-level expansion with ClassGroupId per row"
+    }
+  ],
+  "ambiguousMappingAggregateStatus": "NOT_EXPANDED_TO_ROW_LEVEL",
+  "formalDecisionsUpdated": true,
+  "formalDecisionCountBefore": 33,
+  "formalDecisionCountAfter": 352,
+  "localArtifacts": {
+    "acceptedCsv": "temp/local-artifacts/l7-f6g2d/workbook-import.accepted.local.csv",
+    "invalidCsv": "temp/local-artifacts/l7-f6g2d/workbook-import.invalid.local.csv",
+    "aggregateJson": "temp/local-artifacts/l7-f6g2d/workbook-validation-v2.aggregate.json"
+  }
+}
