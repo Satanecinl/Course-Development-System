@@ -215,14 +215,15 @@ function buildRefCanonicalKey(ref: ReferenceClass): string {
 /**
  * Build alias key: normalized major (strip direction/variant suffixes).
  * For matching DB entries with parenthetical markers against reference.
+ * directionToken is intentionally excluded — alias match is grade+major+classNum only.
  */
 function buildAliasKey(
   gradeToken: string,
   majorToken: string,
   classNumberToken: string,
-  _directionToken: string | null
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- intentionally unused: alias strips direction
+  directionToken: string | null
 ): string {
-  // Alias: strip parenthetical info, match on grade+major+classNum only
   return `${gradeToken}|${majorToken}|${classNumberToken}||`
 }
 

@@ -116,12 +116,11 @@ Categorized by pattern:
 | Migration-required candidates | **0** |
 | Risk distribution | LOW(404), MEDIUM(2) |
 
-**Critical finding**: All 406 sem4 ClassGroups are delete-safe because:
-- sem4 TeachingTask = 0 (no teaching tasks in target semester)
-- TeachingTaskClass (446) references sem1 ClassGroups, not sem4
-- Therefore sem4 ClassGroups have zero downstream references
+**Technical observation**: All 406 sem4 ClassGroups have zero downstream TeachingTaskClass / TeachingTask / ScheduleSlot / ScheduleAdjustment references because sem4 TeachingTask = 0. This makes them technically "delete-safe" from a referential integrity perspective, but **this is NOT a recommendation to delete all 406**.
 
-**Important caveat**: The 36 sem1 ClassGroups ARE referenced by the 446 TTC records and their associated ScheduleSlots. Deleting sem1 ClassGroups would break those references. Only sem4 ClassGroups are safe to clean.
+Correct controlled cleanup path: (1) backup, (2) confirm token, (3) transaction, (4) preserve/create canonical 227 reference ClassGroups, (5) remove only verified extras, (6) post-audit. See `docs/l8-c0a-classgroup-closeout-count-and-cleanup-addendum.md` for full details.
+
+**Important caveat**: The 36 sem1 ClassGroups ARE referenced by the 446 TTC records and their associated ScheduleSlots. Deleting sem1 ClassGroups would break those references. Only sem4 ClassGroups have zero downstream refs.
 
 ## Schema Semantic Audit
 

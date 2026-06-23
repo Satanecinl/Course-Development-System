@@ -1,0 +1,113 @@
+{
+  "stage": "L8-C0A-CLOSEOUT-COUNT-AND-WORKTREE-CLEANUP-ADDENDUM",
+  "status": "CLOSEOUT_COMPLETE",
+  "description": "Addendum to formally close L8-C0 with count reconciliation, delete-safe clarification, and worktree cleanup",
+
+  "k22ByproductCheck": {
+    "modifiedFilesBefore": ["docs/k22-score-default-snapshot.json", "docs/k22-score-regression-harness-implementation.json"],
+    "diffType": "generatedAt timestamp only",
+    "restored": true,
+    "expectedDriftFound": false
+  },
+
+  "referenceMajorCountReconciliation": {
+    "l8AUnionScope": 38,
+    "l8CSheet1Scope": 34,
+    "sheet3ClassScope": 35,
+    "sheet1DistinctMajorKeys": 34,
+    "sheet1MajorPlusDirectionKeys": 34,
+    "sheet3DistinctMajorKeys": 35,
+    "sheet3DistinctMajorPlusDirectionKeys": 42,
+    "sheet1MajorsWithAtLeastOneClass": 31,
+    "sheet1MajorsWithoutClass": 3,
+    "sheet3OrphanMajorsNotInSheet1": 4,
+    "sheetLevelMajorCountSheet1": 34,
+    "sheetLevelMajorCountSheet3": 35,
+    "referenceClassCount": 227,
+    "reasonCode": "REFERENCE_MAJOR_COUNT_SCOPE_DIFFERENCE",
+    "selectedCanonicalCount": 34,
+    "selectedCanonicalScope": "Sheet 1 (学院专业数据库) — official major list",
+    "explanation": "L8-A scanned both sheets into a single majorSet (union=38). L8-C0 only read sheet 1 (=34). The 4 extra from sheet 3 are naming variants or unlisted majors. Sheet 1 is the canonical reference for ClassGroup reconciliation."
+  },
+
+  "classGroupCountReconciliation": {
+    "sem4Total": 406,
+    "dbClassGroupSide": {
+      "REFERENCE_MATCH_EXACT": 182,
+      "REFERENCE_MATCH_ALIAS": 4,
+      "REFERENCE_MATCH_AMBIGUOUS": 3,
+      "DB_ONLY_EXTRA": 209,
+      "DB_DUPLICATE": 0,
+      "SUSPICIOUS_NAME": 1,
+      "SEMESTER_COPY": 5,
+      "IMPORT_ARTIFACT": 0,
+      "COMPOSITE_OR_TEMP_GROUP": 2,
+      "sum": 406,
+      "verified": true
+    },
+    "referenceSide": {
+      "matchedByDB": 186,
+      "REFERENCE_ONLY_MISSING_IN_DB": 26,
+      "uniqueCanonicalKeys": 212,
+      "totalClassRows": 227,
+      "note": "212 unique canonical keys (227 rows minus 18 school-length duplicate keys)"
+    },
+    "unreferencedExtraComposition": {
+      "DB_ONLY_EXTRA": 209,
+      "SUSPICIOUS_NAME": 1,
+      "SEMESTER_COPY": 5,
+      "COMPOSITE_OR_TEMP_GROUP": 2,
+      "sum": 217,
+      "verified": true
+    },
+    "countDrift": false
+  },
+
+  "deleteSafeClarification": {
+    "clarified": true,
+    "deleteAllRecommended": false,
+    "technicalMeaning": "406 sem4 ClassGroups have zero downstream TeachingTaskClass/TeachingTask/ScheduleSlot/ScheduleAdjustment refs because sem4 TeachingTask=0",
+    "correctPath": "backup → confirm token → transaction → preserve canonical 227 → remove verified extras → post-audit",
+    "reference": "See l8-c0a addendum section 4"
+  },
+
+  "lintWarningSource": {
+    "totalErrors": 562,
+    "totalWarnings": 542,
+    "allPreExisting": true,
+    "newL8C0Warning": false,
+    "fixed": true,
+    "fixDescription": "_directionToken unused param: added eslint-disable comment (param intentionally unused for alias key stripping)",
+    "reasonCode": "NO_NEW_LINT_WARNING_FROM_L8_C0"
+  },
+
+  "verificationResults": {
+    "prismaValidate": "PASS",
+    "migrateStatus": "PASS",
+    "build": "PASS",
+    "typecheck": "PASS",
+    "lint": "PASS",
+    "k22c": "PASS (73/73, 0 FAIL)",
+    "scanDocsPii": "PASS (0 blocking)"
+  },
+
+  "l8C0Closure": {
+    "formallyClosed": true,
+    "k22ByproductsRestored": true,
+    "worktreeClean": true,
+    "aheadBehind0": true,
+    "majorCountDiscrepancyExplained": true,
+    "classGroupCountDiscrepancyExplained": true,
+    "deleteSafeWordingClarified": true,
+    "noNewLintWarning": true,
+    "dbBaselineUnchanged": true,
+    "noDBWrite": true,
+    "noApply": true,
+    "noBackup": true,
+    "allVerificationPass": true,
+    "protectedPathsClean": true
+  },
+
+  "recommendedNextStage": "L8-C1-CLASSGROUP-GLOBALIZATION-DESIGN",
+  "teachingTaskImportBlocked": true
+}

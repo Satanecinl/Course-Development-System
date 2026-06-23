@@ -45,7 +45,14 @@
   },
   "referencedExtraCount": 0,
   "unreferencedExtraCount": 217,
-  "deleteSafeCandidateCount": 406,
+  "unreferencedExtraComposition": {
+    "DB_ONLY_EXTRA": 209,
+    "SUSPICIOUS_NAME": 1,
+    "SEMESTER_COPY": 5,
+    "COMPOSITE_OR_TEMP_GROUP": 2
+  },
+  "deleteSafeCandidateCount": 0,
+  "deleteSafeNote": "406 sem4 ClassGroups have zero downstream refs (technical observation only). NOT a recommendation to delete all. Controlled cleanup requires backup, confirm token, transaction, preserve canonical 227, remove verified extras, post-audit. See l8-c0a addendum.",
   "mergeRequiredCandidateCount": 0,
   "migrationRequiredCandidateCount": 0,
   "schemaAudit": {
