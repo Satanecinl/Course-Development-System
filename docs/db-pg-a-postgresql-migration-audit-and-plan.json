@@ -1,0 +1,82 @@
+{
+  "auditId": "DB-PG-A-POSTGRESQL-MIGRATION-AUDIT-AND-PLAN",
+  "status": "audit_plan_only",
+  "branch": "db-pg-a-migration-plan",
+  "allowedActions": [
+    "read_current_prisma_schema",
+    "read_current_prisma_migrations",
+    "read_current_sqlite_import_assumptions",
+    "add_standalone_read_only_audit_script",
+    "add_markdown_and_json_planning_artifacts"
+  ],
+  "forbiddenActions": [
+    "switch_prisma_provider",
+    "generate_postgresql_migration",
+    "edit_prisma_migrations",
+    "edit_env",
+    "edit_package_json",
+    "edit_package_lock_json",
+    "write_or_delete_prisma_dev_db",
+    "edit_l7_excel_import_scripts",
+    "wire_audit_script_into_package_scripts_or_ci"
+  ],
+  "protectedPaths": [
+    "prisma/schema.prisma",
+    "prisma/migrations/**",
+    ".env",
+    "package.json",
+    "package-lock.json",
+    "prisma/dev.db",
+    "L7 Excel import scripts"
+  ],
+  "findings": [
+    {
+      "id": "SQLITE_PROVIDER_CURRENT",
+      "severity": "info",
+      "summary": "Current Prisma datasource and migration lock are SQLite-based.",
+      "directMigrationImpact": "PostgreSQL migration must not start by silently switching provider in DB-PG-A."
+    },
+    {
+      "id": "SQLITE_MIGRATION_SQL",
+      "severity": "blocking",
+      "summary": "Existing migration SQL contains SQLite-specific statements such as AUTOINCREMENT, PRAGMA, DATETIME, table rebuilds, and RENAME TO.",
+      "directMigrationImpact": "Do not replay the current SQLite migration history against PostgreSQL."
+    },
+    {
+      "id": "L7_SQLITE_BACKUP_ASSUMPTIONS",
+      "severity": "warning",
+      "summary": "L7 Excel import paths still assume prisma/dev.db file backup and SQLite-specific inspection.",
+      "directMigrationImpact": "Real PostgreSQL migration must wait until L7 write path is closed, explicitly frozen, or redesigned."
+    },
+    {
+      "id": "SQLITE_SOURCE_DB_READONLY",
+      "severity": "info",
+      "summary": "The source SQLite database may be inventoried read-only for planning evidence.",
+      "directMigrationImpact": "Inventory must not become a data migration in DB-PG-A."
+    }
+  ],
+  "recommendedLaterPhases": [
+    {
+      "phase": "DB-PG-B",
+      "goal": "Freeze or close L7 Excel write path and define PostgreSQL-safe backup/rollback semantics."
+    },
+    {
+      "phase": "DB-PG-C",
+      "goal": "Create and review a PostgreSQL-compatible schema baseline instead of replaying SQLite migrations."
+    },
+    {
+      "phase": "DB-PG-D",
+      "goal": "Run deterministic SQLite export and PostgreSQL import dry runs against disposable databases."
+    },
+    {
+      "phase": "DB-PG-E",
+      "goal": "Verify application workflows against PostgreSQL, including scheduler, imports, auth, admin DB browser, and adjustment requests."
+    },
+    {
+      "phase": "DB-PG-F",
+      "goal": "Perform approved production cutover with backup, rollback, and post-cutover verification."
+    }
+  ],
+  "expectedAuditBlockingExitReason": "current SQLite provider / SQLite migration SQL / L7 SQLite backup assumptions block direct PostgreSQL migration",
+  "conclusion": "DB-PG-A is audit/plan only. No PostgreSQL migration is performed. The L7 Excel import mainline remains SQLite-based and unaffected."
+}
