@@ -1,0 +1,25 @@
+{
+  "stage": "L8-C4-CLASSGROUP-CANONICAL-CONTROLLED-SYNC-APPLY",
+  "status": "CLOSED",
+  "backupBasename": "prisma/dev.db.backup-before-l8-c4-classgroup-canonical-sync-20260623141644",
+  "createdClassGroups": 16,
+  "updatedClassGroups": 227,
+  "deactivatedClassGroups": 260,
+  "hardDeletedClassGroups": 0,
+  "ttcMigrated": 588,
+  "ttcDeduped": 96,
+  "postApply": {
+    "classGroupTotal": 458,
+    "activeCanonicalRefXlsx": 198,
+    "inactiveExtras": 260,
+    "canonicalKeyNonNull": 198,
+    "canonicalKeyDuplicates": 0,
+    "ttcTotal": 350,
+    "ttcToInactiveCG": 0,
+    "course": 104,
+    "teacher": 427
+  },
+  "nameCollisionLimitation": "29 canonical keys share plannedName with another key (三年制/五年制/对口 variants). @@unique([semesterId,name]) prevented separate rows.",
+  "teachingTaskImportBlocked": true,
+  "recommendedNextStage": "L8-C5-CLASSGROUP-API-UI-GLOBAL-QUERY-MIGRATION"
+}
