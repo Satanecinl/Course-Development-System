@@ -1,0 +1,47 @@
+{
+  "stage": "L8-C5A-CLASSGROUP-GLOBAL-ACTIVE-QUERY-IMMEDIATE-FIX",
+  "status": "CLOSED",
+  "branch": "master",
+  "headBefore": "9369d380aafd65bed1ca9735a78a3539560734c9",
+  "forcePush": false,
+  "dbWritten": false,
+  "schemaModified": false,
+  "migrationCreated": false,
+  "classGroupGlobalQueryImplemented": true,
+  "defaultVisibleCount": 227,
+  "legacyHiddenByDefault": true,
+  "badgeAdded": true,
+  "affectedFiles": [
+    "src/lib/classgroup-global-query.ts",
+    "src/app/api/admin/[model]/route.ts",
+    "src/app/api/entity-list/route.ts",
+    "src/app/api/class-groups/route.ts",
+    "src/lib/import/course-setting-resolution-options.ts",
+    "src/lib/admin-db/config.ts",
+    "src/app/admin/db/admin-db-content.tsx",
+    "src/components/admin-db/admin-toolbar.tsx"
+  ],
+  "remainingSemesterScopedQueries": [
+    "teaching-task/route.ts (create validation)",
+    "teaching-task/[id]/route.ts (update validation)",
+    "importer.ts (schedule import upsert)",
+    "course-setting-apply-l7-f.ts (L7-F apply preflight + rollback)",
+    "course-setting-partial-import-plan-l6-e2.ts (L6-E2 task split)",
+    "partial-import-plan/route.ts (gate check)",
+    "partial-import-apply/route.ts (gate check)",
+    "scheduler/readiness/route.ts (readiness check)",
+    "data/summary/route.ts (dashboard summary)",
+    "semester-service.ts (dependency check)"
+  ],
+  "verification": {
+    "build": "PASS",
+    "typecheck": "PASS",
+    "lint": "PASS (0 errors in changed files)",
+    "prismaValidate": "PASS",
+    "migrateStatus": "PASS",
+    "scanDocsPii": "PASS (0 BLOCKING)"
+  },
+  "professionalClassGroupMasterDataUsableGlobally": true,
+  "teachingTaskImportBlocked": true,
+  "recommendedNextStage": "L8-C5B-CLASSGROUP-SEMESTER-ID-GATE-HARDENING"
+}

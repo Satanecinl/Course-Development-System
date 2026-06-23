@@ -25,6 +25,9 @@ export const TABLES: TableConfig[] = [
   { key: 'teachingtask', label: '教学任务表', color: 'bg-purple-100 text-purple-700' },
 ]
 
+/** L8-C5A: tables that are global master data and ignore semester scoping */
+export const GLOBAL_MASTER_TABLES = new Set(['classgroup'])
+
 /** 需要全局穿透警告的主数据表 */
 export const MASTER_TABLES = new Set(['classgroup', 'teacher', 'course', 'room'])
 

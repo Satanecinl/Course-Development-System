@@ -23,7 +23,7 @@ import { TeachingTaskDialog } from '@/components/admin-db/teaching-task-dialog'
 import { useHasPermission } from '@/components/layout/current-user-context'
 import type { EntityOption } from '@/components/combobox'
 import type { DbRecord } from '@/lib/admin-db/types'
-import { TABLES, MASTER_TABLES, DEDICATED_TABLES, getFormFields, getDefaultFormData, getAdminModelWritePermission } from '@/lib/admin-db/config'
+import { TABLES, MASTER_TABLES, DEDICATED_TABLES, GLOBAL_MASTER_TABLES, getFormFields, getDefaultFormData, getAdminModelWritePermission } from '@/lib/admin-db/config'
 import { getColumns, getCellValue } from '@/lib/admin-db/columns'
 import { fetchAdminTableRecords, fetchAdminTableCounts, fetchEntityOptions as apiFetchEntityOptions, fetchTaskOptions as apiFetchTaskOptions, createNamedEntity } from '@/lib/admin-db/api'
 
@@ -568,6 +568,7 @@ export default function AdminDbContent() {
             onAddClick={openCreate}
             onHistoryClick={() => setImportHistoryOpen(true)}
             canCreate={canWriteCurrentModel}
+            badge={GLOBAL_MASTER_TABLES.has(activeTable) ? '全局主数据' : undefined}
           />
           {/* K25-E: semester selector */}
           <div className="flex items-center gap-3">

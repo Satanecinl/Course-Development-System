@@ -5,6 +5,7 @@ import type { PermissionKey } from '@/lib/auth/types'
 import { resolveSchedulerSemester } from '@/lib/semester'
 import { guardAdminSlotUpdate, guardAdminSlotCreate } from '@/lib/schedule/slot-mutation-guard'
 import { guardAdminTaskUpdate } from '@/lib/schedule/teaching-task-mutation-guard'
+import { activeCanonicalClassGroupWhere } from '@/lib/classgroup-global-query'
 
 const MODEL_MAP: Record<string, keyof typeof prisma> = {
   classgroup: 'classGroup',
@@ -170,9 +171,15 @@ export async function GET(
 
     const include = INCLUDE_MAP[model.toLowerCase()]
     const findArgs: Record<string, unknown> = { take: 500 }
-    if (semester) {
+
+    // L8-C5A: classgroup is global master data — ignore semester filter,
+    // use active canonical filter instead.
+    if (model.toLowerCase() === 'classgroup') {
+      findArgs.where = activeCanonicalClassGroupWhere()
+    } else if (semester) {
       findArgs.where = scopedWhere(model, semester.id)
     }
+
     if (include) {
       findArgs.include = include
     }

@@ -1,21 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requirePermission } from '@/lib/auth/require-permission'
-import { resolveSchedulerSemester } from '@/lib/semester'
+import { activeCanonicalClassGroupWhere } from '@/lib/classgroup-global-query'
 
 export async function GET(request: NextRequest) {
   try {
     const auth = await requirePermission('data:read', request)
     if ('error' in auth) return auth.error
 
-    const { searchParams } = new URL(request.url)
-    const semesterIdParam = searchParams.get('semesterId')
-    const semester = await resolveSchedulerSemester({
-      semesterId: semesterIdParam ? parseInt(semesterIdParam, 10) : undefined,
-    })
-
+    // L8-C5A: ClassGroup is global master data — return active canonical
+    // ClassGroups regardless of semester selection.
     const classGroups = await prisma.classGroup.findMany({
-      where: { semesterId: semester.id },
+      where: activeCanonicalClassGroupWhere(),
       orderBy: { name: 'asc' },
       select: { id: true, name: true },
     })
