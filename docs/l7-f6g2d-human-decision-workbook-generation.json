@@ -1,0 +1,29 @@
+{
+  "stage": "L7-F6G2D-HUMAN-DECISION-WORKBOOK-GENERATION",
+  "status": "WORKBOOK_GENERATED_WAITING_FOR_USER_EDIT",
+  "dbWrite": false,
+  "targetSemesterId": 4,
+  "sourceOfTruthDecisionCount": 358,
+  "formalDecidedBefore": 33,
+  "pendingBefore": 325,
+  "externalPending": 21,
+  "duplicateRiskPending": 204,
+  "ambiguousPending": 98,
+  "weeklyHoursPending": 1,
+  "ambiguousMappingPending": 1,
+  "candidateDictionaryRows": 359,
+  "sheets": [
+    "README",
+    "Summary",
+    "External_21",
+    "DuplicateRisk_204",
+    "Ambiguous_98",
+    "Other_2",
+    "Candidate_Dictionary",
+    "Export_Check"
+  ],
+  "workbookPath": "temp/local-artifacts/l7-f6g2d/user-decision-workbook.local.xlsx",
+  "workbookTracked": false,
+  "readyForControlledWrite": false,
+  "userActionRequired": "edit workbook, then run import-human-decision-workbook-l7-f6g2d.ts"
+}
