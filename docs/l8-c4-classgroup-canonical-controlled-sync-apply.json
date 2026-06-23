@@ -1,6 +1,7 @@
 {
   "stage": "L8-C4-CLASSGROUP-CANONICAL-CONTROLLED-SYNC-APPLY",
-  "status": "CLOSED",
+  "status": "FAILED_ROLLED_BACK",
+  "rollbackNote": "DB restored to pre-C4 baseline. See docs/l8-c4a-failed-apply-rollback-and-root-cause-audit.md for details.",
   "backupBasename": "prisma/dev.db.backup-before-l8-c4-classgroup-canonical-sync-20260623141644",
   "createdClassGroups": 16,
   "updatedClassGroups": 227,

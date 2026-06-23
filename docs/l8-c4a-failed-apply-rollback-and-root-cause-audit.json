@@ -1,0 +1,76 @@
+{
+  "stage": "L8-C4A-FAILED-APPLY-ROLLBACK-AND-ROOT-CAUSE-AUDIT",
+  "status": "CLOSED",
+  "l8c4Status": "FAILED_ROLLED_BACK",
+  "l8c5Status": "BLOCKED",
+  "teachingTaskImportBlocked": true,
+
+  "failedStateEvidenceBackup": "prisma/dev.db.backup-failed-l8-c4-before-rollback-20260623144218",
+  "restoreBackup": "prisma/dev.db.backup-before-l8-c4-classgroup-canonical-sync-20260623141644",
+
+  "rollbackResult": {
+    "restored": true,
+    "baselineRestored": true,
+    "postRollbackBaseline": {
+      "course": 104, "teacher": 427,
+      "classGroupTotal": 442, "classGroupSem1": 36, "classGroupSem4": 406,
+      "teachingTaskSem4": 0, "teachingTaskClass": 446,
+      "scheduleSlotSem4": 0, "scheduleAdjustmentSem4": 0,
+      "importBatchTotal": 39,
+      "canonicalKeyNull": 442, "isActiveTrue": 442
+    }
+  },
+
+  "rootCauseAudit": {
+    "plannedNameCollision": {
+      "cause": "buildPlannedName omits educationLevel/schoolLength/direction; multiple canonical keys share identical plannedName",
+      "affectedKeys": 29,
+      "c4PreflightFailure": "dry-run did not assert plannedName collision count == 0",
+      "c4bRequiredSafeguard": "disambiguated display name OR use uniqueKey OR abort on collision > 0"
+    },
+    "ttcDeletion": {
+      "deleted": 96,
+      "cause": "C4 script delete branch for @@unique([teachingTaskId, classGroupId]) collision",
+      "violatedForbidden": "Section 三: 不删除任何数据, 不创建 TeachingTaskClass",
+      "c4PreflightFailure": "dry-run did not assert TTC total unchanged",
+      "c4bRequiredSafeguard": "PROHIBIT any delete() in apply; abort on unique constraint; pre-flight assert TTC total unchanged"
+    },
+    "countDrift": {
+      "drift": {
+        "create": { "planned": 61, "actual": 16, "delta": -45 },
+        "update": { "planned": 166, "actual": 227, "delta": +61 },
+        "deactivate": { "planned": 250, "actual": 260, "delta": +10 },
+        "migrateTTC": { "planned": 357, "actual": 588, "delta": +231 }
+      },
+      "causes": [
+        "Manual + composite decisions changed TTC migration count",
+        "plan toClassGroupId not preserved in unified decisions",
+        "Dry-run and apply used different matching logic",
+        "Pre-flight invariants not asserted before transaction"
+      ],
+      "c4bRequiredSafeguard": "immutable plan snapshot; apply must match snapshot exactly; pre-flight assert counts"
+    }
+  },
+
+  "c4bRequiredSafeguards": [
+    "Disambiguate plannedName OR use uniqueKey OR abort on collision count > 0",
+    "PROHIBIT any tx.teachingTaskClass.delete() in apply",
+    "If unique constraint would fail, abort transaction",
+    "Pre-flight assert: planned create == expected, update == expected, deactivate == expected, migrate == expected",
+    "Pre-flight assert: plannedName collision count == 0",
+    "Pre-flight assert: TTC total unchanged",
+    "Any pre-flight failure must abort with specific reasonCode"
+  ],
+
+  "verificationResults": {
+    "prismaValidate": "PASS",
+    "migrateStatus": "PASS",
+    "build": "PASS",
+    "typecheck": "PASS",
+    "lint": "PASS",
+    "k22c": "PASS",
+    "scanDocsPii": "PASS"
+  },
+
+  "recommendedNextStage": "L8-C4B-CLASSGROUP-CANONICAL-SYNC-REDESIGN"
+}

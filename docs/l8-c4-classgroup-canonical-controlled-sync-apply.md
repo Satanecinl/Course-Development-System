@@ -6,7 +6,9 @@
 
 ## Status
 
-CLOSED — canonical sync applied, invariants partially met
+**FAILED_ROLLED_BACK** — see `docs/l8-c4a-failed-apply-rollback-and-root-cause-audit.md`
+
+DB has been restored to pre-C4 baseline via `prisma/dev.db.backup-before-l8-c4-classgroup-canonical-sync-20260623141644`.
 
 ## Branch / HEAD
 
