@@ -1,0 +1,15 @@
+{
+  "stage": "L8-C3C-CLASSGROUP-COMPOSITE-TTC-SPLIT-REVIEW",
+  "status": "COMPLETE",
+  "compositeSourceClassGroups": 2,
+  "affectedTTCTotal": 18,
+  "affectedTTCCountCG19": 14,
+  "affectedTTCCountCG36": 4,
+  "autoClassifiedHIGH": 18,
+  "needsUserDecision": 0,
+  "localMdPath": "temp/local-artifacts/l8-c3c/composite-ttc-split-review.local.md",
+  "localJsonPath": "temp/local-artifacts/l8-c3c/composite-ttc-split-review.local.json",
+  "readyForC4Apply": false,
+  "userDecisionRequired": true,
+  "teachingTaskImportBlocked": true
+}
