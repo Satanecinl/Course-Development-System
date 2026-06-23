@@ -1,0 +1,139 @@
+{
+  "stage": "L8-B0-ALL-STAFF-TEACHER-COVERAGE-PLAN",
+  "status": "CLOSED",
+  "generatedAt": "2026-06-23T03:45:00Z",
+  "branch": "master",
+  "head": "53af184fb422d9c073bd76efb4d1fee881a9d472",
+  "dbWrite": false,
+  "dbBaselineUnchanged": true,
+  "targetSemesterId": 4,
+  "teacherSemanticDecision": "ALL_STAFF_PERSON_TABLE",
+  "rationale": "User decided Teacher = 全体教职工人员表. L8-A's STAFF_ONLY_DO_NOT_IMPORT classification is REJECTED as a skip reason. All valid staff/contacts persons enter Teacher coverage unless duplicate/invalid/ambiguous.",
+  "inputFiles": {
+    "staffDb": "exists (read-only)",
+    "contactsXlsx": "exists (read-only)"
+  },
+  "sourceFiles": {
+    "staffDb": {
+      "tableCount": 1,
+      "recordCount": 436
+    },
+    "contactsXlsx": {
+      "sheetCount": 30,
+      "recordCount": 436
+    }
+  },
+  "unionPeople": {
+    "total": 424,
+    "bothSourcesCount": 414,
+    "staffDbOnlyCount": 0,
+    "contactsXlsxOnlyCount": 10,
+    "classificationCounts": {
+      "ALREADY_IN_TEACHER": 231,
+      "SAFE_CREATE_TEACHER": 191,
+      "NEEDS_MANUAL_REVIEW": 0,
+      "DUPLICATE_SOURCE_PERSON": 2,
+      "INVALID_PERSON_RECORD": 0,
+      "AMBIGUOUS_EXISTING_TEACHER_MATCH": 0
+    },
+    "mutuallyExclusiveInvariant": "PASS (sum=424 = union total)",
+    "l8aComparisonNote": "L8-A reported 70 SAFE_CREATE_TEACHER-equivalent (TEACHER_CANDIDATE) + 123 skipStaffOnly (now eligible). L8-B0 SAFE_CREATE_TEACHER = 191 = 70 + 121 (the 2 difference are DUPLICATE_SOURCE_PERSON, which L8-A flagged as 10 intra-source duplicates but L8-B0 counts only the 2 NOT already in Teacher)."
+  },
+  "dbTeacher": {
+    "totalCount": 236,
+    "matchedToUnionPeople": 231,
+    "dbOnlyCount": 5,
+    "duplicateNormalizedNameGroupCount": 0,
+    "notRepresentedInUnionPeople": 5
+  },
+  "teacherSchema": {
+    "modelName": "Teacher",
+    "fields": [
+      "id",
+      "name",
+      "employeeNo",
+      "department",
+      "position",
+      "rank",
+      "phone",
+      "officePhone",
+      "createdAt",
+      "updatedAt"
+    ],
+    "minimumRequiredForCreate": ["name"],
+    "uniqueConstraints": ["name (UNIQUE)"],
+    "canWriteDepartment": true,
+    "canWritePosition": true,
+    "canWritePhone": true,
+    "canWriteOfficePhone": true,
+    "canWriteEmployeeNo": true,
+    "canWriteRank": true,
+    "plannedCreatePayloadShape": {
+      "name": "String",
+      "employeeNo": "String?",
+      "department": "String?",
+      "position": "String?",
+      "rank": "String?",
+      "phone": "String?",
+      "officePhone": "String?"
+    }
+  },
+  "syncPlan": {
+    "safeCreateTeacherCount": 191,
+    "needsManualReviewCount": 0,
+    "duplicateSourcePersonCount": 2,
+    "invalidPersonRecordCount": 0,
+    "ambiguousExistingTeacherMatchCount": 0,
+    "alreadyCoveredTeacherCount": 231,
+    "dbOnlyTeacherCount": 5,
+    "duplicateSourcePersonNote": "Both entries have multiple rows in same source (staffDb) with conflicting department/title. Routed to L8-B1 manual review."
+  },
+  "dbBaseline": {
+    "before": {
+      "Course": 104,
+      "Teacher": 236,
+      "ClassGroup_sem1": 36,
+      "ClassGroup_sem4": 406,
+      "TeachingTask_sem4": 0,
+      "TeachingTaskClass": 446,
+      "ScheduleSlot_sem4": 0,
+      "ScheduleAdjustment_sem4": 0,
+      "ImportBatch_total": 39,
+      "ImportBatch_39_status": "APPLIED",
+      "ImportBatch_40_present": false
+    },
+    "after": {
+      "Course": 104,
+      "Teacher": 236,
+      "ClassGroup_sem1": 36,
+      "ClassGroup_sem4": 406,
+      "TeachingTask_sem4": 0,
+      "TeachingTaskClass": 446,
+      "ScheduleSlot_sem4": 0,
+      "ScheduleAdjustment_sem4": 0,
+      "ImportBatch_total": 39,
+      "ImportBatch_39_status": "APPLIED",
+      "ImportBatch_40_present": false
+    },
+    "unchanged": true
+  },
+  "verification": {
+    "auditScriptRan": "PASS",
+    "mutuallyExclusiveInvariant": "PASS",
+    "dbBaselineUnchanged": "PASS",
+    "noDbWrite": "PASS",
+    "noBackup": "PASS",
+    "noApply": "PASS",
+    "committedDocsContainNoRawPII": "PASS",
+    "privateLocalArtifactsContainRawForReview": "PASS (gitignored)"
+  },
+  "nextStageRecommendation": "L8-B1-ALL-STAFF-TEACHER-MANUAL-REVIEW-WORKBOOK",
+  "rationaleForNextStage": "duplicateSourcePersonCount=2 > 0; these require human review to decide whether to merge, keep latest, or skip. Spec defaults to L8-B1 unless ALL safe and user explicitly approves.",
+  "teachingTaskImportBlocked": true,
+  "rawIncludedInCommitted": false,
+  "privateLocalArtifacts": [
+    "temp/local-artifacts/l8-b0/all-staff-union-people.raw.local.json",
+    "temp/local-artifacts/l8-b0/all-staff-teacher-sync-plan.local.json",
+    "temp/local-artifacts/l8-b0/all-staff-teacher-sync-plan.local.xlsx"
+  ]
+}
