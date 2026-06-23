@@ -1,0 +1,190 @@
+{
+  "stage": "L8-C0-CLASSGROUP-GLOBAL-MASTER-DATA-SEMANTIC-RECONCILIATION",
+  "semanticDecision": "GLOBAL_MASTER_DATA",
+  "referenceMajorCount": 34,
+  "referenceClassCount": 227,
+  "referenceUniqueCanonicalKeys": 209,
+  "referenceDuplicateKeys": 18,
+  "referenceTotalStudents": 6736,
+  "referenceColleges": 6,
+  "referenceUniqueMajors": 35,
+  "referenceGrades": {
+    "2024级": 76,
+    "2025级": 98,
+    "2022级": 6,
+    "2023级": 46,
+    "2021级": 1
+  },
+  "referenceEducationLevels": {
+    "高职": 206,
+    "中高职": 21
+  },
+  "referenceSchoolLengths": {
+    "三年制": 189,
+    "二年制": 17,
+    "五年制": 21
+  },
+  "dbClassGroupTotal": 442,
+  "dbClassGroupBySemester": {
+    "1": 36,
+    "4": 406
+  },
+  "dbClassGroupSemTarget": 406,
+  "dbSemesterCopyOverlap": 36,
+  "matchResult": {
+    "REFERENCE_MATCH_EXACT": 182,
+    "REFERENCE_MATCH_ALIAS": 4,
+    "REFERENCE_MATCH_AMBIGUOUS": 3,
+    "REFERENCE_ONLY_MISSING_IN_DB": 26,
+    "DB_ONLY_EXTRA": 209,
+    "DB_DUPLICATE": 0,
+    "SUSPICIOUS_NAME": 1,
+    "SEMESTER_COPY": 5,
+    "IMPORT_ARTIFACT": 0,
+    "COMPOSITE_OR_TEMP_GROUP": 2
+  },
+  "referencedExtraCount": 0,
+  "unreferencedExtraCount": 217,
+  "deleteSafeCandidateCount": 406,
+  "mergeRequiredCandidateCount": 0,
+  "migrationRequiredCandidateCount": 0,
+  "schemaAudit": {
+    "model": "ClassGroup",
+    "fields": {
+      "id": {
+        "type": "Int",
+        "required": true,
+        "autoincrement": true
+      },
+      "name": {
+        "type": "String",
+        "required": true
+      },
+      "studentCount": {
+        "type": "Int?",
+        "required": false
+      },
+      "advisorName": {
+        "type": "String?",
+        "required": false
+      },
+      "advisorPhone": {
+        "type": "String?",
+        "required": false
+      },
+      "semesterId": {
+        "type": "Int",
+        "required": true
+      },
+      "semester": {
+        "type": "Semester @relation",
+        "required": true
+      },
+      "taskClasses": {
+        "type": "TeachingTaskClass[]",
+        "required": false
+      },
+      "createdAt": {
+        "type": "DateTime",
+        "required": true
+      },
+      "updatedAt": {
+        "type": "DateTime",
+        "required": true
+      }
+    },
+    "uniqueConstraints": [
+      "@@unique([semesterId, name])"
+    ],
+    "indexes": [
+      "@@index([semesterId])"
+    ],
+    "semesterIdRequired": true,
+    "relationsToTeachingTaskClass": true,
+    "relationsToSemester": true,
+    "canBeMadeGlobalAdditively": false,
+    "notes": "ClassGroup is currently semester-scoped. @@unique([semesterId, name]) prevents global uniqueness. Making global requires: (1) make semesterId nullable, (2) change unique to [name] only, (3) migrate existing data, (4) update all API/UI/import/scheduler queries."
+  },
+  "codeUsageAudit": {
+    "IMPORT": {
+      "affected": true,
+      "description": "Import pipeline creates ClassGroup via upsert with semesterId. confirmImportBatch() in importer.ts uses semesterId to scope ClassGroup lookup/creation. Making ClassGroup global would require removing semesterId from upsert conditions.",
+      "files": [
+        "src/lib/import/importer.ts"
+      ]
+    },
+    "COURSE_SETTING": {
+      "affected": true,
+      "description": "Course setting preview queries ClassGroup by targetSemesterId. If ClassGroup becomes global, query should drop semesterId filter.",
+      "files": [
+        "src/app/api/admin/course-setting/route.ts (if exists)"
+      ]
+    },
+    "SCHEDULE_DISPLAY": {
+      "affected": true,
+      "description": "Schedule grid displays ClassGroup names via TeachingTaskClass. No direct semesterId filter on ClassGroup in display, but indirect via TeachingTask.semesterId.",
+      "files": [
+        "src/components/schedule-grid.tsx"
+      ]
+    },
+    "SCHEDULER_SOLVER": {
+      "affected": false,
+      "description": "Solver loads ClassGroup via TeachingTaskClass. Does not filter ClassGroup by semesterId directly.",
+      "files": [
+        "src/lib/scheduler/data-loader.ts"
+      ]
+    },
+    "ADJUSTMENT": {
+      "affected": false,
+      "description": "Adjustment system references ClassGroup indirectly via TeachingTaskClass. No direct ClassGroup semesterId query.",
+      "files": [
+        "src/lib/schedule/adjustments.ts"
+      ]
+    },
+    "ADMIN_DB_PAGE": {
+      "affected": true,
+      "description": "Admin DB page queries ClassGroup by active semester. Making ClassGroup global would require removing semester filter.",
+      "files": [
+        "src/lib/admin-db/config.ts",
+        "src/app/admin/db/page.tsx (if exists)"
+      ]
+    },
+    "SETTINGS": {
+      "affected": false,
+      "description": "Settings center does not directly manage ClassGroup.",
+      "files": []
+    },
+    "SEMESTER_SCOPING": {
+      "affected": true,
+      "description": "ClassGroup.semesterId is the core of semester scoping for class groups. Making global requires schema migration + all query updates.",
+      "files": [
+        "prisma/schema.prisma",
+        "src/store/semesterStore.ts"
+      ]
+    },
+    "API_VALIDATION": {
+      "affected": true,
+      "description": "API routes validate ClassGroup existence within semester scope. Global ClassGroup would need different validation.",
+      "files": [
+        "src/app/api/admin/import/confirm/route.ts"
+      ]
+    }
+  },
+  "recommendedOption": "HYBRID (Option A short-term cleanup + Option B long-term globalization)",
+  "recommendedNextStage": "L8-C1-CLASSGROUP-GLOBALIZATION-DESIGN",
+  "baselineBefore": {
+    "course": 104,
+    "teacher": 427,
+    "classGroupSem1": 36,
+    "classGroupSemTarget": 406,
+    "teachingTaskSemTarget": 0,
+    "teachingTaskClass": 446,
+    "scheduleSlotSemTarget": 0,
+    "scheduleAdjustmentSemTarget": 0,
+    "importBatchTotal": 39
+  },
+  "baselineDrift": null,
+  "noDBWriteConfirmation": true,
+  "noApplyConfirmation": true,
+  "noBackupConfirmation": true
+}
