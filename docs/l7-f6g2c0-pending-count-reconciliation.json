@@ -1,0 +1,27 @@
+{
+  "stage": "L7-F6G2C0-PENDING-COUNT-RECONCILIATION",
+  "dbWrite": false,
+  "targetSemesterId": 4,
+  "sourceOfTruthArtifact": "L7-F6G2A_DRAFT",
+  "sourceOfTruthDecisionCount": 358,
+  "sourceOfTruthPendingCount": 325,
+  "extraPendingCount": 53,
+  "extraPendingByCategory": {
+    "g1IndexDifference": 0,
+    "skipRowsExp": 58,
+    "weeklyHoursExp": 18,
+    "g1OtherContributions": -23,
+    "totalExtra": 53
+  },
+  "countMismatchRootCause": "GROUPED_VS_EXPANDED_DECISION_COUNT",
+  "isBug": false,
+  "requiresCodeFix": false,
+  "requiresArtifactRegeneration": false,
+  "safeToProceedToNextDecisionBatch": true,
+  "recommendedNextStage": "L7-F6G2C-EXTERNAL-TEACHER-DECISION-BATCH",
+  "localArtifacts": {
+    "rawJson": "temp/local-artifacts/l7-f6g2c0/pending-count-reconciliation.raw.local.json",
+    "aggregateJson": "temp/local-artifacts/l7-f6g2c0/pending-count-reconciliation.aggregate.json",
+    "csv": "temp/local-artifacts/l7-f6g2c0/extra-pending-items.local.csv"
+  }
+}
