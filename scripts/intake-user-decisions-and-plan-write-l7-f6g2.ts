@@ -316,20 +316,28 @@ npx tsx scripts/intake-user-decisions-and-plan-write-l7-f6g2.ts --target-semeste
   const approvedExamTypeAutoFixes = 0
   const approvedAmbiguousMappings = 0
 
-  // Build decisionId → decision map
-  const decisionById = new Map<string, UserDecisionItem>()
-  for (const d of userDecisions) decisionById.set(d.decisionId, d)
+  // Build (category, decisionId) → decision map using composite key.
+  // Using composite key avoids collision when the same decisionId hash
+  // appears in different categories (e.g. 22 staffContacts/external
+  // hash collisions in the L7-F6G2A draft).
+  const decisionByCompositeKey = new Map<string, UserDecisionItem>()
+  for (const d of userDecisions) {
+    const compositeKey = `${d.category}:${d.decisionId}`
+    decisionByCompositeKey.set(compositeKey, d)
+  }
+  const lookup = (category: string, decisionId: string): UserDecisionItem | undefined =>
+    decisionByCompositeKey.get(`${category}:${decisionId}`)
 
   // Teacher creates
   for (const s of g1.staffContacts) {
-    const d = decisionById.get(s.decisionId)
+    const d = lookup('staffContactsTeacher', s.decisionId)
     if (d?.decisionStatus === 'approve') {
       // Existing Teacher check: if name already in Teacher=236, treat as alias not create
       approvedTeacherAliases++ // conservative — L7-F6H will re-verify
     }
   }
   for (const e of g1.external) {
-    const d = decisionById.get(e.decisionId)
+    const d = lookup('externalTeacher', e.decisionId)
     if (d?.decisionStatus === 'approve') {
       if (isExternalGeneric(e.name)) {
         invalidDecisionItems++
@@ -340,10 +348,12 @@ npx tsx scripts/intake-user-decisions-and-plan-write-l7-f6g2.ts --target-semeste
     }
   }
   for (const c of g1.classGroups) {
-    const d = decisionById.get(shortHash(c.major, 16))
+    const majorHash = shortHash(c.major, 16)
     if (c.action === 'MANUAL_CONFIRM_MAJOR_ALIAS') {
+      const d = lookup('majorAlias', majorHash)
       if (d?.decisionStatus === 'approve') approvedMajorAliases++
     } else {
+      const d = lookup('newMajorClassGroup', majorHash)
       if (d?.decisionStatus === 'approve') approvedClassGroupCreates++
     }
   }
@@ -390,10 +400,11 @@ npx tsx scripts/intake-user-decisions-and-plan-write-l7-f6g2.ts --target-semeste
     },
   }
 
-  // Write local artifacts
+  // Write local artifacts. G2B preserves the formal partial decision file at
+  // user-decisions.intake.local.json — write validation log to a separate file.
   const laDir = join(resolve(__dirname, '..'), 'temp', 'local-artifacts', 'l7-f6g2')
   if (!existsSync(laDir)) mkdirSync(laDir, { recursive: true })
-  writeFileSync(join(laDir, 'user-decisions.intake.local.json'), JSON.stringify({
+  writeFileSync(join(laDir, 'g2-intake-validation.local.json'), JSON.stringify({
     stage: STAGE,
     targetSemesterId: args.targetSemesterId,
     decisionSourcePath: userDecisionResult.path,

@@ -88,8 +88,8 @@ async function main(): Promise<void> {
 
   console.log('\n--- 5. User decision file detection ---')
   record('C19 intake detects user decision file', plan.userDecisionFileFound === true || plan.userDecisionFileFound === false)
-  // If BLOCKED, userDecisionFileFound should be false
-  record('C20 BLOCKED when no user decisions', plan.status === 'BLOCKED_WAITING_FOR_USER_DECISIONS' || plan.readyForControlledWrite === true)
+  // L7-F6G2B introduces partial decisions: status may be PARTIAL_OR_BLOCKED with decidedItems > 0
+  record('C20 BLOCKED or PARTIAL when no full decisions', plan.status === 'BLOCKED_WAITING_FOR_USER_DECISIONS' || plan.status === 'PARTIAL_OR_BLOCKED' || plan.readyForControlledWrite === true)
 
   console.log('\n--- 6. recommendedAction not treated as approval ---')
   record('C21 recommendedActionTreatedAsApproval = false', plan.recommendedActionTreatedAsApproval === false)
@@ -103,14 +103,14 @@ async function main(): Promise<void> {
   record('C27 plan has nextStage', typeof plan.nextStage === 'string')
   record('C28 plan has writePlanHash or null', plan.writePlanHash === null || typeof plan.writePlanHash === 'string')
 
-  console.log('\n--- 8. Approved action counts (only when user decisions present) ---')
-  if (plan.userDecisionFileFound === true && plan.readyForControlledWrite !== false) {
-    record('C29 approvedTeacherCreates reported', typeof plan.approvedTeacherCreates === 'number')
+  console.log('\n--- 8. Approved action counts ---')
+  if (plan.userDecisionFileFound === true) {
+    record('C29 approvedTeacherAliases reported', typeof plan.approvedTeacherAliases === 'number')
     record('C30 approvedExternalTeacherCreates reported', typeof plan.approvedExternalTeacherCreates === 'number')
     record('C31 approvedClassGroupCreates reported', typeof plan.approvedClassGroupCreates === 'number')
     record('C32 approvedMajorAliases reported', typeof plan.approvedMajorAliases === 'number')
   } else {
-    record('C29 all approved counts = 0 (BLOCKED)', (plan.approvedTeacherCreates ?? 0) === 0)
+    record('C29 all approved counts = 0 (BLOCKED)', (plan.approvedTeacherAliases ?? 0) === 0)
     record('C30 approved external = 0 (BLOCKED)', (plan.approvedExternalTeacherCreates ?? 0) === 0)
     record('C31 approved CG = 0 (BLOCKED)', (plan.approvedClassGroupCreates ?? 0) === 0)
     record('C32 approved alias = 0 (BLOCKED)', (plan.approvedMajorAliases ?? 0) === 0)
