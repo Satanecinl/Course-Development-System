@@ -1,0 +1,125 @@
+{
+  "stage": "L8-B1-ALL-STAFF-TEACHER-CONTROLLED-SYNC-APPLY",
+  "status": "CLOSED",
+  "generatedAt": "2026-06-23T04:05:00Z",
+  "branch": "master",
+  "head": "8ae20d33f85422afcd8c019c14d21485c735b616",
+  "dbWrite": true,
+  "dbBaselineUnchangedExceptTeacher": true,
+  "targetSemesterId": 4,
+  "teacherSemanticDecision": "ALL_STAFF_PERSON_TABLE",
+  "b0PlanCounts": {
+    "safeCreateTeacher": 191,
+    "needsManualReview": 0,
+    "duplicateSourcePerson": 2,
+    "invalidPersonRecord": 0,
+    "ambiguousExistingTeacherMatch": 0
+  },
+  "applyMode": "valid-token",
+  "confirmTokenHash": "b346c425c3d6a39a",
+  "invalidTokenTestResult": {
+    "tokenUsed": "INVALID_TOKEN",
+    "dbWritten": false,
+    "teacherCountBefore": 236,
+    "teacherCountAfter": 236,
+    "exitCode": 0,
+    "pass": true
+  },
+  "validTokenApplyResult": {
+    "tokenUsed": "WRITE_L8_B1_ALL_STAFF_TEACHERS",
+    "dbWritten": true,
+    "transactionCommitted": true,
+    "transactionRolledBack": false,
+    "plannedCreates": 191,
+    "actualCreates": 191,
+    "plannedUpdates": 0,
+    "actualUpdates": 0,
+    "plannedDeletes": 0,
+    "actualDeletes": 0,
+    "uniqueNameConflict": false,
+    "failureReason": null
+  },
+  "teacherBefore": 236,
+  "teacherAfter": 427,
+  "teacherDelta": 191,
+  "duplicateNormalizedNameGroupCount": 0,
+  "invalidTeacherNameCount": 0,
+  "allPlannedNamesCreated": true,
+  "missingPlannedNamesCount": 0,
+  "duplicateSourcePersonNotCreatedCount": 2,
+  "dbOnlyTeacherRetainedCount": 5,
+  "postAuditResult": {
+    "teacherAfter": 427,
+    "teacherExpected": 427,
+    "teacherDelta": 191,
+    "baselineUnchangedExceptTeacher": true,
+    "newTeacherCount": 191,
+    "duplicateNormalizedNameGroupCount": 0,
+    "invalidTeacherNameCount": 0,
+    "dbOnlyTeacherRetainedCount": 5,
+    "duplicateSourcePersonNotCreatedCount": 2,
+    "allPlannedNamesCreated": true,
+    "missingPlannedNamesCount": 0,
+    "pass": true
+  },
+  "schema": {
+    "plannedCreatePayloadShape": {
+      "name": "String",
+      "employeeNo": "String?",
+      "department": "String?",
+      "position": "String?",
+      "rank": "String?",
+      "phone": "String?",
+      "officePhone": "String?"
+    },
+    "minimumRequiredForCreate": ["name"],
+    "uniqueConstraints": ["name (UNIQUE)"]
+  },
+  "dbBaselineBefore": {
+    "Course": 104,
+    "Teacher": 236,
+    "ClassGroup_sem1": 36,
+    "ClassGroup_sem4": 406,
+    "TeachingTask_sem4": 0,
+    "TeachingTaskClass": 446,
+    "ScheduleSlot_sem4": 0,
+    "ScheduleAdjustment_sem4": 0,
+    "ImportBatch_total": 39,
+    "ImportBatch_39_status": "APPLIED",
+    "ImportBatch_40_present": false
+  },
+  "dbBaselineAfter": {
+    "Course": 104,
+    "Teacher": 427,
+    "ClassGroup_sem1": 36,
+    "ClassGroup_sem4": 406,
+    "TeachingTask_sem4": 0,
+    "TeachingTaskClass": 446,
+    "ScheduleSlot_sem4": 0,
+    "ScheduleAdjustment_sem4": 0,
+    "ImportBatch_total": 39,
+    "ImportBatch_39_status": "APPLIED",
+    "ImportBatch_40_present": false
+  },
+  "backup": {
+    "basename": "dev.db.backup-before-l8-b1-all-staff-teacher-sync-20260623-120236",
+    "createdBeforeApply": true,
+    "gitTracked": false
+  },
+  "rawIncludedInCommitted": false,
+  "privateLocalArtifacts": [
+    "temp/local-artifacts/l8-b1/all-staff-teacher-controlled-sync-apply.raw.local.json"
+  ],
+  "nextStageRecommendation": "L8-C0-CLASSGROUP-GLOBAL-MASTER-DATA-SEMANTIC-RECONCILIATION",
+  "teachingTaskImportBlocked": true,
+  "verification": {
+    "applyScriptRan": "PASS",
+    "dryRunPass": "PASS",
+    "invalidTokenTestPass": "PASS",
+    "validTokenApplyPass": "PASS",
+    "postAuditPass": "PASS",
+    "noDbWriteExceptTeacher": "PASS",
+    "committedDocsContainNoRawPII": "PASS",
+    "privateLocalArtifactsContainRawForReview": "PASS (gitignored)"
+  }
+}
