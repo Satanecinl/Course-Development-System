@@ -1,0 +1,100 @@
+{
+  "stage": "L8-C4B-CLASSGROUP-CANONICAL-SYNC-REDESIGN",
+  "branch": "master",
+  "headBefore": "2f3bbea14b187aa06efd7d48582f115b5a7b6416",
+  "forcePush": false,
+  "dbWritten": false,
+  "applyExecuted": false,
+  "validTokenApplyRun": false,
+  "backupCreated": false,
+  "schemaModified": false,
+  "migrationCreated": false,
+  "oldC4ApplyScript": {
+    "blockedOrSuperseded": true,
+    "canNoLongerWriteDB": true,
+    "supersededBy": "L8-C4B-CLASSGROUP-CANONICAL-SYNC-REDESIGN"
+  },
+  "plannedNameCollision": {
+    "oldCollisionCount": 29,
+    "oldDuplicateBaseNameCount": 26,
+    "newPlannedNameDuplicateCount": 0,
+    "canonicalKeyDuplicateCount": 0,
+    "solutionReasonCode": "educationLevel_schoolLength_suffix_for_groups_with_schoolLength_variance"
+  },
+  "immutableSnapshot": {
+    "path": "temp/local-artifacts/l8-c4b/classgroup-canonical-sync-plan.immutable.local.json",
+    "mdPath": "temp/local-artifacts/l8-c4b/classgroup-canonical-sync-plan.immutable.local.md",
+    "hash": "f4ead9a4c10b643a14e2e023a54865387ffcb43b5e5cf75fd741ecca5ddc8e80",
+    "planVersion": "l8-c4b-v1",
+    "referenceCanonicalCount": 227
+  },
+  "planCounts": {
+    "create": 45,
+    "update": 182,
+    "deactivate": 260,
+    "hardDelete": 0,
+    "ttcMigrate": 357,
+    "ttcDelete": 0,
+    "ttcCreate": 0,
+    "finalClassGroupTotal": 487,
+    "finalTtcTotal": 446,
+    "activeCanonicalRefXlsx": 227,
+    "canonicalKeyNonNull": 227
+  },
+  "ttcMigrationCollisionCheck": {
+    "collisionCount": 5,
+    "readyForApply": false,
+    "conflictingTeachingTaskIds": [33, 168, 174, 176, 181],
+    "convergentTargetClassGroupId": 39,
+    "note": "5 teaching tasks each have 2 TTCs that would migrate to the same canonical target CG#39. C4C refuses to apply; manual review required."
+  },
+  "preflightVerifier": {
+    "totalGates": 29,
+    "passedGates": 27,
+    "failedGates": 2,
+    "readyForC4CApply": false,
+    "failedGateNames": ["ttc-collision-count", "snapshot-ready-for-c4c"]
+  },
+  "dbBaselineBefore": {
+    "course": 104,
+    "teacher": 427,
+    "cgTotal": 442,
+    "cgSem1": 36,
+    "cgSem4": 406,
+    "ttc": 446,
+    "ttSem4": 0,
+    "ssSem4": 0,
+    "saSem4": 0,
+    "ibTotal": 39,
+    "ckNull": 442,
+    "activeTrue": 442
+  },
+  "dbBaselineAfter": {
+    "course": 104,
+    "teacher": 427,
+    "cgTotal": 442,
+    "cgSem1": 36,
+    "cgSem4": 406,
+    "ttc": 446,
+    "ttSem4": 0,
+    "ssSem4": 0,
+    "saSem4": 0,
+    "ibTotal": 39,
+    "ckNull": 442,
+    "activeTrue": 442
+  },
+  "forbiddenFilesCheck": {
+    "prismaDevDbCommitted": false,
+    "tempDirCommitted": false,
+    "xlsxCommitted": false,
+    "csvCommitted": false,
+    "backupCommitted": false
+  },
+  "nextStage": {
+    "l8c4cRequires": "ttcCollisionCount = 0 + readyForC4CApply = true",
+    "currentBlocker": "5 TTC collisions on target CG#39 (5 teaching tasks, 10 TTC rows)",
+    "recommendedResolutionStage": "L8-C4B1 (NEW): human review of 5 TTC collision cases; re-export unified-ttc-decisions.local.json",
+    "l8c5": "BLOCKED (depends on C4 success)",
+    "teachingTaskImport": "BLOCKED (depends on C5)"
+  }
+}

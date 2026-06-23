@@ -10,6 +10,15 @@
 
 DB has been restored to pre-C4 baseline via `prisma/dev.db.backup-before-l8-c4-classgroup-canonical-sync-20260623141644`.
 
+## SUPERSEDED by L8-C4B
+
+This stage is **superseded by L8-C4B** (`docs/l8-c4b-classgroup-canonical-sync-redesign.md`).
+
+- L8-C4B redesigns the C4 apply with disambiguated plannedName, immutable plan snapshot, and preflight verifier.
+- L8-C4B has permanently blocked `scripts/apply-classgroup-canonical-sync-l8-c4.ts` from any write path.
+- L8-C4B is the source of truth going forward. C4 is referenced only for historical context.
+- See `docs/l8-c4b-classgroup-canonical-sync-redesign.json` for the current plan snapshot summary.
+
 ## Branch / HEAD
 
 - Branch: `master`
