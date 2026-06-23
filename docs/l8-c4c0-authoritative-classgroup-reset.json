@@ -1,0 +1,70 @@
+{
+  "stage": "L8-C4C0-CLASSGROUP-AUTHORITATIVE-RESET-FROM-REFERENCE",
+  "status": "CLOSED",
+  "branch": "master",
+  "headBefore": "642ac1825f4243bafdc7f622c668a55b0dceaba4",
+  "forcePush": false,
+  "dbWritten": true,
+  "applyExecuted": true,
+  "backupCreated": true,
+  "backupBasename": "prisma/dev.db.backup-before-l8-c4c0-authoritative-classgroup-reset-20260623155916",
+  "sourceFile": "D:/Desktop/Course Development System/学院专业数据库.xlsx",
+  "targetSemesterId": 4,
+  "dryRunResult": {
+    "referenceCanonicalClassCount": 227,
+    "canonicalKeyDuplicateCount": 0,
+    "plannedNameDuplicateCount": 0,
+    "createClassGroups": 45,
+    "updateClassGroups": 182,
+    "deactivateLegacyClassGroups": 260,
+    "hardDeleteClassGroups": 0,
+    "ttcMigrate": 0,
+    "ttcDelete": 0,
+    "ttcCreate": 0,
+    "pass": true
+  },
+  "invalidTokenResult": {
+    "rejected": true,
+    "dbWritten": false
+  },
+  "validTokenResult": {
+    "transactionCommitted": true,
+    "createClassGroups": 45,
+    "updateClassGroups": 182,
+    "deactivateLegacyClassGroups": 260,
+    "hardDeleteClassGroups": 0
+  },
+  "postApplyInvariants": {
+    "activeRefXlsxClassGroups": 227,
+    "sem4ActiveRefXlsxClassGroups": 227,
+    "canonicalKeyNonNullCount": 227,
+    "canonicalKeyDuplicateCount": 0,
+    "plannedNameDuplicateCount": 0,
+    "classGroupHardDeleted": 0,
+    "allPass": true
+  },
+  "protectedTableHashes": {
+    "teachingTaskClassHashBefore": "6dad6130069c0235",
+    "teachingTaskClassHashAfter": "6dad6130069c0235",
+    "teachingTaskClassHashUnchanged": true,
+    "teachingTaskHashAfter": "ba4477909515c091",
+    "courseHashAfter": "ead1faa4b20f302b",
+    "teacherHashAfter": "fe02a103fdd6dede",
+    "scheduleSlotHashAfter": "e9c2662471e8f708",
+    "scheduleAdjustmentHashAfter": "457af8f1c0194833",
+    "importBatchHashAfter": "faa9f706c2f4c70c",
+    "allUnchanged": true
+  },
+  "protectedTablesUntouched": {
+    "teachingTaskClass": true,
+    "teachingTask": true,
+    "course": true,
+    "teacher": true,
+    "scheduleSlot": true,
+    "scheduleAdjustment": true,
+    "importBatch": true
+  },
+  "professionalClassGroupMasterDataImported": true,
+  "teachingTaskImportBlocked": true,
+  "recommendedNextStage": "L8-C5-CLASSGROUP-ACTIVE-CANONICAL-QUERY-MIGRATION"
+}
