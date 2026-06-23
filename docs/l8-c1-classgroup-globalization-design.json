@@ -1,0 +1,113 @@
+{
+  "stage": "L8-C1-CLASSGROUP-GLOBALIZATION-DESIGN",
+  "status": "DESIGN_COMPLETE",
+  "description": "ClassGroup global master data implementation design. Read-only; no DB writes.",
+
+  "semanticDecisions": {
+    "classGroup": "GLOBAL_MASTER_DATA",
+    "room": "GLOBAL_MASTER_DATA (deferred to L9 series)",
+    "teacher": "ALL_STAFF_PERSON_TABLE (done L6-E1C)"
+  },
+
+  "currentSchema": {
+    "model": "ClassGroup",
+    "semesterIdRequired": true,
+    "uniqueConstraint": "@@unique([semesterId, name])",
+    "relations": ["Semester", "TeachingTaskClass"],
+    "totalRecords": 442,
+    "bySemester": { "1": 36, "4": 406 },
+    "sem1ReferencedByTTC": 36,
+    "sem4ReferencedByTTC": 0,
+    "totalTTC": 446
+  },
+
+  "targetSchema": {
+    "semesterIdHandling": "REMOVED from ClassGroup; moved to SemesterClassGroup join table (M:N)",
+    "canonicalKeyAdded": true,
+    "canonicalKeyUnique": true,
+    "nameUnique": true,
+    "isActiveAdded": true,
+    "gradeAdded": true,
+    "majorNameAdded": true,
+    "classNumberAdded": true,
+    "sourceTypeAdded": true,
+    "joinTable": "SemesterClassGroup (semesterId, classGroupId, isDefault)",
+    "teachingTaskClassFkUnchanged": true
+  },
+
+  "migrationStrategy": {
+    "phase1": "Create 227 canonical ClassGroups from reference Excel (sourceType='reference_xlsx')",
+    "phase2": "Map sem4 406 to canonical 227 via canonicalKey matching",
+    "phase3": "Migrate sem1 36 TeachingTaskClass refs to canonical ClassGroups",
+    "phase4": "Deactivate extras (isActive=false) or delete if unreferenced",
+    "postInvariant": "count(ClassGroup WHERE isActive=true AND sourceType='reference_xlsx') = 227"
+  },
+
+  "teachingTaskClassReferenceMigration": {
+    "totalRecords": 446,
+    "strategy": "For each TTC: find canonical ClassGroup by canonicalKey; update classGroupId if different",
+    "idempotent": true,
+    "prerequisite": "All canonical 227 ClassGroups must exist before TTC migration"
+  },
+
+  "apiUiImportImpact": {
+    "adminCrudRoute": { "change": "Remove ClassGroup from SEMESTER_SCOPED_MODELS → GLOBAL_MASTER_MODELS", "files": ["src/app/api/admin/[model]/route.ts"] },
+    "entityListApi": { "change": "where: { isActive: true } instead of { semesterId }", "files": ["src/app/api/entity-list/route.ts"] },
+    "classGroupsApi": { "change": "where: { isActive: true }", "files": ["src/app/api/class-groups/route.ts"] },
+    "teachingTaskApi": { "change": "Remove ClassGroup semester mismatch check", "files": ["src/app/api/teaching-task/route.ts", "src/app/api/teaching-task/[id]/route.ts"] },
+    "importPipeline": { "change": "classGroupMap from global active CGs; canonicalKey matching", "files": ["src/lib/import/importer.ts", "src/lib/import/course-setting-xlsx-preview.ts", "src/lib/import/course-setting-resolution-options.ts", "src/lib/import/course-setting-apply-l7-f.ts"] },
+    "dataSummary": { "change": "count({ isActive: true })", "files": ["src/app/api/data/summary/route.ts"] },
+    "schedulerReadiness": { "change": "count({ isActive: true })", "files": ["src/app/api/admin/scheduler/readiness/route.ts"] },
+    "adminDbUi": { "change": "Fetch global active ClassGroups; remove semester filter", "files": ["src/app/admin/db/admin-db-content.tsx", "src/lib/admin-db/api.ts"] },
+    "noChangeNeeded": ["scheduler/*", "adjustment/*", "conflict-*", "dashboard/*", "room-recommendations", "semester-store", "export-api"]
+  },
+
+  "entitiesRemainingSemesterScoped": [
+    "TeachingTask",
+    "ScheduleSlot",
+    "ScheduleAdjustment",
+    "ImportBatch",
+    "SchedulingRun",
+    "SchedulingConfig"
+  ],
+
+  "recommendedOption": "OPTION_C_PHASED_GLOBALIZATION",
+  "optionCRationale": "Each phase independently testable. Additive schema first. Data cleanup in transaction. Code changes verified with build/typecheck/lint. Final schema change last.",
+
+  "stageBreakdown": [
+    { "stage": "L8-C2", "title": "SCHEMA-PREP", "dbWrites": true, "schemaChanges": true, "description": "Add canonicalKey, isActive, grade, majorName, classNumber, sourceType columns" },
+    { "stage": "L8-C3", "title": "CANONICAL-CLEANUP-APPLY", "dbWrites": true, "schemaChanges": false, "description": "Create 227 canonical CGs, migrate sem1 TTC refs, deactivate extras" },
+    { "stage": "L8-C4", "title": "API-UI-GLOBAL-QUERY", "dbWrites": false, "schemaChanges": false, "description": "Update ~10 files to use global ClassGroup queries" },
+    { "stage": "L8-C5", "title": "SEMESTERID-REMOVAL", "dbWrites": true, "schemaChanges": true, "description": "Remove semesterId, add SemesterClassGroup join table" },
+    { "stage": "L8-C6", "title": "ACCEPTANCE-CLOSEOUT", "dbWrites": false, "schemaChanges": false, "description": "Final verification, TeachingTask import unblock" }
+  ],
+
+  "rollbackStrategy": {
+    "c2": "Reverse migration: drop added columns",
+    "c3": "Restore from backup. Transaction rollback on error.",
+    "c4": "Git revert. No DB changes.",
+    "c5": "Restore from backup. Re-add semesterId.",
+    "c6": "N/A"
+  },
+
+  "teachingTaskImportBlockUntil": "L8-C6 CLOSED — requires global ClassGroup queries stable + import dry-run + real-import test pass",
+
+  "riskList": [
+    { "risk": "TTC references break during migration", "severity": "HIGH", "mitigation": "Migrate TTC refs BEFORE deactivating old ClassGroups" },
+    { "risk": "Canonical 227 don't match existing refs", "severity": "MEDIUM", "mitigation": "Pre-migration audit of every referenced CG" },
+    { "risk": "Import pipeline fails with global CG", "severity": "MEDIUM", "mitigation": "Import dry-run test in C4" },
+    { "risk": "Schema migration breaks Prisma Client", "severity": "LOW", "mitigation": "prisma generate after each migration" }
+  ],
+
+  "roomGlobalizationNote": "Room is GLOBAL_MASTER_DATA. Current schema already has no semesterId. Deferred to L9 series.",
+
+  "verificationResults": {
+    "prismaValidate": "PASS",
+    "migrateStatus": "PASS",
+    "build": "PASS",
+    "typecheck": "PASS",
+    "lint": "PASS",
+    "k22c": "PASS (73/73)",
+    "scanDocsPii": "PASS"
+  }
+}
