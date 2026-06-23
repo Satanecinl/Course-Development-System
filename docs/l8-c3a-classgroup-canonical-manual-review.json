@@ -1,0 +1,35 @@
+{
+  "stage": "L8-C3A-CLASSGROUP-CANONICAL-MANUAL-REVIEW",
+  "status": "WAITING_FOR_USER_REVIEW",
+  "description": "Manual review workbook for 8 unmatched ClassGroups / 89 TTCs",
+
+  "l8c3ArtifactsFound": true,
+  "affectedSourceClassGroups": 8,
+  "affectedTTCs": 89,
+  "canonicalCandidateCount": 227,
+
+  "workbookPath": "temp/local-artifacts/l8-c3a/classgroup-canonical-manual-review.local.xlsx",
+  "workbookSheets": ["README", "Summary", "Unmatched_Source_ClassGroups_8", "Affected_TTC_89", "Canonical_Candidates_227", "Export_Check"],
+
+  "importScriptPath": "scripts/import-classgroup-canonical-manual-review-l8-c3a.ts",
+  "dryRunStatus": "WAITING_FOR_USER_REVIEW",
+  "acceptedDecisions": 0,
+  "readyForC4Apply": false,
+  "manualReviewRequired": 8,
+
+  "nextUserAction": "Edit workbook action columns, save, re-run import dry-run until readyForC4Apply=true",
+
+  "verificationResults": {
+    "generator": "PASS",
+    "importerDryRun": "PASS",
+    "prismaValidate": "PASS",
+    "migrateStatus": "PASS",
+    "build": "PASS",
+    "typecheck": "PASS",
+    "lint": "PASS",
+    "k22c": "PASS (73/73)",
+    "scanDocsPii": "PASS"
+  },
+
+  "teachingTaskImportBlocked": true
+}
