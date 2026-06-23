@@ -1,0 +1,12 @@
+{
+  "stage": "L8-C3B0-CLASSGROUP-MANUAL-REVIEW-ASSISTED-EXPORT",
+  "status": "COMPLETE",
+  "affectedSourceClassGroups": 8,
+  "affectedTTCs": 89,
+  "canonicalCandidateCount": 227,
+  "localMdPath": "temp/local-artifacts/l8-c3b0/classgroup-8-review-for-user.local.md",
+  "localJsonPath": "temp/local-artifacts/l8-c3b0/classgroup-8-review-for-user.local.json",
+  "workbookStillUnedited": true,
+  "userSelectionRequired": true,
+  "l8C4Blocked": true
+}
