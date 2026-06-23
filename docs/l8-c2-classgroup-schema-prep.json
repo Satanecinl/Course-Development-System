@@ -1,0 +1,82 @@
+{
+  "stage": "L8-C2-CLASSGROUP-SCHEMA-PREP",
+  "status": "CLOSED",
+  "description": "Additive schema migration: add global master data prep fields to ClassGroup",
+
+  "schemaModified": true,
+  "migrationCreated": true,
+  "migrationName": "20260623000000_add_classgroup_global_fields_l8_c2",
+  "migrationMethod": "manual SQL (shadow DB incompatible with legacy migration)",
+  "appliedVia": "prisma migrate deploy",
+  "totalMigrations": 15,
+
+  "backupCreated": true,
+  "backupBasename": "prisma/dev.db.backup-before-l8-c2-classgroup-schema-prep-20260623132208",
+
+  "addedFields": {
+    "canonicalKey": { "type": "TEXT", "nullable": true, "default": "null", "constraint": "@unique" },
+    "grade": { "type": "TEXT", "nullable": true, "default": "null" },
+    "majorName": { "type": "TEXT", "nullable": true, "default": "null" },
+    "classNumber": { "type": "TEXT", "nullable": true, "default": "null" },
+    "educationLevel": { "type": "TEXT", "nullable": true, "default": "null" },
+    "schoolLength": { "type": "TEXT", "nullable": true, "default": "null" },
+    "sourceType": { "type": "TEXT", "nullable": true, "default": "null" },
+    "isActive": { "type": "BOOLEAN", "nullable": false, "default": true }
+  },
+
+  "addedIndexes": ["ClassGroup_canonicalKey_key (UNIQUE)", "ClassGroup_isActive_idx"],
+
+  "existingRowBehavior": {
+    "canonicalKey": "null (all 442 rows)",
+    "grade": "null",
+    "majorName": "null",
+    "classNumber": "null",
+    "educationLevel": "null",
+    "schoolLength": "null",
+    "sourceType": "null",
+    "isActive": "true (all 442 rows via DEFAULT)"
+  },
+
+  "intentionallyNotChanged": [
+    "semesterId still required (NOT NULL)",
+    "@@unique([semesterId, name]) retained",
+    "name NOT global unique (semester duplicates exist)",
+    "No SemesterClassGroup join table",
+    "No ClassGroup data cleanup",
+    "No TeachingTaskClass migration",
+    "No API/UI query migration",
+    "No import/course-setting logic change"
+  ],
+
+  "dbBaselineBefore": {
+    "course": 104, "teacher": 427, "cgSem1": 36, "cgSem4": 406,
+    "ttSem4": 0, "ttc": 446, "ssSem4": 0, "saSem4": 0, "ibTotal": 39
+  },
+  "dbBaselineAfter": {
+    "course": 104, "teacher": 427, "cgSem1": 36, "cgSem4": 406,
+    "ttSem4": 0, "ttc": 446, "ssSem4": 0, "saSem4": 0, "ibTotal": 39
+  },
+  "classGroupTotalBefore": 442,
+  "classGroupTotalAfter": 442,
+  "teachingTaskClassCountBefore": 446,
+  "teachingTaskClassCountAfter": 446,
+
+  "verificationResults": {
+    "prismaValidate": "PASS",
+    "migrateStatus": "PASS",
+    "build": "PASS",
+    "typecheck": "PASS",
+    "lint": "PASS",
+    "k22c": "PASS (73/73)",
+    "scanDocsPii": "PASS"
+  },
+
+  "teacherStatusCorrection": {
+    "from": "ALL_STAFF_PERSON_TABLE done (L6-E1C)",
+    "to": "ALL_STAFF_PERSON_TABLE done (L8-B1)",
+    "files": ["docs/l8-c1-classgroup-globalization-design.md", "docs/l8-c1-classgroup-globalization-design.json"]
+  },
+
+  "recommendedNextStage": "L8-C3-CLASSGROUP-CANONICAL-REFERENCE-PLAN",
+  "teachingTaskImportBlocked": true
+}

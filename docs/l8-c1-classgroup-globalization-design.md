@@ -18,7 +18,7 @@ DESIGN_COMPLETE — no DB writes, no schema changes
 
 | Entity | Decision | Status |
 |--------|----------|--------|
-| Teacher | ALL_STAFF_PERSON_TABLE (global) | DONE (L6-E1C) |
+| Teacher | ALL_STAFF_PERSON_TABLE (global) | DONE (L8-B1) |
 | ClassGroup | GLOBAL_MASTER_DATA | DESIGNED (L8-C1) |
 | Room | GLOBAL_MASTER_DATA | NOTED — deferred to later stage |
 

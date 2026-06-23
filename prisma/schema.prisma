@@ -44,8 +44,20 @@ model ClassGroup {
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
 
+  // L8-C2: additive fields for global master data prep
+  canonicalKey   String?  @unique   // normalized matching key: grade|major|classNum|direction
+  grade          String?            // e.g. "2024级"
+  majorName      String?            // e.g. "护理"
+  classNumber    String?            // e.g. "1"
+  educationLevel String?            // e.g. "高职", "中高职"
+  schoolLength   String?            // e.g. "三年制", "五年制"
+  sourceType     String?            // "reference_xlsx" | "legacy" | "import_artifact"
+  isActive       Boolean  @default(true)
+
   @@unique([semesterId, name])
   @@index([semesterId])
+  @@index([canonicalKey])
+  @@index([isActive])
 }
 
 model Teacher {
