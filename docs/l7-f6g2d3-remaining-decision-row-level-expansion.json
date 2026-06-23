@@ -1,0 +1,14 @@
+{
+  "stage": "L7-F6G2D3-REMAINING-DECISION-ROW-LEVEL-EXPANSION",
+  "status": "WORKBOOK_GENERATED_WAITING_FOR_USER_EDIT",
+  "dbWrite": false,
+  "ambiguousTeacherExpandedCount": 15,
+  "ambiguousMappingExpandedCount": 63,
+  "totalRowDecisions": 78,
+  "ambiguousTeacherHighConfidence": 2,
+  "ambiguousTeacherNeedsReview": 13,
+  "ambiguousMappingWithCandidates": 0,
+  "ambiguousMappingNoCandidates": 63,
+  "readyForControlledWrite": false,
+  "workbookPath": "temp/local-artifacts/l7-f6g2d3/remaining-row-level-decisions.local.xlsx"
+}
